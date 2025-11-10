@@ -184,6 +184,8 @@
                         // Find existing cooldown timer or use current timer
                         let existingTimer = this.findOrCreateCooldownTimer(timer, cooldownType);
                         
+                        console.log(`🔍 Original timer clicked:`, timer.id);
+                        console.log(`🔍 Timer selected for cooldown:`, existingTimer.id);
                         console.log(`🔍 Adding ${cooldownType} to timer:`, existingTimer.id);
                         console.log(`🔍 Existing cooldowns before:`, existingTimer.cooldowns);
                         
@@ -218,13 +220,18 @@
                         
                         // ALWAYS do a full re-render for cooldown selections to ensure display works
                         console.log('🔍 Force re-rendering timer with cooldown data');
+                        console.log(`🔍 Looking for timer element with ID: sidekick-timer-${existingTimer.id}`);
                         const element = document.getElementById(`sidekick-timer-${existingTimer.id}`);
+                        console.log(`🔍 Found element:`, !!element);
                         if (element) {
                             element.remove();
                             this.renderTimer(existingTimer);
                             console.log('🔍 Timer re-rendered successfully');
                         } else {
                             console.error('🔍 Could not find timer element to remove');
+                            console.log('🔍 Available timer elements:', document.querySelectorAll('[id^="sidekick-timer-"]'));
+                            // Try to render anyway
+                            this.renderTimer(existingTimer);
                         }
                         
                         this.startTimer(existingTimer.id);
