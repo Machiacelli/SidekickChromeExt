@@ -224,7 +224,13 @@
                         
                         this.startTimer(existingTimer.id);
 
-                        console.log(`⏰ Updated timer with ${cooldownNames[cooldownType]}: ${remainingTimeSeconds}s remaining`);
+                        // Show success notification
+                        if (window.SidekickModules?.UI?.showNotification) {
+                            window.SidekickModules.UI.showNotification(
+                                'SUCCESS', 
+                                `${cooldownNames[cooldownType]} Timer Started - ${this.formatTime(remainingTimeSeconds)} remaining`
+                            );
+                        }
                     } else {
                         console.log(`🔍 ${cooldownType} cooldown has expired (remaining time: ${remainingTimeSeconds} seconds)`);
                         if (window.SidekickModules?.Core?.NotificationSystem) {
@@ -818,22 +824,27 @@
                         console.log(`🔍 Cooldown option clicked: ${cooldownType}`);
                         
                         if (cooldownType) {
-                            console.log(`🔍 About to call checkSpecificCooldown with timer:`, timer.id, 'cooldownType:', cooldownType);
-                            console.log('🔍 self context:', self);
-                            console.log('🔍 checkSpecificCooldown method exists:', typeof self.checkSpecificCooldown);
-                            
                             // Close dropdown immediately
                             dropdownContent.style.display = 'none';
                             
                             try {
                                 // Call the cooldown check with proper context
                                 await self.checkSpecificCooldown(timer, cooldownType);
-                                console.log('🔍 checkSpecificCooldown completed successfully');
+                                
+                                // Show visual feedback that timer was started
+                                const timerWindow = document.getElementById(`sidekick-timer-${timer.id}`);
+                                if (timerWindow) {
+                                    const timerDisplay = timerWindow.querySelector('.timer-display');
+                                    if (timerDisplay) {
+                                        timerDisplay.style.backgroundColor = '#2ecc71';
+                                        setTimeout(() => {
+                                            timerDisplay.style.backgroundColor = '#34495e';
+                                        }, 1000);
+                                    }
+                                }
                             } catch (error) {
                                 console.error('❌ Error in checkSpecificCooldown:', error);
                             }
-                        } else {
-                            console.error('❌ No cooldown type found on option:', option);
                         }
                     });
                 });
