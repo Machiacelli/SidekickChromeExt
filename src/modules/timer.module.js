@@ -746,19 +746,13 @@
                     font-size: 14px;
                     text-align: center;
                 ">
-                    ${timer.remainingTime > 0 ? `
-                        <div class="timer-display" style="
-                            text-align: center;
-                            font-size: 24px;
-                            font-weight: 700;
-                            color: ${timer.color || '#666'};
-                            font-family: 'Courier New', monospace;
-                        ">${this.formatTime(timer.remainingTime)}</div>
-                    ` : `
-                        <div style="color: #888; font-style: italic;">
-                            Select a cooldown from the ⚙️ menu above
-                        </div>
-                    `}
+                    <div class="timer-display" style="
+                        text-align: center;
+                        font-size: 24px;
+                        font-weight: 700;
+                        color: ${timer.color || '#666'};
+                        font-family: 'Courier New', monospace;
+                    ">${timer.remainingTime > 0 ? this.formatTime(timer.remainingTime) : 'Select a cooldown from ⚙️ above'}</div>
                 </div>
             `;
 
@@ -929,6 +923,9 @@
             const timer = this.timers.find(t => t.id === id);
             const element = document.querySelector(`[data-timer-id="${timer.id}"]`);
             
+            console.log(`🔍 updateTimerDisplay - Timer:`, timer?.name, 'remainingTime:', timer?.remainingTime);
+            console.log(`🔍 updateTimerDisplay - Element found:`, !!element);
+            
             if (!timer || !element) return;
 
             // For API timers, just update the display without re-rendering the whole element
@@ -941,14 +938,19 @@
                 const nameSpan = header.querySelector('span');
                 if (nameSpan) {
                     nameSpan.textContent = timer.name;
+                    console.log(`🔍 Updated timer name to: ${timer.name}`);
                 }
             }
 
             // Update display
             const display = element.querySelector('.timer-display');
             if (display) {
-                display.textContent = timer.remainingTime > 0 ? this.formatTime(timer.remainingTime) : '00:00:00';
+                const timeText = timer.remainingTime > 0 ? this.formatTime(timer.remainingTime) : '00:00:00';
+                display.textContent = timeText;
                 display.style.color = timer.color;
+                console.log(`🔍 Updated timer display to: ${timeText}`);
+            } else {
+                console.error(`🔍 Could not find timer-display element for timer ${id}`);
             }
         },
 
