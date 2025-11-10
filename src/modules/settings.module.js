@@ -14,7 +14,8 @@
     function waitForCore() {
         return new Promise((resolve) => {
             const checkCore = () => {
-                if (window.SidekickModules?.Core) {
+                if (window.SidekickModules?.Core?.ChromeStorage) {
+                    console.log("⚙️ Core module with ChromeStorage ready for Settings");
                     resolve();
                 } else {
                     setTimeout(checkCore, 100);

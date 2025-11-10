@@ -14,7 +14,8 @@
     function waitForCore() {
         return new Promise((resolve) => {
             const checkCore = () => {
-                if (window.SidekickModules?.Core) {
+                if (window.SidekickModules?.Core?.ChromeStorage) {
+                    console.log("📝 Core module with ChromeStorage ready for Notepad");
                     resolve();
                 } else {
                     setTimeout(checkCore, 100);
@@ -51,22 +52,48 @@
         // Load notepads from storage
         async loadNotepads() {
             try {
+                if (!window.SidekickModules?.Core?.ChromeStorage) {
+                    throw new Error('ChromeStorage not available');
+                }
+                
                 const stored = await window.SidekickModules.Core.ChromeStorage.get('sidekick_notepads');
                 this.notepads = stored || [];
                 console.log(`📝 Loaded ${this.notepads.length} notepads`);
             } catch (error) {
                 console.error('Failed to load notepads:', error);
                 this.notepads = [];
+                
+                // Show user-friendly error
+                if (window.SidekickModules?.Core?.NotificationSystem) {
+                    window.SidekickModules.Core.NotificationSystem.show(
+                        'Notepad Error', 
+                        'Failed to load saved notepads', 
+                        'error'
+                    );
+                }
             }
         },
 
         // Save notepads to storage
         async saveNotepads() {
             try {
+                if (!window.SidekickModules?.Core?.ChromeStorage) {
+                    throw new Error('ChromeStorage not available');
+                }
+                
                 await window.SidekickModules.Core.ChromeStorage.set('sidekick_notepads', this.notepads);
                 console.log('📝 Notepads saved successfully');
             } catch (error) {
                 console.error('Failed to save notepads:', error);
+                
+                // Show user-friendly error
+                if (window.SidekickModules?.Core?.NotificationSystem) {
+                    window.SidekickModules.Core.NotificationSystem.show(
+                        'Save Error', 
+                        'Failed to save notepad changes', 
+                        'error'
+                    );
+                }
             }
         },
 

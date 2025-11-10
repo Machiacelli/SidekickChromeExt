@@ -51,14 +51,77 @@
         }
     };
 
+    // === CHROME STORAGE WRAPPER ===
+    const ChromeStorage = {
+        // Get data from Chrome storage
+        async get(key) {
+            return new Promise((resolve) => {
+                if (chrome?.storage?.local) {
+                    chrome.storage.local.get([key], (result) => {
+                        resolve(result[key]);
+                    });
+                } else {
+                    console.warn("Chrome storage not available, using localStorage");
+                    resolve(JSON.parse(localStorage.getItem(key) || 'null'));
+                }
+            });
+        },
+
+        // Set data in Chrome storage
+        async set(key, value) {
+            return new Promise((resolve) => {
+                if (chrome?.storage?.local) {
+                    chrome.storage.local.set({ [key]: value }, () => {
+                        resolve();
+                    });
+                } else {
+                    console.warn("Chrome storage not available, using localStorage");
+                    localStorage.setItem(key, JSON.stringify(value));
+                    resolve();
+                }
+            });
+        },
+
+        // Remove data from Chrome storage
+        async remove(key) {
+            return new Promise((resolve) => {
+                if (chrome?.storage?.local) {
+                    chrome.storage.local.remove([key], () => {
+                        resolve();
+                    });
+                } else {
+                    console.warn("Chrome storage not available, using localStorage");
+                    localStorage.removeItem(key);
+                    resolve();
+                }
+            });
+        },
+
+        // Clear all storage
+        async clear() {
+            return new Promise((resolve) => {
+                if (chrome?.storage?.local) {
+                    chrome.storage.local.clear(() => {
+                        resolve();
+                    });
+                } else {
+                    console.warn("Chrome storage not available, using localStorage");
+                    localStorage.clear();
+                    resolve();
+                }
+            });
+        }
+    };
+
     // === CORE MODULE EXPORT ===
     const CoreModule = {
         STORAGE_KEYS,
         NotificationSystem,
+        ChromeStorage,
         
         // Initialize core functionality
         async init() {
-            console.log("� Initializing Core Module...");
+            console.log("🔧 Initializing Core Module...");
             console.log("✅ Core Module initialized successfully");
             return true;
         }
