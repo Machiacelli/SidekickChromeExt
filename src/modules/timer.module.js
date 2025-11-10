@@ -218,23 +218,12 @@
 
                         this.saveTimers();
                         
-                        // ALWAYS do a full re-render for cooldown selections to ensure display works
-                        console.log('🔍 Force re-rendering timer with cooldown data');
-                        console.log(`🔍 Looking for timer element with ID: sidekick-timer-${existingTimer.id}`);
-                        const element = document.getElementById(`sidekick-timer-${existingTimer.id}`);
-                        console.log(`🔍 Found element:`, !!element);
-                        if (element) {
-                            element.remove();
-                            this.renderTimer(existingTimer);
-                            console.log('🔍 Timer re-rendered successfully');
-                        } else {
-                            console.error('🔍 Could not find timer element to remove');
-                            console.log('🔍 Available timer elements:', document.querySelectorAll('[id^="sidekick-timer-"]'));
-                            // Try to render anyway
-                            this.renderTimer(existingTimer);
-                        }
-                        
+                        // Start the timer
                         this.startTimer(existingTimer.id);
+                        
+                        // Force a complete display update without removing the element
+                        console.log('🔍 Updating timer display after cooldown selection');
+                        this.updateTimerDisplay(existingTimer.id);
 
                         // Show success notification
                         if (window.SidekickModules?.UI?.showNotification) {
@@ -1031,15 +1020,12 @@
         // Update timer display
         updateTimerDisplay(id) {
             const timer = this.timers.find(t => t.id === id);
-            const element = document.querySelector(`[data-timer-id="${timer.id}"]`);
+            const element = document.getElementById(`sidekick-timer-${timer.id}`);
             
             console.log(`🔍 updateTimerDisplay - Timer:`, timer?.name, 'remainingTime:', timer?.remainingTime);
             console.log(`🔍 updateTimerDisplay - Element found:`, !!element);
             
             if (!timer || !element) return;
-
-            // For API timers, just update the display without re-rendering the whole element
-            // This prevents dropdown interference during timer updates
 
             // Update header color and name
             const header = element.querySelector('.timer-header');
@@ -1052,15 +1038,69 @@
                 }
             }
 
-            // Update display
-            const display = element.querySelector('.timer-display');
-            if (display) {
-                const timeText = timer.remainingTime > 0 ? this.formatTime(timer.remainingTime) : '00:00:00';
-                display.textContent = timeText;
-                display.style.color = timer.color;
-                console.log(`🔍 Updated timer display to: ${timeText}`);
+            // Update display content based on timer type
+            const contentArea = element.querySelector('div[style*="flex-direction: column"]');
+            if (contentArea) {
+                // Clear and rebuild content
+                const existingDisplay = contentArea.querySelector('.timer-display, [style*="rgba(255,255,255,0.1)"]');
+                if (existingDisplay) {
+                    existingDisplay.remove();
+                }
+                
+                // Add new content based on timer type
+                if (timer.cooldowns && Object.keys(timer.cooldowns).length > 1) {
+                    // Multi-cooldown display
+                    const cooldownNames = {
+                        'drug': 'Drug',
+                        'medical': 'Medical', 
+                        'booster': 'Booster'
+                    };
+                    
+                    Object.entries(timer.cooldowns).forEach(([type, time]) => {
+                        const cooldownDiv = document.createElement('div');
+                        cooldownDiv.style.cssText = `
+                            background: rgba(255,255,255,0.1);
+                            border-radius: 6px;
+                            padding: 8px;
+                            margin: 4px 0;
+                            width: 90%;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                        `;
+                        cooldownDiv.innerHTML = `
+                            <span style="
+                                color: #ccc;
+                                font-size: 14px;
+                                font-weight: 600;
+                            ">${cooldownNames[type] || type}</span>
+                            <span style="
+                                color: ${this.getCooldownColor(type)};
+                                font-family: 'Courier New', monospace;
+                                font-weight: 700;
+                                font-size: 16px;
+                            ">${this.formatTime(time)}</span>
+                        `;
+                        contentArea.appendChild(cooldownDiv);
+                    });
+                } else {
+                    // Single cooldown display
+                    const display = document.createElement('div');
+                    display.className = 'timer-display';
+                    display.style.cssText = `
+                        text-align: center;
+                        font-size: 24px;
+                        font-weight: 700;
+                        color: ${timer.color || '#666'};
+                        font-family: 'Courier New', monospace;
+                    `;
+                    const timeText = timer.remainingTime > 0 ? this.formatTime(timer.remainingTime) : '00:00:00';
+                    display.textContent = timeText;
+                    contentArea.appendChild(display);
+                    console.log(`🔍 Updated timer display to: ${timeText}`);
+                }
             } else {
-                console.error(`🔍 Could not find timer-display element for timer ${id}`);
+                console.error(`🔍 Could not find content area for timer ${id}`);
             }
         },
 
