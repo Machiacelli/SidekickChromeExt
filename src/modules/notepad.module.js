@@ -72,36 +72,21 @@
                 
                 let stored = null;
                 
-                // Method 1: Try Chrome storage wrapper if available
+                // Method 1: Try Chrome storage wrapper (now handles extension context internally)
                 try {
                     if (window.SidekickModules?.Core?.ChromeStorage?.get) {
-                        console.log("� Method 1: Using ChromeStorage wrapper");
+                        console.log("📝 Method 1: Using ChromeStorage wrapper");
                         stored = await window.SidekickModules.Core.ChromeStorage.get('sidekick_notepads');
                         console.log("✅ ChromeStorage wrapper succeeded");
                     }
                 } catch (error) {
-                    console.warn("⚠️ ChromeStorage wrapper failed:", error);
+                    console.warn("⚠️ ChromeStorage wrapper failed:", error.message);
                 }
                 
-                // Method 2: Try direct Chrome API if Method 1 failed
-                if (stored === null && chrome?.storage?.local) {
-                    try {
-                        console.log("📝 Method 2: Using direct Chrome storage API");
-                        stored = await new Promise((resolve) => {
-                            chrome.storage.local.get(['sidekick_notepads'], (result) => {
-                                resolve(result.sidekick_notepads);
-                            });
-                        });
-                        console.log("✅ Direct Chrome storage succeeded");
-                    } catch (error) {
-                        console.warn("⚠️ Direct Chrome storage failed:", error);
-                    }
-                }
-                
-                // Method 3: Final fallback to localStorage
+                // Method 2: Fallback to localStorage if wrapper failed
                 if (stored === null) {
                     try {
-                        console.log("📝 Method 3: Using localStorage fallback");
+                        console.log("📝 Method 2: Using localStorage fallback");
                         stored = JSON.parse(localStorage.getItem('sidekick_notepads') || 'null');
                         console.log("✅ localStorage fallback succeeded");
                     } catch (error) {
@@ -111,6 +96,10 @@
                 
                 this.notepads = stored || [];
                 console.log(`📝 Loaded ${this.notepads.length} notepads`);
+
+                // Refresh display after loading
+                this.refreshDisplay();
+                
             } catch (error) {
                 console.error('Failed to load notepads:', error);
                 console.error('Error stack:', error.stack);
@@ -134,7 +123,7 @@
                 
                 let saved = false;
                 
-                // Method 1: Try Chrome storage wrapper
+                // Method 1: Try Chrome storage wrapper (now handles extension context internally)
                 try {
                     if (window.SidekickModules?.Core?.ChromeStorage?.set) {
                         console.log("📝 Method 1: Saving via ChromeStorage wrapper");
@@ -143,33 +132,13 @@
                         console.log("✅ ChromeStorage wrapper save succeeded");
                     }
                 } catch (error) {
-                    console.warn("⚠️ ChromeStorage wrapper save failed:", error);
+                    console.warn("⚠️ ChromeStorage wrapper save failed:", error.message);
                 }
                 
-                // Method 2: Try direct Chrome API if Method 1 failed
-                if (!saved && chrome?.storage?.local) {
-                    try {
-                        console.log("📝 Method 2: Saving via direct Chrome storage API");
-                        await new Promise((resolve, reject) => {
-                            chrome.storage.local.set({ 'sidekick_notepads': this.notepads }, () => {
-                                if (chrome.runtime.lastError) {
-                                    reject(chrome.runtime.lastError);
-                                } else {
-                                    resolve();
-                                }
-                            });
-                        });
-                        saved = true;
-                        console.log("✅ Direct Chrome storage save succeeded");
-                    } catch (error) {
-                        console.warn("⚠️ Direct Chrome storage save failed:", error);
-                    }
-                }
-                
-                // Method 3: Final fallback to localStorage
+                // Method 2: Fallback to localStorage if wrapper failed
                 if (!saved) {
                     try {
-                        console.log("📝 Method 3: Saving via localStorage fallback");
+                        console.log("📝 Method 2: Saving via localStorage fallback");
                         localStorage.setItem('sidekick_notepads', JSON.stringify(this.notepads));
                         saved = true;
                         console.log("✅ localStorage fallback save succeeded");
@@ -194,378 +163,577 @@
             }
         },
 
-        // Create a new notepad
-        createNotepad(title = 'New Note') {
+        // Create a new notepad window in the sidebar
+        addNotepad(title = 'New Note') {
+            console.log('📝 Adding new notepad:', title);
+            
+            const contentArea = document.getElementById('sidekick-content');
+            const contentWidth = contentArea ? contentArea.clientWidth : 480; // Updated for wider sidebar
+            const contentHeight = contentArea ? contentArea.clientHeight : 500;
+            
             const notepad = {
                 id: Date.now() + Math.random(),
                 title: title,
                 content: '',
+                color: '#4CAF50', // Default color
+                x: 10 + (this.notepads.length * 20), // Offset new notepads
+                y: 10 + (this.notepads.length * 20),
+                width: Math.min(320, contentWidth - 40), // Wider default for wider sidebar
+                height: Math.min(200, contentHeight - 60), // Taller default
+                pinned: false,
                 created: new Date().toISOString(),
                 modified: new Date().toISOString()
             };
-            
-            this.notepads.unshift(notepad);
+
+            this.notepads.push(notepad);
             this.saveNotepads();
+            
+            // Render the new notepad window
+            this.renderNotepad(notepad);
+            
+            if (window.SidekickModules?.Core?.NotificationSystem) {
+                window.SidekickModules.Core.NotificationSystem.show(
+                    'Notepad', 
+                    'New notepad created', 
+                    'info', 
+                    2000
+                );
+            }
+            
+            console.log('📝 Notepad added successfully, total notepads:', this.notepads.length);
             return notepad;
         },
 
         // Delete a notepad
         deleteNotepad(id) {
-            this.notepads = this.notepads.filter(notepad => notepad.id !== id);
-            this.saveNotepads();
+            const notepad = this.notepads.find(n => n.id === id);
+            if (notepad && confirm(`Delete notepad "${notepad.title}"?`)) {
+                console.log('📝 Deleting notepad:', id, notepad.title);
+                
+                // Remove from local array
+                this.notepads = this.notepads.filter(n => n.id !== id);
+                
+                // Remove from DOM
+                const element = document.querySelector(`[data-notepad-id="${id}"]`);
+                if (element) {
+                    element.remove();
+                    console.log('📝 Removed notepad element from DOM');
+                }
+                
+                // Save updated array
+                this.saveNotepads();
+                
+                // Show placeholder if no notepads left
+                if (this.notepads.length === 0) {
+                    this.showPlaceholder();
+                }
+                
+                if (window.SidekickModules?.Core?.NotificationSystem) {
+                    window.SidekickModules.Core.NotificationSystem.show(
+                        'Notepad', 
+                        'Notepad deleted', 
+                        'success', 
+                        2000
+                    );
+                }
+                
+                console.log('📝 Notepad deleted successfully, remaining notepads:', this.notepads.length);
+            }
         },
 
-        // Update a notepad
+        // Update notepad content
         updateNotepad(id, updates) {
             const notepad = this.notepads.find(n => n.id === id);
             if (notepad) {
                 Object.assign(notepad, updates, { modified: new Date().toISOString() });
                 this.saveNotepads();
+                console.log('📝 Updated notepad:', id);
                 return notepad;
             }
             return null;
         },
 
-        // Create notepad panel UI
-        createNotepadPanel() {
-            const panel = document.createElement('div');
-            panel.className = 'sidekick-notepad-panel';
-            panel.style.cssText = 'height: 100%; display: flex; flex-direction: column;';
-            
-            this.renderNotepadList(panel);
-            return panel;
-        },
+        // Refresh display - render all notepads in sidebar
+        refreshDisplay() {
+            console.log('📝 Refreshing notepad display...');
+            const contentArea = document.getElementById('sidekick-content');
+            if (!contentArea) return;
 
-        // Render the notepad list
-        renderNotepadList(container) {
-            container.innerHTML = `
-                <div style="padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.2);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h3 style="margin: 0; color: #fff; font-size: 18px;">📝 Notepads</h3>
-                        <button id="sidekick-add-notepad" style="padding: 8px 12px; background: #4CAF50; 
-                                                              border: none; color: white; border-radius: 5px; 
-                                                              font-size: 12px; cursor: pointer; font-weight: bold;">
-                            ➕ New
-                        </button>
-                    </div>
-                </div>
-                <div id="sidekick-notepad-list" style="flex: 1; overflow-y: auto; padding: 10px;"></div>
-            `;
+            // Clear existing notepads but keep other content
+            const existingNotepads = contentArea.querySelectorAll('.movable-notepad');
+            existingNotepads.forEach(np => np.remove());
 
-            this.renderNotepadItems(container);
-            this.attachNotepadListeners(container);
-        },
-
-        // Render individual notepad items
-        renderNotepadItems(container) {
-            const listContainer = container.querySelector('#sidekick-notepad-list');
-            
+            // Show placeholder if no notepads
             if (this.notepads.length === 0) {
-                listContainer.innerHTML = `
-                    <div style="text-align: center; color: #aaa; padding: 40px 20px;">
-                        <div style="font-size: 48px; margin-bottom: 15px;">📝</div>
-                        <div>No notepads yet</div>
-                        <div style="font-size: 12px; margin-top: 10px;">Click "New" to create your first notepad</div>
-                    </div>
-                `;
+                this.showPlaceholder();
                 return;
             }
 
-            listContainer.innerHTML = this.notepads.map(notepad => `
-                <div class="notepad-item" data-id="${notepad.id}" style="background: rgba(255,255,255,0.1); 
-                     margin-bottom: 10px; border-radius: 8px; padding: 15px; cursor: pointer; 
-                     border: 1px solid rgba(255,255,255,0.2); transition: all 0.2s;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                        <h4 style="margin: 0; color: #fff; font-size: 14px; font-weight: bold; 
-                                   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
-                            ${this.escapeHtml(notepad.title)}
-                        </h4>
-                        <button class="delete-notepad" data-id="${notepad.id}" style="background: #f44336; 
-                                border: none; color: white; border-radius: 3px; padding: 4px 8px; 
-                                font-size: 10px; cursor: pointer; margin-left: 10px;">
-                            🗑️
-                        </button>
-                    </div>
-                    <div style="color: #ccc; font-size: 12px; margin-bottom: 8px;">
-                        ${this.formatDate(notepad.modified)}
-                    </div>
-                    <div style="color: #ddd; font-size: 13px; line-height: 1.4; 
-                                max-height: 60px; overflow: hidden;">
-                        ${this.escapeHtml(notepad.content.substring(0, 100))}${notepad.content.length > 100 ? '...' : ''}
-                    </div>
-                </div>
-            `).join('');
-        },
+            // Remove placeholder if it exists
+            const placeholder = contentArea.querySelector('.sidekick-placeholder');
+            if (placeholder) {
+                placeholder.remove();
+            }
 
-        // Attach event listeners for notepad list
-        attachNotepadListeners(container) {
-            // Add new notepad
-            const addBtn = container.querySelector('#sidekick-add-notepad');
-            addBtn.addEventListener('click', () => {
-                const title = prompt('Enter notepad title:', 'New Note');
-                if (title !== null && title.trim()) {
-                    const notepad = this.createNotepad(title.trim());
-                    this.renderNotepadItems(container);
-                    
-                    if (window.SidekickModules.Core.NotificationSystem) {
-                        window.SidekickModules.Core.NotificationSystem.show(
-                            'Notepad Created',
-                            `"${title.trim()}" has been created`,
-                            'success',
-                            2000
-                        );
-                    }
-                }
-            });
-
-            // Open notepad for editing
-            container.addEventListener('click', (e) => {
-                if (e.target.classList.contains('notepad-item') || e.target.closest('.notepad-item')) {
-                    const item = e.target.classList.contains('notepad-item') ? e.target : e.target.closest('.notepad-item');
-                    const id = parseFloat(item.dataset.id);
-                    this.openNotepadEditor(id, container);
-                }
-            });
-
-            // Delete notepad
-            container.addEventListener('click', (e) => {
-                if (e.target.classList.contains('delete-notepad')) {
-                    e.stopPropagation();
-                    const id = parseFloat(e.target.dataset.id);
-                    const notepad = this.notepads.find(n => n.id === id);
-                    
-                    if (confirm(`Delete "${notepad?.title || 'this notepad'}"?`)) {
-                        this.deleteNotepad(id);
-                        this.renderNotepadItems(container);
-                        
-                        if (window.SidekickModules.Core.NotificationSystem) {
-                            window.SidekickModules.Core.NotificationSystem.show(
-                                'Notepad Deleted',
-                                'Notepad has been removed',
-                                'info',
-                                2000
-                            );
-                        }
-                    }
-                }
+            // Render all notepads as pinnable windows
+            this.notepads.forEach(notepad => {
+                this.renderNotepad(notepad);
             });
         },
 
-        // Open notepad editor in a contained modal window
-        openNotepadEditor(id, container) {
-            const notepad = this.notepads.find(n => n.id === id);
-            if (!notepad) return;
+        // Show placeholder when no notepads exist
+        showPlaceholder() {
+            // No placeholder needed anymore - user requested removal
+            return;
+        },
 
-            // Create modal overlay
-            const modal = document.createElement('div');
-            modal.className = 'sidekick-notepad-modal';
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 10000;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            `;
+        // Render a notepad as a pinnable window in the sidebar
+        renderNotepad(notepad) {
+            const contentArea = document.getElementById('sidekick-content');
+            if (!contentArea) return;
 
-            // Create notepad window
-            const notepadWindow = document.createElement('div');
-            notepadWindow.className = 'sidekick-notepad-window';
-            notepadWindow.style.cssText = `
+            // Remove placeholder if it exists
+            const placeholder = contentArea.querySelector('.sidekick-placeholder');
+            if (placeholder) {
+                placeholder.remove();
+            }
+
+            // Create movable notepad window
+            const notepadElement = document.createElement('div');
+            notepadElement.className = 'movable-notepad';
+            notepadElement.dataset.notepadId = notepad.id;
+            
+            // Use content area dimensions instead of sidebar dimensions
+            const contentWidth = contentArea.clientWidth || 480; // Updated for wider sidebar
+            const contentHeight = contentArea.clientHeight || 500;
+            
+            // Clamp notepad dimensions and position to content area
+            const width = Math.min(Math.max(notepad.width || 320, 200), contentWidth - 20); // Wider default
+            const height = Math.min(Math.max(notepad.height || 200, 120), contentHeight - 40); // Taller default
+            const x = Math.min(Math.max(notepad.x || 10, 0), contentWidth - width);
+            const y = Math.min(Math.max(notepad.y || 10, 0), contentHeight - height);
+
+            notepadElement.style.cssText = `
+                position: absolute;
+                left: ${x}px;
+                top: ${y}px;
+                width: ${width}px;
+                height: ${height}px;
                 background: #2a2a2a;
-                border: 2px solid #555;
-                border-radius: 12px;
-                width: 600px;
-                height: 500px;
+                border: 1px solid #444;
+                border-radius: 6px;
                 display: flex;
                 flex-direction: column;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-                resize: both;
+                min-width: 140px;
+                min-height: 80px;
+                z-index: 1000;
+                resize: ${notepad.pinned ? 'none' : 'both'};
                 overflow: hidden;
-                min-width: 400px;
-                min-height: 300px;
-                max-width: 90vw;
-                max-height: 90vh;
-                position: relative;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.4);
             `;
-
-            // Create title bar for dragging
-            const titleBar = document.createElement('div');
-            titleBar.className = 'sidekick-notepad-titlebar';
-            titleBar.style.cssText = `
-                background: #333;
-                padding: 12px 20px;
-                border-bottom: 1px solid #555;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                cursor: move;
-                user-select: none;
-                border-radius: 10px 10px 0 0;
-            `;
-
-            titleBar.innerHTML = `
-                <input type="text" id="notepad-title-${id}" value="${this.escapeHtml(notepad.title)}" 
-                       style="background: transparent; border: none; color: #fff; font-size: 16px; 
-                              font-weight: bold; flex: 1; outline: none; border-bottom: 1px solid rgba(255,255,255,0.3);
-                              cursor: text; margin-right: 15px;">
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <button id="save-notepad-${id}" style="padding: 6px 12px; background: #4CAF50; 
-                                                  border: none; color: white; border-radius: 4px; 
-                                                  font-size: 12px; cursor: pointer; font-weight: bold;">
-                        💾 Save
-                    </button>
-                    <button id="close-notepad-${id}" style="padding: 6px 10px; background: #f44336; 
-                                                    border: none; color: white; border-radius: 4px; 
-                                                    font-size: 12px; cursor: pointer; font-weight: bold;">
-                        ✕
-                    </button>
-                </div>
-            `;
-
-            // Create content area
-            const contentArea = document.createElement('div');
-            contentArea.style.cssText = `
-                flex: 1;
-                padding: 20px;
-                display: flex;
-                flex-direction: column;
-            `;
-
-            contentArea.innerHTML = `
-                <textarea id="notepad-content-${id}" 
-                          style="width: 100%; height: 100%; background: #1a1a1a; border: 1px solid #555; 
-                                 color: #fff; padding: 15px; border-radius: 6px; resize: none; 
-                                 font-family: 'Courier New', monospace; font-size: 14px; outline: none;"
-                          placeholder="Start typing your notes here...">${this.escapeHtml(notepad.content)}</textarea>
-                <div style="margin-top: 10px; font-size: 12px; color: #aaa; text-align: right;">
-                    Last modified: ${this.formatDate(notepad.modified)}
-                </div>
-            `;
-
-            // Assemble the window
-            notepadWindow.appendChild(titleBar);
-            notepadWindow.appendChild(contentArea);
-            modal.appendChild(notepadWindow);
-
-            // Make window draggable
-            this.makeWindowDraggable(notepadWindow, titleBar);
-
-            // Attach event listeners
-            const titleInput = titleBar.querySelector(`#notepad-title-${id}`);
-            const contentTextarea = contentArea.querySelector(`#notepad-content-${id}`);
-            const saveBtn = titleBar.querySelector(`#save-notepad-${id}`);
-            const closeBtn = titleBar.querySelector(`#close-notepad-${id}`);
-
-            // Prevent dragging when clicking on input fields
-            titleInput.addEventListener('mousedown', (e) => e.stopPropagation());
-            titleInput.addEventListener('click', (e) => e.stopPropagation());
-
-            // Save function
-            const saveNotepad = () => {
-                notepad.title = titleInput.value.trim() || 'Untitled';
-                notepad.content = contentTextarea.value;
-                notepad.modified = new Date().toISOString();
-                this.saveNotepads();
-                
-                if (window.SidekickModules.Core.NotificationSystem) {
-                    window.SidekickModules.Core.NotificationSystem.show(
-                        'Notepad Saved',
-                        `"${notepad.title}" has been saved`,
-                        'success',
-                        2000
-                    );
-                }
-                
-                // Update the list display if it's still visible
-                this.renderNotepadItems(container);
-            };
-
-            // Close function
-            const closeModal = () => {
-                document.body.removeChild(modal);
-            };
-
-            // Event listeners
-            saveBtn.addEventListener('click', saveNotepad);
-            closeBtn.addEventListener('click', closeModal);
             
-            // Auto-save on content change (debounced)
-            let saveTimeout;
-            const autoSave = () => {
-                clearTimeout(saveTimeout);
-                saveTimeout = setTimeout(saveNotepad, 2000);
-            };
-            
-            titleInput.addEventListener('input', autoSave);
-            contentTextarea.addEventListener('input', autoSave);
+            notepadElement.innerHTML = `
+                <div class="notepad-header" style="
+                    background: linear-gradient(135deg, ${notepad.color || '#4CAF50'}, ${this.darkenColor(notepad.color || '#4CAF50', 15)});
+                    border-bottom: 1px solid #555;
+                    padding: 4px 8px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    cursor: ${notepad.pinned ? 'default' : 'move'};
+                    height: 24px;
+                    flex-shrink: 0;
+                    border-radius: 5px 5px 0 0;
+                    user-select: none;
+                ">
+                    <div style="display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0;">
+                        <input type="text" class="notepad-title" value="${this.escapeHtml(notepad.title)}" 
+                               placeholder="Title..." 
+                               style="
+                                   background: transparent;
+                                   border: none;
+                                   color: #fff;
+                                   font-weight: 600;
+                                   font-size: 11px;
+                                   outline: none;
+                                   flex: 1;
+                                   cursor: text;
+                                   min-width: 0;
+                                   width: 100%;
+                               ">
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 3px; min-width: 32px; flex-shrink: 0;">
+                        <div class="pin-dropdown" style="position: relative;">
+                            <button class="dropdown-btn" style="
+                                background: none;
+                                border: none;
+                                color: rgba(255,255,255,0.8);
+                                cursor: pointer;
+                                font-size: 10px;
+                                padding: 1px 3px;
+                                border-radius: 2px;
+                                transition: background 0.2s;
+                                min-width: 12px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            " title="Options">⚙️</button>
+                            <div class="dropdown-content" style="
+                                display: none;
+                                position: absolute;
+                                background: #333;
+                                min-width: 120px;
+                                box-shadow: 0px 8px 16px rgba(0,0,0,0.3);
+                                z-index: 1001;
+                                border-radius: 4px;
+                                border: 1px solid #555;
+                                top: 100%;
+                                right: 0;
+                            ">
+                                <button class="pin-btn" style="
+                                    background: none;
+                                    border: none;
+                                    color: #fff;
+                                    padding: 8px 12px;
+                                    width: 100%;
+                                    text-align: left;
+                                    cursor: pointer;
+                                    font-size: 12px;
+                                    transition: background 0.2s;
+                                " onmouseover="this.style.background='rgba(255,255,255,0.1)'" 
+                                   onmouseout="this.style.background='none'">
+                                    ${notepad.pinned ? '📌 Unpin' : '📌 Pin'}
+                                </button>
+                                <button class="color-btn" style="
+                                    background: none;
+                                    border: none;
+                                    color: #fff;
+                                    padding: 8px 12px;
+                                    width: 100%;
+                                    text-align: left;
+                                    cursor: pointer;
+                                    font-size: 12px;
+                                    transition: background 0.2s;
+                                " onmouseover="this.style.background='rgba(255,255,255,0.1)'" 
+                                   onmouseout="this.style.background='none'">
+                                    🎨 Change Color
+                                </button>
+                            </div>
+                        </div>
+                        <button class="close-btn" style="
+                            background: #dc3545;
+                            border: none;
+                            color: white;
+                            cursor: pointer;
+                            font-size: 10px;
+                            padding: 0;
+                            width: 14px;
+                            height: 14px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            border-radius: 50%;
+                            transition: all 0.2s;
+                            font-weight: bold;
+                            flex-shrink: 0;
+                            min-width: 14px;
+                        " onmouseover="this.style.background='#c82333'; this.style.transform='scale(1.1)'" 
+                           onmouseout="this.style.background='#dc3545'; this.style.transform='scale(1)'" 
+                           title="Delete notepad">×</button>
+                    </div>
+                </div>
+                <textarea placeholder="Write your notes here..." 
+                          class="notepad-textarea" 
+                          style="
+                              flex: 1;
+                              background: transparent;
+                              border: none;
+                              color: #fff;
+                              padding: 8px;
+                              font-size: 12px;
+                              font-family: inherit;
+                              resize: none;
+                              outline: none;
+                              line-height: 1.3;
+                              width: 100%;
+                              box-sizing: border-box;
+                              scrollbar-width: thin;
+                              scrollbar-color: rgba(255,255,255,0.3) transparent;
+                          ">${this.escapeHtml(notepad.content)}</textarea>
+            `;
 
-            // Close on overlay click
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    closeModal();
-                }
-            });
+            // Add CSS for webkit scrollbars
+            if (!document.getElementById('notepad-scrollbar-style')) {
+                const style = document.createElement('style');
+                style.id = 'notepad-scrollbar-style';
+                style.textContent = `
+                    .notepad-textarea::-webkit-scrollbar {
+                        width: 6px;
+                    }
+                    .notepad-textarea::-webkit-scrollbar-track {
+                        background: transparent;
+                    }
+                    .notepad-textarea::-webkit-scrollbar-thumb {
+                        background: rgba(255,255,255,0.3);
+                        border-radius: 3px;
+                    }
+                    .notepad-textarea::-webkit-scrollbar-thumb:hover {
+                        background: rgba(255,255,255,0.5);
+                    }
+                `;
+                document.head.appendChild(style);
+            }
 
-            // Keyboard shortcuts
-            modal.addEventListener('keydown', (e) => {
-                if (e.ctrlKey && e.key === 's') {
-                    e.preventDefault();
-                    saveNotepad();
-                }
-                if (e.key === 'Escape') {
-                    closeModal();
-                }
-            });
+            // Setup event handlers for the notepad
+            this.setupNotepadHandlers(notepadElement, notepad);
 
-            // Add to document
-            document.body.appendChild(modal);
-
-            // Focus the content area
-            setTimeout(() => contentTextarea.focus(), 100);
+            contentArea.appendChild(notepadElement);
+            console.log('📝 Rendered notepad window:', notepad.title);
         },
 
-        // Make window draggable
-        makeWindowDraggable(windowElement, titleBar) {
-            let isDragging = false;
-            let dragOffset = { x: 0, y: 0 };
+        // Setup event handlers for notepad window
+        setupNotepadHandlers(notepadElement, notepad) {
+            const titleInput = notepadElement.querySelector('.notepad-title');
+            const textarea = notepadElement.querySelector('.notepad-textarea');
+            const header = notepadElement.querySelector('.notepad-header');
+            const closeBtn = notepadElement.querySelector('.close-btn');
+            const dropdownBtn = notepadElement.querySelector('.dropdown-btn');
+            const dropdownContent = notepadElement.querySelector('.dropdown-content');
+            const pinBtn = notepadElement.querySelector('.pin-btn');
+            const colorBtn = notepadElement.querySelector('.color-btn');
 
-            titleBar.addEventListener('mousedown', (e) => {
-                // Only start dragging if clicking on the title bar itself, not inputs/buttons
-                if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') {
-                    return;
+            // Title editing
+            if (titleInput) {
+                titleInput.addEventListener('input', () => {
+                    notepad.title = titleInput.value;
+                    this.saveNotepads();
+                });
+                
+                titleInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        titleInput.blur();
+                    }
+                });
+
+                // Prevent dragging when focusing on title
+                titleInput.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                });
+            }
+
+            // Content editing
+            if (textarea) {
+                textarea.addEventListener('input', () => {
+                    notepad.content = textarea.value;
+                    this.saveNotepads();
+                });
+
+                // Focus effects
+                textarea.addEventListener('focus', () => {
+                    notepadElement.style.borderColor = '#66BB6A';
+                    notepadElement.style.boxShadow = '0 0 0 2px rgba(102, 187, 106, 0.2)';
+                });
+                
+                textarea.addEventListener('blur', () => {
+                    notepadElement.style.borderColor = '#444';
+                    notepadElement.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                });
+            }
+
+            // Close button
+            if (closeBtn) {
+                closeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.deleteNotepad(notepad.id);
+                });
+            }
+
+            // Dropdown functionality
+            if (dropdownBtn && dropdownContent) {
+                dropdownBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isVisible = dropdownContent.style.display === 'block';
+                    
+                    // Close all other dropdowns first
+                    document.querySelectorAll('.dropdown-content').forEach(dropdown => {
+                        dropdown.style.display = 'none';
+                    });
+                    
+                    dropdownContent.style.display = isVisible ? 'none' : 'block';
+                });
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', () => {
+                    dropdownContent.style.display = 'none';
+                });
+            }
+
+            // Pin functionality
+            if (pinBtn) {
+                pinBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    notepad.pinned = !notepad.pinned;
+                    pinBtn.textContent = notepad.pinned ? '📌 Unpin' : '📌 Pin';
+                    
+                    notepadElement.style.resize = notepad.pinned ? 'none' : 'both';
+                    header.style.cursor = notepad.pinned ? 'default' : 'move';
+                    
+                    this.saveNotepads();
+                    dropdownContent.style.display = 'none';
+                });
+            }
+
+            // Color functionality
+            if (colorBtn) {
+                colorBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    dropdownContent.style.display = 'none';
+                    this.showColorPicker(notepadElement, notepad);
+                });
+            }
+
+            // Dragging functionality (only if not pinned)
+            if (header) {
+                let isDragging = false;
+                let dragOffset = { x: 0, y: 0 };
+
+                header.addEventListener('mousedown', (e) => {
+                    if (notepad.pinned) return;
+                    if (e.target.closest('button') || e.target.closest('input')) return;
+                    
+                    isDragging = true;
+                    const rect = notepadElement.getBoundingClientRect();
+                    const sidebarRect = document.getElementById('sidekick-content').getBoundingClientRect();
+                    
+                    dragOffset.x = e.clientX - rect.left;
+                    dragOffset.y = e.clientY - rect.top;
+                    
+                    notepadElement.style.zIndex = '1100';
+                    e.preventDefault();
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (!isDragging || notepad.pinned) return;
+                    
+                    const sidebarContent = document.getElementById('sidekick-content');
+                    const sidebarRect = sidebarContent.getBoundingClientRect();
+                    
+                    let newX = e.clientX - sidebarRect.left - dragOffset.x;
+                    let newY = e.clientY - sidebarRect.top - dragOffset.y;
+                    
+                    // Constrain to sidebar bounds
+                    const notepadRect = notepadElement.getBoundingClientRect();
+                    newX = Math.max(0, Math.min(newX, sidebarContent.offsetWidth - notepadRect.width));
+                    newY = Math.max(0, Math.min(newY, sidebarContent.offsetHeight - notepadRect.height));
+                    
+                    notepadElement.style.left = newX + 'px';
+                    notepadElement.style.top = newY + 'px';
+                    
+                    notepad.x = newX;
+                    notepad.y = newY;
+                });
+
+                document.addEventListener('mouseup', () => {
+                    if (isDragging) {
+                        isDragging = false;
+                        notepadElement.style.zIndex = '1000';
+                        this.saveNotepads();
+                    }
+                });
+            }
+
+            // Resizing functionality (only if not pinned)
+            const resizeObserver = new ResizeObserver(entries => {
+                if (notepad.pinned) return;
+                
+                for (let entry of entries) {
+                    if (entry.target === notepadElement) {
+                        notepad.width = entry.contentRect.width;
+                        notepad.height = entry.contentRect.height;
+                        this.saveNotepads();
+                    }
                 }
-                
-                isDragging = true;
-                const rect = windowElement.getBoundingClientRect();
-                dragOffset.x = e.clientX - rect.left;
-                dragOffset.y = e.clientY - rect.top;
-                
-                titleBar.style.cursor = 'grabbing';
-                e.preventDefault();
             });
+            resizeObserver.observe(notepadElement);
+        },
 
-            document.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
+        // Show color picker for notepad
+        showColorPicker(notepadElement, notepad) {
+            // Remove any existing color picker
+            const existingPicker = document.querySelector('.color-picker');
+            if (existingPicker) existingPicker.remove();
+            
+            const colorPicker = document.createElement('div');
+            colorPicker.className = 'color-picker';
+            colorPicker.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: #333;
+                border: 1px solid #555;
+                border-radius: 8px;
+                padding: 16px;
+                z-index: 999999;
+                display: grid;
+                grid-template-columns: repeat(4, 30px);
+                gap: 8px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            `;
+            
+            const colors = [
+                '#4CAF50', '#2196F3', '#FF9800', '#f44336', 
+                '#9C27B0', '#607D8B', '#795548', '#E91E63', 
+                '#00BCD4', '#8BC34A', '#FFC107', '#FFEB3B', 
+                '#BDBDBD', '#333', '#FFFFFF', '#000000'
+            ];
+            
+            colors.forEach(color => {
+                const colorBtn = document.createElement('div');
+                colorBtn.style.cssText = `
+                    width: 30px;
+                    height: 30px;
+                    background: ${color};
+                    border: 2px solid ${notepad.color === color ? '#fff' : '#666'};
+                    border-radius: 4px;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                `;
                 
-                const newX = e.clientX - dragOffset.x;
-                const newY = e.clientY - dragOffset.y;
+                colorBtn.addEventListener('click', () => {
+                    notepad.color = color;
+                    const header = notepadElement.querySelector('.notepad-header');
+                    header.style.background = `linear-gradient(135deg, ${color}, ${this.darkenColor(color, 15)})`;
+                    
+                    this.saveNotepads();
+                    colorPicker.remove();
+                    
+                    console.log(`🎨 Notepad color changed to ${color}`);
+                });
                 
-                windowElement.style.position = 'fixed';
-                windowElement.style.left = `${Math.max(0, Math.min(newX, window.innerWidth - windowElement.offsetWidth))}px`;
-                windowElement.style.top = `${Math.max(0, Math.min(newY, window.innerHeight - windowElement.offsetHeight))}px`;
+                colorBtn.addEventListener('mouseenter', () => {
+                    colorBtn.style.transform = 'scale(1.1)';
+                });
+                
+                colorBtn.addEventListener('mouseleave', () => {
+                    colorBtn.style.transform = 'scale(1)';
+                });
+                
+                colorPicker.appendChild(colorBtn);
             });
-
-            document.addEventListener('mouseup', () => {
-                if (isDragging) {
-                    isDragging = false;
-                    titleBar.style.cursor = 'move';
-                }
-            });
+            
+            document.body.appendChild(colorPicker);
+            
+            // Close when clicking outside
+            setTimeout(() => {
+                document.addEventListener('click', function closeColorPicker(e) {
+                    if (!colorPicker.contains(e.target)) {
+                        colorPicker.remove();
+                        document.removeEventListener('click', closeColorPicker);
+                    }
+                });
+            }, 100);
         },
 
         // Utility functions
@@ -575,20 +743,15 @@
             return div.innerHTML;
         },
 
-        formatDate(dateString) {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diffMs = now - date;
-            const diffMins = Math.floor(diffMs / 60000);
-            const diffHours = Math.floor(diffMs / 3600000);
-            const diffDays = Math.floor(diffMs / 86400000);
-
-            if (diffMins < 1) return 'Just now';
-            if (diffMins < 60) return `${diffMins}m ago`;
-            if (diffHours < 24) return `${diffHours}h ago`;
-            if (diffDays < 7) return `${diffDays}d ago`;
-            
-            return date.toLocaleDateString();
+        darkenColor(color, percent) {
+            const num = parseInt(color.replace("#", ""), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) - amt;
+            const G = (num >> 8 & 0x00FF) - amt;
+            const B = (num & 0x0000FF) - amt;
+            return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
         }
     };
 

@@ -54,11 +54,43 @@
     const ChromeStorage = {
         // Get data from Chrome storage
         async get(key) {
-            return new Promise((resolve) => {
+            return new Promise((resolve, reject) => {
+                // Check if extension context is valid
+                try {
+                    if (chrome?.runtime?.id === undefined) {
+                        console.warn("Extension context invalidated, using localStorage fallback");
+                        resolve(JSON.parse(localStorage.getItem(key) || 'null'));
+                        return;
+                    }
+                } catch (error) {
+                    console.warn("Chrome runtime check failed, using localStorage fallback");
+                    resolve(JSON.parse(localStorage.getItem(key) || 'null'));
+                    return;
+                }
+
                 if (chrome?.storage?.local) {
-                    chrome.storage.local.get([key], (result) => {
-                        resolve(result[key]);
-                    });
+                    try {
+                        chrome.storage.local.get([key], (result) => {
+                            if (chrome.runtime.lastError) {
+                                const errorMsg = chrome.runtime.lastError.message || 'Chrome storage error';
+                                if (errorMsg.includes('Extension context invalidated')) {
+                                    console.warn("Extension context invalidated during get, using localStorage");
+                                    resolve(JSON.parse(localStorage.getItem(key) || 'null'));
+                                } else {
+                                    reject(new Error(errorMsg));
+                                }
+                            } else {
+                                resolve(result[key]);
+                            }
+                        });
+                    } catch (error) {
+                        if (error.message && error.message.includes('Extension context invalidated')) {
+                            console.warn("Extension context invalidated, using localStorage fallback");
+                            resolve(JSON.parse(localStorage.getItem(key) || 'null'));
+                        } else {
+                            reject(error);
+                        }
+                    }
                 } else {
                     console.warn("Chrome storage not available, using localStorage");
                     resolve(JSON.parse(localStorage.getItem(key) || 'null'));
@@ -68,11 +100,47 @@
 
         // Set data in Chrome storage
         async set(key, value) {
-            return new Promise((resolve) => {
-                if (chrome?.storage?.local) {
-                    chrome.storage.local.set({ [key]: value }, () => {
+            return new Promise((resolve, reject) => {
+                // Check if extension context is valid
+                try {
+                    if (chrome?.runtime?.id === undefined) {
+                        console.warn("Extension context invalidated, using localStorage fallback");
+                        localStorage.setItem(key, JSON.stringify(value));
                         resolve();
-                    });
+                        return;
+                    }
+                } catch (error) {
+                    console.warn("Chrome runtime check failed, using localStorage fallback");
+                    localStorage.setItem(key, JSON.stringify(value));
+                    resolve();
+                    return;
+                }
+
+                if (chrome?.storage?.local) {
+                    try {
+                        chrome.storage.local.set({ [key]: value }, () => {
+                            if (chrome.runtime.lastError) {
+                                const errorMsg = chrome.runtime.lastError.message || 'Chrome storage error';
+                                if (errorMsg.includes('Extension context invalidated')) {
+                                    console.warn("Extension context invalidated during set, using localStorage");
+                                    localStorage.setItem(key, JSON.stringify(value));
+                                    resolve();
+                                } else {
+                                    reject(new Error(errorMsg));
+                                }
+                            } else {
+                                resolve();
+                            }
+                        });
+                    } catch (error) {
+                        if (error.message && error.message.includes('Extension context invalidated')) {
+                            console.warn("Extension context invalidated, using localStorage fallback");
+                            localStorage.setItem(key, JSON.stringify(value));
+                            resolve();
+                        } else {
+                            reject(error);
+                        }
+                    }
                 } else {
                     console.warn("Chrome storage not available, using localStorage");
                     localStorage.setItem(key, JSON.stringify(value));
@@ -83,11 +151,47 @@
 
         // Remove data from Chrome storage
         async remove(key) {
-            return new Promise((resolve) => {
-                if (chrome?.storage?.local) {
-                    chrome.storage.local.remove([key], () => {
+            return new Promise((resolve, reject) => {
+                // Check if extension context is valid
+                try {
+                    if (chrome?.runtime?.id === undefined) {
+                        console.warn("Extension context invalidated, using localStorage fallback");
+                        localStorage.removeItem(key);
                         resolve();
-                    });
+                        return;
+                    }
+                } catch (error) {
+                    console.warn("Chrome runtime check failed, using localStorage fallback");
+                    localStorage.removeItem(key);
+                    resolve();
+                    return;
+                }
+
+                if (chrome?.storage?.local) {
+                    try {
+                        chrome.storage.local.remove([key], () => {
+                            if (chrome.runtime.lastError) {
+                                const errorMsg = chrome.runtime.lastError.message || 'Chrome storage error';
+                                if (errorMsg.includes('Extension context invalidated')) {
+                                    console.warn("Extension context invalidated during remove, using localStorage");
+                                    localStorage.removeItem(key);
+                                    resolve();
+                                } else {
+                                    reject(new Error(errorMsg));
+                                }
+                            } else {
+                                resolve();
+                            }
+                        });
+                    } catch (error) {
+                        if (error.message && error.message.includes('Extension context invalidated')) {
+                            console.warn("Extension context invalidated, using localStorage fallback");
+                            localStorage.removeItem(key);
+                            resolve();
+                        } else {
+                            reject(error);
+                        }
+                    }
                 } else {
                     console.warn("Chrome storage not available, using localStorage");
                     localStorage.removeItem(key);
@@ -98,11 +202,47 @@
 
         // Clear all storage
         async clear() {
-            return new Promise((resolve) => {
-                if (chrome?.storage?.local) {
-                    chrome.storage.local.clear(() => {
+            return new Promise((resolve, reject) => {
+                // Check if extension context is valid
+                try {
+                    if (chrome?.runtime?.id === undefined) {
+                        console.warn("Extension context invalidated, using localStorage fallback");
+                        localStorage.clear();
                         resolve();
-                    });
+                        return;
+                    }
+                } catch (error) {
+                    console.warn("Chrome runtime check failed, using localStorage fallback");
+                    localStorage.clear();
+                    resolve();
+                    return;
+                }
+
+                if (chrome?.storage?.local) {
+                    try {
+                        chrome.storage.local.clear(() => {
+                            if (chrome.runtime.lastError) {
+                                const errorMsg = chrome.runtime.lastError.message || 'Chrome storage error';
+                                if (errorMsg.includes('Extension context invalidated')) {
+                                    console.warn("Extension context invalidated during clear, using localStorage");
+                                    localStorage.clear();
+                                    resolve();
+                                } else {
+                                    reject(new Error(errorMsg));
+                                }
+                            } else {
+                                resolve();
+                            }
+                        });
+                    } catch (error) {
+                        if (error.message && error.message.includes('Extension context invalidated')) {
+                            console.warn("Extension context invalidated, using localStorage fallback");
+                            localStorage.clear();
+                            resolve();
+                        } else {
+                            reject(error);
+                        }
+                    }
                 } else {
                     console.warn("Chrome storage not available, using localStorage");
                     localStorage.clear();

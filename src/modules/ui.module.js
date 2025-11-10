@@ -75,11 +75,11 @@
                 existingButton.remove();
             }
 
-            // Create hamburger button
+            // Create hamburger button with original tool icon
             this.hamburgerButton = document.createElement('button');
             this.hamburgerButton.id = 'sidekick-hamburger';
             this.hamburgerButton.className = 'sidekick-hamburger';
-            this.hamburgerButton.innerHTML = '☰';
+            this.hamburgerButton.innerHTML = '🔧';
             this.hamburgerButton.title = 'Toggle Sidekick Sidebar';
 
             // Add click event
@@ -107,67 +107,60 @@
             this.sidebar.id = 'sidekick-sidebar';
             this.sidebar.className = 'sidekick-sidebar hidden'; // Start hidden
 
-            // Create sidebar content
+            // Create sidebar content with proper positioning
             const sidebarContent = document.createElement('div');
             sidebarContent.className = 'sidekick-sidebar-content';
-
-            // Create close button
-            const closeButton = document.createElement('button');
-            closeButton.className = 'sidekick-close-btn';
-            closeButton.innerHTML = '×';
-            closeButton.title = 'Close Sidebar';
-            closeButton.addEventListener('click', () => {
-                this.closeSidebar();
-            });
-
-            // Create header
-            const header = document.createElement('h2');
-            header.textContent = 'Sidekick v1.0.0';
-            header.style.cssText = 'margin-top: 0; color: #333; font-size: 18px;';
-
-            // Create navigation
-            const nav = document.createElement('div');
-            nav.innerHTML = `
-                <div style="display: flex; background: rgba(255,255,255,0.1); border-radius: 8px; margin-bottom: 20px; overflow: hidden;">
-                    <button class="nav-btn active" data-module="dashboard" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.2); 
-                            border: none; color: white; font-size: 12px; cursor: pointer; font-weight: bold;">
-                        🏠 Dashboard
-                    </button>
-                    <button class="nav-btn" data-module="notepad" style="flex: 1; padding: 10px; background: transparent; 
-                            border: none; color: rgba(255,255,255,0.7); font-size: 12px; cursor: pointer; font-weight: bold;">
-                        📝 Notes
-                    </button>
-                </div>
+            sidebarContent.style.cssText = `
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                position: relative;
+                height: 100%;
+                padding-top: 15px;
             `;
 
-            // Create content area
+            // Create top bar with logo next to hamburger button (positioned outside sidebar)
+            this.topBar = document.createElement('div');
+            this.topBar.id = 'sidekick-top-bar';
+            this.topBar.className = 'sidekick-top-bar hidden'; // Start hidden like sidebar
+            this.topBar.style.cssText = `
+                position: fixed;
+                top: 4px;
+                left: 45px;
+                z-index: 2147483646;
+                display: flex;
+                align-items: center;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                pointer-events: none;
+                transition: opacity 0.3s ease;
+            `;
+            
+            this.topBar.innerHTML = `
+                <span style="
+                    color: #fff;
+                    font-size: 18px;
+                    font-weight: bold;
+                    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+                    background: linear-gradient(45deg, #8BC34A, #FFC107);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                    margin-left: 8px;
+                ">Sidekick</span>
+            `;
+
+            // Add topBar to body instead of sidebar
+            document.body.appendChild(this.topBar);
+
+            // Create content area (no header needed since logo is in top bar)
             const contentArea = document.createElement('div');
             contentArea.id = 'sidekick-content';
-            contentArea.style.cssText = 'flex: 1; overflow: hidden; display: flex; flex-direction: column;';
+            contentArea.style.cssText = 'flex: 1; overflow: hidden; position: relative; padding: 5px; margin-bottom: 50px;';
 
-            // Create basic content
-            const content = document.createElement('div');
-            content.innerHTML = `
-                <div style="text-align: center; color: #ddd; padding: 40px 20px;">
-                    <div style="font-size: 48px; margin-bottom: 15px;">🚀</div>
-                    <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">Welcome to Sidekick!</div>
-                    <div style="font-size: 14px; opacity: 0.8;">Chrome extension is active and ready</div>
-                    <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px; text-align: left;">
-                        <div style="font-weight: bold; margin-bottom: 10px;">Available Features:</div>
-                        <div style="font-size: 13px; line-height: 1.6;">
-                            📝 <strong>Notes:</strong> Create and manage notepads<br>
-                            ⚙️ <strong>Settings:</strong> Configure API key and preferences<br>
-                            🔄 <strong>More modules coming soon...</strong>
-                        </div>
-                    </div>
-                </div>
-            `;
-            contentArea.appendChild(content);
-
-            // Create Add Module button
+            // Create Add Module button - position it on the left
             const addModuleButton = document.createElement('button');
             addModuleButton.className = 'sidekick-add-module-btn';
-            addModuleButton.innerHTML = '+ Add Module';
+            addModuleButton.innerHTML = '+';
             addModuleButton.title = 'Add new module';
             addModuleButton.style.cssText = `
                 position: absolute;
@@ -176,13 +169,18 @@
                 background: rgba(255,255,255,0.1);
                 border: 1px solid rgba(255,255,255,0.2);
                 color: rgba(255,255,255,0.7);
-                padding: 8px 12px;
-                border-radius: 6px;
+                padding: 0;
+                border-radius: 50%;
                 cursor: pointer;
-                font-size: 12px;
+                font-size: 18px;
                 font-weight: bold;
                 transition: all 0.3s ease;
                 backdrop-filter: blur(5px);
+                width: 36px;
+                height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             `;
             
             addModuleButton.addEventListener('mouseenter', () => {
@@ -201,10 +199,7 @@
                 this.showAddModuleMenu();
             });
 
-            // Assemble sidebar
-            sidebarContent.appendChild(closeButton);
-            sidebarContent.appendChild(header);
-            sidebarContent.appendChild(nav);
+            // Assemble sidebar (without header and close button)
             sidebarContent.appendChild(contentArea);
             sidebarContent.appendChild(addModuleButton);
             this.sidebar.appendChild(sidebarContent);
@@ -212,8 +207,8 @@
             // Append to body
             document.body.appendChild(this.sidebar);
 
-            // Add navigation functionality
-            this.initializeNavigation();
+            // Initialize notepad functionality immediately
+            this.initializeNotepadArea();
 
             console.log("✅ Sidebar created");
         },
@@ -234,6 +229,10 @@
                 this.sidebarVisible = true;
                 console.log("📖 Sidebar opened");
             }
+            // Show logo when sidebar opens
+            if (this.topBar) {
+                this.topBar.classList.remove('hidden');
+            }
         },
 
         // Close sidebar
@@ -243,220 +242,212 @@
                 this.sidebarVisible = false;
                 console.log("📕 Sidebar closed");
             }
+            // Hide logo when sidebar closes
+            if (this.topBar) {
+                this.topBar.classList.add('hidden');
+            }
         },
 
-        // Initialize navigation system
-        initializeNavigation() {
-            const navButtons = this.sidebar.querySelectorAll('.nav-btn');
+        // Initialize notepad area instead of navigation tabs
+        async initializeNotepadArea() {
             const contentArea = this.sidebar.querySelector('#sidekick-content');
+            if (!contentArea) return;
 
-            navButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    // Update active button
-                    navButtons.forEach(b => {
-                        b.classList.remove('active');
-                        b.style.background = 'transparent';
-                        b.style.color = 'rgba(255,255,255,0.7)';
-                    });
-                    btn.classList.add('active');
-                    btn.style.background = 'rgba(255,255,255,0.2)';
-                    btn.style.color = 'white';
+            // Clear any existing content - start with empty notepad area
+            contentArea.innerHTML = '';
 
-                    // Load module content
-                    this.loadModuleContent(btn.dataset.module, contentArea);
-                });
-            });
-        },
-
-        // Load content for specific module
-        async loadModuleContent(moduleName, contentArea) {
-            console.log(`🔄 Loading ${moduleName} module content`);
-
-            switch (moduleName) {
-                case 'dashboard':
-                    this.loadDashboard(contentArea);
-                    break;
-                case 'notepad':
-                    await this.loadNotepadModule(contentArea);
-                    break;
-                default:
-                    contentArea.innerHTML = '<div style="padding: 20px; color: #ccc;">Module not found</div>';
-            }
-        },
-
-        // Load dashboard content
-        loadDashboard(contentArea) {
-            contentArea.innerHTML = `
-                <div style="text-align: center; color: #ddd; padding: 40px 20px;">
-                    <div style="font-size: 48px; margin-bottom: 15px;">🚀</div>
-                    <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">Welcome to Sidekick!</div>
-                    <div style="font-size: 14px; opacity: 0.8;">Chrome extension is active and ready</div>
-                    <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px; text-align: left;">
-                        <div style="font-weight: bold; margin-bottom: 10px;">Available Features:</div>
-                        <div style="font-size: 13px; line-height: 1.6;">
-                            📝 <strong>Notes:</strong> Create and manage notepads<br>
-                            ⚙️ <strong>Settings:</strong> Available in extension popup menu<br>
-                            ➕ <strong>Add Modules:</strong> Click the "+ Add Module" button below<br>
-                            🔄 <strong>More features coming soon...</strong>
-                        </div>
-                    </div>
-                </div>
-            `;
-        },
-
-        // Load notepad module
-        async loadNotepadModule(contentArea) {
-            if (!window.SidekickModules.Notepad) {
-                contentArea.innerHTML = '<div style="padding: 20px; color: #f44336;">Notepad module not loaded</div>';
-                return;
-            }
-
+            // Wait for notepad module and initialize it
             try {
+                if (window.SidekickModules?.Notepad) {
+                    await window.SidekickModules.Notepad.init();
+                    window.SidekickModules.Notepad.refreshDisplay();
+                    console.log("✅ Notepad module initialized in sidebar");
+                }
+            } catch (error) {
+                console.error("❌ Failed to initialize notepad module:", error);
+            }
+        },
+
+        // Create a new notepad window in the sidebar
+        async createNewNotepad() {
+            try {
+                if (!window.SidekickModules?.Notepad) {
+                    this.showNotification('Notepad Error', 'Notepad module not loaded', 'error');
+                    return;
+                }
+
                 await window.SidekickModules.Notepad.init();
-                const notepadPanel = window.SidekickModules.Notepad.createNotepadPanel();
-                contentArea.innerHTML = '';
-                contentArea.appendChild(notepadPanel);
+                
+                // Create notepad immediately without prompting for title
+                const notepad = window.SidekickModules.Notepad.addNotepad('New Note');
             } catch (error) {
-                console.error('Failed to load notepad module:', error);
-                contentArea.innerHTML = '<div style="padding: 20px; color: #f44336;">Failed to load notepad module</div>';
+                console.error('Failed to create notepad:', error);
+                this.showNotification('Notepad Error', 'Failed to create notepad', 'error');
             }
         },
 
-        // Load settings module
-        async loadSettingsModule(contentArea) {
-            if (!window.SidekickModules.Settings) {
-                contentArea.innerHTML = '<div style="padding: 20px; color: #f44336;">Settings module not loaded</div>';
-                return;
-            }
-
-            try {
-                await window.SidekickModules.Settings.init();
-                const settingsPanel = window.SidekickModules.Settings.createSettingsPanel();
-                contentArea.innerHTML = '';
-                contentArea.appendChild(settingsPanel);
-            } catch (error) {
-                console.error('Failed to load settings module:', error);
-                contentArea.innerHTML = '<div style="padding: 20px; color: #f44336;">Failed to load settings module</div>';
-            }
-        },
-
-        // Show add module menu
+        // Show add module menu as sleek inline dropdown
         showAddModuleMenu() {
             console.log("📋 Showing add module menu");
 
-            // Create overlay
-            const overlay = document.createElement('div');
-            overlay.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.5);
-                z-index: 999999;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            `;
+            // Remove existing menu if present
+            const existingMenu = document.getElementById('sidekick-module-menu');
+            if (existingMenu) {
+                existingMenu.remove();
+                return; // Toggle behavior - close if already open
+            }
 
-            // Create menu
+            // Create sleek inline menu - positioned on the left side
             const menu = document.createElement('div');
+            menu.id = 'sidekick-module-menu';
             menu.style.cssText = `
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                border-radius: 12px;
-                padding: 20px;
-                color: white;
-                min-width: 300px;
-                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-                transform: scale(0.9);
-                transition: transform 0.2s ease;
+                position: absolute;
+                bottom: 55px;
+                left: 15px;
+                width: 140px;
+                background: rgba(25, 25, 25, 0.98);
+                border-radius: 8px;
+                padding: 6px;
+                box-shadow: 0 6px 24px rgba(0,0,0,0.7);
+                backdrop-filter: blur(20px);
+                border: 1px solid rgba(255,255,255,0.12);
+                z-index: 1000;
+                transform: translateY(10px);
+                opacity: 0;
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             `;
 
             menu.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 style="margin: 0; font-size: 18px; font-weight: 500;">Add New Module</h3>
-                    <button class="close-menu" style="background: rgba(255,255,255,0.2); border: none; color: white; 
-                            border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 16px;">×</button>
-                </div>
-                <div style="display: grid; gap: 10px;">
-                    <button class="module-option" data-module="notepad" style="background: rgba(255,255,255,0.1); 
-                            border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px; border-radius: 8px; 
-                            cursor: pointer; text-align: left; transition: all 0.2s ease;">
-                        📝 Add new notepad
+                <div style="display: grid; gap: 3px;">
+                    <button class="module-option" data-module="notepad" style="
+                        background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+                        border: 1px solid rgba(255,255,255,0.06);
+                        color: rgba(255,255,255,0.92);
+                        padding: 10px 12px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        text-align: left;
+                        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                        font-size: 11px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-weight: 500;
+                        letter-spacing: 0.3px;
+                    ">
+                        <span style="font-size: 13px; filter: grayscale(0.2);">📝</span> Notepad
                     </button>
-                    <button class="module-option" data-module="timer" style="background: rgba(255,255,255,0.1); 
-                            border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px; border-radius: 8px; 
-                            cursor: pointer; text-align: left; transition: all 0.2s ease;">
-                        ⏰ Add new timer
+                    <button class="module-option" data-module="timer" style="
+                        background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+                        border: 1px solid rgba(255,255,255,0.06);
+                        color: rgba(255,255,255,0.92);
+                        padding: 10px 12px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        text-align: left;
+                        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                        font-size: 11px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-weight: 500;
+                        letter-spacing: 0.3px;
+                    ">
+                        <span style="font-size: 13px; filter: grayscale(0.2);">⏰</span> Timer
                     </button>
-                    <button class="module-option" data-module="todolist" style="background: rgba(255,255,255,0.1); 
-                            border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px; border-radius: 8px; 
-                            cursor: pointer; text-align: left; transition: all 0.2s ease;">
-                        ✅ Add new todo list
+                    <button class="module-option" data-module="todolist" style="
+                        background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+                        border: 1px solid rgba(255,255,255,0.06);
+                        color: rgba(255,255,255,0.92);
+                        padding: 10px 12px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        text-align: left;
+                        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                        font-size: 11px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-weight: 500;
+                        letter-spacing: 0.3px;
+                    ">
+                        <span style="font-size: 13px; filter: grayscale(0.2);">✅</span> Todo
                     </button>
-                    <button class="module-option" data-module="stockticker" style="background: rgba(255,255,255,0.1); 
-                            border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px; border-radius: 8px; 
-                            cursor: pointer; text-align: left; transition: all 0.2s ease;">
-                        📈 Add stock ticker
+                    <button class="module-option" data-module="stockticker" style="
+                        background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+                        border: 1px solid rgba(255,255,255,0.06);
+                        color: rgba(255,255,255,0.92);
+                        padding: 10px 12px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        text-align: left;
+                        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                        font-size: 11px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-weight: 500;
+                        letter-spacing: 0.3px;
+                    ">
+                        <span style="font-size: 13px; filter: grayscale(0.2);">📈</span> Stock
                     </button>
                 </div>
             `;
 
-            // Add hover effects
+            // Add to sidebar content area
+            const contentArea = this.sidebar.querySelector('#sidekick-content');
+            if (contentArea) {
+                contentArea.appendChild(menu);
+            }
+
+            // Add event listeners
             setTimeout(() => {
+                // Animate in
+                menu.style.transform = 'translateY(0)';
+                menu.style.opacity = '1';
+
                 const moduleOptions = menu.querySelectorAll('.module-option');
                 moduleOptions.forEach(option => {
                     option.addEventListener('mouseenter', () => {
-                        option.style.background = 'rgba(255,255,255,0.2)';
-                        option.style.transform = 'translateX(5px)';
+                        option.style.background = 'linear-gradient(135deg, rgba(102, 187, 106, 0.2), rgba(102, 187, 106, 0.1))';
+                        option.style.borderColor = 'rgba(102, 187, 106, 0.3)';
+                        option.style.transform = 'translateY(-1px)';
+                        option.style.boxShadow = '0 4px 12px rgba(0,0,0,0.4)';
                     });
                     option.addEventListener('mouseleave', () => {
-                        option.style.background = 'rgba(255,255,255,0.1)';
-                        option.style.transform = 'translateX(0)';
+                        option.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04))';
+                        option.style.borderColor = 'rgba(255,255,255,0.06)';
+                        option.style.transform = 'translateY(0)';
+                        option.style.boxShadow = 'none';
                     });
                     option.addEventListener('click', () => {
                         const moduleType = option.dataset.module;
                         this.addNewModule(moduleType);
-                        overlay.remove();
+                        menu.remove();
                     });
                 });
-
-                const closeBtn = menu.querySelector('.close-menu');
-                closeBtn.addEventListener('click', () => {
-                    overlay.remove();
-                });
             }, 0);
 
-            // Add to overlay and show
-            overlay.appendChild(menu);
-            document.body.appendChild(overlay);
-
-            // Animate in
+            // Auto-close after 8 seconds
             setTimeout(() => {
-                menu.style.transform = 'scale(1)';
-            }, 0);
-
-            // Close on overlay click
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) {
-                    overlay.remove();
+                if (document.getElementById('sidekick-module-menu') === menu) {
+                    menu.style.transform = 'translateY(10px)';
+                    menu.style.opacity = '0';
+                    setTimeout(() => menu.remove(), 250);
                 }
-            });
+            }, 8000);
         },
 
-        // Add new module
+        // Add new notepad module directly to sidebar
         addNewModule(moduleType) {
             console.log(`➕ Adding new ${moduleType} module`);
             
             switch (moduleType) {
                 case 'notepad':
-                    this.showNotification('New Notepad', 'Use the Notes tab to create new notepads', 'info');
-                    // Switch to notes tab
-                    const notesBtn = document.querySelector('[data-module="notepad"]');
-                    if (notesBtn) notesBtn.click();
+                    this.createNewNotepad();
                     break;
                 case 'timer':
-                    this.showNotification('Timer Module', 'Timer module coming soon!', 'info');
+                    this.createNewTimer();
                     break;
                 case 'todolist':
                     this.showNotification('Todo List Module', 'Todo list module coming soon!', 'info');
@@ -469,6 +460,43 @@
             }
         },
 
+        // Create a new timer window in the sidebar
+        async createNewTimer() {
+            try {
+                if (!window.SidekickModules?.Timer) {
+                    this.showNotification('Timer Error', 'Timer module not loaded', 'error');
+                    return;
+                }
+
+                await window.SidekickModules.Timer.init();
+                
+                // Create timer immediately with cooldown selection interface
+                const timer = window.SidekickModules.Timer.addTimer('Cooldown Timer');
+                this.showNotification('Timer Created', 'New cooldown timer created', 'success');
+            } catch (error) {
+                console.error('Failed to create timer:', error);
+                this.showNotification('Timer Error', 'Failed to create timer', 'error');
+            }
+        },
+
+        // Create a new notepad window in the sidebar
+        async createNewNotepad() {
+            try {
+                if (!window.SidekickModules?.Notepad) {
+                    this.showNotification('Notepad Error', 'Notepad module not loaded', 'error');
+                    return;
+                }
+
+                await window.SidekickModules.Notepad.init();
+                
+                // Create notepad immediately without prompting for title
+                const notepad = window.SidekickModules.Notepad.addNotepad('New Note');
+            } catch (error) {
+                console.error('Failed to create notepad:', error);
+                this.showNotification('Notepad Error', 'Failed to create notepad', 'error');
+            }
+        },
+
         // Show notification (placeholder for now)
         showNotification(title, message, type = 'info') {
             console.log(`🔔 ${type.toUpperCase()}: ${title} - ${message}`);
@@ -477,7 +505,8 @@
             if (window.SidekickModules?.Core?.NotificationSystem) {
                 window.SidekickModules.Core.NotificationSystem.show(title, message, type, 3000);
             }
-        }
+        },
+
     };
 
     // Export UI module to global namespace

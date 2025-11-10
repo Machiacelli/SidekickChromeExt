@@ -48,19 +48,7 @@
                 console.log("✅ Sidekick: UI initialized");
             }
 
-            // Show notification after UI is ready
-            setTimeout(() => {
-                const notification = window.SidekickModules.Core.NotificationSystem;
-                if (notification) {
-                    notification.show(
-                        "Sidekick Loaded",
-                        "Chrome extension is active with sidebar!",
-                        "info",
-                        3000
-                    );
-                }
-            }, 1000);
-
+            // UI and modules initialized successfully
             console.log("🎉 Sidekick Chrome Extension initialization complete!");
 
         } catch (error) {

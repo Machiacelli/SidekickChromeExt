@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Enhanced sidebar and tools for Torn.com",
   "permissions": ["storage", "activeTab", "scripting"],
-  "host_permissions": ["https://www.torn.com/*", "https://*.torn.com/*"],
+  "host_permissions": ["https://www.torn.com/*", "https://*.torn.com/*", "https://api.torn.com/*"],
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -12,7 +12,7 @@
   },
   "content_scripts": [{
     "matches": ["https://www.torn.com/*", "https://*.torn.com/*"],
-    "js": ["src/modules/core.module.js", "src/modules/settings.module.js", "src/modules/notepad.module.js", "src/modules/ui.module.js", "src/main.js"],
+    "js": ["src/modules/core.module.js", "src/modules/settings.module.js", "src/modules/notepad.module.js", "src/modules/timer.module.js", "src/modules/ui.module.js", "src/main.js"],
     "css": ["src/styles/main.css"],
     "run_at": "document_end"
   }],
