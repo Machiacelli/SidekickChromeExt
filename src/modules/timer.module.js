@@ -811,18 +811,27 @@
                     option.addEventListener('mouseleave', function() {
                         option.style.background = 'none';
                     });
-                    option.addEventListener('click', function(e) {
+                    option.addEventListener('click', async function(e) {
                         e.preventDefault();
                         e.stopPropagation();
                         
                         console.log(`🔍 Cooldown option clicked: ${cooldownType}`);
                         
                         if (cooldownType) {
+                            console.log(`🔍 About to call checkSpecificCooldown with timer:`, timer.id, 'cooldownType:', cooldownType);
+                            console.log('🔍 self context:', self);
+                            console.log('🔍 checkSpecificCooldown method exists:', typeof self.checkSpecificCooldown);
+                            
                             // Close dropdown immediately
                             dropdownContent.style.display = 'none';
                             
-                            // Call the cooldown check with proper context
-                            self.checkSpecificCooldown(timer, cooldownType);
+                            try {
+                                // Call the cooldown check with proper context
+                                await self.checkSpecificCooldown(timer, cooldownType);
+                                console.log('🔍 checkSpecificCooldown completed successfully');
+                            } catch (error) {
+                                console.error('❌ Error in checkSpecificCooldown:', error);
+                            }
                         } else {
                             console.error('❌ No cooldown type found on option:', option);
                         }
