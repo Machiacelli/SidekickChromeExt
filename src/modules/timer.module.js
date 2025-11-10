@@ -198,7 +198,8 @@
                         };
 
                         // Check if this timer is being converted from blank to API timer
-                        const wasBlankTimer = !existingTimer.isApiTimer;
+                        const wasBlankTimer = !existingTimer.isRunning && !existingTimer.endTime;
+                        console.log(`🔍 wasBlankTimer check: isRunning=${existingTimer.isRunning}, endTime=${existingTimer.endTime}, result=${wasBlankTimer}`);
                         
                         existingTimer.name = cooldownNames[cooldownType] || 'Cooldown';
                         existingTimer.duration = remainingTimeSeconds;
