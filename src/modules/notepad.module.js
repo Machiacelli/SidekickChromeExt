@@ -73,16 +73,26 @@
                 console.log("🔍 Core:", !!window.SidekickModules?.Core);
                 console.log("🔍 ChromeStorage:", !!window.SidekickModules?.Core?.ChromeStorage);
                 
+                // Detailed debugging of ChromeStorage object
+                if (window.SidekickModules?.Core?.ChromeStorage) {
+                    const chromeStorage = window.SidekickModules.Core.ChromeStorage;
+                    console.log("🔍 ChromeStorage type:", typeof chromeStorage);
+                    console.log("🔍 ChromeStorage keys:", Object.keys(chromeStorage));
+                    console.log("🔍 ChromeStorage.get type:", typeof chromeStorage.get);
+                    console.log("🔍 ChromeStorage.get exists:", !!chromeStorage.get);
+                }
+                
                 let stored = null;
                 
                 // Try Chrome storage wrapper first
-                if (window.SidekickModules?.Core?.ChromeStorage) {
+                if (window.SidekickModules?.Core?.ChromeStorage?.get) {
                     console.log("📝 Using ChromeStorage wrapper");
                     stored = await window.SidekickModules.Core.ChromeStorage.get('sidekick_notepads');
                 } else {
-                    console.log("📝 ChromeStorage not available, trying direct Chrome API");
+                    console.log("📝 ChromeStorage.get not available, trying direct Chrome API");
                     // Fallback to direct Chrome API
                     if (chrome?.storage?.local) {
+                        console.log("📝 Using direct Chrome storage API");
                         stored = await new Promise((resolve) => {
                             chrome.storage.local.get(['sidekick_notepads'], (result) => {
                                 resolve(result.sidekick_notepads);
@@ -99,6 +109,7 @@
                 console.log(`📝 Loaded ${this.notepads.length} notepads`);
             } catch (error) {
                 console.error('Failed to load notepads:', error);
+                console.error('Error stack:', error.stack);
                 this.notepads = [];
                 
                 // Show user-friendly error
@@ -115,11 +126,33 @@
         // Save notepads to storage
         async saveNotepads() {
             try {
-                if (!window.SidekickModules?.Core?.ChromeStorage) {
-                    throw new Error('ChromeStorage not available');
+                console.log("💾 saveNotepads - Starting save...");
+                console.log("🔍 ChromeStorage available:", !!window.SidekickModules?.Core?.ChromeStorage);
+                
+                // Try Chrome storage wrapper first
+                if (window.SidekickModules?.Core?.ChromeStorage?.set) {
+                    console.log("📝 Saving via ChromeStorage wrapper");
+                    await window.SidekickModules.Core.ChromeStorage.set('sidekick_notepads', this.notepads);
+                } else {
+                    console.log("📝 ChromeStorage.set not available, trying direct Chrome API");
+                    // Fallback to direct Chrome API
+                    if (chrome?.storage?.local) {
+                        await new Promise((resolve, reject) => {
+                            chrome.storage.local.set({ 'sidekick_notepads': this.notepads }, () => {
+                                if (chrome.runtime.lastError) {
+                                    reject(chrome.runtime.lastError);
+                                } else {
+                                    resolve();
+                                }
+                            });
+                        });
+                    } else {
+                        console.log("📝 Chrome API not available, using localStorage");
+                        // Final fallback to localStorage
+                        localStorage.setItem('sidekick_notepads', JSON.stringify(this.notepads));
+                    }
                 }
                 
-                await window.SidekickModules.Core.ChromeStorage.set('sidekick_notepads', this.notepads);
                 console.log('📝 Notepads saved successfully');
             } catch (error) {
                 console.error('Failed to save notepads:', error);
@@ -128,7 +161,7 @@
                 if (window.SidekickModules?.Core?.NotificationSystem) {
                     window.SidekickModules.Core.NotificationSystem.show(
                         'Save Error', 
-                        'Failed to save notepad changes', 
+                        'Failed to save notepad changes: ' + error.message, 
                         'error'
                     );
                 }
