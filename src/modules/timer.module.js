@@ -764,13 +764,18 @@
 
         // Set up timer event listeners
         setupTimerEventListeners(timer, element) {
+            const self = this; // Preserve context
+            
             // Dropdown toggle
             const dropdownBtn = element.querySelector('.dropdown-btn');
             const dropdownContent = element.querySelector('.dropdown-content');
             
             if (dropdownBtn && dropdownContent) {
-                dropdownBtn.addEventListener('click', (e) => {
+                console.log('🔍 Setting up dropdown for timer:', timer.id);
+                
+                dropdownBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
+                    console.log('🔍 Dropdown button clicked');
                     
                     // Close all other dropdowns first
                     document.querySelectorAll('.timer-dropdown .dropdown-content').forEach(dropdown => {
@@ -782,10 +787,11 @@
                     // Toggle this dropdown
                     const isVisible = dropdownContent.style.display === 'block';
                     dropdownContent.style.display = isVisible ? 'none' : 'block';
+                    console.log('🔍 Dropdown visibility:', dropdownContent.style.display);
                 });
 
                 // Close dropdown when clicking outside (use a more specific approach)
-                document.addEventListener('click', (e) => {
+                document.addEventListener('click', function(e) {
                     if (!element.contains(e.target)) {
                         dropdownContent.style.display = 'none';
                     }
@@ -796,19 +802,19 @@
                 console.log(`🔍 Found ${cooldownOptions.length} cooldown options`);
                 
                 cooldownOptions.forEach((option, index) => {
-                    console.log(`🔍 Setting up option ${index}:`, option.textContent, 'data-type:', option.dataset.type);
+                    const cooldownType = option.dataset.type;
+                    console.log(`🔍 Setting up option ${index}:`, option.textContent, 'data-type:', cooldownType);
                     
-                    option.addEventListener('mouseenter', () => {
+                    option.addEventListener('mouseenter', function() {
                         option.style.background = 'rgba(255,255,255,0.1)';
                     });
-                    option.addEventListener('mouseleave', () => {
+                    option.addEventListener('mouseleave', function() {
                         option.style.background = 'none';
                     });
-                    option.addEventListener('click', (e) => {
+                    option.addEventListener('click', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
                         
-                        const cooldownType = option.dataset.type;
                         console.log(`🔍 Cooldown option clicked: ${cooldownType}`);
                         
                         if (cooldownType) {
@@ -816,11 +822,16 @@
                             dropdownContent.style.display = 'none';
                             
                             // Call the cooldown check with proper context
-                            window.SidekickModules.Timer.checkSpecificCooldown(timer, cooldownType);
+                            self.checkSpecificCooldown(timer, cooldownType);
                         } else {
                             console.error('❌ No cooldown type found on option:', option);
                         }
                     });
+                });
+            } else {
+                console.warn('❌ Dropdown elements not found:', {
+                    dropdownBtn: !!dropdownBtn,
+                    dropdownContent: !!dropdownContent
                 });
             }
 
