@@ -213,7 +213,7 @@
                         
                         // ALWAYS do a full re-render for cooldown selections to ensure display works
                         console.log('🔍 Force re-rendering timer with cooldown data');
-                        const element = document.querySelector(`[data-timer-id="${existingTimer.id}"]`);
+                        const element = document.getElementById(`sidekick-timer-${existingTimer.id}`);
                         if (element) {
                             element.remove();
                             this.renderTimer(existingTimer);
