@@ -68,40 +68,44 @@
         // Load notepads from storage
         async loadNotepads() {
             try {
-                console.log("🔍 loadNotepads - Checking availability...");
-                console.log("🔍 SidekickModules:", !!window.SidekickModules);
-                console.log("🔍 Core:", !!window.SidekickModules?.Core);
-                console.log("🔍 ChromeStorage:", !!window.SidekickModules?.Core?.ChromeStorage);
-                
-                // Detailed debugging of ChromeStorage object
-                if (window.SidekickModules?.Core?.ChromeStorage) {
-                    const chromeStorage = window.SidekickModules.Core.ChromeStorage;
-                    console.log("🔍 ChromeStorage type:", typeof chromeStorage);
-                    console.log("🔍 ChromeStorage keys:", Object.keys(chromeStorage));
-                    console.log("🔍 ChromeStorage.get type:", typeof chromeStorage.get);
-                    console.log("🔍 ChromeStorage.get exists:", !!chromeStorage.get);
-                }
+                console.log("🔍 loadNotepads - Starting with robust storage access...");
                 
                 let stored = null;
                 
-                // Try Chrome storage wrapper first
-                if (window.SidekickModules?.Core?.ChromeStorage?.get) {
-                    console.log("📝 Using ChromeStorage wrapper");
-                    stored = await window.SidekickModules.Core.ChromeStorage.get('sidekick_notepads');
-                } else {
-                    console.log("📝 ChromeStorage.get not available, trying direct Chrome API");
-                    // Fallback to direct Chrome API
-                    if (chrome?.storage?.local) {
-                        console.log("📝 Using direct Chrome storage API");
+                // Method 1: Try Chrome storage wrapper if available
+                try {
+                    if (window.SidekickModules?.Core?.ChromeStorage?.get) {
+                        console.log("� Method 1: Using ChromeStorage wrapper");
+                        stored = await window.SidekickModules.Core.ChromeStorage.get('sidekick_notepads');
+                        console.log("✅ ChromeStorage wrapper succeeded");
+                    }
+                } catch (error) {
+                    console.warn("⚠️ ChromeStorage wrapper failed:", error);
+                }
+                
+                // Method 2: Try direct Chrome API if Method 1 failed
+                if (stored === null && chrome?.storage?.local) {
+                    try {
+                        console.log("📝 Method 2: Using direct Chrome storage API");
                         stored = await new Promise((resolve) => {
                             chrome.storage.local.get(['sidekick_notepads'], (result) => {
                                 resolve(result.sidekick_notepads);
                             });
                         });
-                    } else {
-                        console.log("📝 Chrome API not available, using localStorage");
-                        // Final fallback to localStorage
+                        console.log("✅ Direct Chrome storage succeeded");
+                    } catch (error) {
+                        console.warn("⚠️ Direct Chrome storage failed:", error);
+                    }
+                }
+                
+                // Method 3: Final fallback to localStorage
+                if (stored === null) {
+                    try {
+                        console.log("📝 Method 3: Using localStorage fallback");
                         stored = JSON.parse(localStorage.getItem('sidekick_notepads') || 'null');
+                        console.log("✅ localStorage fallback succeeded");
+                    } catch (error) {
+                        console.warn("⚠️ localStorage fallback failed:", error);
                     }
                 }
                 
@@ -127,16 +131,25 @@
         async saveNotepads() {
             try {
                 console.log("💾 saveNotepads - Starting save...");
-                console.log("🔍 ChromeStorage available:", !!window.SidekickModules?.Core?.ChromeStorage);
                 
-                // Try Chrome storage wrapper first
-                if (window.SidekickModules?.Core?.ChromeStorage?.set) {
-                    console.log("📝 Saving via ChromeStorage wrapper");
-                    await window.SidekickModules.Core.ChromeStorage.set('sidekick_notepads', this.notepads);
-                } else {
-                    console.log("📝 ChromeStorage.set not available, trying direct Chrome API");
-                    // Fallback to direct Chrome API
-                    if (chrome?.storage?.local) {
+                let saved = false;
+                
+                // Method 1: Try Chrome storage wrapper
+                try {
+                    if (window.SidekickModules?.Core?.ChromeStorage?.set) {
+                        console.log("📝 Method 1: Saving via ChromeStorage wrapper");
+                        await window.SidekickModules.Core.ChromeStorage.set('sidekick_notepads', this.notepads);
+                        saved = true;
+                        console.log("✅ ChromeStorage wrapper save succeeded");
+                    }
+                } catch (error) {
+                    console.warn("⚠️ ChromeStorage wrapper save failed:", error);
+                }
+                
+                // Method 2: Try direct Chrome API if Method 1 failed
+                if (!saved && chrome?.storage?.local) {
+                    try {
+                        console.log("📝 Method 2: Saving via direct Chrome storage API");
                         await new Promise((resolve, reject) => {
                             chrome.storage.local.set({ 'sidekick_notepads': this.notepads }, () => {
                                 if (chrome.runtime.lastError) {
@@ -146,10 +159,23 @@
                                 }
                             });
                         });
-                    } else {
-                        console.log("📝 Chrome API not available, using localStorage");
-                        // Final fallback to localStorage
+                        saved = true;
+                        console.log("✅ Direct Chrome storage save succeeded");
+                    } catch (error) {
+                        console.warn("⚠️ Direct Chrome storage save failed:", error);
+                    }
+                }
+                
+                // Method 3: Final fallback to localStorage
+                if (!saved) {
+                    try {
+                        console.log("📝 Method 3: Saving via localStorage fallback");
                         localStorage.setItem('sidekick_notepads', JSON.stringify(this.notepads));
+                        saved = true;
+                        console.log("✅ localStorage fallback save succeeded");
+                    } catch (error) {
+                        console.warn("⚠️ localStorage fallback save failed:", error);
+                        throw error;
                     }
                 }
                 
@@ -325,73 +351,221 @@
             });
         },
 
-        // Open notepad editor
+        // Open notepad editor in a contained modal window
         openNotepadEditor(id, container) {
             const notepad = this.notepads.find(n => n.id === id);
             if (!notepad) return;
 
-            container.innerHTML = `
-                <div style="padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.2);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <input type="text" id="notepad-title" value="${this.escapeHtml(notepad.title)}" 
-                               style="background: transparent; border: none; color: #fff; font-size: 18px; 
-                                      font-weight: bold; flex: 1; outline: none; border-bottom: 1px solid rgba(255,255,255,0.3);">
-                        <div style="display: flex; gap: 10px; margin-left: 15px;">
-                            <button id="save-notepad" style="padding: 8px 12px; background: #4CAF50; 
-                                                          border: none; color: white; border-radius: 5px; 
-                                                          font-size: 12px; cursor: pointer; font-weight: bold;">
-                                💾 Save
-                            </button>
-                            <button id="back-to-list" style="padding: 8px 12px; background: #757575; 
-                                                          border: none; color: white; border-radius: 5px; 
-                                                          font-size: 12px; cursor: pointer; font-weight: bold;">
-                                ← Back
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div style="flex: 1; padding: 20px;">
-                    <textarea id="notepad-content" placeholder="Start writing your note..." 
-                              style="width: 100%; height: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.3); 
-                                     color: #fff; padding: 15px; border-radius: 8px; font-family: inherit; 
-                                     font-size: 14px; line-height: 1.5; resize: none; outline: none; box-sizing: border-box;">${this.escapeHtml(notepad.content)}</textarea>
+            // Create modal overlay
+            const modal = document.createElement('div');
+            modal.className = 'sidekick-notepad-modal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 10000;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            `;
+
+            // Create notepad window
+            const notepadWindow = document.createElement('div');
+            notepadWindow.className = 'sidekick-notepad-window';
+            notepadWindow.style.cssText = `
+                background: #2a2a2a;
+                border: 2px solid #555;
+                border-radius: 12px;
+                width: 600px;
+                height: 500px;
+                display: flex;
+                flex-direction: column;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                resize: both;
+                overflow: hidden;
+                min-width: 400px;
+                min-height: 300px;
+                max-width: 90vw;
+                max-height: 90vh;
+                position: relative;
+            `;
+
+            // Create title bar for dragging
+            const titleBar = document.createElement('div');
+            titleBar.className = 'sidekick-notepad-titlebar';
+            titleBar.style.cssText = `
+                background: #333;
+                padding: 12px 20px;
+                border-bottom: 1px solid #555;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                cursor: move;
+                user-select: none;
+                border-radius: 10px 10px 0 0;
+            `;
+
+            titleBar.innerHTML = `
+                <input type="text" id="notepad-title-${id}" value="${this.escapeHtml(notepad.title)}" 
+                       style="background: transparent; border: none; color: #fff; font-size: 16px; 
+                              font-weight: bold; flex: 1; outline: none; border-bottom: 1px solid rgba(255,255,255,0.3);
+                              cursor: text; margin-right: 15px;">
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button id="save-notepad-${id}" style="padding: 6px 12px; background: #4CAF50; 
+                                                  border: none; color: white; border-radius: 4px; 
+                                                  font-size: 12px; cursor: pointer; font-weight: bold;">
+                        💾 Save
+                    </button>
+                    <button id="close-notepad-${id}" style="padding: 6px 10px; background: #f44336; 
+                                                    border: none; color: white; border-radius: 4px; 
+                                                    font-size: 12px; cursor: pointer; font-weight: bold;">
+                        ✕
+                    </button>
                 </div>
             `;
 
-            // Attach save and back listeners
-            container.querySelector('#save-notepad').addEventListener('click', () => {
-                const title = container.querySelector('#notepad-title').value.trim();
-                const content = container.querySelector('#notepad-content').value;
-                
-                this.updateNotepad(id, { title: title || 'Untitled', content });
+            // Create content area
+            const contentArea = document.createElement('div');
+            contentArea.style.cssText = `
+                flex: 1;
+                padding: 20px;
+                display: flex;
+                flex-direction: column;
+            `;
+
+            contentArea.innerHTML = `
+                <textarea id="notepad-content-${id}" 
+                          style="width: 100%; height: 100%; background: #1a1a1a; border: 1px solid #555; 
+                                 color: #fff; padding: 15px; border-radius: 6px; resize: none; 
+                                 font-family: 'Courier New', monospace; font-size: 14px; outline: none;"
+                          placeholder="Start typing your notes here...">${this.escapeHtml(notepad.content)}</textarea>
+                <div style="margin-top: 10px; font-size: 12px; color: #aaa; text-align: right;">
+                    Last modified: ${this.formatDate(notepad.modified)}
+                </div>
+            `;
+
+            // Assemble the window
+            notepadWindow.appendChild(titleBar);
+            notepadWindow.appendChild(contentArea);
+            modal.appendChild(notepadWindow);
+
+            // Make window draggable
+            this.makeWindowDraggable(notepadWindow, titleBar);
+
+            // Attach event listeners
+            const titleInput = titleBar.querySelector(`#notepad-title-${id}`);
+            const contentTextarea = contentArea.querySelector(`#notepad-content-${id}`);
+            const saveBtn = titleBar.querySelector(`#save-notepad-${id}`);
+            const closeBtn = titleBar.querySelector(`#close-notepad-${id}`);
+
+            // Prevent dragging when clicking on input fields
+            titleInput.addEventListener('mousedown', (e) => e.stopPropagation());
+            titleInput.addEventListener('click', (e) => e.stopPropagation());
+
+            // Save function
+            const saveNotepad = () => {
+                notepad.title = titleInput.value.trim() || 'Untitled';
+                notepad.content = contentTextarea.value;
+                notepad.modified = new Date().toISOString();
+                this.saveNotepads();
                 
                 if (window.SidekickModules.Core.NotificationSystem) {
                     window.SidekickModules.Core.NotificationSystem.show(
                         'Notepad Saved',
-                        `"${title || 'Untitled'}" has been saved`,
+                        `"${notepad.title}" has been saved`,
                         'success',
                         2000
                     );
                 }
-            });
+                
+                // Update the list display if it's still visible
+                this.renderNotepadItems(container);
+            };
 
-            container.querySelector('#back-to-list').addEventListener('click', () => {
-                this.renderNotepadList(container);
-            });
+            // Close function
+            const closeModal = () => {
+                document.body.removeChild(modal);
+            };
 
-            // Auto-save on content change
+            // Event listeners
+            saveBtn.addEventListener('click', saveNotepad);
+            closeBtn.addEventListener('click', closeModal);
+            
+            // Auto-save on content change (debounced)
             let saveTimeout;
             const autoSave = () => {
                 clearTimeout(saveTimeout);
-                saveTimeout = setTimeout(() => {
-                    const title = container.querySelector('#notepad-title').value.trim();
-                    const content = container.querySelector('#notepad-content').value;
-                    this.updateNotepad(id, { title: title || 'Untitled', content });
-                }, 2000);
+                saveTimeout = setTimeout(saveNotepad, 2000);
             };
+            
+            titleInput.addEventListener('input', autoSave);
+            contentTextarea.addEventListener('input', autoSave);
 
-            container.querySelector('#notepad-title').addEventListener('input', autoSave);
-            container.querySelector('#notepad-content').addEventListener('input', autoSave);
+            // Close on overlay click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+
+            // Keyboard shortcuts
+            modal.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key === 's') {
+                    e.preventDefault();
+                    saveNotepad();
+                }
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+            });
+
+            // Add to document
+            document.body.appendChild(modal);
+
+            // Focus the content area
+            setTimeout(() => contentTextarea.focus(), 100);
+        },
+
+        // Make window draggable
+        makeWindowDraggable(windowElement, titleBar) {
+            let isDragging = false;
+            let dragOffset = { x: 0, y: 0 };
+
+            titleBar.addEventListener('mousedown', (e) => {
+                // Only start dragging if clicking on the title bar itself, not inputs/buttons
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') {
+                    return;
+                }
+                
+                isDragging = true;
+                const rect = windowElement.getBoundingClientRect();
+                dragOffset.x = e.clientX - rect.left;
+                dragOffset.y = e.clientY - rect.top;
+                
+                titleBar.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                const newX = e.clientX - dragOffset.x;
+                const newY = e.clientY - dragOffset.y;
+                
+                windowElement.style.position = 'fixed';
+                windowElement.style.left = `${Math.max(0, Math.min(newX, window.innerWidth - windowElement.offsetWidth))}px`;
+                windowElement.style.top = `${Math.max(0, Math.min(newY, window.innerHeight - windowElement.offsetHeight))}px`;
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    titleBar.style.cursor = 'move';
+                }
+            });
         },
 
         // Utility functions
