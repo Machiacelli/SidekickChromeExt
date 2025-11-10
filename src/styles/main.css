@@ -1,0 +1,325 @@
+/**
+ * Sidekick Chrome Extension - Main Styles
+ * Core CSS for the Sidekick sidebar and components
+ * Version: 1.0.0
+ */
+
+/* Notification Animations */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Sidekick Notification Styles */
+.sidekick-notification {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    z-index: 999999 !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    max-width: 350px !important;
+    word-wrap: break-word !important;
+}
+
+.sidekick-notification:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4) !important;
+}
+
+/* Sidebar Base Styles */
+#sidekick-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    width: 320px !important;
+    height: 100vh !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    z-index: 999998 !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    box-shadow: -2px 0 10px rgba(0,0,0,0.2) !important;
+    transform: translateX(0) !important;
+    transition: transform 0.3s ease !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+#sidekick-sidebar.hidden {
+    transform: translateX(100%) !important;
+}
+
+/* Hamburger Menu */
+#sidekick-hamburger {
+    position: fixed !important;
+    top: 15px !important;
+    right: 15px !important;
+    width: 40px !important;
+    height: 40px !important;
+    background: rgba(0,0,0,0.7) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 50% !important;
+    cursor: pointer !important;
+    font-size: 18px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 999999 !important;
+    transition: all 0.3s ease !important;
+    font-family: monospace !important;
+}
+
+#sidekick-hamburger:hover {
+    background: rgba(0,0,0,0.9) !important;
+    transform: scale(1.1) !important;
+}
+
+/* Sidebar Header */
+.sidekick-header {
+    padding: 20px !important;
+    background: rgba(0,0,0,0.2) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+    text-align: center !important;
+}
+
+.sidekick-header h1 {
+    margin: 0 !important;
+    font-size: 24px !important;
+    font-weight: 300 !important;
+    color: white !important;
+}
+
+.sidekick-header .version {
+    font-size: 12px !important;
+    opacity: 0.7 !important;
+    margin-top: 5px !important;
+}
+
+/* Sidebar Content */
+.sidekick-content {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 20px !important;
+}
+
+/* Sidebar Buttons */
+.sidekick-button {
+    width: 100% !important;
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    color: white !important;
+    padding: 12px 16px !important;
+    margin-bottom: 10px !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    transition: all 0.3s ease !important;
+    text-align: left !important;
+    display: flex !important;
+    align-items: center !important;
+    font-family: inherit !important;
+}
+
+.sidekick-button:hover {
+    background: rgba(255,255,255,0.2) !important;
+    transform: translateX(5px) !important;
+}
+
+.sidekick-button.active {
+    background: rgba(255,255,255,0.3) !important;
+    border-color: rgba(255,255,255,0.5) !important;
+}
+
+.sidekick-button .icon {
+    margin-right: 10px !important;
+    font-size: 16px !important;
+}
+
+/* Panel Styles */
+.sidekick-panel {
+    position: fixed !important;
+    top: 50px !important;
+    left: 50px !important;
+    width: 300px !important;
+    min-height: 200px !important;
+    background: white !important;
+    color: #333 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+    z-index: 999997 !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    overflow: hidden !important;
+    resize: both !important;
+    border: 1px solid #ddd !important;
+}
+
+.sidekick-panel-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    padding: 12px 16px !important;
+    cursor: move !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    user-select: none !important;
+}
+
+.sidekick-panel-header h3 {
+    margin: 0 !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+}
+
+.sidekick-panel-controls {
+    display: flex !important;
+    gap: 8px !important;
+}
+
+.sidekick-panel-controls button {
+    background: rgba(255,255,255,0.2) !important;
+    border: none !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    font-size: 12px !important;
+    transition: background 0.2s ease !important;
+}
+
+.sidekick-panel-controls button:hover {
+    background: rgba(255,255,255,0.3) !important;
+}
+
+.sidekick-panel-content {
+    padding: 16px !important;
+    max-height: 400px !important;
+    overflow-y: auto !important;
+}
+
+/* Body state classes for layout adjustments */
+body.sidekick-sidebar-visible {
+    margin-right: 320px !important;
+    transition: margin-right 0.3s ease !important;
+}
+
+body.sidekick-sidebar-hidden {
+    margin-right: 0 !important;
+    transition: margin-right 0.3s ease !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    body.sidekick-sidebar-visible {
+        margin-right: 0 !important;
+    }
+    
+    #sidekick-sidebar {
+        width: 280px !important;
+    }
+}
+
+/* Form Controls */
+.sidekick-input {
+    width: 100% !important;
+    padding: 8px 12px !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+    font-size: 14px !important;
+    font-family: inherit !important;
+    margin-bottom: 10px !important;
+    box-sizing: border-box !important;
+}
+
+.sidekick-input:focus {
+    outline: none !important;
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+}
+
+.sidekick-textarea {
+    width: 100% !important;
+    min-height: 100px !important;
+    padding: 8px 12px !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+    font-size: 14px !important;
+    font-family: inherit !important;
+    resize: vertical !important;
+    box-sizing: border-box !important;
+}
+
+.sidekick-textarea:focus {
+    outline: none !important;
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+}
+
+/* Loading States */
+.sidekick-loading {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px !important;
+    font-style: italic !important;
+    opacity: 0.7 !important;
+}
+
+.sidekick-spinner {
+    width: 20px !important;
+    height: 20px !important;
+    border: 2px solid #f3f3f3 !important;
+    border-top: 2px solid #667eea !important;
+    border-radius: 50% !important;
+    animation: spin 1s linear infinite !important;
+    margin-right: 10px !important;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Scrollbar Styling */
+.sidekick-content::-webkit-scrollbar,
+.sidekick-panel-content::-webkit-scrollbar {
+    width: 8px !important;
+}
+
+.sidekick-content::-webkit-scrollbar-track,
+.sidekick-panel-content::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.1) !important;
+    border-radius: 4px !important;
+}
+
+.sidekick-content::-webkit-scrollbar-thumb,
+.sidekick-panel-content::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.3) !important;
+    border-radius: 4px !important;
+}
+
+.sidekick-content::-webkit-scrollbar-thumb:hover,
+.sidekick-panel-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.5) !important;
+}
