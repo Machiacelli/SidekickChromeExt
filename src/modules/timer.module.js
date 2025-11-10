@@ -211,19 +211,15 @@
 
                         this.saveTimers();
                         
-                        // If converting blank timer to API timer, do a full re-render
-                        // Otherwise just update display to preserve dropdown state
-                        if (wasBlankTimer) {
-                            console.log('🔍 Re-rendering blank timer with data:', existingTimer.name, existingTimer.remainingTime);
-                            const element = document.querySelector(`[data-timer-id="${existingTimer.id}"]`);
-                            if (element) {
-                                element.remove();
-                                this.renderTimer(existingTimer);
-                                console.log('🔍 Timer re-rendered successfully');
-                            }
+                        // ALWAYS do a full re-render for cooldown selections to ensure display works
+                        console.log('🔍 Force re-rendering timer with cooldown data');
+                        const element = document.querySelector(`[data-timer-id="${existingTimer.id}"]`);
+                        if (element) {
+                            element.remove();
+                            this.renderTimer(existingTimer);
+                            console.log('🔍 Timer re-rendered successfully');
                         } else {
-                            console.log('🔍 Updating existing timer display');
-                            this.updateTimerDisplay(existingTimer.id);
+                            console.error('🔍 Could not find timer element to remove');
                         }
                         
                         this.startTimer(existingTimer.id);
