@@ -280,37 +280,16 @@
             console.log(`🔍 findOrCreateCooldownTimer for ${cooldownType}, currentTimer:`, currentTimer.id);
             
             // First check if we already have a cooldown timer (any timer with cooldowns)
-            let existingCooldownTimer = this.timers.find(t => t.cooldowns && Object.keys(t.cooldowns).length > 0);
+            let existingCooldownTimer = this.timers.find(t => t.cooldowns && Object.keys(t.cooldowns).length > 0 && t.isRunning);
             
             if (existingCooldownTimer) {
                 console.log(`🔍 Found existing cooldown timer:`, existingCooldownTimer.id, existingCooldownTimer.cooldowns);
                 return existingCooldownTimer;
             }
             
-            // Check if we already have a timer for this specific cooldown type
-            let existingTimer = this.timers.find(t => t.cooldownType === cooldownType && t.isApiTimer);
-            
-            if (existingTimer) {
-                console.log(`🔍 Found existing timer for ${cooldownType}:`, existingTimer.id);
-                return existingTimer;
-            }
-            
-            // Use the current timer if it's blank
-            if (!currentTimer.isApiTimer && currentTimer.remainingTime === 0) {
-                console.log(`🔍 Using current blank timer:`, currentTimer.id);
-                return currentTimer;
-            }
-            
-            // Find any blank timer
-            let blankTimer = this.timers.find(t => !t.isApiTimer && t.remainingTime === 0);
-            if (blankTimer) {
-                console.log(`🔍 Found blank timer:`, blankTimer.id);
-                return blankTimer;
-            }
-            
-            // Create a new timer as last resort
-            console.log(`🔍 Creating new timer for cooldown`);
-            return this.addTimer('Cooldown Timer');
+            // ALWAYS use the current timer that was clicked - don't search for others
+            console.log(`🔍 Using clicked timer:`, currentTimer.id);
+            return currentTimer;
         },
 
         // Load timers from storage
