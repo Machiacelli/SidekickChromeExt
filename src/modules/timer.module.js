@@ -598,7 +598,11 @@
         // Render a timer window in the sidebar  
         renderTimer(timer) {
             const contentArea = document.getElementById('sidekick-content');
-            if (!contentArea) return;
+            console.log('🔍 renderTimer - contentArea found:', !!contentArea);
+            if (!contentArea) {
+                console.error('🔍 CRITICAL: sidekick-content element not found!');
+                return;
+            }
 
             // Remove placeholder if it exists
             const placeholder = contentArea.querySelector('.sidekick-placeholder');
@@ -826,6 +830,12 @@
             `;
 
             contentArea.appendChild(timerElement);
+            console.log(`🔍 Timer element appended to DOM with ID: sidekick-timer-${timer.id}`);
+            
+            // Verify element was actually added
+            const verifyElement = document.getElementById(`sidekick-timer-${timer.id}`);
+            console.log(`🔍 Verification - Element exists after append: ${!!verifyElement}`);
+            
             this.setupTimerEventListeners(timer, timerElement);
             
             console.log('⏰ Timer rendered:', timer.name);
