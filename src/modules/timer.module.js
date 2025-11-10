@@ -1023,9 +1023,17 @@
             const element = document.getElementById(`sidekick-timer-${timer.id}`);
             
             console.log(`🔍 updateTimerDisplay - Timer:`, timer?.name, 'remainingTime:', timer?.remainingTime);
+            console.log(`🔍 updateTimerDisplay - Looking for ID: sidekick-timer-${timer.id}`);
             console.log(`🔍 updateTimerDisplay - Element found:`, !!element);
             
-            if (!timer || !element) return;
+            // Debug: Log all existing timer elements
+            const allTimerElements = document.querySelectorAll('[id^="sidekick-timer-"]');
+            console.log(`🔍 All timer elements in DOM:`, Array.from(allTimerElements).map(el => el.id));
+            
+            if (!timer || !element) {
+                console.error(`🔍 Cannot update - timer exists: ${!!timer}, element exists: ${!!element}`);
+                return;
+            }
 
             // Update header color and name
             const header = element.querySelector('.timer-header');
