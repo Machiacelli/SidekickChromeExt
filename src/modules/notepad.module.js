@@ -14,6 +14,11 @@
     function waitForCore() {
         return new Promise((resolve) => {
             const checkCore = () => {
+                console.log("🔍 Checking for Core module...");
+                console.log("🔍 SidekickModules exists:", !!window.SidekickModules);
+                console.log("🔍 Core exists:", !!window.SidekickModules?.Core);
+                console.log("🔍 ChromeStorage exists:", !!window.SidekickModules?.Core?.ChromeStorage);
+                
                 if (window.SidekickModules?.Core?.ChromeStorage) {
                     console.log("📝 Core module with ChromeStorage ready for Notepad");
                     resolve();
@@ -52,8 +57,13 @@
         // Load notepads from storage
         async loadNotepads() {
             try {
+                console.log("🔍 loadNotepads - Checking availability...");
+                console.log("🔍 SidekickModules:", !!window.SidekickModules);
+                console.log("🔍 Core:", !!window.SidekickModules?.Core);
+                console.log("🔍 ChromeStorage:", !!window.SidekickModules?.Core?.ChromeStorage);
+                
                 if (!window.SidekickModules?.Core?.ChromeStorage) {
-                    throw new Error('ChromeStorage not available');
+                    throw new Error('ChromeStorage not available - SidekickModules: ' + !!window.SidekickModules + ', Core: ' + !!window.SidekickModules?.Core + ', ChromeStorage: ' + !!window.SidekickModules?.Core?.ChromeStorage);
                 }
                 
                 const stored = await window.SidekickModules.Core.ChromeStorage.get('sidekick_notepads');
@@ -67,7 +77,7 @@
                 if (window.SidekickModules?.Core?.NotificationSystem) {
                     window.SidekickModules.Core.NotificationSystem.show(
                         'Notepad Error', 
-                        'Failed to load saved notepads', 
+                        'Failed to load saved notepads: ' + error.message, 
                         'error'
                     );
                 }

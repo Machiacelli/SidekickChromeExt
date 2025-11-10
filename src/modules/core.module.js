@@ -50,7 +50,6 @@
             }, duration);
         }
     };
-
     // === CHROME STORAGE WRAPPER ===
     const ChromeStorage = {
         // Get data from Chrome storage
@@ -130,5 +129,7 @@
     // Export to global namespace
     window.SidekickModules.Core = CoreModule;
     console.log("✅ Core Module loaded and ready");
+    console.log("🔍 CoreModule contents:", Object.keys(CoreModule));
+    console.log("🔍 ChromeStorage available:", !!CoreModule.ChromeStorage);
 
 })();
