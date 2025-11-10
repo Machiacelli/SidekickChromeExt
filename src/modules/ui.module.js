@@ -137,10 +137,6 @@
                             border: none; color: rgba(255,255,255,0.7); font-size: 12px; cursor: pointer; font-weight: bold;">
                         📝 Notes
                     </button>
-                    <button class="nav-btn" data-module="settings" style="flex: 1; padding: 10px; background: transparent; 
-                            border: none; color: rgba(255,255,255,0.7); font-size: 12px; cursor: pointer; font-weight: bold;">
-                        ⚙️ Settings
-                    </button>
                 </div>
             `;
 
@@ -168,11 +164,49 @@
             `;
             contentArea.appendChild(content);
 
+            // Create Add Module button
+            const addModuleButton = document.createElement('button');
+            addModuleButton.className = 'sidekick-add-module-btn';
+            addModuleButton.innerHTML = '+ Add Module';
+            addModuleButton.title = 'Add new module';
+            addModuleButton.style.cssText = `
+                position: absolute;
+                bottom: 15px;
+                left: 15px;
+                background: rgba(255,255,255,0.1);
+                border: 1px solid rgba(255,255,255,0.2);
+                color: rgba(255,255,255,0.7);
+                padding: 8px 12px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 12px;
+                font-weight: bold;
+                transition: all 0.3s ease;
+                backdrop-filter: blur(5px);
+            `;
+            
+            addModuleButton.addEventListener('mouseenter', () => {
+                addModuleButton.style.background = 'rgba(255,255,255,0.2)';
+                addModuleButton.style.color = 'white';
+                addModuleButton.style.transform = 'translateY(-2px)';
+            });
+            
+            addModuleButton.addEventListener('mouseleave', () => {
+                addModuleButton.style.background = 'rgba(255,255,255,0.1)';
+                addModuleButton.style.color = 'rgba(255,255,255,0.7)';
+                addModuleButton.style.transform = 'translateY(0)';
+            });
+            
+            addModuleButton.addEventListener('click', () => {
+                this.showAddModuleMenu();
+            });
+
             // Assemble sidebar
             sidebarContent.appendChild(closeButton);
             sidebarContent.appendChild(header);
             sidebarContent.appendChild(nav);
             sidebarContent.appendChild(contentArea);
+            sidebarContent.appendChild(addModuleButton);
             this.sidebar.appendChild(sidebarContent);
 
             // Append to body
@@ -245,9 +279,6 @@
                 case 'notepad':
                     await this.loadNotepadModule(contentArea);
                     break;
-                case 'settings':
-                    await this.loadSettingsModule(contentArea);
-                    break;
                 default:
                     contentArea.innerHTML = '<div style="padding: 20px; color: #ccc;">Module not found</div>';
             }
@@ -264,8 +295,9 @@
                         <div style="font-weight: bold; margin-bottom: 10px;">Available Features:</div>
                         <div style="font-size: 13px; line-height: 1.6;">
                             📝 <strong>Notes:</strong> Create and manage notepads<br>
-                            ⚙️ <strong>Settings:</strong> Configure API key and preferences<br>
-                            🔄 <strong>More modules coming soon...</strong>
+                            ⚙️ <strong>Settings:</strong> Available in extension popup menu<br>
+                            ➕ <strong>Add Modules:</strong> Click the "+ Add Module" button below<br>
+                            🔄 <strong>More features coming soon...</strong>
                         </div>
                     </div>
                 </div>
@@ -305,6 +337,135 @@
             } catch (error) {
                 console.error('Failed to load settings module:', error);
                 contentArea.innerHTML = '<div style="padding: 20px; color: #f44336;">Failed to load settings module</div>';
+            }
+        },
+
+        // Show add module menu
+        showAddModuleMenu() {
+            console.log("📋 Showing add module menu");
+
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                z-index: 999999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+
+            // Create menu
+            const menu = document.createElement('div');
+            menu.style.cssText = `
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 12px;
+                padding: 20px;
+                color: white;
+                min-width: 300px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                transform: scale(0.9);
+                transition: transform 0.2s ease;
+            `;
+
+            menu.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 500;">Add New Module</h3>
+                    <button class="close-menu" style="background: rgba(255,255,255,0.2); border: none; color: white; 
+                            border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 16px;">×</button>
+                </div>
+                <div style="display: grid; gap: 10px;">
+                    <button class="module-option" data-module="notepad" style="background: rgba(255,255,255,0.1); 
+                            border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px; border-radius: 8px; 
+                            cursor: pointer; text-align: left; transition: all 0.2s ease;">
+                        📝 Add new notepad
+                    </button>
+                    <button class="module-option" data-module="timer" style="background: rgba(255,255,255,0.1); 
+                            border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px; border-radius: 8px; 
+                            cursor: pointer; text-align: left; transition: all 0.2s ease;">
+                        ⏰ Add new timer
+                    </button>
+                    <button class="module-option" data-module="todolist" style="background: rgba(255,255,255,0.1); 
+                            border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px; border-radius: 8px; 
+                            cursor: pointer; text-align: left; transition: all 0.2s ease;">
+                        ✅ Add new todo list
+                    </button>
+                    <button class="module-option" data-module="stockticker" style="background: rgba(255,255,255,0.1); 
+                            border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px; border-radius: 8px; 
+                            cursor: pointer; text-align: left; transition: all 0.2s ease;">
+                        📈 Add stock ticker
+                    </button>
+                </div>
+            `;
+
+            // Add hover effects
+            setTimeout(() => {
+                const moduleOptions = menu.querySelectorAll('.module-option');
+                moduleOptions.forEach(option => {
+                    option.addEventListener('mouseenter', () => {
+                        option.style.background = 'rgba(255,255,255,0.2)';
+                        option.style.transform = 'translateX(5px)';
+                    });
+                    option.addEventListener('mouseleave', () => {
+                        option.style.background = 'rgba(255,255,255,0.1)';
+                        option.style.transform = 'translateX(0)';
+                    });
+                    option.addEventListener('click', () => {
+                        const moduleType = option.dataset.module;
+                        this.addNewModule(moduleType);
+                        overlay.remove();
+                    });
+                });
+
+                const closeBtn = menu.querySelector('.close-menu');
+                closeBtn.addEventListener('click', () => {
+                    overlay.remove();
+                });
+            }, 0);
+
+            // Add to overlay and show
+            overlay.appendChild(menu);
+            document.body.appendChild(overlay);
+
+            // Animate in
+            setTimeout(() => {
+                menu.style.transform = 'scale(1)';
+            }, 0);
+
+            // Close on overlay click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            });
+        },
+
+        // Add new module
+        addNewModule(moduleType) {
+            console.log(`➕ Adding new ${moduleType} module`);
+            
+            switch (moduleType) {
+                case 'notepad':
+                    this.showNotification('New Notepad', 'Use the Notes tab to create new notepads', 'info');
+                    // Switch to notes tab
+                    const notesBtn = document.querySelector('[data-module="notepad"]');
+                    if (notesBtn) notesBtn.click();
+                    break;
+                case 'timer':
+                    this.showNotification('Timer Module', 'Timer module coming soon!', 'info');
+                    break;
+                case 'todolist':
+                    this.showNotification('Todo List Module', 'Todo list module coming soon!', 'info');
+                    break;
+                case 'stockticker':
+                    this.showNotification('Stock Ticker Module', 'Stock ticker module coming soon!', 'info');
+                    break;
+                default:
+                    this.showNotification('Unknown Module', 'Module type not recognized', 'error');
             }
         },
 
