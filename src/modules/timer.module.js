@@ -174,38 +174,36 @@
                     console.log(`🔍 Cooldown found: ${remainingTimeSeconds} seconds remaining`);
                     
                     if (remainingTimeSeconds > 0) {
-                        // Check if we already have a timer for this cooldown type
-                        let existingTimer = this.timers.find(t => t.cooldownType === cooldownType && t.isApiTimer);
-                        
-                        if (!existingTimer) {
-                            // Use the current timer if it's blank, or find the first blank timer
-                            if (!timer.isApiTimer && timer.remainingTime === 0) {
-                                existingTimer = timer;
-                            } else {
-                                existingTimer = this.timers.find(t => !t.isApiTimer && t.remainingTime === 0);
-                                if (!existingTimer) {
-                                    // Create a new timer for this cooldown
-                                    existingTimer = this.addTimer('Cooldown Timer');
-                                }
-                            }
-                        }
-                        
-                        // Update timer with cooldown info
+                        // Cooldown names mapping
                         const cooldownNames = {
                             'drug': 'Drug Cooldown',
                             'medical': 'Medical Cooldown', 
                             'booster': 'Booster Cooldown'
                         };
-
-                        // Check if this timer is being converted from blank to API timer
-                        const wasBlankTimer = !existingTimer.isRunning && !existingTimer.endTime;
-                        console.log(`🔍 wasBlankTimer check: isRunning=${existingTimer.isRunning}, endTime=${existingTimer.endTime}, result=${wasBlankTimer}`);
                         
-                        existingTimer.name = cooldownNames[cooldownType] || 'Cooldown';
-                        existingTimer.duration = remainingTimeSeconds;
-                        existingTimer.remainingTime = remainingTimeSeconds;
-                        existingTimer.color = this.getCooldownColor(cooldownType);
-                        existingTimer.cooldownType = cooldownType;
+                        // Find existing cooldown timer or use current timer
+                        let existingTimer = this.findOrCreateCooldownTimer(timer, cooldownType);
+                        
+                        // Add this cooldown to the timer's cooldown collection
+                        if (!existingTimer.cooldowns) {
+                            existingTimer.cooldowns = {};
+                        }
+                        existingTimer.cooldowns[cooldownType] = remainingTimeSeconds;
+                        
+                        // Update timer properties based on number of cooldowns
+                        const cooldownCount = Object.keys(existingTimer.cooldowns).length;
+                        if (cooldownCount === 1) {
+                            // Single cooldown - show specific name
+                            existingTimer.name = cooldownNames[cooldownType] || 'Cooldown';
+                            existingTimer.color = this.getCooldownColor(cooldownType);
+                        } else {
+                            // Multiple cooldowns - show generic name
+                            existingTimer.name = 'Cooldowns';
+                            existingTimer.color = '#9b59b6'; // Purple for multi-cooldown
+                        }
+                        
+                        existingTimer.duration = Math.max(...Object.values(existingTimer.cooldowns));
+                        existingTimer.remainingTime = Math.max(...Object.values(existingTimer.cooldowns));
                         existingTimer.isApiTimer = true;
                         existingTimer.isRunning = true;
 
@@ -262,6 +260,36 @@
                     );
                 }
             }
+        },
+
+        findOrCreateCooldownTimer(currentTimer, cooldownType) {
+            // First check if we already have a cooldown timer (any timer with cooldowns)
+            let existingCooldownTimer = this.timers.find(t => t.cooldowns && Object.keys(t.cooldowns).length > 0);
+            
+            if (existingCooldownTimer) {
+                return existingCooldownTimer;
+            }
+            
+            // Check if we already have a timer for this specific cooldown type
+            let existingTimer = this.timers.find(t => t.cooldownType === cooldownType && t.isApiTimer);
+            
+            if (existingTimer) {
+                return existingTimer;
+            }
+            
+            // Use the current timer if it's blank
+            if (!currentTimer.isApiTimer && currentTimer.remainingTime === 0) {
+                return currentTimer;
+            }
+            
+            // Find any blank timer
+            let blankTimer = this.timers.find(t => !t.isApiTimer && t.remainingTime === 0);
+            if (blankTimer) {
+                return blankTimer;
+            }
+            
+            // Create a new timer as last resort
+            return this.addTimer('Cooldown Timer');
         },
 
         // Load timers from storage
@@ -748,23 +776,62 @@
                 ">
                     ${(function() {
                         console.log(`🔍 renderTimer - timer.remainingTime: ${timer.remainingTime}, name: ${timer.name}`);
-                        return timer.remainingTime > 0 ? `
-                            <div class="timer-display" style="
-                                text-align: center;
-                                font-size: 24px;
-                                font-weight: 700;
-                                color: ${timer.color || '#666'};
-                                font-family: 'Courier New', monospace;
-                            ">${this.formatTime(timer.remainingTime)}</div>
-                        ` : `
-                            <div class="timer-display" style="
-                                text-align: center;
-                                font-size: 24px;
-                                font-weight: 700;
-                                color: ${timer.color || '#666'};
-                                font-family: 'Courier New', monospace;
-                            "></div>
-                        `;
+                        
+                        if (timer.cooldowns && Object.keys(timer.cooldowns).length > 1) {
+                            // Multi-cooldown display
+                            const cooldownNames = {
+                                'drug': 'Drug',
+                                'medical': 'Medical', 
+                                'booster': 'Booster'
+                            };
+                            
+                            return Object.entries(timer.cooldowns).map(([type, time]) => `
+                                <div style="
+                                    background: rgba(255,255,255,0.1);
+                                    border-radius: 6px;
+                                    padding: 8px;
+                                    margin: 4px 0;
+                                    width: 90%;
+                                    display: flex;
+                                    justify-content: space-between;
+                                    align-items: center;
+                                ">
+                                    <span style="
+                                        color: #ccc;
+                                        font-size: 14px;
+                                        font-weight: 600;
+                                    ">${cooldownNames[type] || type}</span>
+                                    <span style="
+                                        color: ${this.getCooldownColor(type)};
+                                        font-family: 'Courier New', monospace;
+                                        font-weight: 700;
+                                        font-size: 16px;
+                                    ">${this.formatTime(time)}</span>
+                                </div>
+                            `).join('');
+                        } else if (timer.remainingTime > 0) {
+                            // Single cooldown display
+                            return `
+                                <div class="timer-display" style="
+                                    text-align: center;
+                                    font-size: 24px;
+                                    font-weight: 700;
+                                    color: ${timer.color || '#666'};
+                                    font-family: 'Courier New', monospace;
+                                ">${this.formatTime(timer.remainingTime)}</div>
+                            `;
+                        } else {
+                            // Empty timer
+                            return `
+                                <div class="timer-display" style="
+                                    text-align: center;
+                                    font-size: 24px;
+                                    font-weight: 700;
+                                    color: ${timer.color || '#666'};
+                                    font-family: 'Courier New', monospace;
+                                "></div>
+                            `;
+                        }
                     }).call(this)}
                 </div>
             `;
@@ -904,19 +971,49 @@
             // Start new interval
             const interval = setInterval(() => {
                 if (timer.type === 'countdown') {
-                    timer.remainingTime = Math.max(0, timer.remainingTime - 1);
-                    if (timer.remainingTime === 0) {
-                        timer.isRunning = false;
-                        clearInterval(interval);
-                        this.intervals.delete(id);
-                        // Timer finished notification
-                        if (window.SidekickModules?.Core?.NotificationSystem) {
-                            window.SidekickModules.Core.NotificationSystem.show(
-                                'Timer Finished', 
-                                `${timer.name} has finished!`, 
-                                'success', 
-                                5000
-                            );
+                    if (timer.cooldowns) {
+                        // Update multiple cooldowns
+                        let allExpired = true;
+                        for (let cooldownType in timer.cooldowns) {
+                            timer.cooldowns[cooldownType] = Math.max(0, timer.cooldowns[cooldownType] - 1);
+                            if (timer.cooldowns[cooldownType] > 0) {
+                                allExpired = false;
+                            }
+                        }
+                        
+                        // Update main timer remaining time to the longest cooldown
+                        timer.remainingTime = Math.max(...Object.values(timer.cooldowns));
+                        
+                        if (allExpired) {
+                            timer.isRunning = false;
+                            clearInterval(interval);
+                            this.intervals.delete(id);
+                            // All cooldowns finished notification
+                            if (window.SidekickModules?.Core?.NotificationSystem) {
+                                window.SidekickModules.Core.NotificationSystem.show(
+                                    'Cooldowns Finished', 
+                                    'All cooldowns have finished!', 
+                                    'success', 
+                                    5000
+                                );
+                            }
+                        }
+                    } else {
+                        // Single timer countdown
+                        timer.remainingTime = Math.max(0, timer.remainingTime - 1);
+                        if (timer.remainingTime === 0) {
+                            timer.isRunning = false;
+                            clearInterval(interval);
+                            this.intervals.delete(id);
+                            // Timer finished notification
+                            if (window.SidekickModules?.Core?.NotificationSystem) {
+                                window.SidekickModules.Core.NotificationSystem.show(
+                                    'Timer Finished', 
+                                    `${timer.name} has finished!`, 
+                                    'success', 
+                                    5000
+                                );
+                            }
                         }
                     }
                 } else {
