@@ -184,14 +184,21 @@
                         // Find existing cooldown timer or use current timer
                         let existingTimer = this.findOrCreateCooldownTimer(timer, cooldownType);
                         
+                        console.log(`🔍 Adding ${cooldownType} to timer:`, existingTimer.id);
+                        console.log(`🔍 Existing cooldowns before:`, existingTimer.cooldowns);
+                        
                         // Add this cooldown to the timer's cooldown collection
                         if (!existingTimer.cooldowns) {
                             existingTimer.cooldowns = {};
                         }
                         existingTimer.cooldowns[cooldownType] = remainingTimeSeconds;
                         
+                        console.log(`🔍 Cooldowns after adding ${cooldownType}:`, existingTimer.cooldowns);
+                        
                         // Update timer properties based on number of cooldowns
                         const cooldownCount = Object.keys(existingTimer.cooldowns).length;
+                        console.log(`🔍 Total cooldown count: ${cooldownCount}`);
+                        
                         if (cooldownCount === 1) {
                             // Single cooldown - show specific name
                             existingTimer.name = cooldownNames[cooldownType] || 'Cooldown';
@@ -263,10 +270,13 @@
         },
 
         findOrCreateCooldownTimer(currentTimer, cooldownType) {
+            console.log(`🔍 findOrCreateCooldownTimer for ${cooldownType}, currentTimer:`, currentTimer.id);
+            
             // First check if we already have a cooldown timer (any timer with cooldowns)
             let existingCooldownTimer = this.timers.find(t => t.cooldowns && Object.keys(t.cooldowns).length > 0);
             
             if (existingCooldownTimer) {
+                console.log(`🔍 Found existing cooldown timer:`, existingCooldownTimer.id, existingCooldownTimer.cooldowns);
                 return existingCooldownTimer;
             }
             
@@ -274,21 +284,25 @@
             let existingTimer = this.timers.find(t => t.cooldownType === cooldownType && t.isApiTimer);
             
             if (existingTimer) {
+                console.log(`🔍 Found existing timer for ${cooldownType}:`, existingTimer.id);
                 return existingTimer;
             }
             
             // Use the current timer if it's blank
             if (!currentTimer.isApiTimer && currentTimer.remainingTime === 0) {
+                console.log(`🔍 Using current blank timer:`, currentTimer.id);
                 return currentTimer;
             }
             
             // Find any blank timer
             let blankTimer = this.timers.find(t => !t.isApiTimer && t.remainingTime === 0);
             if (blankTimer) {
+                console.log(`🔍 Found blank timer:`, blankTimer.id);
                 return blankTimer;
             }
             
             // Create a new timer as last resort
+            console.log(`🔍 Creating new timer for cooldown`);
             return this.addTimer('Cooldown Timer');
         },
 
