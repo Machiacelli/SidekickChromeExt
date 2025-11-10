@@ -213,12 +213,15 @@
                         // If converting blank timer to API timer, do a full re-render
                         // Otherwise just update display to preserve dropdown state
                         if (wasBlankTimer) {
+                            console.log('🔍 Re-rendering blank timer with data:', existingTimer.name, existingTimer.remainingTime);
                             const element = document.querySelector(`[data-timer-id="${existingTimer.id}"]`);
                             if (element) {
                                 element.remove();
                                 this.renderTimer(existingTimer);
+                                console.log('🔍 Timer re-rendered successfully');
                             }
                         } else {
+                            console.log('🔍 Updating existing timer display');
                             this.updateTimerDisplay(existingTimer.id);
                         }
                         
@@ -746,13 +749,26 @@
                     font-size: 14px;
                     text-align: center;
                 ">
-                    <div class="timer-display" style="
-                        text-align: center;
-                        font-size: 24px;
-                        font-weight: 700;
-                        color: ${timer.color || '#666'};
-                        font-family: 'Courier New', monospace;
-                    ">${timer.remainingTime > 0 ? this.formatTime(timer.remainingTime) : 'Select a cooldown from ⚙️ above'}</div>
+                    ${(function() {
+                        console.log(`🔍 renderTimer - timer.remainingTime: ${timer.remainingTime}, name: ${timer.name}`);
+                        return timer.remainingTime > 0 ? `
+                            <div class="timer-display" style="
+                                text-align: center;
+                                font-size: 24px;
+                                font-weight: 700;
+                                color: ${timer.color || '#666'};
+                                font-family: 'Courier New', monospace;
+                            ">${this.formatTime(timer.remainingTime)}</div>
+                        ` : `
+                            <div class="timer-display" style="
+                                text-align: center;
+                                font-size: 24px;
+                                font-weight: 700;
+                                color: ${timer.color || '#666'};
+                                font-family: 'Courier New', monospace;
+                            "></div>
+                        `;
+                    }).call(this)}
                 </div>
             `;
 
