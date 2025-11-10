@@ -10,6 +10,17 @@
 
     console.log("📝 Loading Sidekick Notepad Module...");
 
+    // Immediate test of module availability
+    setTimeout(() => {
+        console.log("📝 Initial module check:");
+        console.log("📝 SidekickModules exists:", !!window.SidekickModules);
+        console.log("📝 Core exists:", !!window.SidekickModules?.Core);
+        console.log("📝 ChromeStorage exists:", !!window.SidekickModules?.Core?.ChromeStorage);
+        if (window.SidekickModules?.Core) {
+            console.log("📝 Core keys:", Object.keys(window.SidekickModules.Core));
+        }
+    }, 50);
+
     // Wait for Core module to be available
     function waitForCore() {
         return new Promise((resolve) => {
@@ -62,11 +73,28 @@
                 console.log("🔍 Core:", !!window.SidekickModules?.Core);
                 console.log("🔍 ChromeStorage:", !!window.SidekickModules?.Core?.ChromeStorage);
                 
-                if (!window.SidekickModules?.Core?.ChromeStorage) {
-                    throw new Error('ChromeStorage not available - SidekickModules: ' + !!window.SidekickModules + ', Core: ' + !!window.SidekickModules?.Core + ', ChromeStorage: ' + !!window.SidekickModules?.Core?.ChromeStorage);
+                let stored = null;
+                
+                // Try Chrome storage wrapper first
+                if (window.SidekickModules?.Core?.ChromeStorage) {
+                    console.log("📝 Using ChromeStorage wrapper");
+                    stored = await window.SidekickModules.Core.ChromeStorage.get('sidekick_notepads');
+                } else {
+                    console.log("📝 ChromeStorage not available, trying direct Chrome API");
+                    // Fallback to direct Chrome API
+                    if (chrome?.storage?.local) {
+                        stored = await new Promise((resolve) => {
+                            chrome.storage.local.get(['sidekick_notepads'], (result) => {
+                                resolve(result.sidekick_notepads);
+                            });
+                        });
+                    } else {
+                        console.log("📝 Chrome API not available, using localStorage");
+                        // Final fallback to localStorage
+                        stored = JSON.parse(localStorage.getItem('sidekick_notepads') || 'null');
+                    }
                 }
                 
-                const stored = await window.SidekickModules.Core.ChromeStorage.get('sidekick_notepads');
                 this.notepads = stored || [];
                 console.log(`📝 Loaded ${this.notepads.length} notepads`);
             } catch (error) {

@@ -128,8 +128,18 @@
 
     // Export to global namespace
     window.SidekickModules.Core = CoreModule;
+    
+    // Ensure ChromeStorage is immediately accessible
+    Object.defineProperty(window.SidekickModules.Core, 'ChromeStorage', {
+        value: ChromeStorage,
+        writable: false,
+        enumerable: true,
+        configurable: false
+    });
+    
     console.log("✅ Core Module loaded and ready");
     console.log("🔍 CoreModule contents:", Object.keys(CoreModule));
     console.log("🔍 ChromeStorage available:", !!CoreModule.ChromeStorage);
+    console.log("🔍 Direct access test:", !!window.SidekickModules.Core.ChromeStorage);
 
 })();
