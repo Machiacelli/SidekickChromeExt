@@ -161,7 +161,7 @@
                         flex: 1;
                         overflow: hidden;
                         margin: 0 15px;
-                        margin-left: 25px;
+                        margin-left: 75px;
                         min-height: 18px;
                         z-index: 1;
                     "></div>
@@ -175,7 +175,7 @@
             cogButton.title = 'Advanced Settings';
             cogButton.style.cssText = `
                 position: absolute;
-                right: 20px;
+                right: 17px;
                 top: 50%;
                 transform: translateY(-50%);
                 background: none;

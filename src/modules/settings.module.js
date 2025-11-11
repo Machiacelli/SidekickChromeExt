@@ -64,8 +64,9 @@
             panel.className = 'sidekick-settings-panel';
             panel.style.cssText = `
                 position: fixed;
-                top: 50px;
-                right: 15px;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
                 width: 300px;
                 background: linear-gradient(135deg, #2a2a2a, #1f1f1f);
                 border: 1px solid #444;
