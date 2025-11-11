@@ -135,6 +135,18 @@
             
             this.topBar.innerHTML = `
                 <div style="display: flex; align-items: center; width: 100%;">
+                    <span style="
+                        color: #fff;
+                        font-size: 22px;
+                        font-weight: bold;
+                        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+                        background: linear-gradient(45deg, #8BC34A, #FFC107);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                        margin-right: 15px;
+                        flex-shrink: 0;
+                    ">Sidekick</span>
                     <div id="sidekick-clock-container" style="
                         color: #ccc; 
                         font-size: 12px; 
@@ -147,21 +159,7 @@
                         overflow: hidden;
                         margin: 0 15px;
                         min-height: 18px;
-                        margin-left: 25px;
                     "></div>
-                    <span style="
-                        color: #fff;
-                        font-size: 22px;
-                        font-weight: bold;
-                        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-                        background: linear-gradient(45deg, #8BC34A, #FFC107);
-                        -webkit-background-clip: text;
-                        -webkit-text-fill-color: transparent;
-                        background-clip: text;
-                        margin-left: 8px;
-                        margin-top: 4px;
-                        flex-shrink: 0;
-                    ">Sidekick</span>
                 </div>
             `;
 

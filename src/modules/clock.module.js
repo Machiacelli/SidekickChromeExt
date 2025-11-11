@@ -131,18 +131,7 @@
                 `;
             }
 
-            // Hover effects - subtle for seamless design
-            this.clockElement.addEventListener('mouseenter', () => {
-                this.clockElement.style.opacity = '1';
-                this.clockElement.style.background = 'rgba(255, 255, 255, 0.1)';
-                this.clockElement.style.borderRadius = '3px';
-            });
 
-            this.clockElement.addEventListener('mouseleave', () => {
-                this.clockElement.style.opacity = '0.9';
-                this.clockElement.style.background = 'transparent';
-                this.clockElement.style.borderRadius = '0px';
-            });
 
             // Click to toggle between clock and points
             this.clockElement.addEventListener('click', () => {
