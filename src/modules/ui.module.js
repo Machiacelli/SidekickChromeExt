@@ -145,7 +145,7 @@
                         -webkit-text-fill-color: transparent;
                         background-clip: text;
                         margin-right: 15px;
-                        margin-left: 50px;
+                        margin-left: 40px;
                         flex-shrink: 0;
                     ">Sidekick</span>
                     <div id="sidekick-clock-container" style="
@@ -175,7 +175,7 @@
             cogButton.title = 'Advanced Settings';
             cogButton.style.cssText = `
                 position: absolute;
-                right: 17px;
+                right: 14px;
                 top: 50%;
                 transform: translateY(-50%);
                 background: none;
