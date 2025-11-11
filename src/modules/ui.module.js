@@ -148,29 +148,61 @@
             `;
             
             this.topBar.innerHTML = `
-                <div style="
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
+                <span style="
+                    color: #fff;
+                    font-size: 22px;
+                    font-weight: bold;
+                    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+                    background: linear-gradient(45deg, #8BC34A, #FFC107);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
                     margin-left: 8px;
-                ">
-                    <div style="
-                        font-size: 18px;
-                        font-weight: bold;
-                        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-                        background: linear-gradient(45deg, #00ff41, #00d4ff);
-                        -webkit-background-clip: text;
-                        -webkit-text-fill-color: transparent;
-                        background-clip: text;
-                        font-family: 'Courier New', monospace;
-                        text-transform: uppercase;
-                        letter-spacing: 2px;
-                    ">SIDEKICK</div>
-                </div>
+                    margin-top: 4px;
+                ">Sidekick</span>
             `;
 
             // Add topBar to body instead of sidebar
             document.body.appendChild(this.topBar);
+
+            // Add cog wheel button in top-right corner
+            const cogButton = document.createElement('button');
+            cogButton.id = 'sidekick-cog-button';
+            cogButton.innerHTML = '⚙️';
+            cogButton.title = 'Advanced Settings';
+            cogButton.style.cssText = `
+                position: absolute;
+                right: 25px;
+                top: 3px;
+                background: none;
+                border: none;
+                color: rgba(255,255,255,0.8);
+                cursor: pointer;
+                font-size: 16px;
+                padding: 2px 6px;
+                border-radius: 4px;
+                transition: all 0.2s ease;
+                user-select: none;
+                z-index: 1000;
+            `;
+            
+            cogButton.addEventListener('mouseenter', () => {
+                cogButton.style.background = 'rgba(255,255,255,0.1)';
+                cogButton.style.color = '#fff';
+                cogButton.style.transform = 'scale(1.1)';
+            });
+            
+            cogButton.addEventListener('mouseleave', () => {
+                cogButton.style.background = 'none';
+                cogButton.style.color = 'rgba(255,255,255,0.8)';
+                cogButton.style.transform = 'scale(1)';
+            });
+            
+            cogButton.addEventListener('click', () => {
+                this.showAdvancedSettings();
+            });
+            
+            this.topBar.appendChild(cogButton);
 
             // Create content area (no header needed since logo is in top bar)
             const contentArea = document.createElement('div');
@@ -255,6 +287,15 @@
                     window.SidekickModules.Timer.lazyInit();
                 }
                 
+                // Initialize Link Group module when sidebar opens
+                if (window.SidekickModules?.LinkGroup && !window.SidekickModules.LinkGroup.isInitialized) {
+                    console.log("🔗 Triggering Link Group initialization...");
+                    window.SidekickModules.LinkGroup.init().then(() => {
+                        // Render any existing link groups
+                        window.SidekickModules.LinkGroup.renderAllLinkGroups();
+                    });
+                }
+                
                 // Save state
                 this.saveSidebarState();
             }
@@ -270,6 +311,12 @@
                 this.sidebar.classList.add('hidden');
                 this.sidebarVisible = false;
                 console.log("📕 Sidebar closed");
+                
+                // Don't clear existing link group elements when sidebar closes - they should persist
+                // Comment out the clearing to keep link groups visible
+                // if (window.SidekickModules?.LinkGroup?.clearExistingLinkGroups) {
+                //     window.SidekickModules.LinkGroup.clearExistingLinkGroups();
+                // }
                 
                 // Save state
                 this.saveSidebarState();
@@ -428,6 +475,24 @@
                     ">
                         <span style="font-size: 13px; filter: grayscale(0.2);">📈</span> Stock
                     </button>
+                    <button class="module-option" data-module="linkgroup" style="
+                        background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+                        border: 1px solid rgba(255,255,255,0.06);
+                        color: rgba(255,255,255,0.92);
+                        padding: 10px 12px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        text-align: left;
+                        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                        font-size: 11px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-weight: 500;
+                        letter-spacing: 0.3px;
+                    ">
+                        <span style="font-size: 13px; filter: grayscale(0.2);">🔗</span> Links
+                    </button>
                 </div>
             `;
 
@@ -486,6 +551,9 @@
                 case 'timer':
                     this.createNewTimer();
                     break;
+                case 'linkgroup':
+                    this.createNewLinkGroup();
+                    break;
                 case 'todolist':
                     this.showNotification('Todo List Module', 'Todo list module coming soon!', 'info');
                     break;
@@ -535,6 +603,160 @@
                 console.error('Failed to create notepad:', error);
                 this.showNotification('Notepad Error', 'Failed to create notepad', 'error');
             }
+        },
+
+        // Create a new link group window in the sidebar
+        async createNewLinkGroup() {
+            try {
+                if (!window.SidekickModules?.LinkGroup) {
+                    this.showNotification('Link Group Error', 'Link Group module not loaded', 'error');
+                    return;
+                }
+
+                // Don't re-init if already initialized - just add link group
+                if (!window.SidekickModules.LinkGroup.isInitialized) {
+                    await window.SidekickModules.LinkGroup.init();
+                }
+                
+                // Create link group immediately with default name
+                const linkGroup = window.SidekickModules.LinkGroup.createLinkGroup('Links');
+                this.showNotification('Link Group Created', 'New link group created', 'success');
+            } catch (error) {
+                console.error('Failed to create link group:', error);
+                this.showNotification('Link Group Error', 'Failed to create link group', 'error');
+            }
+        },
+
+        // Show advanced settings panel
+        showAdvancedSettings() {
+            console.log("⚙️ Showing advanced settings panel");
+
+            // Check if Settings module is available and use it
+            if (window.SidekickModules?.Settings?.createSettingsPanel) {
+                console.log("⚙️ Using Settings module for advanced settings");
+                window.SidekickModules.Settings.createSettingsPanel();
+                return;
+            }
+
+            console.log("⚙️ Settings module not available, using fallback panel");
+
+            // Remove existing panel if present
+            const existingPanel = document.getElementById('sidekick-advanced-panel');
+            if (existingPanel) {
+                existingPanel.remove();
+                return; // Toggle behavior
+            }
+
+            // Create advanced settings panel
+            const panel = document.createElement('div');
+            panel.id = 'sidekick-advanced-panel';
+            panel.style.cssText = `
+                position: fixed;
+                top: 50px;
+                right: 15px;
+                width: 250px;
+                background: linear-gradient(135deg, #2a2a2a, #1f1f1f);
+                border: 1px solid #444;
+                border-radius: 8px;
+                padding: 15px;
+                z-index: 10001;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+                backdrop-filter: blur(20px);
+                color: #fff;
+                font-family: Arial, sans-serif;
+            `;
+
+            panel.innerHTML = `
+                <div style="text-align: center; margin-bottom: 15px; font-weight: bold; color: #FFC107;">
+                    ⚙️ Advanced Settings
+                </div>
+                
+                <div class="setting-item" style="margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 14px;">Chain Timer</span>
+                        <button id="chain-timer-toggle" class="toggle-btn" style="
+                            background: #444;
+                            border: 1px solid #666;
+                            color: #fff;
+                            padding: 4px 8px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 12px;
+                        ">Off</button>
+                    </div>
+                    <div style="font-size: 11px; color: #aaa; margin-top: 2px;">
+                        Floating chain countdown timer
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 15px;">
+                    <button id="close-advanced" style="
+                        background: #444;
+                        border: 1px solid #666;
+                        color: #fff;
+                        padding: 6px 12px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 12px;
+                    ">Close</button>
+                </div>
+            `;
+
+            document.body.appendChild(panel);
+
+            // Set up event listeners
+            this.setupAdvancedSettingsListeners(panel);
+
+            // Auto-close after 10 seconds
+            setTimeout(() => {
+                if (document.getElementById('sidekick-advanced-panel') === panel) {
+                    panel.remove();
+                }
+            }, 10000);
+        },
+
+        // Set up advanced settings event listeners
+        setupAdvancedSettingsListeners(panel) {
+            // Chain Timer toggle
+            const chainTimerToggle = panel.querySelector('#chain-timer-toggle');
+            if (chainTimerToggle && window.SidekickModules?.ChainTimer) {
+                const updateChainTimerButton = () => {
+                    const status = window.SidekickModules.ChainTimer.getStatus();
+                    chainTimerToggle.textContent = status.isActive ? 'On' : 'Off';
+                    chainTimerToggle.style.background = status.isActive ? '#4CAF50' : '#444';
+                };
+                
+                updateChainTimerButton();
+                
+                chainTimerToggle.addEventListener('click', async () => {
+                    try {
+                        await window.SidekickModules.ChainTimer.toggle();
+                        updateChainTimerButton();
+                    } catch (error) {
+                        console.error('Failed to toggle chain timer:', error);
+                    }
+                });
+            }
+
+            // Close button
+            const closeBtn = panel.querySelector('#close-advanced');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    panel.remove();
+                });
+            }
+
+            // Click outside to close
+            const closeOnClickOutside = (e) => {
+                if (!panel.contains(e.target) && e.target.id !== 'sidekick-cog-button') {
+                    panel.remove();
+                    document.removeEventListener('click', closeOnClickOutside);
+                }
+            };
+            
+            setTimeout(() => {
+                document.addEventListener('click', closeOnClickOutside);
+            }, 100);
         },
 
         // Load sidebar state from storage

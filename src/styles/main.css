@@ -76,14 +76,15 @@
     transform: translateX(0) !important;
 }
 
-/* Top Bar Logo - Hide/Show with sidebar */
+/* Top Bar Logo - Follow sidebar instead of fading */
 .sidekick-top-bar {
     opacity: 1 !important;
-    transition: opacity 0.3s ease !important;
+    transform: translateX(0) !important;
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
 }
 
 .sidekick-top-bar.hidden {
-    opacity: 0 !important;
+    transform: translateX(-500px) !important;
     pointer-events: none !important;
 }
 
@@ -213,22 +214,15 @@
     background: transparent !important;
 }
 
-/* Scrollbar styling for dark theme */
+/* Scrollbar styling for dark theme - Hide visual scrollbars but keep functionality */
 #sidekick-content::-webkit-scrollbar {
-    width: 8px !important;
+    width: 0px !important;
+    background: transparent !important;
 }
 
-#sidekick-content::-webkit-scrollbar-track {
-    background: #1a1a1a !important;
-}
-
-#sidekick-content::-webkit-scrollbar-thumb {
-    background: #444 !important;
-    border-radius: 4px !important;
-}
-
-#sidekick-content::-webkit-scrollbar-thumb:hover {
-    background: #555 !important;
+#sidekick-content {
+    scrollbar-width: none !important; /* Firefox */
+    -ms-overflow-style: none !important; /* IE and Edge */
 }
 
 /* Sidebar Buttons */
@@ -408,25 +402,20 @@ body.sidekick-sidebar-hidden {
     100% { transform: rotate(360deg); }
 }
 
-/* Scrollbar Styling - Updated for dark theme */
+/* Scrollbar Styling - Updated to hide all scrollbars but keep functionality */
 .sidekick-content::-webkit-scrollbar,
-.sidekick-panel-content::-webkit-scrollbar {
-    width: 8px !important;
+.sidekick-panel-content::-webkit-scrollbar,
+.movable-notepad .notepad-textarea::-webkit-scrollbar,
+.movable-linkgroup .linkgroup-content::-webkit-scrollbar {
+    width: 0px !important;
+    background: transparent !important;
 }
 
-.sidekick-content::-webkit-scrollbar-track,
-.sidekick-panel-content::-webkit-scrollbar-track {
-    background: #1a1a1a !important;
-    border-radius: 4px !important;
-}
-
-.sidekick-content::-webkit-scrollbar-thumb,
-.sidekick-panel-content::-webkit-scrollbar-thumb {
-    background: #444 !important;
-    border-radius: 4px !important;
-}
-
-.sidekick-content::-webkit-scrollbar-thumb:hover,
-.sidekick-panel-content::-webkit-scrollbar-thumb:hover {
-    background: #555 !important;
+/* Hide scrollbars for Firefox */
+.sidekick-content,
+.sidekick-panel-content,
+.movable-notepad .notepad-textarea,
+.movable-linkgroup .linkgroup-content {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
 }

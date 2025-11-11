@@ -88,7 +88,7 @@
             this.clockElement.id = 'sidekick-clock';
             
             if (topBar) {
-                // Position at the far right of the sidebar top bar - moved down 1mm
+                // Position at the far right of the sidebar top bar - moved more to the right
                 this.clockElement.style.cssText = `
                     color: #fff;
                     padding: 3px 8px;
@@ -96,17 +96,17 @@
                     font-size: 13px;
                     cursor: pointer;
                     user-select: none;
-                    transition: all 0.2s ease;
+                    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
                     text-align: center;
                     white-space: nowrap;
                     pointer-events: auto;
                     text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
                     opacity: 0.9;
                     position: absolute;
-                    right: 25px;
+                    right: 50px;
                     top: 3px;
                 `;
-                console.log('✅ Clock positioned at far right of sidebar top bar with 25px inset and 3px down');
+                console.log('✅ Clock positioned at far right of sidebar top bar with 50px inset for cog wheel space');
             } else {
                 // Fallback to fixed positioning if no sidebar found
                 console.warn('⚠️ Could not find sidebar top bar, using fixed positioning');
@@ -168,7 +168,7 @@
             const dateDisplay = document.createElement('div');
             dateDisplay.id = 'sidekick-clock-date';
             dateDisplay.style.cssText = `
-                font-size: 10px;
+                font-size: 11px;
                 opacity: 0.8;
                 line-height: 1.1;
             `;
@@ -212,14 +212,26 @@
                 const cheapestOffer = Math.min(...this.pointsData.map(offer => offer.cost));
                 timeElement.textContent = `$${cheapestOffer.toLocaleString()}`;
                 timeElement.style.color = '#4CAF50';
+                timeElement.style.fontSize = '16px'; // Bigger font for points
                 dateElement.textContent = ''; // Remove "Points" text
                 dateElement.style.color = '#4CAF50';
+                
+                // Adjust clock position when in points mode - move 1mm lower
+                if (this.clockElement) {
+                    this.clockElement.style.top = '6px';
+                }
             } else if (this.showPoints && (!this.pointsData || this.pointsData.length === 0)) {
                 // Show "No Data" when points mode is enabled but no data available
                 timeElement.textContent = 'No Data';
                 timeElement.style.color = '#ff9800';
+                timeElement.style.fontSize = '14px'; // Medium font for no data
                 dateElement.textContent = ''; // Remove "Points" text
                 dateElement.style.color = '#ff9800';
+                
+                // Adjust clock position when in points mode - move 1mm lower
+                if (this.clockElement) {
+                    this.clockElement.style.top = '6px';
+                }
             } else {
                 // Show current UTC time (Torn time)
                 const now = new Date();
@@ -239,8 +251,14 @@
                 
                 timeElement.textContent = timeStr;
                 timeElement.style.color = '#fff';
+                timeElement.style.fontSize = '13px'; // Normal font for clock
                 dateElement.textContent = dateStr;
                 dateElement.style.color = '#aaa';
+                
+                // Reset clock position when in clock mode
+                if (this.clockElement) {
+                    this.clockElement.style.top = '5px';
+                }
             }
         },
 

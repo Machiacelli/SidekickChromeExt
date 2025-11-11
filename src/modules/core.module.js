@@ -48,6 +48,16 @@
                     }
                 }, 300);
             }, duration);
+        },
+
+        // Clear all existing notifications
+        clearAll() {
+            const notifications = document.querySelectorAll('.sidekick-notification');
+            notifications.forEach(notification => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            });
         }
     };
     // === CHROME STORAGE WRAPPER ===

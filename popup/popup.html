@@ -4,6 +4,70 @@
     <meta charset="utf-8">
     <title>Sidekick Settings</title>
     <style>
+        .switch-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255,255,255,0.2);
+            transition: .4s;
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: rgba(76, 175, 80, 0.8);
+            border-color: rgba(76, 175, 80, 1);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .switch-label {
+            flex: 1;
+            margin-right: 15px;
+        }
+        
+        .switch-description {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+        
         body {
             width: 300px;
             min-height: 400px;
@@ -138,6 +202,61 @@
         <div class="setting-group">
             <label for="apiKey">Torn API Key:</label>
             <input type="text" id="apiKey" placeholder="Enter your Torn API key...">
+        </div>
+        
+        <div class="switch-container">
+            <div class="switch-label">
+                <div>Fast Attack</div>
+                <div class="switch-description">Moves Start Fight button over weapon for faster attacks</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="attackButtonMover">
+                <span class="slider"></span>
+            </label>
+        </div>
+        
+        <div class="switch-container">
+            <div class="switch-label">
+                <div>Block Training</div>
+                <div class="switch-description">Blocks gym access to prevent accidental training</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="blockTraining">
+                <span class="slider"></span>
+            </label>
+        </div>
+        
+        <div class="switch-container">
+            <div class="switch-label">
+                <div>Time on Tab</div>
+                <div class="switch-description">Shows remaining time for activities in browser tab</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="timeOnTab">
+                <span class="slider"></span>
+            </label>
+        </div>
+        
+        <div class="switch-container">
+            <div class="switch-label">
+                <div>NPC Attack Timer</div>
+                <div class="switch-description">Shows NPC attack countdowns in news ticker</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="npcAttackTimer">
+                <span class="slider"></span>
+            </label>
+        </div>
+        
+        <div class="switch-container">
+            <div class="switch-label">
+                <div>Random Target</div>
+                <div class="switch-description">Adds random target button to attack pages</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="randomTarget">
+                <span class="slider"></span>
+            </label>
         </div>
         
         <button class="button" id="saveSettings">Save Settings</button>

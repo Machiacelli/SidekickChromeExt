@@ -84,6 +84,51 @@
                                                          background: rgba(255,255,255,0.1); color: #ccc;">
                         Enter your API key and click Save
                     </div>
+                    
+                    <!-- Xanax Viewer Settings -->
+                    <div style="border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0; padding-top: 20px;">
+                        <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px;">💊 Xanax Viewer Settings</h4>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Auto Refresh Limit:</label>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <input type="range" id="sidekick-xanax-autolimit" min="0" max="100" value="0" 
+                                       style="flex: 1; accent-color: #4CAF50;">
+                                <span id="sidekick-xanax-autolimit-display" style="color: #fff; min-width: 30px;">0</span>
+                            </div>
+                            <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
+                                Number of faction members to auto-refresh (closest level to you)
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: flex; align-items: center; gap: 10px; color: #ccc; cursor: pointer;">
+                                <input type="checkbox" id="sidekick-xanax-relative" style="accent-color: #4CAF50;">
+                                <span>Show Relative Values</span>
+                            </label>
+                            <div style="font-size: 12px; color: #aaa; margin-top: 5px; margin-left: 25px;">
+                                Display Xanax usage relative to your own usage
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <button id="sidekick-save-xanax-settings" style="flex: 1; padding: 10px; background: #9C27B0; 
+                                                                             border: none; color: white; border-radius: 5px; 
+                                                                             font-weight: bold; cursor: pointer;">
+                                💾 Save Xanax Settings
+                            </button>
+                            <button id="sidekick-clear-xanax-cache" style="flex: 1; padding: 10px; background: #FF5722; 
+                                                                           border: none; color: white; border-radius: 5px; 
+                                                                           font-weight: bold; cursor: pointer;">
+                                🗑️ Clear Cache
+                            </button>
+                        </div>
+                        
+                        <div id="sidekick-xanax-status" style="text-align: center; padding: 10px; border-radius: 5px; 
+                                                             background: rgba(255,255,255,0.1); color: #ccc; margin-top: 10px;">
+                            Xanax Viewer settings loaded
+                        </div>
+                    </div>
                 </div>
             `;
 
@@ -98,6 +143,14 @@
             const apiInput = panel.querySelector('#sidekick-api-key');
             const statusDiv = panel.querySelector('#sidekick-api-status');
 
+            // Xanax Viewer elements
+            const xanaxAutoLimitSlider = panel.querySelector('#sidekick-xanax-autolimit');
+            const xanaxAutoLimitDisplay = panel.querySelector('#sidekick-xanax-autolimit-display');
+            const xanaxRelativeCheckbox = panel.querySelector('#sidekick-xanax-relative');
+            const saveXanaxBtn = panel.querySelector('#sidekick-save-xanax-settings');
+            const clearCacheBtn = panel.querySelector('#sidekick-clear-xanax-cache');
+            const xanaxStatusDiv = panel.querySelector('#sidekick-xanax-status');
+
             // Load existing API key
             this.loadApiKey().then(apiKey => {
                 if (apiKey) {
@@ -105,6 +158,25 @@
                     statusDiv.textContent = 'API key loaded from storage';
                     statusDiv.style.background = 'rgba(76, 175, 80, 0.3)';
                 }
+            });
+
+            // Load existing Xanax Viewer settings
+            this.loadXanaxViewerSettings().then(settings => {
+                xanaxAutoLimitSlider.value = settings.autoLimit || 0;
+                xanaxAutoLimitDisplay.textContent = settings.autoLimit || 0;
+                xanaxRelativeCheckbox.checked = settings.showRelative || false;
+                
+                // Also update the Xanax Viewer module with loaded settings
+                if (window.SidekickModules?.XanaxViewer) {
+                    window.SidekickModules.XanaxViewer.apiKey = settings.apiKey || '';
+                    window.SidekickModules.XanaxViewer.autoLimit = settings.autoLimit || 0;
+                    window.SidekickModules.XanaxViewer.showRelative = settings.showRelative || false;
+                }
+            });
+
+            // Auto-limit slider update
+            xanaxAutoLimitSlider.addEventListener('input', () => {
+                xanaxAutoLimitDisplay.textContent = xanaxAutoLimitSlider.value;
             });
 
             // Save settings
@@ -124,6 +196,11 @@
                         await window.SidekickModules.Clock.updateApiKey(apiKey);
                     }
                     
+                    // Notify Xanax Viewer module of API key update
+                    if (window.SidekickModules?.XanaxViewer?.setApiKey) {
+                        await window.SidekickModules.XanaxViewer.setApiKey(apiKey);
+                    }
+                    
                     statusDiv.textContent = 'Settings saved successfully!';
                     statusDiv.style.background = 'rgba(76, 175, 80, 0.3)';
                     
@@ -139,6 +216,66 @@
                     console.error('Failed to save API key:', error);
                     statusDiv.textContent = 'Failed to save settings';
                     statusDiv.style.background = 'rgba(244, 67, 54, 0.3)';
+                }
+            });
+
+            // Save Xanax Viewer settings
+            saveXanaxBtn.addEventListener('click', async () => {
+                const settings = {
+                    apiKey: apiInput.value.trim(),
+                    autoLimit: parseInt(xanaxAutoLimitSlider.value),
+                    showRelative: xanaxRelativeCheckbox.checked
+                };
+
+                try {
+                    await window.SidekickModules.Core.ChromeStorage.set('sidekick_xanax_viewer', settings);
+                    
+                    // Update the Xanax Viewer module
+                    if (window.SidekickModules?.XanaxViewer) {
+                        window.SidekickModules.XanaxViewer.apiKey = settings.apiKey;
+                        window.SidekickModules.XanaxViewer.autoLimit = settings.autoLimit;
+                        window.SidekickModules.XanaxViewer.showRelative = settings.showRelative;
+                        await window.SidekickModules.XanaxViewer.saveSettings();
+                    }
+                    
+                    xanaxStatusDiv.textContent = 'Xanax Viewer settings saved successfully!';
+                    xanaxStatusDiv.style.background = 'rgba(156, 39, 176, 0.3)';
+                    
+                    if (window.SidekickModules.Core.NotificationSystem) {
+                        window.SidekickModules.Core.NotificationSystem.show(
+                            'Xanax Viewer Settings',
+                            'Settings saved successfully',
+                            'success',
+                            3000
+                        );
+                    }
+                } catch (error) {
+                    console.error('Failed to save Xanax Viewer settings:', error);
+                    xanaxStatusDiv.textContent = 'Failed to save Xanax Viewer settings';
+                    xanaxStatusDiv.style.background = 'rgba(244, 67, 54, 0.3)';
+                }
+            });
+
+            // Clear Xanax cache
+            clearCacheBtn.addEventListener('click', async () => {
+                try {
+                    await window.SidekickModules.Core.ChromeStorage.set('xanaxviewer_cache', {});
+                    
+                    xanaxStatusDiv.textContent = 'Xanax Viewer cache cleared successfully!';
+                    xanaxStatusDiv.style.background = 'rgba(255, 87, 34, 0.3)';
+                    
+                    if (window.SidekickModules.Core.NotificationSystem) {
+                        window.SidekickModules.Core.NotificationSystem.show(
+                            'Cache Cleared',
+                            'Xanax Viewer cache has been cleared',
+                            'info',
+                            3000
+                        );
+                    }
+                } catch (error) {
+                    console.error('Failed to clear Xanax Viewer cache:', error);
+                    xanaxStatusDiv.textContent = 'Failed to clear cache';
+                    xanaxStatusDiv.style.background = 'rgba(244, 67, 54, 0.3)';
                 }
             });
 
@@ -189,6 +326,25 @@
             } catch (error) {
                 console.error('Failed to load API key:', error);
                 return null;
+            }
+        },
+
+        // Load Xanax Viewer settings from storage
+        async loadXanaxViewerSettings() {
+            try {
+                const settings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_xanax_viewer');
+                return settings || {
+                    apiKey: '',
+                    autoLimit: 0,
+                    showRelative: false
+                };
+            } catch (error) {
+                console.error('Failed to load Xanax Viewer settings:', error);
+                return {
+                    apiKey: '',
+                    autoLimit: 0,
+                    showRelative: false
+                };
             }
         },
 
