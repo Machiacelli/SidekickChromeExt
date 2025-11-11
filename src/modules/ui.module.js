@@ -51,11 +51,20 @@
                 await waitForCore();
                 console.log("✅ Core module ready for UI");
 
+                // Load saved sidebar state
+                await this.loadSidebarState();
+
                 // Create hamburger button
                 this.createHamburgerButton();
                 
                 // Create sidebar
                 this.createSidebar();
+
+                // Apply loaded state
+                this.applySidebarState();
+                
+                // Set up cross-tab state synchronization
+                this.setupStateSync();
 
                 this.isInitialized = true;
                 console.log("✅ UI Module initialized successfully");
@@ -127,9 +136,12 @@
                 position: fixed;
                 top: 4px;
                 left: 45px;
+                right: 10px;
+                width: 480px;
                 z-index: 2147483646;
                 display: flex;
                 align-items: center;
+                justify-content: space-between;
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 pointer-events: none;
                 transition: opacity 0.3s ease;
@@ -228,6 +240,9 @@
                 this.sidebar.classList.remove('hidden');
                 this.sidebarVisible = true;
                 console.log("📖 Sidebar opened");
+                
+                // Save state
+                this.saveSidebarState();
             }
             // Show logo when sidebar opens
             if (this.topBar) {
@@ -241,6 +256,9 @@
                 this.sidebar.classList.add('hidden');
                 this.sidebarVisible = false;
                 console.log("📕 Sidebar closed");
+                
+                // Save state
+                this.saveSidebarState();
             }
             // Hide logo when sidebar closes
             if (this.topBar) {
@@ -502,6 +520,68 @@
             } catch (error) {
                 console.error('Failed to create notepad:', error);
                 this.showNotification('Notepad Error', 'Failed to create notepad', 'error');
+            }
+        },
+
+        // Load sidebar state from storage
+        async loadSidebarState() {
+            try {
+                if (window.SidekickModules?.Core?.ChromeStorage?.get) {
+                    const saved = await window.SidekickModules.Core.ChromeStorage.get('sidekick_sidebar_state');
+                    this.savedState = saved || { visible: false };
+                    console.log("📖 Sidebar state loaded:", this.savedState);
+                }
+            } catch (error) {
+                console.warn("⚠️ Failed to load sidebar state:", error);
+                this.savedState = { visible: false };
+            }
+        },
+
+        // Save sidebar state to storage
+        async saveSidebarState() {
+            try {
+                if (window.SidekickModules?.Core?.ChromeStorage?.set) {
+                    const state = { visible: this.sidebarVisible };
+                    await window.SidekickModules.Core.ChromeStorage.set('sidekick_sidebar_state', state);
+                    
+                    // Broadcast to other tabs
+                    chrome.runtime.sendMessage({
+                        type: 'SIDEBAR_STATE_CHANGED',
+                        state: state
+                    }).catch(() => {
+                        // Silent fail if no other tabs
+                    });
+                }
+            } catch (error) {
+                console.warn("⚠️ Failed to save sidebar state:", error);
+            }
+        },
+
+        // Apply loaded sidebar state
+        applySidebarState() {
+            if (this.savedState && this.savedState.visible) {
+                this.openSidebar();
+            } else {
+                this.closeSidebar();
+            }
+        },
+
+        // Set up cross-tab state synchronization
+        setupStateSync() {
+            // Listen for messages from other tabs
+            if (chrome && chrome.runtime && chrome.runtime.onMessage) {
+                chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+                    if (message.type === 'SIDEBAR_STATE_CHANGED') {
+                        // Update local state to match
+                        if (message.state.visible !== this.sidebarVisible) {
+                            if (message.state.visible) {
+                                this.openSidebar();
+                            } else {
+                                this.closeSidebar();
+                            }
+                        }
+                    }
+                });
             }
         },
 

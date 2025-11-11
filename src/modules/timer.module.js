@@ -52,6 +52,8 @@
                 await this.loadTimers();
                 await this.loadApiKey();
                 this.startApiChecking();
+                // Restore timer displays after loading
+                await this.restoreTimerDisplays();
                 this.isInitialized = true;
                 console.log("✅ Timer Module initialized successfully");
             } catch (error) {
@@ -328,6 +330,31 @@
                         'error'
                     );
                 }
+            }
+        },
+
+        // Restore timer displays after page load
+        async restoreTimerDisplays() {
+            try {
+                console.log("🔄 Restoring timer displays...");
+                
+                // Wait a bit for the UI to be ready
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Restore each timer
+                for (const timer of this.timers) {
+                    if (timer.isRunning) {
+                        // Render the timer display
+                        this.renderTimer(timer);
+                        
+                        // Start the countdown if it's running
+                        this.startTimer(timer.id);
+                    }
+                }
+                
+                console.log("✅ Timer displays restored:", this.timers.length, "timers");
+            } catch (error) {
+                console.error("❌ Failed to restore timer displays:", error);
             }
         },
 
