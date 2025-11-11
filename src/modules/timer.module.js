@@ -1153,6 +1153,15 @@
             // Update display content based on timer type
             const contentArea = element.querySelector('div[style*="flex-direction: column"]');
             if (contentArea) {
+                // Check if this is just a time update vs structure change
+                const needsRebuild = this.checkIfRebuildNeeded(contentArea, timer);
+                
+                if (!needsRebuild) {
+                    // Just update time displays without recreating elements
+                    this.updateTimeDisplaysOnly(contentArea, timer);
+                    return;
+                }
+                
                 // Clear and rebuild content
                 const existingDisplay = contentArea.querySelector('.timer-display, [style*="rgba(255,255,255,0.1)"]');
                 if (existingDisplay) {
@@ -1272,8 +1281,69 @@
             }
         },
 
+        // Helper method to check if timer display needs rebuilding
+        checkIfRebuildNeeded(contentArea, timer) {
+            if (timer.cooldowns && Object.keys(timer.cooldowns).length > 1) {
+                // Check if we have the right cooldown elements
+                const existingCooldowns = contentArea.querySelectorAll('[data-cooldown-type]');
+                const existingTypes = Array.from(existingCooldowns).map(el => el.dataset.cooldownType);
+                const currentTypes = Object.keys(timer.cooldowns);
+                
+                // Need rebuild if different structure
+                return existingTypes.length !== currentTypes.length || 
+                       !existingTypes.every(type => currentTypes.includes(type));
+            } else {
+                // Single timer - check if we have the right display type
+                const hasMultiDisplay = contentArea.querySelector('[data-cooldown-type]');
+                const hasSingleDisplay = contentArea.querySelector('.timer-display');
+                
+                // Need rebuild if we have multi-display but need single, or vice versa
+                return hasMultiDisplay || !hasSingleDisplay;
+            }
+        },
+
+        // Helper method to update only time displays without rebuilding DOM
+        updateTimeDisplaysOnly(contentArea, timer) {
+            if (timer.cooldowns && Object.keys(timer.cooldowns).length > 1) {
+                // Update multi-cooldown times
+                Object.entries(timer.cooldowns).forEach(([type, time]) => {
+                    const cooldownEl = contentArea.querySelector(`[data-cooldown-type="${type}"]`);
+                    if (cooldownEl) {
+                        const timeSpan = cooldownEl.querySelector('[style*="Courier New"]');
+                        if (timeSpan) {
+                            timeSpan.textContent = this.formatTime(time);
+                        }
+                    }
+                });
+            } else {
+                // Update single timer display
+                const display = contentArea.querySelector('.timer-display');
+                if (display) {
+                    const timeText = timer.remainingTime > 0 ? this.formatTime(timer.remainingTime) : '00:00:00';
+                    display.textContent = timeText;
+                }
+            }
+        },
+
         // Remove individual cooldown from timer
         removeCooldown(timerId, cooldownType) {
+            // Debounce to prevent rapid successive calls
+            const debounceKey = `${timerId}-${cooldownType}`;
+            if (this.removeDebounce && this.removeDebounce[debounceKey]) {
+                console.log(`🚫 Debouncing remove request for ${cooldownType} on timer ${timerId}`);
+                return;
+            }
+            
+            if (!this.removeDebounce) this.removeDebounce = {};
+            this.removeDebounce[debounceKey] = true;
+            
+            // Clear debounce after short delay
+            setTimeout(() => {
+                if (this.removeDebounce) {
+                    delete this.removeDebounce[debounceKey];
+                }
+            }, 500);
+            
             console.log(`🗑️ Removing ${cooldownType} cooldown from timer ${timerId}`);
             
             const timer = this.timers.find(t => t.id === timerId);
