@@ -80,28 +80,80 @@
                 existingClock.remove();
             }
 
-            // Create clock element in top-right corner
+            // Find Torn's top navigation bar - try multiple selectors
+            let topNav = null;
+            const navSelectors = [
+                'header.header', // Main header
+                '.header-wrapper', // Header wrapper
+                '#top-page-links-list', // Top links area
+                '.nav-container', // Navigation container
+                'header', // Generic header
+                '[class*="header"]' // Any element with "header" in class
+            ];
+
+            for (const selector of navSelectors) {
+                topNav = document.querySelector(selector);
+                if (topNav) {
+                    console.log(`🔍 Found top navigation using selector: ${selector}`);
+                    break;
+                }
+            }
+
+            // Create clock element 
             this.clockElement = document.createElement('div');
             this.clockElement.id = 'sidekick-clock';
-            this.clockElement.style.cssText = `
-                position: fixed;
-                top: 10px;
-                right: 15px;
-                background: rgba(0, 0, 0, 0.8);
-                color: #fff;
-                padding: 8px 12px;
-                border-radius: 6px;
-                font-family: 'Courier New', monospace;
-                font-size: 14px;
-                z-index: 10000;
-                cursor: pointer;
-                user-select: none;
-                border: 1px solid #444;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-                transition: all 0.3s ease;
-                min-width: 120px;
-                text-align: center;
-            `;
+            
+            if (topNav) {
+                // Position within the top navigation bar
+                this.clockElement.style.cssText = `
+                    position: absolute;
+                    top: 50%;
+                    right: 15px;
+                    transform: translateY(-50%);
+                    background: rgba(0, 0, 0, 0.7);
+                    color: #fff;
+                    padding: 6px 10px;
+                    border-radius: 4px;
+                    font-family: 'Courier New', monospace;
+                    font-size: 13px;
+                    z-index: 1000;
+                    cursor: pointer;
+                    user-select: none;
+                    border: 1px solid #555;
+                    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+                    transition: all 0.2s ease;
+                    min-width: 110px;
+                    text-align: center;
+                    white-space: nowrap;
+                `;
+                
+                // Ensure the parent has relative positioning
+                if (getComputedStyle(topNav).position === 'static') {
+                    topNav.style.position = 'relative';
+                }
+            } else {
+                // Fallback to fixed positioning if no nav found
+                console.warn('⚠️ Could not find top navigation, using fixed positioning');
+                this.clockElement.style.cssText = `
+                    position: fixed;
+                    top: 10px;
+                    right: 15px;
+                    background: rgba(0, 0, 0, 0.8);
+                    color: #fff;
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    font-family: 'Courier New', monospace;
+                    font-size: 14px;
+                    z-index: 10000;
+                    cursor: pointer;
+                    user-select: none;
+                    border: 1px solid #444;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                    transition: all 0.3s ease;
+                    min-width: 120px;
+                    text-align: center;
+                `;
+            }
 
             // Hover effects
             this.clockElement.addEventListener('mouseenter', () => {
@@ -146,10 +198,14 @@
             this.clockElement.appendChild(timeDisplay);
             this.clockElement.appendChild(dateDisplay);
 
-            // Append to body
-            document.body.appendChild(this.clockElement);
-            
-            console.log('✅ Clock element created and added to page');
+            // Append to navigation bar or fallback to body
+            if (topNav) {
+                topNav.appendChild(this.clockElement);
+                console.log('✅ Clock element created and added to navigation bar');
+            } else {
+                document.body.appendChild(this.clockElement);
+                console.log('✅ Clock element created and added to body (fallback)');
+            }
         },
 
         startClock() {
