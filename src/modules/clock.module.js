@@ -88,22 +88,21 @@
             this.clockElement.id = 'sidekick-clock';
             
             if (topBar) {
-                // Position within the sidebar top bar
+                // Position within the sidebar top bar - small and seamless
                 this.clockElement.style.cssText = `
                     color: #fff;
-                    padding: 4px 8px;
-                    border-radius: 4px;
+                    padding: 2px 6px;
                     font-family: 'Courier New', monospace;
-                    font-size: 12px;
+                    font-size: 11px;
                     cursor: pointer;
                     user-select: none;
-                    background: rgba(0, 0, 0, 0.3);
-                    border: 1px solid rgba(255, 255, 255, 0.2);
                     transition: all 0.2s ease;
                     margin-left: auto;
                     text-align: center;
                     white-space: nowrap;
                     pointer-events: auto;
+                    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+                    opacity: 0.9;
                 `;
                 console.log('✅ Clock positioned in sidebar top bar');
             } else {
@@ -130,15 +129,17 @@
                 `;
             }
 
-            // Hover effects
+            // Hover effects - subtle for seamless design
             this.clockElement.addEventListener('mouseenter', () => {
-                this.clockElement.style.background = 'rgba(0, 0, 0, 0.9)';
-                this.clockElement.style.transform = 'scale(1.05)';
+                this.clockElement.style.opacity = '1';
+                this.clockElement.style.background = 'rgba(255, 255, 255, 0.1)';
+                this.clockElement.style.borderRadius = '3px';
             });
 
             this.clockElement.addEventListener('mouseleave', () => {
-                this.clockElement.style.background = 'rgba(0, 0, 0, 0.8)';
-                this.clockElement.style.transform = 'scale(1)';
+                this.clockElement.style.opacity = '0.9';
+                this.clockElement.style.background = 'transparent';
+                this.clockElement.style.borderRadius = '0px';
             });
 
             // Click to toggle between clock and points
@@ -157,17 +158,17 @@
             timeDisplay.id = 'sidekick-clock-time';
             timeDisplay.style.cssText = `
                 font-weight: bold;
-                font-size: 16px;
-                line-height: 1.2;
+                font-size: 11px;
+                line-height: 1.1;
             `;
 
             // Create date/label display
             const dateDisplay = document.createElement('div');
             dateDisplay.id = 'sidekick-clock-date';
             dateDisplay.style.cssText = `
-                font-size: 11px;
+                font-size: 9px;
                 opacity: 0.8;
-                line-height: 1.2;
+                line-height: 1.1;
             `;
 
             this.clockElement.appendChild(timeDisplay);

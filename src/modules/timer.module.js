@@ -1156,8 +1156,8 @@
             // Update display content based on timer type
             const contentArea = element.querySelector('div[style*="flex-direction: column"]');
             if (contentArea) {
-                // Check if this is just a time update vs structure change
-                const needsRebuild = this.checkIfRebuildNeeded(contentArea, timer);
+                // ALWAYS rebuild for now to prevent duplication issues
+                const needsRebuild = true; // this.checkIfRebuildNeeded(contentArea, timer);
                 
                 if (!needsRebuild) {
                     // Just update time displays without recreating elements
@@ -1165,11 +1165,8 @@
                     return;
                 }
                 
-                // Clear and rebuild content
-                const existingDisplay = contentArea.querySelector('.timer-display, [style*="rgba(255,255,255,0.1)"]');
-                if (existingDisplay) {
-                    existingDisplay.remove();
-                }
+                // Clear and rebuild content - CLEAR ALL CHILDREN TO PREVENT DUPLICATES
+                contentArea.innerHTML = '';
                 
                 // Add new content based on timer type
                 if (timer.cooldowns && Object.keys(timer.cooldowns).length > 1) {
@@ -1287,20 +1284,23 @@
         // Helper method to check if timer display needs rebuilding
         checkIfRebuildNeeded(contentArea, timer) {
             if (timer.cooldowns && Object.keys(timer.cooldowns).length > 1) {
-                // Check if we have the right cooldown elements
+                // Check if we have the right cooldown elements for multi-cooldown display
                 const existingCooldowns = contentArea.querySelectorAll('[data-cooldown-type]');
                 const existingTypes = Array.from(existingCooldowns).map(el => el.dataset.cooldownType);
                 const currentTypes = Object.keys(timer.cooldowns);
                 
-                // Need rebuild if different structure
-                return existingTypes.length !== currentTypes.length || 
-                       !existingTypes.every(type => currentTypes.includes(type));
+                // Need rebuild if different structure (different types or count)
+                if (existingTypes.length !== currentTypes.length) return true;
+                if (!existingTypes.every(type => currentTypes.includes(type))) return true;
+                
+                // Structure matches, no rebuild needed
+                return false;
             } else {
                 // Single timer - check if we have the right display type
                 const hasMultiDisplay = contentArea.querySelector('[data-cooldown-type]');
                 const hasSingleDisplay = contentArea.querySelector('.timer-display');
                 
-                // Need rebuild if we have multi-display but need single, or vice versa
+                // Need rebuild if we have multi-display but need single, or no single display
                 return hasMultiDisplay || !hasSingleDisplay;
             }
         },
