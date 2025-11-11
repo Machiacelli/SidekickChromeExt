@@ -621,8 +621,15 @@
                 return;
             }
             
+            console.log(`🔍 Content area found:`, contentArea);
+            console.log(`🔍 Content area parent:`, contentArea.parentNode);
+            console.log(`🔍 Content area children count:`, contentArea.children.length);
+            console.log(`🔍 Content area innerHTML length:`, contentArea.innerHTML.length);
+            
             const contentWidth = contentArea.clientWidth || 480;
             const contentHeight = contentArea.clientHeight || 500;
+            
+            console.log(`🔍 Content dimensions: ${contentWidth}x${contentHeight}`);
             
             const width = Math.min(Math.max(timer.width || 280, 140), contentWidth - 20);
             const height = Math.min(Math.max(timer.height || 180, 80), contentHeight - 40);
@@ -830,8 +837,25 @@
             `;
 
             // Append to content area within sidepanel
-            contentArea.appendChild(timerElement);
+            console.log(`🔍 About to append timer element:`, timerElement);
+            console.log(`🔍 Timer element ID:`, timerElement.id);
+            console.log(`🔍 Timer element className:`, timerElement.className);
+            
+            try {
+                contentArea.appendChild(timerElement);
+                console.log(`🔍 appendChild() completed without error`);
+            } catch (error) {
+                console.error(`🚨 appendChild() failed with error:`, error);
+                return;
+            }
+            
             console.log(`🔍 Timer element appended to sidepanel content area with ID: sidekick-timer-${timer.id}`);
+            
+            // Immediate verification
+            const immediateCheck = document.getElementById(`sidekick-timer-${timer.id}`);
+            console.log(`🔍 Immediate verification - Element exists:`, !!immediateCheck);
+            console.log(`🔍 Content area children after append:`, contentArea.children.length);
+            console.log(`🔍 All children in content area:`, Array.from(contentArea.children).map(c => c.id || c.className));
             
             // Watch for element removal to debug what's removing it
             const observer = new MutationObserver(function(mutations) {
