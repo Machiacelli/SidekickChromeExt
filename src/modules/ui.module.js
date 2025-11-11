@@ -145,6 +145,7 @@
                         -webkit-text-fill-color: transparent;
                         background-clip: text;
                         margin-right: 15px;
+                        margin-left: 50px;
                         flex-shrink: 0;
                     ">Sidekick</span>
                     <div id="sidekick-clock-container" style="
@@ -153,12 +154,16 @@
                         margin-right: 15px;
                         min-width: 80px;
                         flex-shrink: 0;
+                        z-index: 5;
+                        position: relative;
                     "></div>
                     <div id="sidekick-event-ticker-placeholder" style="
                         flex: 1;
                         overflow: hidden;
                         margin: 0 15px;
+                        margin-left: 25px;
                         min-height: 18px;
+                        z-index: 1;
                     "></div>
                 </div>
             `;
@@ -170,7 +175,7 @@
             cogButton.title = 'Advanced Settings';
             cogButton.style.cssText = `
                 position: absolute;
-                right: 10px;
+                right: 20px;
                 top: 50%;
                 transform: translateY(-50%);
                 background: none;
