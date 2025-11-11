@@ -158,12 +158,13 @@
                         position: relative;
                     "></div>
                     <div id="sidekick-event-ticker-placeholder" style="
-                        flex: 1;
+                        flex: 0 1 auto;
                         overflow: hidden;
-                        margin: 0 15px;
                         margin-left: 10px;
+                        margin-right: 60px;
                         min-height: 18px;
                         z-index: 1;
+                        max-width: 200px;
                     "></div>
                 </div>
             `;
@@ -175,7 +176,7 @@
             cogButton.title = 'Advanced Settings';
             cogButton.style.cssText = `
                 position: absolute;
-                right: 8px;
+                right: 25px;
                 top: 50%;
                 transform: translateY(-50%);
                 background: none;
