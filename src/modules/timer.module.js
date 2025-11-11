@@ -71,24 +71,6 @@
                     this.saveTimers();
                 }
             }, 10000);
-            
-            // Add manual test function to window for debugging
-            window.debugTimerSave = () => {
-                console.log("🔍 Current timers in memory:", this.timers.length);
-                console.log("🔍 Timers:", this.timers);
-                this.saveTimers();
-                const saved = localStorage.getItem('sidekick_timer_state');
-                console.log("🔍 Saved to localStorage:", saved);
-            };
-            
-            window.debugTimerLoad = () => {
-                const saved = localStorage.getItem('sidekick_timer_state');
-                console.log("🔍 Raw localStorage data:", saved);
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    console.log("🔍 Parsed data:", parsed);
-                }
-            };
         },
 
         // Initialize the timer module
@@ -111,6 +93,25 @@
                 // DON'T render timers here - only render when user opens sidebar
                 // This prevents duplication on page load
                 console.log("⏰ Timer Module initialized with", this.timers.length, "saved timers (not rendered yet)");
+                
+                // Add manual test functions to window for debugging (always available)
+                window.debugTimerSave = () => {
+                    console.log("🔍 Current timers in memory:", this.timers.length);
+                    console.log("🔍 Timers:", this.timers);
+                    this.saveTimers();
+                    const saved = localStorage.getItem('sidekick_timer_state');
+                    console.log("🔍 Saved to localStorage:", saved);
+                };
+                
+                window.debugTimerLoad = () => {
+                    const saved = localStorage.getItem('sidekick_timer_state');
+                    console.log("🔍 Raw localStorage data:", saved);
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        console.log("🔍 Parsed data:", parsed);
+                        console.log("🔍 Number of timers in saved data:", parsed.timers?.length || 0);
+                    }
+                };
                 
                 this.isInitialized = true;
                 console.log("✅ Timer Module initialized successfully");

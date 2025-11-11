@@ -88,7 +88,7 @@
             this.clockElement.id = 'sidekick-clock';
             
             if (topBar) {
-                // Position at the far right of the sidebar top bar - more inset to keep seconds inside
+                // Position at the far right of the sidebar top bar - moved down 1mm
                 this.clockElement.style.cssText = `
                     color: #fff;
                     padding: 3px 8px;
@@ -104,8 +104,9 @@
                     opacity: 0.9;
                     position: absolute;
                     right: 25px;
+                    top: 3px;
                 `;
-                console.log('✅ Clock positioned at far right of sidebar top bar with 25px inset');
+                console.log('✅ Clock positioned at far right of sidebar top bar with 25px inset and 3px down');
             } else {
                 // Fallback to fixed positioning if no sidebar found
                 console.warn('⚠️ Could not find sidebar top bar, using fixed positioning');
@@ -211,13 +212,13 @@
                 const cheapestOffer = Math.min(...this.pointsData.map(offer => offer.cost));
                 timeElement.textContent = `$${cheapestOffer.toLocaleString()}`;
                 timeElement.style.color = '#4CAF50';
-                dateElement.textContent = 'Points';
+                dateElement.textContent = ''; // Remove "Points" text
                 dateElement.style.color = '#4CAF50';
             } else if (this.showPoints && (!this.pointsData || this.pointsData.length === 0)) {
                 // Show "No Data" when points mode is enabled but no data available
                 timeElement.textContent = 'No Data';
                 timeElement.style.color = '#ff9800';
-                dateElement.textContent = 'Points';
+                dateElement.textContent = ''; // Remove "Points" text
                 dateElement.style.color = '#ff9800';
             } else {
                 // Show current UTC time (Torn time)

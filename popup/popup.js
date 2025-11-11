@@ -8,10 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Get DOM elements
     const apiKeyInput = document.getElementById('apiKey');
-    const autoStartCheckbox = document.getElementById('autoStart');
-    const notificationsCheckbox = document.getElementById('notifications');
     const saveButton = document.getElementById('saveSettings');
-    const openTornButton = document.getElementById('openTorn');
     const clearDataButton = document.getElementById('clearData');
     const statusDiv = document.getElementById('status');
     
@@ -20,45 +17,21 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Event listeners
     saveButton.addEventListener('click', saveSettings);
-    openTornButton.addEventListener('click', openTorn);
     clearDataButton.addEventListener('click', clearData);
-    
-    // Link handlers
-    document.getElementById('reportBug').addEventListener('click', (e) => {
-        e.preventDefault();
-        chrome.tabs.create({ url: 'https://github.com/YOUR_USERNAME/Sidekick/issues' });
-    });
-    
-    document.getElementById('viewSource').addEventListener('click', (e) => {
-        e.preventDefault();
-        chrome.tabs.create({ url: 'https://github.com/YOUR_USERNAME/Sidekick' });
-    });
-    
-    document.getElementById('rateExtension').addEventListener('click', (e) => {
-        e.preventDefault();
-        chrome.tabs.create({ url: 'https://chrome.google.com/webstore/detail/YOUR_EXTENSION_ID' });
-    });
     
     function loadSettings() {
         chrome.storage.local.get([
-            'sidekick_api_key',
-            'sidekick_auto_start',
-            'sidekick_notifications'
+            'sidekick_api_key'
         ], function(result) {
             if (result.sidekick_api_key) {
                 apiKeyInput.value = result.sidekick_api_key;
             }
-            
-            autoStartCheckbox.checked = result.sidekick_auto_start !== false; // Default true
-            notificationsCheckbox.checked = result.sidekick_notifications !== false; // Default true
         });
     }
     
     function saveSettings() {
         const settings = {
-            sidekick_api_key: apiKeyInput.value.trim(),
-            sidekick_auto_start: autoStartCheckbox.checked,
-            sidekick_notifications: notificationsCheckbox.checked
+            sidekick_api_key: apiKeyInput.value.trim()
         };
         
         chrome.storage.local.set(settings, function() {
@@ -78,20 +51,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    function openTorn() {
-        chrome.tabs.query({ url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function(tabs) {
-            if (tabs.length > 0) {
-                // Switch to existing Torn tab
-                chrome.tabs.update(tabs[0].id, { active: true });
-                chrome.windows.update(tabs[0].windowId, { focused: true });
-            } else {
-                // Create new Torn tab
-                chrome.tabs.create({ url: 'https://www.torn.com/' });
-            }
-            window.close();
-        });
-    }
-    
     function clearData() {
         if (confirm('Are you sure you want to clear all Sidekick data? This cannot be undone.')) {
             chrome.storage.local.clear(function() {
@@ -100,8 +59,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Reset form
                     apiKeyInput.value = '';
-                    autoStartCheckbox.checked = true;
-                    notificationsCheckbox.checked = true;
                     
                     // Send message to all Torn.com tabs to refresh
                     chrome.tabs.query({ url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function(tabs) {
@@ -127,12 +84,4 @@ document.addEventListener('DOMContentLoaded', function() {
             statusDiv.style.display = 'none';
         }, 3000);
     }
-    
-    // Check if we're on a Torn.com page
-    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-        const currentTab = tabs[0];
-        if (currentTab && (currentTab.url.includes('torn.com'))) {
-            openTornButton.textContent = 'Switch to Torn.com';
-        }
-    });
 });
