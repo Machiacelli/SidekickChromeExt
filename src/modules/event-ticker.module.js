@@ -462,7 +462,7 @@
             
             const checkTicker = setInterval(() => {
                 attempts++;
-                const placeholder = document.getElementById('sidekick-event-ticker-placeholder');
+                const placeholder = document.getElementById('sidekick-ticker-placeholder');
                 
                 if (placeholder) {
                     console.log('✅ Event Ticker: Found placeholder, creating ticker...');
@@ -482,7 +482,7 @@
                 return;
             }
 
-            const placeholder = document.getElementById('sidekick-event-ticker-placeholder');
+            const placeholder = document.getElementById('sidekick-ticker-placeholder');
             if (!placeholder) {
                 console.warn('⚠️ Event Ticker: Placeholder not found, retrying in 200ms...');
                 setTimeout(() => this.createTicker(), 200);

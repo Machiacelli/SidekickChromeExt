@@ -148,6 +148,17 @@
                         margin-left: 40px;
                         flex-shrink: 0;
                     ">Sidekick</span>
+                    <div id="sidekick-ticker-placeholder" style="
+                        flex: 1;
+                        overflow: hidden;
+                        margin-left: 10px;
+                        margin-right: 15px;
+                        min-height: 18px;
+                        z-index: 1;
+                        display: flex;
+                        align-items: center;
+                        justify-content: flex-start;
+                    "></div>
                     <div id="sidekick-clock-container" style="
                         color: #ccc; 
                         font-size: 12px; 
@@ -156,17 +167,6 @@
                         flex-shrink: 0;
                         z-index: 5;
                         position: relative;
-                    "></div>
-                    <div id="sidekick-event-ticker-placeholder" style="
-                        flex: 1;
-                        overflow: hidden;
-                        margin-left: 10px;
-                        margin-right: 40px;
-                        min-height: 18px;
-                        z-index: 1;
-                        display: flex;
-                        align-items: center;
-                        justify-content: flex-start;
                     "></div>
                 </div>
             `;

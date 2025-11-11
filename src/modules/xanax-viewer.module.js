@@ -60,6 +60,8 @@
         async loadSettings() {
             try {
                 const saved = await window.SidekickModules.Core.ChromeStorage.get('sidekick_xanax_viewer');
+                
+                // First try to load from xanax-specific settings
                 if (saved) {
                     this.apiKey = saved.apiKey || '';
                     this.autoLimit = saved.autoLimit || 0;
@@ -70,6 +72,16 @@
                     this.autoLimit = 0;
                     this.showRelative = false;
                 }
+
+                // If no API key in xanax settings, try to get from global settings
+                if (!this.apiKey) {
+                    const globalApiKey = await window.SidekickModules.Core.ChromeStorage.get('sidekick_api_key');
+                    if (globalApiKey) {
+                        this.apiKey = globalApiKey;
+                        console.log('💊 Xanax Viewer: Using global API key');
+                    }
+                }
+                
                 console.log('💊 Xanax Viewer settings loaded:', { 
                     hasApiKey: !!this.apiKey, 
                     autoLimit: this.autoLimit, 
