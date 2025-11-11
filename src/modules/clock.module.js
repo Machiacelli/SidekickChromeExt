@@ -91,9 +91,9 @@
                 // Position at the far right of the sidebar top bar - more inset to keep seconds inside
                 this.clockElement.style.cssText = `
                     color: #fff;
-                    padding: 2px 6px;
+                    padding: 3px 8px;
                     font-family: 'Courier New', monospace;
-                    font-size: 11px;
+                    font-size: 13px;
                     cursor: pointer;
                     user-select: none;
                     transition: all 0.2s ease;
@@ -159,7 +159,7 @@
             timeDisplay.id = 'sidekick-clock-time';
             timeDisplay.style.cssText = `
                 font-weight: bold;
-                font-size: 11px;
+                font-size: 13px;
                 line-height: 1.1;
             `;
 
@@ -167,7 +167,7 @@
             const dateDisplay = document.createElement('div');
             dateDisplay.id = 'sidekick-clock-date';
             dateDisplay.style.cssText = `
-                font-size: 9px;
+                font-size: 10px;
                 opacity: 0.8;
                 line-height: 1.1;
             `;

@@ -530,72 +530,43 @@
             }
         },
 
-        // Save timers to storage
+        // Save timers to storage - SIMPLIFIED APPROACH
         async saveTimers() {
             try {
-                console.log("💾 saveTimers - Starting save...");
-                console.log("💾 Number of timers to save:", this.timers.length);
+                console.log("💾 saveTimers - Starting save with", this.timers.length, "timers");
                 
                 // Use the same approach as original script - save all in one state object
                 const state = {
                     timers: this.timers.map(timer => ({
                         ...timer,
-                        // Don't save DOM references
+                        // Don't save DOM references or functions
                         element: null
                     })),
                     lastSaved: Date.now()
                 };
                 
-                let saved = false;
+                // CRITICAL: Use synchronous localStorage as primary storage (like original script)
+                try {
+                    localStorage.setItem('sidekick_timer_state', JSON.stringify(state));
+                    console.log("✅ localStorage save succeeded with", state.timers.length, "timers");
+                } catch (localError) {
+                    console.error("❌ localStorage save failed:", localError);
+                }
                 
-                // Method 1: Try Chrome storage wrapper (now handles extension context internally)
+                // Also save to Chrome storage as backup
                 try {
                     if (window.SidekickModules?.Core?.ChromeStorage?.set) {
-                        console.log("⏰ Method 1: Saving via ChromeStorage wrapper");
                         await window.SidekickModules.Core.ChromeStorage.set('sidekick_timer_state', state);
-                        saved = true;
-                        console.log("✅ ChromeStorage wrapper save succeeded");
+                        console.log("✅ Chrome storage backup succeeded");
                     }
-                } catch (error) {
-                    console.warn("⚠️ ChromeStorage wrapper save failed:", error.message);
+                } catch (chromeError) {
+                    console.warn("⚠️ Chrome storage backup failed:", chromeError);
                 }
                 
-                // Method 2: Fallback to localStorage if wrapper failed
-                if (!saved) {
-                    try {
-                        console.log("⏰ Method 2: Saving via localStorage fallback");
-                        localStorage.setItem('sidekick_timer_state', JSON.stringify(state));
-                        saved = true;
-                        console.log("✅ localStorage fallback save succeeded");
-                    } catch (error) {
-                        console.warn("⚠️ localStorage fallback save failed:", error);
-                        throw error;
-                    }
-                }
-                
-                console.log('⏰ Timer state saved successfully with', this.timers.length, 'timers');
-                
-                // Verify save by loading immediately
-                if (window.SidekickModules?.Core?.ChromeStorage?.get) {
-                    try {
-                        const verify = await window.SidekickModules.Core.ChromeStorage.get('sidekick_timer_state');
-                        console.log('💾 Verification load shows:', verify?.timers?.length || 0, 'timers saved');
-                    } catch (verifyError) {
-                        console.warn('⚠️ Could not verify save:', verifyError);
-                    }
-                }
+                console.log('⏰ Timer state saved successfully');
                 
             } catch (error) {
-                console.error('Failed to save timers:', error);
-                
-                // Show user-friendly error
-                if (window.SidekickModules?.Core?.NotificationSystem) {
-                    window.SidekickModules.Core.NotificationSystem.show(
-                        'Save Error', 
-                        'Failed to save timer changes: ' + error.message, 
-                        'error'
-                    );
-                }
+                console.error('❌ Critical save failure:', error);
             }
         },
 
