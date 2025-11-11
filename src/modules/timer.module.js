@@ -90,9 +90,12 @@
                 await this.loadApiKey();
                 this.setupNavigationHandler();
                 
-                // DON'T render timers here - only render when user opens sidebar
-                // This prevents duplication on page load
-                console.log("⏰ Timer Module initialized with", this.timers.length, "saved timers (not rendered yet)");
+                // Restore timer panels after a short delay to ensure page is ready
+                setTimeout(() => {
+                    this.restoreTimerPanels();
+                }, 1000);
+                
+                console.log("⏰ Timer Module initialized with", this.timers.length, "saved timers");
                 
                 // Add manual test functions to window for debugging (always available)
                 window.debugTimerSave = () => {
@@ -638,6 +641,33 @@
                 console.error('❌ CRITICAL SAVE FAILURE:', error);
                 throw error; // Make failures visible
             }
+        },
+
+        // Restore timer panels after page refresh
+        restoreTimerPanels() {
+            console.log("🔄 Restoring", this.timers.length, "timer panels after page refresh...");
+            
+            if (this.timers.length === 0) {
+                console.log("⏰ No timers to restore");
+                return;
+            }
+            
+            // Create panels for all saved timers
+            this.timers.forEach(timer => {
+                try {
+                    console.log("🔄 Restoring timer:", timer.name, "at position", timer.x, timer.y);
+                    this.createTimerPanel(timer);
+                    
+                    // If the timer was running, restart it
+                    if (timer.isRunning && timer.remainingTime > 0) {
+                        this.startTimer(timer.id);
+                    }
+                } catch (error) {
+                    console.error("❌ Failed to restore timer:", timer.name, error);
+                }
+            });
+            
+            console.log("✅ Timer panels restoration completed");
         },
 
         // Create a new timer window in the sidebar

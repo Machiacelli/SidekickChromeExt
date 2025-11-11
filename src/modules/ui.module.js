@@ -151,7 +151,7 @@
                     <div id="sidekick-ticker-placeholder" style="
                         flex: 1;
                         overflow: hidden;
-                        margin-left: 5px;
+                        margin-left: 2px;
                         margin-right: 15px;
                         min-height: 18px;
                         z-index: 1;
