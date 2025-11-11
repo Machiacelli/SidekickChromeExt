@@ -88,7 +88,7 @@
             this.clockElement.id = 'sidekick-clock';
             
             if (topBar) {
-                // Position at the far right of the sidebar top bar - slightly inset
+                // Position at the far right of the sidebar top bar - more inset to keep seconds inside
                 this.clockElement.style.cssText = `
                     color: #fff;
                     padding: 2px 6px;
@@ -103,9 +103,9 @@
                     text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
                     opacity: 0.9;
                     position: absolute;
-                    right: 8px;
+                    right: 15px;
                 `;
-                console.log('✅ Clock positioned at far right of sidebar top bar with inset');
+                console.log('✅ Clock positioned at far right of sidebar top bar with 15px inset');
             } else {
                 // Fallback to fixed positioning if no sidebar found
                 console.warn('⚠️ Could not find sidebar top bar, using fixed positioning');

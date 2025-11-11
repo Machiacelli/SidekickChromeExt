@@ -38,6 +38,21 @@
         apiKey: null,
         apiCheckInterval: null,
 
+        // Add timer persistence safeguard during navigation
+        setupNavigationHandler() {
+            // Save timers before page unload
+            window.addEventListener('beforeunload', () => {
+                this.saveTimers();
+            });
+            
+            // Also save on visibility change (tab switching)
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden') {
+                    this.saveTimers();
+                }
+            });
+        },
+
         // Initialize the timer module
         async init() {
             if (this.isInitialized) {
@@ -51,6 +66,7 @@
                 await waitForCore();
                 await this.loadTimers();
                 await this.loadApiKey();
+                this.setupNavigationHandler();
                 this.startApiChecking();
                 // Restore timer displays after loading
                 await this.restoreTimerDisplays();
@@ -90,6 +106,36 @@
         startApiChecking() {
             // Automatic API checking has been disabled per user request
             // Cooldowns will only be checked when manually requested via dropdown
+        },
+
+        // Fetch cooldown data from API (for restoring displays)
+        async fetchCooldownData() {
+            if (!this.apiKey) {
+                console.log('⚠️ No API key available for cooldown data fetch');
+                return;
+            }
+
+            try {
+                console.log('🔄 Fetching cooldown data for restore...');
+                const response = await fetch(`https://api.torn.com/user/?selections=cooldowns&key=${this.apiKey}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    console.warn("⚠️ API Error during fetch:", data.error.error);
+                    return;
+                }
+
+                if (data.cooldowns) {
+                    this.cooldownData = data.cooldowns;
+                    console.log('✅ Cooldown data refreshed:', Object.keys(this.cooldownData).length, 'cooldowns');
+                } else {
+                    this.cooldownData = {};
+                    console.log('📭 No active cooldowns found');
+                }
+            } catch (error) {
+                console.warn("⚠️ Failed to fetch cooldown data:", error);
+                this.cooldownData = {};
+            }
         },
 
         // Check Torn API for cooldowns
@@ -337,6 +383,11 @@
         async restoreTimerDisplays() {
             try {
                 console.log("🔄 Restoring timer displays...");
+                
+                // Clear any existing timer elements first to prevent duplication
+                const existingTimers = document.querySelectorAll('[id^="sidekick-timer-"]');
+                console.log(`🔄 Clearing ${existingTimers.length} existing timer elements`);
+                existingTimers.forEach(element => element.remove());
                 
                 // Wait a bit for the UI to be ready
                 await new Promise(resolve => setTimeout(resolve, 100));
@@ -650,11 +701,11 @@
         renderTimer(timer) {
             console.log('🔍 renderTimer - Creating standalone timer window for timer:', timer.id);
             
-            // Check if timer already exists and is properly rendered
+            // ALWAYS remove any existing element first to prevent duplication
             const existingElement = document.getElementById(`sidekick-timer-${timer.id}`);
             if (existingElement) {
-                console.log('🔍 Timer element already exists, skipping render for:', timer.id);
-                return; // Don't re-render existing timers
+                console.log('🔍 Removing existing timer element before re-rendering:', timer.id);
+                existingElement.remove();
             }
 
             // For new timers that aren't API timers, show cooldown selection
