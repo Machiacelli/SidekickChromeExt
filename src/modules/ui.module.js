@@ -148,17 +148,25 @@
             `;
             
             this.topBar.innerHTML = `
-                <span style="
-                    color: #fff;
-                    font-size: 18px;
-                    font-weight: bold;
-                    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-                    background: linear-gradient(45deg, #8BC34A, #FFC107);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    background-clip: text;
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
                     margin-left: 8px;
-                ">🎮 Sidekick</span>
+                ">
+                    <div style="
+                        font-size: 18px;
+                        font-weight: bold;
+                        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+                        background: linear-gradient(45deg, #00ff41, #00d4ff);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                        font-family: 'Courier New', monospace;
+                        text-transform: uppercase;
+                        letter-spacing: 2px;
+                    ">SIDEKICK</div>
+                </div>
             `;
 
             // Add topBar to body instead of sidebar

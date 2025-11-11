@@ -559,43 +559,72 @@
             }
         },
 
-        // Save timers to storage - SIMPLIFIED APPROACH
+        // Save timers to storage - BULLETPROOF APPROACH
         async saveTimers() {
             try {
-                console.log("💾 saveTimers - Starting save with", this.timers.length, "timers");
+                console.log("💾 BULLETPROOF SAVE - Starting with", this.timers.length, "timers");
                 
-                // Use the same approach as original script - save all in one state object
-                const state = {
+                // Create clean state object (no DOM references, no functions)
+                const cleanState = {
                     timers: this.timers.map(timer => ({
-                        ...timer,
-                        // Don't save DOM references or functions
-                        element: null
+                        id: timer.id,
+                        name: timer.name,
+                        duration: timer.duration,
+                        remainingTime: timer.remainingTime,
+                        isRunning: timer.isRunning,
+                        type: timer.type,
+                        color: timer.color,
+                        x: timer.x,
+                        y: timer.y,
+                        width: timer.width,
+                        height: timer.height,
+                        pinned: timer.pinned,
+                        created: timer.created,
+                        modified: timer.modified,
+                        isApiTimer: timer.isApiTimer,
+                        cooldownType: timer.cooldownType,
+                        cooldowns: timer.cooldowns
                     })),
-                    lastSaved: Date.now()
+                    lastSaved: Date.now(),
+                    version: '1.0'
                 };
                 
-                // CRITICAL: Use synchronous localStorage as primary storage (like original script)
-                try {
-                    localStorage.setItem('sidekick_timer_state', JSON.stringify(state));
-                    console.log("✅ localStorage save succeeded with", state.timers.length, "timers");
-                } catch (localError) {
-                    console.error("❌ localStorage save failed:", localError);
-                }
+                const stateString = JSON.stringify(cleanState);
+                console.log("💾 State string length:", stateString.length);
+                console.log("💾 State preview:", stateString.substring(0, 200));
                 
-                // Also save to Chrome storage as backup
+                // TRIPLE SAVE: localStorage (primary), Chrome storage (backup), sessionStorage (emergency)
+                
+                // Method 1: localStorage (synchronous, most reliable)
+                localStorage.setItem('sidekick_timer_state', stateString);
+                console.log("✅ localStorage save completed");
+                
+                // Method 2: sessionStorage (backup)
+                sessionStorage.setItem('sidekick_timer_state', stateString);
+                console.log("✅ sessionStorage save completed");
+                
+                // Method 3: Chrome storage (async backup)
                 try {
                     if (window.SidekickModules?.Core?.ChromeStorage?.set) {
-                        await window.SidekickModules.Core.ChromeStorage.set('sidekick_timer_state', state);
-                        console.log("✅ Chrome storage backup succeeded");
+                        await window.SidekickModules.Core.ChromeStorage.set('sidekick_timer_state', cleanState);
+                        console.log("✅ Chrome storage save completed");
                     }
                 } catch (chromeError) {
-                    console.warn("⚠️ Chrome storage backup failed:", chromeError);
+                    console.warn("⚠️ Chrome storage failed:", chromeError);
                 }
                 
-                console.log('⏰ Timer state saved successfully');
+                // Immediate verification
+                const verification = localStorage.getItem('sidekick_timer_state');
+                if (verification) {
+                    const parsed = JSON.parse(verification);
+                    console.log("✅ SAVE VERIFIED - timers in storage:", parsed.timers.length);
+                } else {
+                    console.error("❌ SAVE FAILED - no data in localStorage");
+                }
                 
             } catch (error) {
-                console.error('❌ Critical save failure:', error);
+                console.error('❌ CRITICAL SAVE FAILURE:', error);
+                throw error; // Make failures visible
             }
         },
 
