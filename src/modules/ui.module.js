@@ -148,18 +148,32 @@
             `;
             
             this.topBar.innerHTML = `
-                <span style="
-                    color: #fff;
-                    font-size: 22px;
-                    font-weight: bold;
-                    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-                    background: linear-gradient(45deg, #8BC34A, #FFC107);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    background-clip: text;
-                    margin-left: 8px;
-                    margin-top: 4px;
-                ">Sidekick</span>
+                <div style="display: flex; align-items: center;">
+                    <div id="sidekick-clock-container" style="
+                        color: #ccc; 
+                        font-size: 12px; 
+                        margin-right: 10px;
+                        min-width: 80px;
+                    "></div>
+                    <div id="sidekick-event-ticker-placeholder" style="
+                        flex: 1;
+                        overflow: hidden;
+                        margin: 0 10px;
+                        min-height: 18px;
+                    "></div>
+                    <span style="
+                        color: #fff;
+                        font-size: 22px;
+                        font-weight: bold;
+                        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+                        background: linear-gradient(45deg, #8BC34A, #FFC107);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                        margin-left: 8px;
+                        margin-top: 4px;
+                    ">Sidekick</span>
+                </div>
             `;
 
             // Add topBar to body instead of sidebar
@@ -199,6 +213,7 @@
             });
             
             cogButton.addEventListener('click', () => {
+                console.log("🔧 Cogwheel button clicked!");
                 this.showAdvancedSettings();
             });
             
@@ -630,6 +645,8 @@
         // Show advanced settings panel
         showAdvancedSettings() {
             console.log("⚙️ Showing advanced settings panel");
+            console.log("⚙️ Available modules:", Object.keys(window.SidekickModules || {}));
+            console.log("⚙️ Settings module check:", !!window.SidekickModules?.Settings?.createSettingsPanel);
 
             // Check if Settings module is available and use it
             if (window.SidekickModules?.Settings?.createSettingsPanel) {

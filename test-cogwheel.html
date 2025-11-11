@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Cogwheel Settings Panel</title>
+</head>
+<body>
+    <h1>Cogwheel Settings Test</h1>
+    <div id="test-output"></div>
+    
+    <script>
+        // Simulate the extension environment
+        window.SidekickModules = {
+            Core: {
+                ChromeStorage: {
+                    get: async (key) => { return {}; },
+                    set: async (key, value) => { console.log('Storage set:', key, value); }
+                }
+            },
+            Settings: {
+                async init() {
+                    console.log('Settings module initialized');
+                },
+                createSettingsPanel() {
+                    console.log('Creating settings panel...');
+                    const panel = document.createElement('div');
+                    panel.style.cssText = `
+                        position: fixed;
+                        top: 100px;
+                        right: 20px;
+                        width: 300px;
+                        background: #2a2a2a;
+                        color: white;
+                        padding: 20px;
+                        border-radius: 8px;
+                        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+                        z-index: 10000;
+                    `;
+                    panel.innerHTML = '<h3>⚙️ Settings Panel</h3><p>This would be the full settings panel</p><button onclick="this.parentElement.remove()">Close</button>';
+                    document.body.appendChild(panel);
+                }
+            },
+            UI: {
+                showAdvancedSettings() {
+                    console.log("⚙️ Showing advanced settings panel");
+
+                    // Check if Settings module is available and use it
+                    if (window.SidekickModules?.Settings?.createSettingsPanel) {
+                        console.log("⚙️ Using Settings module for advanced settings");
+                        window.SidekickModules.Settings.createSettingsPanel();
+                        return;
+                    }
+
+                    console.log("⚙️ Settings module not available, using fallback panel");
+                    
+                    // Remove existing panel if present
+                    const existingPanel = document.getElementById('sidekick-advanced-panel');
+                    if (existingPanel) {
+                        existingPanel.remove();
+                        return; // Toggle behavior
+                    }
+                    
+                    // Fallback panel code would go here
+                    const panel = document.createElement('div');
+                    panel.id = 'sidekick-advanced-panel';
+                    panel.innerHTML = '<h3>Fallback Settings</h3><button onclick="this.parentElement.remove()">Close</button>';
+                    document.body.appendChild(panel);
+                }
+            }
+        };
+        
+        // Create test cogwheel button
+        const cogButton = document.createElement('button');
+        cogButton.innerHTML = '⚙️';
+        cogButton.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: #444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 9999;
+        `;
+        cogButton.addEventListener('click', () => {
+            window.SidekickModules.UI.showAdvancedSettings();
+        });
+        document.body.appendChild(cogButton);
+        
+        document.getElementById('test-output').innerHTML = '<p>Click the cogwheel button in the top right to test!</p>';
+    </script>
+</body>
+</html>

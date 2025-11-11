@@ -67,6 +67,15 @@
                 console.warn("⚠️ Clock module not available");
             }
 
+            // Initialize Event Ticker Module
+            console.log("🎪 Sidekick: Initializing Event Ticker...");
+            if (window.SidekickModules.EventTicker?.init) {
+                await window.SidekickModules.EventTicker.init();
+                console.log("✅ Sidekick: Event Ticker initialized");
+            } else {
+                console.warn("⚠️ Event Ticker module not available");
+            }
+
             // Initialize Link Group Module
             console.log("🔗 Sidekick: Initializing Link Group...");
             if (window.SidekickModules.LinkGroup?.init) {
