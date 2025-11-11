@@ -241,6 +241,12 @@
                 this.sidebarVisible = true;
                 console.log("📖 Sidebar opened");
                 
+                // Trigger lazy initialization for timer module when sidebar opens
+                if (window.SidekickModules?.Timer?.lazyInit) {
+                    console.log("🔄 Triggering Timer lazy initialization...");
+                    window.SidekickModules.Timer.lazyInit();
+                }
+                
                 // Save state
                 this.saveSidebarState();
             }

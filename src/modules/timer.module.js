@@ -64,17 +64,65 @@
 
             try {
                 await waitForCore();
+                
+                // Load saved state first (lightweight operation)
                 await this.loadTimers();
                 await this.loadApiKey();
                 this.setupNavigationHandler();
-                this.startApiChecking();
-                // Restore timer displays after loading
-                await this.restoreTimerDisplays();
+                
+                // DON'T render timers here - only render when user opens sidebar
+                // This prevents duplication on page load
+                console.log("⏰ Timer Module initialized with", this.timers.length, "saved timers (not rendered yet)");
+                
                 this.isInitialized = true;
                 console.log("✅ Timer Module initialized successfully");
             } catch (error) {
                 console.error("❌ Timer Module initialization failed:", error);
             }
+        },
+
+        // Lazy initialization - called when sidebar is opened
+        lazyInit() {
+            if (this.isLazyInitialized) {
+                console.log("⏰ Lazy initialization already completed");
+                return;
+            }
+            
+            console.log('⏰ Performing lazy initialization...');
+            
+            // Clear any existing timer elements first to prevent duplication
+            this.clearExistingTimerElements();
+            
+            // Render timers immediately with current data (no delay!)
+            this.renderAllTimers();
+            
+            this.isLazyInitialized = true;
+            console.log('✅ Lazy initialization completed');
+        },
+
+        // Clear all existing timer elements from DOM
+        clearExistingTimerElements() {
+            const existingTimers = document.querySelectorAll('[id^="sidekick-timer-"]');
+            console.log(`🔄 Clearing ${existingTimers.length} existing timer elements`);
+            existingTimers.forEach(element => element.remove());
+        },
+
+        // Render all timers 
+        renderAllTimers() {
+            console.log('🔄 Rendering all timers:', this.timers.length, 'timers');
+            
+            if (this.timers.length === 0) {
+                console.log('📭 No timers to render');
+                return;
+            }
+            
+            // Render each timer
+            this.timers.forEach(timer => {
+                console.log(`🔄 Rendering timer: ${timer.name} (ID: ${timer.id})`);
+                this.renderTimer(timer);
+            });
+            
+            console.log('✅ All timers rendered successfully');
         },
 
         // Load API key from storage
@@ -324,17 +372,18 @@
         // Load timers from storage
         async loadTimers() {
             try {
-                console.log("💾 loadTimers - Starting load...");
+                console.log("� loadTimers - Starting load...");
                 
+                let state = null;
                 let loaded = false;
                 
                 // Method 1: Try Chrome storage wrapper (now handles extension context internally)
                 try {
                     if (window.SidekickModules?.Core?.ChromeStorage?.get) {
                         console.log("⏰ Method 1: Loading via ChromeStorage wrapper");
-                        const savedTimers = await window.SidekickModules.Core.ChromeStorage.get('sidekick_timers');
-                        if (Array.isArray(savedTimers)) {
-                            this.timers = savedTimers;
+                        state = await window.SidekickModules.Core.ChromeStorage.get('sidekick_timer_state');
+                        if (state && state.timers) {
+                            this.timers = state.timers;
                             loaded = true;
                             console.log("✅ ChromeStorage wrapper load succeeded, loaded:", this.timers.length, "timers");
                         }
@@ -347,15 +396,50 @@
                 if (!loaded) {
                     try {
                         console.log("⏰ Method 2: Loading via localStorage fallback");
-                        const savedTimers = JSON.parse(localStorage.getItem('sidekick_timers') || '[]');
-                        if (Array.isArray(savedTimers)) {
-                            this.timers = savedTimers;
+                        const savedState = JSON.parse(localStorage.getItem('sidekick_timer_state') || '{}');
+                        if (savedState && savedState.timers) {
+                            this.timers = savedState.timers;
                             loaded = true;
                             console.log("✅ localStorage fallback load succeeded, loaded:", this.timers.length, "timers");
                         }
                     } catch (error) {
                         console.warn("⚠️ localStorage fallback load failed:", error);
-                        this.timers = [];
+                    }
+                }
+                
+                // Method 3: Try old format for backward compatibility
+                if (!loaded) {
+                    try {
+                        console.log("⏰ Method 3: Loading old format via ChromeStorage wrapper");
+                        if (window.SidekickModules?.Core?.ChromeStorage?.get) {
+                            const oldTimers = await window.SidekickModules.Core.ChromeStorage.get('sidekick_timers');
+                            if (Array.isArray(oldTimers)) {
+                                this.timers = oldTimers;
+                                loaded = true;
+                                console.log("✅ Old format load succeeded, loaded:", this.timers.length, "timers");
+                                // Migrate to new format
+                                this.saveTimers();
+                            }
+                        }
+                    } catch (error) {
+                        console.warn("⚠️ Old format load failed:", error);
+                    }
+                }
+                
+                // Method 4: Try old format via localStorage
+                if (!loaded) {
+                    try {
+                        console.log("⏰ Method 4: Loading old format via localStorage");
+                        const oldTimers = JSON.parse(localStorage.getItem('sidekick_timers') || '[]');
+                        if (Array.isArray(oldTimers)) {
+                            this.timers = oldTimers;
+                            loaded = true;
+                            console.log("✅ Old format localStorage load succeeded, loaded:", this.timers.length, "timers");
+                            // Migrate to new format
+                            this.saveTimers();
+                        }
+                    } catch (error) {
+                        console.warn("⚠️ Old format localStorage load failed:", error);
                     }
                 }
                 
@@ -363,6 +447,11 @@
                     this.timers = [];
                     console.log("⚠️ No storage method succeeded, initialized empty timers array");
                 }
+                
+                // Log each timer for debugging (like original script)
+                this.timers.forEach((timer, index) => {
+                    console.log(`📂 Timer ${index + 1}:`, timer.name, 'type:', timer.cooldownType, 'isApiTimer:', timer.isApiTimer);
+                });
                 
             } catch (error) {
                 console.error('Failed to load timers:', error);
@@ -433,6 +522,17 @@
         async saveTimers() {
             try {
                 console.log("💾 saveTimers - Starting save...");
+                console.log("💾 Number of timers to save:", this.timers.length);
+                
+                // Use the same approach as original script - save all in one state object
+                const state = {
+                    timers: this.timers.map(timer => ({
+                        ...timer,
+                        // Don't save DOM references
+                        element: null
+                    })),
+                    lastSaved: Date.now()
+                };
                 
                 let saved = false;
                 
@@ -440,7 +540,7 @@
                 try {
                     if (window.SidekickModules?.Core?.ChromeStorage?.set) {
                         console.log("⏰ Method 1: Saving via ChromeStorage wrapper");
-                        await window.SidekickModules.Core.ChromeStorage.set('sidekick_timers', this.timers);
+                        await window.SidekickModules.Core.ChromeStorage.set('sidekick_timer_state', state);
                         saved = true;
                         console.log("✅ ChromeStorage wrapper save succeeded");
                     }
@@ -452,7 +552,7 @@
                 if (!saved) {
                     try {
                         console.log("⏰ Method 2: Saving via localStorage fallback");
-                        localStorage.setItem('sidekick_timers', JSON.stringify(this.timers));
+                        localStorage.setItem('sidekick_timer_state', JSON.stringify(state));
                         saved = true;
                         console.log("✅ localStorage fallback save succeeded");
                     } catch (error) {
@@ -461,7 +561,18 @@
                     }
                 }
                 
-                console.log('⏰ Timers saved successfully');
+                console.log('⏰ Timer state saved successfully with', this.timers.length, 'timers');
+                
+                // Verify save by loading immediately
+                if (window.SidekickModules?.Core?.ChromeStorage?.get) {
+                    try {
+                        const verify = await window.SidekickModules.Core.ChromeStorage.get('sidekick_timer_state');
+                        console.log('💾 Verification load shows:', verify?.timers?.length || 0, 'timers saved');
+                    } catch (verifyError) {
+                        console.warn('⚠️ Could not verify save:', verifyError);
+                    }
+                }
+                
             } catch (error) {
                 console.error('Failed to save timers:', error);
                 
