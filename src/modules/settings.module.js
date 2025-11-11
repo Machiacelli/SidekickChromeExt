@@ -79,8 +79,15 @@
             `;
             
             panel.innerHTML = `
-                <div style="padding: 20px;">
-                    <h3 style="margin: 0 0 20px 0; color: #fff; font-size: 18px;">⚙️ Settings</h3>
+                <div style="padding: 20px; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0; color: #fff; font-size: 18px;">⚙️ Settings</h3>
+                        <button id="sidekick-close-settings" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
+                                                                    color: #fff; width: 30px; height: 30px; border-radius: 50%; 
+                                                                    cursor: pointer; font-size: 16px; display: flex; align-items: center; 
+                                                                    justify-content: center; transition: all 0.2s ease;" 
+                                title="Close Settings">×</button>
+                    </div>
                     
                     <div style="margin-bottom: 20px;">
                         <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Torn API Key:</label>
@@ -167,6 +174,7 @@
             const testBtn = panel.querySelector('#sidekick-test-api');
             const apiInput = panel.querySelector('#sidekick-api-key');
             const statusDiv = panel.querySelector('#sidekick-api-status');
+            const closeBtn = panel.querySelector('#sidekick-close-settings');
 
             // Xanax Viewer elements
             const xanaxAutoLimitSlider = panel.querySelector('#sidekick-xanax-autolimit');
@@ -242,6 +250,23 @@
                     statusDiv.textContent = 'Failed to save settings';
                     statusDiv.style.background = 'rgba(244, 67, 54, 0.3)';
                 }
+            });
+
+            // Close settings panel
+            closeBtn.addEventListener('click', () => {
+                panel.remove();
+                this.currentPanel = null;
+            });
+
+            // Hover effect for close button
+            closeBtn.addEventListener('mouseenter', () => {
+                closeBtn.style.background = 'rgba(255,255,255,0.2)';
+                closeBtn.style.transform = 'scale(1.1)';
+            });
+
+            closeBtn.addEventListener('mouseleave', () => {
+                closeBtn.style.background = 'rgba(255,255,255,0.1)';
+                closeBtn.style.transform = 'scale(1)';
             });
 
             // Save Xanax Viewer settings

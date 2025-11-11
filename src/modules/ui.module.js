@@ -158,13 +158,15 @@
                         position: relative;
                     "></div>
                     <div id="sidekick-event-ticker-placeholder" style="
-                        flex: 0 1 auto;
+                        flex: 1;
                         overflow: hidden;
                         margin-left: 10px;
-                        margin-right: 60px;
+                        margin-right: 40px;
                         min-height: 18px;
                         z-index: 1;
-                        max-width: 200px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: flex-start;
                     "></div>
                 </div>
             `;
