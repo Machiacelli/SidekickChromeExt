@@ -833,6 +833,27 @@
             contentArea.appendChild(timerElement);
             console.log(`🔍 Timer element appended to sidepanel content area with ID: sidekick-timer-${timer.id}`);
             
+            // Watch for element removal to debug what's removing it
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList') {
+                        mutation.removedNodes.forEach(function(node) {
+                            if (node.id === `sidekick-timer-${timer.id}`) {
+                                console.error(`🚨 TIMER ELEMENT REMOVED! ID: ${node.id}`);
+                                console.error('🚨 Removed by:', mutation);
+                                console.trace('🚨 Stack trace of removal');
+                            }
+                        });
+                    }
+                });
+            });
+            
+            // Start observing
+            observer.observe(contentArea, {
+                childList: true,
+                subtree: true
+            });
+            
             // Verify element was actually added
             const verifyElement = document.getElementById(`sidekick-timer-${timer.id}`);
             console.log(`🔍 Verification - Element exists after append: ${!!verifyElement}`);
