@@ -146,7 +146,7 @@
                 top: ${y}px;
                 width: ${width}px;
                 height: ${height}px;
-                background: #2a2a2a;
+                background: linear-gradient(145deg, #37474F, #263238);
                 border: 1px solid #444;
                 border-radius: 6px;
                 display: flex;
@@ -154,7 +154,7 @@
                 min-width: 200px;
                 min-height: 150px;
                 z-index: 1000;
-                resize: both;
+                resize: ${linkGroup.pinned ? 'none' : 'both'};
                 overflow: hidden;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.4);
             `;
@@ -167,7 +167,7 @@
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    cursor: move;
+                    cursor: ${linkGroup.pinned ? 'default' : 'move'};
                     height: 24px;
                     flex-shrink: 0;
                     border-radius: 5px 5px 0 0;
@@ -184,20 +184,63 @@
                     " title="Edit name">
                     
                     <div style="display: flex; align-items: center; gap: 3px;">
-                        <button class="add-link-btn" style="
-                            background: #4CAF50;
-                            border: none;
-                            color: white;
-                            cursor: pointer;
-                            width: 16px;
-                            height: 14px;
-                            border-radius: 3px;
-                            font-size: 10px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            line-height: 1;
-                        " title="Add Link">+</button>
+                        <div class="linkgroup-dropdown" style="position: relative;">
+                            <button class="linkgroup-dropdown-btn" style="
+                                background: none;
+                                border: none;
+                                color: rgba(255,255,255,0.8);
+                                cursor: pointer;
+                                font-size: 10px;
+                                padding: 1px 3px;
+                                border-radius: 2px;
+                                transition: background 0.2s;
+                                min-width: 12px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            " title="Options">⚙️</button>
+                            <div class="linkgroup-dropdown-content" style="
+                                display: none;
+                                position: absolute;
+                                background: #333;
+                                min-width: 120px;
+                                box-shadow: 0px 8px 16px rgba(0,0,0,0.3);
+                                z-index: 1001;
+                                border-radius: 4px;
+                                border: 1px solid #555;
+                                top: 100%;
+                                right: 0;
+                            ">
+                                <button class="add-link-btn" style="
+                                    background: none;
+                                    border: none;
+                                    color: #fff;
+                                    padding: 8px 12px;
+                                    width: 100%;
+                                    text-align: left;
+                                    cursor: pointer;
+                                    font-size: 12px;
+                                    transition: background 0.2s;
+                                " onmouseover="this.style.background='rgba(255,255,255,0.1)'" 
+                                   onmouseout="this.style.background='none'">
+                                    ➕ Add Link
+                                </button>
+                                <button class="pin-linkgroup-btn" style="
+                                    background: none;
+                                    border: none;
+                                    color: #fff;
+                                    padding: 8px 12px;
+                                    width: 100%;
+                                    text-align: left;
+                                    cursor: pointer;
+                                    font-size: 12px;
+                                    transition: background 0.2s;
+                                " onmouseover="this.style.background='rgba(255,255,255,0.1)'" 
+                                   onmouseout="this.style.background='none'">
+                                    ${linkGroup.pinned ? '📌 Unpin' : '📌 Pin'}
+                                </button>
+                            </div>
+                        </div>
                         
                         <button class="linkgroup-close" style="
                             background: #f44336;
@@ -292,11 +335,45 @@
                 this.saveLinkGroups();
             });
 
-            // Add link button
+            // Dropdown functionality
+            const dropdownBtn = element.querySelector('.linkgroup-dropdown-btn');
+            const dropdownContent = element.querySelector('.linkgroup-dropdown-content');
+            
+            if (dropdownBtn && dropdownContent) {
+                dropdownBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isVisible = dropdownContent.style.display === 'block';
+                    
+                    // Close all other dropdowns first
+                    document.querySelectorAll('.linkgroup-dropdown-content').forEach(dropdown => {
+                        dropdown.style.display = 'none';
+                    });
+                    
+                    dropdownContent.style.display = isVisible ? 'none' : 'block';
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', () => {
+                    dropdownContent.style.display = 'none';
+                });
+            }
+
+            // Add link button (now inside dropdown)
             const addLinkBtn = element.querySelector('.add-link-btn');
             addLinkBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                dropdownContent.style.display = 'none';
                 this.showAddLinkDialog(linkGroup);
+            });
+
+            // Pin button
+            const pinBtn = element.querySelector('.pin-linkgroup-btn');
+            pinBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                linkGroup.pinned = !linkGroup.pinned;
+                dropdownContent.style.display = 'none';
+                this.saveLinkGroups();
+                this.renderLinkGroup(linkGroup);
             });
 
             // Close button
@@ -407,7 +484,7 @@
             }
 
             function dragStart(e) {
-                if (e.target.closest('input') || e.target.closest('button')) return;
+                if (e.target.closest('input') || e.target.closest('button') || linkGroup.pinned) return;
                 
                 initialX = e.clientX - xOffset;
                 initialY = e.clientY - yOffset;

@@ -308,10 +308,14 @@
             const contentHeight = contentArea.clientHeight || 500;
             
             // Clamp notepad dimensions and position to content area
-            const width = Math.min(Math.max(notepad.width || 320, 200), contentWidth - 20); // Wider default
-            const height = Math.min(Math.max(notepad.height || 200, 120), contentHeight - 40); // Taller default
+            console.log(`📏 Notepad '${notepad.name}' saved dimensions: ${notepad.width || 'none'}x${notepad.height || 'none'}`);
+            
+            const width = Math.min(Math.max(notepad.width || 320, 140), contentWidth - 20); // Smaller minimum width
+            const height = Math.min(Math.max(notepad.height || 200, 80), contentHeight - 40); // Smaller minimum height
             const x = Math.min(Math.max(notepad.x || 10, 0), contentWidth - width);
             const y = Math.min(Math.max(notepad.y || 10, 0), contentHeight - height);
+
+            console.log(`📏 Notepad '${notepad.name}' final dimensions: ${width}x${height}`);
 
             notepadElement.style.cssText = `
                 position: absolute;

@@ -143,23 +143,25 @@
                 align-items: center;
                 justify-content: space-between;
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                pointer-events: none;
+                pointer-events: auto;
                 transition: opacity 0.3s ease;
             `;
             
             this.topBar.innerHTML = `
-                <div style="display: flex; align-items: center;">
+                <div style="display: flex; align-items: center; width: 100%;">
                     <div id="sidekick-clock-container" style="
                         color: #ccc; 
                         font-size: 12px; 
-                        margin-right: 10px;
+                        margin-right: 15px;
                         min-width: 80px;
+                        flex-shrink: 0;
                     "></div>
                     <div id="sidekick-event-ticker-placeholder" style="
                         flex: 1;
                         overflow: hidden;
-                        margin: 0 10px;
+                        margin: 0 15px;
                         min-height: 18px;
+                        margin-left: 25px;
                     "></div>
                     <span style="
                         color: #fff;
@@ -172,6 +174,7 @@
                         background-clip: text;
                         margin-left: 8px;
                         margin-top: 4px;
+                        flex-shrink: 0;
                     ">Sidekick</span>
                 </div>
             `;
@@ -186,7 +189,7 @@
             cogButton.title = 'Advanced Settings';
             cogButton.style.cssText = `
                 position: absolute;
-                right: 25px;
+                right: -15px;
                 top: 3px;
                 background: none;
                 border: none;
@@ -197,7 +200,7 @@
                 border-radius: 4px;
                 transition: all 0.2s ease;
                 user-select: none;
-                z-index: 1000;
+                z-index: 2147483647;
             `;
             
             cogButton.addEventListener('mouseenter', () => {

@@ -74,7 +74,7 @@
             padding: 0;
             margin: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #8BC34A 0%, #FFC107 100%);
             color: white;
         }
         
@@ -85,10 +85,14 @@
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
         
+        .header .logo {
+            width: 120px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        
         .header h1 {
-            margin: 0;
-            font-size: 24px;
-            font-weight: 300;
+            display: none;
         }
         
         .header .version {
@@ -194,6 +198,7 @@
 </head>
 <body>
     <div class="header">
+        <img src="logo.png" alt="Sidekick" class="logo">
         <h1>Sidekick</h1>
         <div class="version">Chrome Extension v1.0.0</div>
     </div>
