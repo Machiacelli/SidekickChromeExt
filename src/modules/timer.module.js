@@ -268,15 +268,7 @@
         findOrCreateCooldownTimer(currentTimer, cooldownType) {
             console.log(`🔍 findOrCreateCooldownTimer for ${cooldownType}, currentTimer:`, currentTimer.id);
             
-            // First check if we already have a cooldown timer (any timer with cooldowns)
-            let existingCooldownTimer = this.timers.find(t => t.cooldowns && Object.keys(t.cooldowns).length > 0 && t.isRunning);
-            
-            if (existingCooldownTimer) {
-                console.log(`🔍 Found existing cooldown timer:`, existingCooldownTimer.id, existingCooldownTimer.cooldowns);
-                return existingCooldownTimer;
-            }
-            
-            // ALWAYS use the current timer that was clicked - don't search for others
+            // ALWAYS use the current timer that was clicked - no searching for old timers
             console.log(`🔍 Using clicked timer:`, currentTimer.id);
             return currentTimer;
         },
@@ -835,6 +827,15 @@
             // Verify element was actually added
             const verifyElement = document.getElementById(`sidekick-timer-${timer.id}`);
             console.log(`🔍 Verification - Element exists after append: ${!!verifyElement}`);
+            
+            // Additional check after small delay
+            setTimeout(() => {
+                const delayedCheck = document.getElementById(`sidekick-timer-${timer.id}`);
+                console.log(`🔍 Delayed verification (100ms) - Element still exists: ${!!delayedCheck}`);
+                if (!delayedCheck) {
+                    console.error('🔍 CRITICAL: Element was removed by something else!');
+                }
+            }, 100);
             
             this.setupTimerEventListeners(timer, timerElement);
             
