@@ -80,56 +80,35 @@
                 existingClock.remove();
             }
 
-            // Find Torn's top navigation bar - try multiple selectors
-            let topNav = null;
-            const navSelectors = [
-                'header.header', // Main header
-                '.header-wrapper', // Header wrapper
-                '#top-page-links-list', // Top links area
-                '.nav-container', // Navigation container
-                'header', // Generic header
-                '[class*="header"]' // Any element with "header" in class
-            ];
-
-            for (const selector of navSelectors) {
-                topNav = document.querySelector(selector);
-                if (topNav) {
-                    console.log(`🔍 Found top navigation using selector: ${selector}`);
-                    break;
-                }
-            }
-
+            // Find the Sidekick sidebar top bar
+            let topBar = document.getElementById('sidekick-top-bar');
+            
             // Create clock element 
             this.clockElement = document.createElement('div');
             this.clockElement.id = 'sidekick-clock';
             
-            if (topNav) {
-                // Position within the top navigation bar with higher visibility
+            if (topBar) {
+                // Position within the sidebar top bar
                 this.clockElement.style.cssText = `
-                    position: fixed;
-                    top: 5px;
-                    right: 15px;
-                    background: rgba(0, 0, 0, 0.9);
                     color: #fff;
-                    padding: 8px 12px;
-                    border-radius: 6px;
+                    padding: 4px 8px;
+                    border-radius: 4px;
                     font-family: 'Courier New', monospace;
-                    font-size: 14px;
-                    z-index: 9999;
+                    font-size: 12px;
                     cursor: pointer;
                     user-select: none;
-                    border: 2px solid #fff;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+                    background: rgba(0, 0, 0, 0.3);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
                     transition: all 0.2s ease;
-                    min-width: 120px;
+                    margin-left: auto;
                     text-align: center;
                     white-space: nowrap;
-                    display: block;
-                    visibility: visible;
+                    pointer-events: auto;
                 `;
+                console.log('✅ Clock positioned in sidebar top bar');
             } else {
-                // Fallback to fixed positioning if no nav found
-                console.warn('⚠️ Could not find top navigation, using fixed positioning');
+                // Fallback to fixed positioning if no sidebar found
+                console.warn('⚠️ Could not find sidebar top bar, using fixed positioning');
                 this.clockElement.style.cssText = `
                     position: fixed;
                     top: 10px;
@@ -194,9 +173,14 @@
             this.clockElement.appendChild(timeDisplay);
             this.clockElement.appendChild(dateDisplay);
 
-            // Always append to body for maximum visibility
-            document.body.appendChild(this.clockElement);
-            console.log('✅ Clock element created and added to body for maximum visibility');
+            // Append to sidebar top bar or fallback to body
+            if (topBar) {
+                topBar.appendChild(this.clockElement);
+                console.log('✅ Clock element added to sidebar top bar');
+            } else {
+                document.body.appendChild(this.clockElement);
+                console.log('✅ Clock element added to body (fallback)');
+            }
         },
 
         startClock() {

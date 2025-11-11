@@ -1425,6 +1425,9 @@
 
         // Delete timer
         deleteTimer(id) {
+            console.log('🚨 TIMER DELETION - ID:', id);
+            console.trace('🚨 DELETION CALL STACK:');
+            
             const timer = this.timers.find(t => t.id === id);
             if (!timer) return;
 
