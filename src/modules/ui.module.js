@@ -116,35 +116,21 @@
             this.sidebar.id = 'sidekick-sidebar';
             this.sidebar.className = 'sidekick-sidebar hidden'; // Start hidden
 
-            // Create sidebar content with proper positioning
-            const sidebarContent = document.createElement('div');
-            sidebarContent.className = 'sidekick-sidebar-content';
-            sidebarContent.style.cssText = `
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                position: relative;
-                height: 100%;
-                padding-top: 15px;
-            `;
-
-            // Create top bar with logo next to hamburger button (positioned outside sidebar)
+            // Create top bar inside sidebar
             this.topBar = document.createElement('div');
             this.topBar.id = 'sidekick-top-bar';
-            this.topBar.className = 'sidekick-top-bar hidden'; // Start hidden like sidebar
+            this.topBar.className = 'sidekick-top-bar';
             this.topBar.style.cssText = `
-                position: fixed;
-                top: 4px;
-                left: 45px;
-                right: 10px;
-                width: 480px;
-                z-index: 2147483646;
+                position: relative;
+                width: 100%;
+                padding: 8px 15px;
+                background: rgba(0,0,0,0.2);
+                border-bottom: 1px solid rgba(255,255,255,0.1);
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                pointer-events: auto;
-                transition: opacity 0.3s ease;
+                flex-shrink: 0;
             `;
             
             this.topBar.innerHTML = `
@@ -179,18 +165,16 @@
                 </div>
             `;
 
-            // Add topBar to body instead of sidebar
-            document.body.appendChild(this.topBar);
-
-            // Add cog wheel button in top-right corner
+            // Add cog wheel button in top bar
             const cogButton = document.createElement('button');
             cogButton.id = 'sidekick-cog-button';
             cogButton.innerHTML = '⚙️';
             cogButton.title = 'Advanced Settings';
             cogButton.style.cssText = `
                 position: absolute;
-                right: -15px;
-                top: 3px;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
                 background: none;
                 border: none;
                 color: rgba(255,255,255,0.8);
@@ -200,19 +184,19 @@
                 border-radius: 4px;
                 transition: all 0.2s ease;
                 user-select: none;
-                z-index: 2147483647;
+                z-index: 10;
             `;
             
             cogButton.addEventListener('mouseenter', () => {
                 cogButton.style.background = 'rgba(255,255,255,0.1)';
                 cogButton.style.color = '#fff';
-                cogButton.style.transform = 'scale(1.1)';
+                cogButton.style.transform = 'translateY(-50%) scale(1.1)';
             });
             
             cogButton.addEventListener('mouseleave', () => {
                 cogButton.style.background = 'none';
                 cogButton.style.color = 'rgba(255,255,255,0.8)';
-                cogButton.style.transform = 'scale(1)';
+                cogButton.style.transform = 'translateY(-50%) scale(1)';
             });
             
             cogButton.addEventListener('click', () => {
@@ -221,6 +205,18 @@
             });
             
             this.topBar.appendChild(cogButton);
+
+            // Create sidebar content with proper positioning
+            const sidebarContent = document.createElement('div');
+            sidebarContent.className = 'sidekick-sidebar-content';
+            sidebarContent.style.cssText = `
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                position: relative;
+                height: 100%;
+                padding-top: 15px;
+            `;
 
             // Create content area (no header needed since logo is in top bar)
             const contentArea = document.createElement('div');
@@ -270,6 +266,7 @@
             });
 
             // Assemble sidebar (without header and close button)
+            this.sidebar.appendChild(this.topBar); // Add top bar first
             sidebarContent.appendChild(contentArea);
             sidebarContent.appendChild(addModuleButton);
             this.sidebar.appendChild(sidebarContent);

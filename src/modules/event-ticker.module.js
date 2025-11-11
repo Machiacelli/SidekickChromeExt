@@ -183,14 +183,14 @@
             // Load cached user event start time
             try {
                 const storage = await window.SidekickModules.Core.ChromeStorage.get('userEventStartTime');
-                if (storage.userEventStartTime) {
+                if (storage && storage.userEventStartTime) {
                     this.userEventStartTime = storage.userEventStartTime;
                     console.log('📦 Event Ticker: Loaded cached user event start time:', this.userEventStartTime);
                 }
                 
                 // Load cached user event end time
                 const endStorage = await window.SidekickModules.Core.ChromeStorage.get('userEventEndTime');
-                if (endStorage.userEventEndTime) {
+                if (endStorage && endStorage.userEventEndTime) {
                     this.userEventEndTime = endStorage.userEventEndTime;
                     console.log('📦 Event Ticker: Loaded cached user event end time:', this.userEventEndTime);
                 }
@@ -219,7 +219,7 @@
             try {
                 console.log('🎂 Event Ticker: Fetching player birthday from Torn API...');
                 const storage = await window.SidekickModules.Core.ChromeStorage.get('torn_api_key');
-                const apiKey = storage.torn_api_key || '';
+                const apiKey = (storage && storage.torn_api_key) ? storage.torn_api_key : '';
                 
                 if (!apiKey) {
                     console.log('⚠️ Event Ticker: No API key found, skipping birthday check');
@@ -256,10 +256,10 @@
                 const currentTime = Math.round(Date.now() / 1000);
                 const cachedEvents = await window.SidekickModules.Core.ChromeStorage.get('torn_events');
                 const lastUpdateStorage = await window.SidekickModules.Core.ChromeStorage.get('torn_events_update');
-                const lastUpdate = lastUpdateStorage.torn_events_update || 0;
+                const lastUpdate = (lastUpdateStorage && lastUpdateStorage.torn_events_update) ? lastUpdateStorage.torn_events_update : 0;
                 
                 // Check if we need to update (30 min interval)
-                if (cachedEvents.torn_events && (currentTime - lastUpdate) < this.apiUpdateInterval) {
+                if (cachedEvents && cachedEvents.torn_events && (currentTime - lastUpdate) < this.apiUpdateInterval) {
                     this.tornEvents = cachedEvents.torn_events;
                     this.calculateNearestEvent();
                     return;
@@ -267,7 +267,7 @@
                 
                 console.log('🔄 Event Ticker: Fetching Torn calendar from API...');
                 const storage = await window.SidekickModules.Core.ChromeStorage.get('torn_api_key');
-                const apiKey = storage.torn_api_key || '';
+                const apiKey = (storage && storage.torn_api_key) ? storage.torn_api_key : '';
                 
                 if (!apiKey) {
                     console.log('⚠️ Event Ticker: No API key for calendar fetch');

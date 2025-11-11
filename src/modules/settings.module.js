@@ -50,8 +50,32 @@
 
         // Create settings panel UI
         createSettingsPanel() {
+            console.log("⚙️ Settings: Creating settings panel");
+            
+            // Remove existing panel if present
+            const existingPanel = document.querySelector('.sidekick-settings-panel');
+            if (existingPanel) {
+                existingPanel.remove();
+                console.log("⚙️ Settings: Removed existing panel");
+                return; // Toggle behavior
+            }
+            
             const panel = document.createElement('div');
             panel.className = 'sidekick-settings-panel';
+            panel.style.cssText = `
+                position: fixed;
+                top: 50px;
+                right: 15px;
+                width: 300px;
+                background: linear-gradient(135deg, #2a2a2a, #1f1f1f);
+                border: 1px solid #444;
+                border-radius: 8px;
+                z-index: 10001;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+                backdrop-filter: blur(20px);
+                color: #fff;
+                font-family: Arial, sans-serif;
+            `;
             
             panel.innerHTML = `
                 <div style="padding: 20px;">
@@ -132,8 +156,8 @@
                 </div>
             `;
 
+            document.body.appendChild(panel);
             this.attachEventListeners(panel);
-            return panel;
         },
 
         // Attach event listeners to settings panel
