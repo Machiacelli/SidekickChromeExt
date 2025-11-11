@@ -382,19 +382,19 @@
         addTimer(name = 'Timer') {
             console.log('⏰ Adding new timer:', name);
             
-            const contentArea = document.getElementById('sidekick-content');
-            const contentWidth = contentArea ? contentArea.clientWidth : 480;
-            const contentHeight = contentArea ? contentArea.clientHeight : 500;
+            // Use window dimensions for standalone timer windows
+            const windowWidth = window.innerWidth || 1200;
+            const windowHeight = window.innerHeight || 800;
             
             // Better stacking algorithm
-            const timerWidth = Math.min(280, contentWidth - 40);
-            const timerHeight = Math.min(140, contentHeight - 60); // Smaller height since no buttons
+            const timerWidth = Math.min(280, windowWidth - 40);
+            const timerHeight = Math.min(140, windowHeight - 60); // Smaller height since no buttons
             const padding = 10;
             const stackOffset = 25;
             
             // Calculate position for better stacking
             const timerCount = this.timers.length;
-            const maxColumns = Math.floor((contentWidth - padding * 2) / (timerWidth + stackOffset));
+            const maxColumns = Math.floor((windowWidth - padding * 2) / (timerWidth + stackOffset));
             const column = timerCount % maxColumns;
             const row = Math.floor(timerCount / maxColumns);
             
@@ -432,9 +432,6 @@
 
         // Create cooldown selection interface
         renderCooldownSelector(timer) {
-            const contentArea = document.getElementById('sidekick-content');
-            if (!contentArea) return;
-
             const cooldownTypes = {
                 'drug': { name: 'Drug Cooldown', color: '#9C27B0', duration: 75 },
                 'medical': { name: 'Medical Cooldown', color: '#4CAF50', duration: 15 },
@@ -449,13 +446,14 @@
             selectorElement.className = 'cooldown-selector';
             selectorElement.dataset.timerId = timer.id;
             
-            const contentWidth = contentArea.clientWidth || 480;
-            const contentHeight = contentArea.clientHeight || 500;
+            // Use window dimensions for standalone selector window
+            const windowWidth = window.innerWidth || 1200;
+            const windowHeight = window.innerHeight || 800;
             
-            const width = Math.min(300, contentWidth - 40);
-            const height = Math.min(400, contentHeight - 60);
-            const x = Math.min(Math.max(timer.x || 10, 0), contentWidth - width);
-            const y = Math.min(Math.max(timer.y || 10, 0), contentHeight - height);
+            const width = Math.min(300, windowWidth - 40);
+            const height = Math.min(400, windowHeight - 60);
+            const x = Math.min(Math.max(timer.x || 10, 0), windowWidth - width);
+            const y = Math.min(Math.max(timer.y || 10, 0), windowHeight - height);
 
             selectorElement.style.cssText = `
                 position: absolute;
@@ -550,7 +548,8 @@
                 </div>
             `;
 
-            contentArea.appendChild(selectorElement);
+            // Append selector as standalone window to body
+            document.body.appendChild(selectorElement);
 
             // Add event listeners for cooldown selection
             selectorElement.querySelector('.cooldown-close').addEventListener('click', () => {
@@ -608,13 +607,14 @@
             timerElement.className = 'movable-timer';
             timerElement.dataset.timerId = timer.id;
             
-            const contentWidth = contentArea.clientWidth || 480;
-            const contentHeight = contentArea.clientHeight || 500;
+            // Use window dimensions for standalone timer window
+            const windowWidth = window.innerWidth || 1200;
+            const windowHeight = window.innerHeight || 800;
             
-            const width = Math.min(Math.max(timer.width || 280, 140), contentWidth - 20);
-            const height = Math.min(Math.max(timer.height || 180, 80), contentHeight - 40);
-            const x = Math.min(Math.max(timer.x || 10, 0), contentWidth - width);
-            const y = Math.min(Math.max(timer.y || 10, 0), contentHeight - height);
+            const width = Math.min(Math.max(timer.width || 280, 140), windowWidth - 20);
+            const height = Math.min(Math.max(timer.height || 180, 80), windowHeight - 40);
+            const x = Math.min(Math.max(timer.x || 10, 0), windowWidth - width);
+            const y = Math.min(Math.max(timer.y || 10, 0), windowHeight - height);
 
             timerElement.style.cssText = `
                 position: absolute;
