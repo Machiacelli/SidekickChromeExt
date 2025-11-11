@@ -104,33 +104,29 @@
             this.clockElement.id = 'sidekick-clock';
             
             if (topNav) {
-                // Position within the top navigation bar
+                // Position within the top navigation bar with higher visibility
                 this.clockElement.style.cssText = `
-                    position: absolute;
-                    top: 50%;
+                    position: fixed;
+                    top: 5px;
                     right: 15px;
-                    transform: translateY(-50%);
-                    background: rgba(0, 0, 0, 0.7);
+                    background: rgba(0, 0, 0, 0.9);
                     color: #fff;
-                    padding: 6px 10px;
-                    border-radius: 4px;
+                    padding: 8px 12px;
+                    border-radius: 6px;
                     font-family: 'Courier New', monospace;
-                    font-size: 13px;
-                    z-index: 1000;
+                    font-size: 14px;
+                    z-index: 9999;
                     cursor: pointer;
                     user-select: none;
-                    border: 1px solid #555;
-                    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+                    border: 2px solid #fff;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
                     transition: all 0.2s ease;
-                    min-width: 110px;
+                    min-width: 120px;
                     text-align: center;
                     white-space: nowrap;
+                    display: block;
+                    visibility: visible;
                 `;
-                
-                // Ensure the parent has relative positioning
-                if (getComputedStyle(topNav).position === 'static') {
-                    topNav.style.position = 'relative';
-                }
             } else {
                 // Fallback to fixed positioning if no nav found
                 console.warn('⚠️ Could not find top navigation, using fixed positioning');
@@ -198,14 +194,9 @@
             this.clockElement.appendChild(timeDisplay);
             this.clockElement.appendChild(dateDisplay);
 
-            // Append to navigation bar or fallback to body
-            if (topNav) {
-                topNav.appendChild(this.clockElement);
-                console.log('✅ Clock element created and added to navigation bar');
-            } else {
-                document.body.appendChild(this.clockElement);
-                console.log('✅ Clock element created and added to body (fallback)');
-            }
+            // Always append to body for maximum visibility
+            document.body.appendChild(this.clockElement);
+            console.log('✅ Clock element created and added to body for maximum visibility');
         },
 
         startClock() {

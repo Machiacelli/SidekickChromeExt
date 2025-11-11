@@ -980,15 +980,18 @@
                 });
             }
 
-            // Close button (with confirmation for safety)
+            // Close button (with stronger confirmation for safety)
             const closeBtn = element.querySelector('.timer-close');
             if (closeBtn) {
                 closeBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    // Add confirmation to prevent accidental deletion
+                    // Add stronger confirmation to prevent accidental deletion
                     const timerName = timer.name || 'Timer';
-                    if (confirm(`Delete "${timerName}"?\n\nThis will remove the entire timer window.`)) {
-                        this.deleteTimer(timer.id);
+                    const confirmMessage = `⚠️ DELETE ENTIRE TIMER? ⚠️\n\nTimer: "${timerName}"\n\n🔴 This will permanently remove the ENTIRE timer window and ALL cooldowns!\n\n⚠️ Are you absolutely sure? This cannot be undone!`;
+                    if (confirm(confirmMessage)) {
+                        if (confirm(`🚨 FINAL CONFIRMATION 🚨\n\nLast chance to cancel!\n\nDelete "${timerName}" timer permanently?`)) {
+                            this.deleteTimer(timer.id);
+                        }
                     }
                 });
             }
@@ -1422,6 +1425,11 @@
 
         // Delete timer
         deleteTimer(id) {
+            // Debug logging to track what's calling deleteTimer
+            console.log('🚨 deleteTimer called for ID:', id);
+            console.log('🚨 Call stack trace:');
+            console.trace();
+            
             const timer = this.timers.find(t => t.id === id);
             if (!timer) return;
 
