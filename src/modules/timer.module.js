@@ -42,15 +42,25 @@
         setupNavigationHandler() {
             // Save timers before page unload
             window.addEventListener('beforeunload', () => {
+                console.log("🔄 Page unloading - saving timers");
                 this.saveTimers();
             });
             
             // Also save on visibility change (tab switching)
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState === 'hidden') {
+                    console.log("🔄 Tab hidden - saving timers");
                     this.saveTimers();
                 }
             });
+            
+            // Save timers every 30 seconds as a backup
+            setInterval(() => {
+                if (this.timers.length > 0) {
+                    console.log("🔄 Auto-save - saving timers");
+                    this.saveTimers();
+                }
+            }, 30000);
         },
 
         // Initialize the timer module
@@ -481,7 +491,7 @@
                 // Wait a bit for the UI to be ready
                 await new Promise(resolve => setTimeout(resolve, 100));
                 
-                // Refresh cooldown data from API before restoring
+                // Refresh cooldown data from API before restoring (only if API key exists)
                 if (this.apiKey) {
                     try {
                         console.log("🔄 Refreshing cooldown data from API...");
@@ -489,6 +499,8 @@
                     } catch (error) {
                         console.warn("⚠️ Failed to refresh cooldown data, using saved data:", error);
                     }
+                } else {
+                    console.log("⚠️ No API key available, skipping cooldown refresh");
                 }
                 
                 // Restore each timer
@@ -637,6 +649,9 @@
             };
 
             this.timers.push(timer);
+            
+            // Save timers immediately after adding
+            console.log('💾 Saving timers after adding new timer');
             this.saveTimers();
             
             // Render the blank timer window
@@ -1646,14 +1661,17 @@
             // Remove from array
             this.timers = this.timers.filter(t => t.id !== id);
 
+            // Save timers immediately after deletion
+            console.log('💾 Saving timers after deletion');
+            this.saveTimers();
+
             // Remove element
             const element = document.querySelector(`[data-timer-id="${id}"]`);
             if (element) {
                 element.remove();
             }
 
-            this.saveTimers();
-            console.log('⏰ Timer deleted:', timer.name);
+            console.log('⏰ Timer deleted:', timer.name, '- Remaining timers:', this.timers.length);
         },
 
         // Make element draggable

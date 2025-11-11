@@ -103,9 +103,9 @@
                     text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
                     opacity: 0.9;
                     position: absolute;
-                    right: 20px;
+                    right: 25px;
                 `;
-                console.log('✅ Clock positioned at far right of sidebar top bar with 20px inset');
+                console.log('✅ Clock positioned at far right of sidebar top bar with 25px inset');
             } else {
                 // Fallback to fixed positioning if no sidebar found
                 console.warn('⚠️ Could not find sidebar top bar, using fixed positioning');

@@ -578,8 +578,10 @@
             if (chrome && chrome.runtime && chrome.runtime.onMessage) {
                 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     if (message.type === 'SIDEBAR_STATE_CHANGED') {
+                        console.log("📡 Received sidebar state change from other tab:", message.state);
                         // Update local state to match
                         if (message.state.visible !== this.sidebarVisible) {
+                            console.log(`📡 Syncing sidebar state: ${this.sidebarVisible} → ${message.state.visible}`);
                             if (message.state.visible) {
                                 this.openSidebar();
                             } else {
@@ -588,6 +590,23 @@
                         }
                     }
                 });
+                
+                // Also check for state changes via storage events
+                if (chrome.storage && chrome.storage.onChanged) {
+                    chrome.storage.onChanged.addListener((changes, namespace) => {
+                        if (changes.sidekick_sidebar_state && namespace === 'local') {
+                            const newState = changes.sidekick_sidebar_state.newValue;
+                            if (newState && newState.visible !== this.sidebarVisible) {
+                                console.log("💾 Storage sync detected sidebar state change:", newState);
+                                if (newState.visible) {
+                                    this.openSidebar();
+                                } else {
+                                    this.closeSidebar();
+                                }
+                            }
+                        }
+                    });
+                }
             }
         },
 
