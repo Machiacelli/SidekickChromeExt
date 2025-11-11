@@ -587,19 +587,14 @@
             });
         },
 
-        // Render a timer window in the sidebar  
+        // Render a timer window as a standalone draggable window
         renderTimer(timer) {
-            const contentArea = document.getElementById('sidekick-content');
-            console.log('🔍 renderTimer - contentArea found:', !!contentArea);
-            if (!contentArea) {
-                console.error('🔍 CRITICAL: sidekick-content element not found!');
-                return;
-            }
-
-            // Remove placeholder if it exists
-            const placeholder = contentArea.querySelector('.sidekick-placeholder');
-            if (placeholder) {
-                placeholder.remove();
+            console.log('🔍 renderTimer - Creating standalone timer window');
+            
+            // Remove existing timer if it exists
+            const existingElement = document.getElementById(`sidekick-timer-${timer.id}`);
+            if (existingElement) {
+                existingElement.remove();
             }
 
             // For new timers that aren't API timers, show cooldown selection
@@ -821,8 +816,9 @@
                 </div>
             `;
 
-            contentArea.appendChild(timerElement);
-            console.log(`🔍 Timer element appended to DOM with ID: sidekick-timer-${timer.id}`);
+            // Append directly to body for standalone window, not contentArea
+            document.body.appendChild(timerElement);
+            console.log(`🔍 Timer element appended to DOM as standalone with ID: sidekick-timer-${timer.id}`);
             
             // Verify element was actually added
             const verifyElement = document.getElementById(`sidekick-timer-${timer.id}`);
