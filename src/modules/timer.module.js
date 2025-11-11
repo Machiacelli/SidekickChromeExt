@@ -612,6 +612,7 @@
             // Create movable timer window
             const timerElement = document.createElement('div');
             timerElement.className = 'movable-timer';
+            timerElement.id = `sidekick-timer-${timer.id}`;  // Add the missing ID!
             timerElement.dataset.timerId = timer.id;
             
             // Get content area for positioning within sidepanel
