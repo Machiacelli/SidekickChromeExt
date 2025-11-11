@@ -253,8 +253,13 @@
             const contentArea = this.sidebar.querySelector('#sidekick-content');
             if (!contentArea) return;
 
-            // Clear any existing content - start with empty notepad area
-            contentArea.innerHTML = '';
+            // Don't clear existing content - preserve any existing timers or modules
+            // Only initialize if notepad area is truly empty
+            if (contentArea.children.length === 0) {
+                console.log("🔍 Content area is empty, safe to initialize notepad");
+            } else {
+                console.log("🔍 Content area has existing content, preserving it");
+            }
 
             // Wait for notepad module and initialize it
             try {
