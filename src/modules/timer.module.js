@@ -341,9 +341,29 @@
                 // Wait a bit for the UI to be ready
                 await new Promise(resolve => setTimeout(resolve, 100));
                 
+                // Refresh cooldown data from API before restoring
+                if (this.apiKey) {
+                    try {
+                        console.log("🔄 Refreshing cooldown data from API...");
+                        await this.fetchCooldownData();
+                    } catch (error) {
+                        console.warn("⚠️ Failed to refresh cooldown data, using saved data:", error);
+                    }
+                }
+                
                 // Restore each timer
                 for (const timer of this.timers) {
                     if (timer.isRunning) {
+                        // Update cooldown times with fresh API data if available
+                        if (timer.cooldowns && this.cooldownData) {
+                            for (const [type, _] of Object.entries(timer.cooldowns)) {
+                                if (this.cooldownData[type]) {
+                                    timer.cooldowns[type] = this.cooldownData[type];
+                                    console.log(`🔄 Updated ${type} cooldown from API: ${this.cooldownData[type]}s`);
+                                }
+                            }
+                        }
+                        
                         // Render the timer display
                         this.renderTimer(timer);
                         
@@ -1012,13 +1032,10 @@
             if (closeBtn) {
                 closeBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    // Add stronger confirmation to prevent accidental deletion
+                    // Simple confirmation for timer deletion
                     const timerName = timer.name || 'Timer';
-                    const confirmMessage = `⚠️ DELETE ENTIRE TIMER? ⚠️\n\nTimer: "${timerName}"\n\n🔴 This will permanently remove the ENTIRE timer window and ALL cooldowns!\n\n⚠️ Are you absolutely sure? This cannot be undone!`;
-                    if (confirm(confirmMessage)) {
-                        if (confirm(`🚨 FINAL CONFIRMATION 🚨\n\nLast chance to cancel!\n\nDelete "${timerName}" timer permanently?`)) {
-                            this.deleteTimer(timer.id);
-                        }
+                    if (confirm(`Delete "${timerName}" timer?`)) {
+                        this.deleteTimer(timer.id);
                     }
                 });
             }
