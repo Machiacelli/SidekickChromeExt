@@ -27,7 +27,8 @@
             while (!window.SidekickModules?.Core?.STORAGE_KEYS || !window.SidekickModules?.UI?.createSidebar) {
                 console.log("🔄 Sidekick: Still waiting for modules...", {
                     core: !!window.SidekickModules?.Core?.STORAGE_KEYS,
-                    ui: !!window.SidekickModules?.UI?.createSidebar
+                    ui: !!window.SidekickModules?.UI?.createSidebar,
+                    clock: !!window.SidekickModules?.Clock
                 });
 
                 if (Date.now() - startTime > timeout) {
@@ -46,6 +47,15 @@
             if (window.SidekickModules.UI.init) {
                 window.SidekickModules.UI.init();
                 console.log("✅ Sidekick: UI initialized");
+            }
+
+            // Initialize Clock Module
+            console.log("🕐 Sidekick: Initializing Clock...");
+            if (window.SidekickModules.Clock?.init) {
+                await window.SidekickModules.Clock.init();
+                console.log("✅ Sidekick: Clock initialized");
+            } else {
+                console.warn("⚠️ Clock module not available");
             }
 
             // UI and modules initialized successfully

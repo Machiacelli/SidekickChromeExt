@@ -1000,15 +1000,33 @@
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     e.preventDefault();
+                    
+                    // Prevent rapid clicking/spam
+                    if (btn.disabled) return;
+                    btn.disabled = true;
+                    btn.style.opacity = '0.3';
+                    
                     this.removeCooldown(timer.id, cooldownType);
+                    
+                    // Re-enable after delay
+                    setTimeout(() => {
+                        if (btn && btn.parentNode) {
+                            btn.disabled = false;
+                            btn.style.opacity = '0.7';
+                        }
+                    }, 1000);
                 });
                 
                 // Hover effects
                 btn.addEventListener('mouseenter', () => {
-                    btn.style.opacity = '1';
+                    if (!btn.disabled) {
+                        btn.style.opacity = '1';
+                    }
                 });
                 btn.addEventListener('mouseleave', () => {
-                    btn.style.opacity = '0.7';
+                    if (!btn.disabled) {
+                        btn.style.opacity = '0.7';
+                    }
                 });
             });
 
@@ -1197,19 +1215,39 @@
                         
                         // Add event listeners for the remove button
                         const removeBtn = cooldownDiv.querySelector('.remove-cooldown-btn');
-                        removeBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            this.removeCooldown(timer.id, type);
-                        });
-                        
-                        // Hover effects
-                        removeBtn.addEventListener('mouseenter', () => {
-                            removeBtn.style.opacity = '1';
-                        });
-                        removeBtn.addEventListener('mouseleave', () => {
-                            removeBtn.style.opacity = '0.7';
-                        });
+                        if (removeBtn) {
+                            removeBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                
+                                // Prevent rapid clicking/spam
+                                if (removeBtn.disabled) return;
+                                removeBtn.disabled = true;
+                                removeBtn.style.opacity = '0.3';
+                                
+                                this.removeCooldown(timer.id, type);
+                                
+                                // Re-enable after a delay
+                                setTimeout(() => {
+                                    if (removeBtn && removeBtn.parentNode) {
+                                        removeBtn.disabled = false;
+                                        removeBtn.style.opacity = '0.7';
+                                    }
+                                }, 1000);
+                            });
+                            
+                            // Hover effects
+                            removeBtn.addEventListener('mouseenter', () => {
+                                if (!removeBtn.disabled) {
+                                    removeBtn.style.opacity = '1';
+                                }
+                            });
+                            removeBtn.addEventListener('mouseleave', () => {
+                                if (!removeBtn.disabled) {
+                                    removeBtn.style.opacity = '0.7';
+                                }
+                            });
+                        }
                         
                         contentArea.appendChild(cooldownDiv);
                     });

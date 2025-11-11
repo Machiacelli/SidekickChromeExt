@@ -118,6 +118,12 @@
 
                 try {
                     await window.SidekickModules.Core.ChromeStorage.set('sidekick_api_key', apiKey);
+                    
+                    // Notify Clock module of API key update
+                    if (window.SidekickModules?.Clock?.updateApiKey) {
+                        await window.SidekickModules.Clock.updateApiKey(apiKey);
+                    }
+                    
                     statusDiv.textContent = 'Settings saved successfully!';
                     statusDiv.style.background = 'rgba(76, 175, 80, 0.3)';
                     
