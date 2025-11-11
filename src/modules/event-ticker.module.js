@@ -518,8 +518,7 @@
                 overflow: hidden;
                 position: relative;
                 min-height: 20px;
-                flex: 1;
-                margin: 0 10px;
+                margin: 0;
             `;
 
             // Scrolling wrapper
@@ -544,8 +543,9 @@
             scrollWrapper.appendChild(textContainer);
             ticker.appendChild(scrollWrapper);
 
-            // Replace placeholder with ticker
-            placeholder.parentNode.replaceChild(ticker, placeholder);
+            // Append to placeholder instead of replacing it
+            placeholder.innerHTML = '';
+            placeholder.appendChild(ticker);
 
             this.tickerElement = textContainer;
             console.log('✅ Event Ticker: Created seamlessly in top bar');
