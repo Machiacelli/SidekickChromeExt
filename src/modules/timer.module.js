@@ -43,7 +43,17 @@
             // Save timers before page unload
             window.addEventListener('beforeunload', () => {
                 console.log("🔄 Page unloading - saving timers");
-                this.saveTimers();
+                // Use synchronous localStorage for immediate save
+                try {
+                    const state = {
+                        timers: this.timers.map(timer => ({ ...timer, element: null })),
+                        lastSaved: Date.now()
+                    };
+                    localStorage.setItem('sidekick_timer_state', JSON.stringify(state));
+                    console.log("✅ Emergency save to localStorage successful");
+                } catch (error) {
+                    console.error("❌ Emergency save failed:", error);
+                }
             });
             
             // Also save on visibility change (tab switching)
@@ -54,13 +64,31 @@
                 }
             });
             
-            // Save timers every 30 seconds as a backup
+            // Save timers every 10 seconds as a backup (more frequent)
             setInterval(() => {
                 if (this.timers.length > 0) {
-                    console.log("🔄 Auto-save - saving timers");
+                    console.log("🔄 Auto-save - saving", this.timers.length, "timers");
                     this.saveTimers();
                 }
-            }, 30000);
+            }, 10000);
+            
+            // Add manual test function to window for debugging
+            window.debugTimerSave = () => {
+                console.log("🔍 Current timers in memory:", this.timers.length);
+                console.log("🔍 Timers:", this.timers);
+                this.saveTimers();
+                const saved = localStorage.getItem('sidekick_timer_state');
+                console.log("🔍 Saved to localStorage:", saved);
+            };
+            
+            window.debugTimerLoad = () => {
+                const saved = localStorage.getItem('sidekick_timer_state');
+                console.log("🔍 Raw localStorage data:", saved);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    console.log("🔍 Parsed data:", parsed);
+                }
+            };
         },
 
         // Initialize the timer module
