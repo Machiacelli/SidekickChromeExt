@@ -473,7 +473,10 @@
                     return;
                 }
 
-                await window.SidekickModules.Timer.init();
+                // Don't re-init if already initialized - just add timer
+                if (!window.SidekickModules.Timer.isInitialized) {
+                    await window.SidekickModules.Timer.init();
+                }
                 
                 // Create timer immediately with cooldown selection interface
                 const timer = window.SidekickModules.Timer.addTimer('Cooldown Timer');

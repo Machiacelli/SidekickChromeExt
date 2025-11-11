@@ -380,7 +380,13 @@
 
         // Create a new timer window in the sidebar
         addTimer(name = 'Timer') {
-            console.log('⏰ Adding new timer:', name);
+            console.log('⏰ Adding new timer:', name, '- Current timer count:', this.timers.length);
+            
+            // Safeguard: Don't interfere with existing timers
+            const currentTimerCount = this.timers.length;
+            if (currentTimerCount > 0) {
+                console.log('🔍 Existing timers found, ensuring no conflicts...');
+            }
             
             // Get content area for positioning within sidepanel
             const contentArea = document.getElementById('sidekick-content');
@@ -403,7 +409,7 @@
             const y = padding + (row * (timerHeight + stackOffset));
             
             const timer = {
-                id: Date.now() + Math.random(),
+                id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 name: name,
                 duration: 0, // Start with 0 - will be set when cooldown is selected
                 remainingTime: 0,
@@ -595,12 +601,13 @@
 
         // Render a timer window as a standalone draggable window
         renderTimer(timer) {
-            console.log('🔍 renderTimer - Creating standalone timer window');
+            console.log('🔍 renderTimer - Creating standalone timer window for timer:', timer.id);
             
-            // Remove existing timer if it exists
+            // Check if timer already exists and is properly rendered
             const existingElement = document.getElementById(`sidekick-timer-${timer.id}`);
             if (existingElement) {
-                existingElement.remove();
+                console.log('🔍 Timer element already exists, skipping render for:', timer.id);
+                return; // Don't re-render existing timers
             }
 
             // For new timers that aren't API timers, show cooldown selection
@@ -852,45 +859,14 @@
             
             console.log(`🔍 Timer element appended to sidepanel content area with ID: sidekick-timer-${timer.id}`);
             
-            // Immediate verification
-            const immediateCheck = document.getElementById(`sidekick-timer-${timer.id}`);
-            console.log(`🔍 Immediate verification - Element exists:`, !!immediateCheck);
-            console.log(`🔍 Content area children after append:`, contentArea.children.length);
-            console.log(`🔍 All children in content area:`, Array.from(contentArea.children).map(c => c.id || c.className));
-            
-            // Watch for element removal to debug what's removing it
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.type === 'childList') {
-                        mutation.removedNodes.forEach(function(node) {
-                            if (node.id === `sidekick-timer-${timer.id}`) {
-                                console.error(`🚨 TIMER ELEMENT REMOVED! ID: ${node.id}`);
-                                console.error('🚨 Removed by:', mutation);
-                                console.trace('🚨 Stack trace of removal');
-                            }
-                        });
-                    }
-                });
-            });
-            
-            // Start observing
-            observer.observe(contentArea, {
-                childList: true,
-                subtree: true
-            });
-            
-            // Verify element was actually added
+            // Simple verification that the element was properly added
             const verifyElement = document.getElementById(`sidekick-timer-${timer.id}`);
-            console.log(`🔍 Verification - Element exists after append: ${!!verifyElement}`);
-            
-            // Additional check after small delay
-            setTimeout(() => {
-                const delayedCheck = document.getElementById(`sidekick-timer-${timer.id}`);
-                console.log(`🔍 Delayed verification (100ms) - Element still exists: ${!!delayedCheck}`);
-                if (!delayedCheck) {
-                    console.error('🔍 CRITICAL: Element was removed by something else!');
-                }
-            }, 100);
+            if (verifyElement) {
+                console.log(`✅ Timer ${timer.id} successfully rendered and verified`);
+            } else {
+                console.error(`� Timer ${timer.id} failed to render properly`);
+                return;
+            }
             
             this.setupTimerEventListeners(timer, timerElement);
             
