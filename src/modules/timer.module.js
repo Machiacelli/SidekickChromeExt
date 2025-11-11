@@ -611,10 +611,11 @@
             }
 
             // For new timers that aren't API timers, show cooldown selection
-            if (!timer.isApiTimer && timer.name === 'Cooldown Timer' && timer.duration === 60 && !timer.isConfigured) {
-                this.renderCooldownSelector(timer);
-                return;
-            }
+            // DISABLED: Old cooldown selector - now using API dropdown in timer window
+            // if (!timer.isApiTimer && timer.name === 'Cooldown Timer' && timer.duration === 60 && !timer.isConfigured) {
+            //     this.renderCooldownSelector(timer);
+            //     return;
+            // }
 
             // Create movable timer window
             const timerElement = document.createElement('div');
@@ -803,18 +804,37 @@
                                     display: flex;
                                     justify-content: space-between;
                                     align-items: center;
+                                    position: relative;
                                 ">
                                     <span style="
                                         color: #ccc;
                                         font-size: 14px;
                                         font-weight: 600;
                                     ">${cooldownNames[type] || type}</span>
-                                    <span style="
-                                        color: ${this.getCooldownColor(type)};
-                                        font-family: 'Courier New', monospace;
-                                        font-weight: 700;
-                                        font-size: 16px;
-                                    ">${this.formatTime(time)}</span>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="
+                                            color: ${this.getCooldownColor(type)};
+                                            font-family: 'Courier New', monospace;
+                                            font-weight: 700;
+                                            font-size: 16px;
+                                        ">${this.formatTime(time)}</span>
+                                        <button class="remove-cooldown-btn" data-cooldown-type="${type}" style="
+                                            background: #e74c3c;
+                                            border: none;
+                                            color: white;
+                                            cursor: pointer;
+                                            width: 16px;
+                                            height: 16px;
+                                            border-radius: 50%;
+                                            font-size: 10px;
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            line-height: 1;
+                                            opacity: 0.7;
+                                            transition: opacity 0.2s;
+                                        " title="Remove ${cooldownNames[type] || type} cooldown">×</button>
+                                    </div>
                                 </div>
                             `).join('');
                         } else if (timer.remainingTime > 0) {
@@ -960,13 +980,37 @@
                 });
             }
 
-            // Close button
+            // Close button (with confirmation for safety)
             const closeBtn = element.querySelector('.timer-close');
             if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
-                    this.deleteTimer(timer.id);
+                closeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Add confirmation to prevent accidental deletion
+                    const timerName = timer.name || 'Timer';
+                    if (confirm(`Delete "${timerName}"?\n\nThis will remove the entire timer window.`)) {
+                        this.deleteTimer(timer.id);
+                    }
                 });
             }
+
+            // Individual cooldown removal buttons
+            const removeCooldownBtns = element.querySelectorAll('.remove-cooldown-btn');
+            removeCooldownBtns.forEach(btn => {
+                const cooldownType = btn.dataset.cooldownType;
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    this.removeCooldown(timer.id, cooldownType);
+                });
+                
+                // Hover effects
+                btn.addEventListener('mouseenter', () => {
+                    btn.style.opacity = '1';
+                });
+                btn.addEventListener('mouseleave', () => {
+                    btn.style.opacity = '0.7';
+                });
+            });
 
             // Duration input
             const durationInput = element.querySelector('.duration-input');
@@ -1117,6 +1161,7 @@
                             display: flex;
                             justify-content: space-between;
                             align-items: center;
+                            position: relative;
                         `;
                         cooldownDiv.innerHTML = `
                             <span style="
@@ -1124,13 +1169,48 @@
                                 font-size: 14px;
                                 font-weight: 600;
                             ">${cooldownNames[type] || type}</span>
-                            <span style="
-                                color: ${this.getCooldownColor(type)};
-                                font-family: 'Courier New', monospace;
-                                font-weight: 700;
-                                font-size: 16px;
-                            ">${this.formatTime(time)}</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="
+                                    color: ${this.getCooldownColor(type)};
+                                    font-family: 'Courier New', monospace;
+                                    font-weight: 700;
+                                    font-size: 16px;
+                                ">${this.formatTime(time)}</span>
+                                <button class="remove-cooldown-btn" data-cooldown-type="${type}" style="
+                                    background: #e74c3c;
+                                    border: none;
+                                    color: white;
+                                    cursor: pointer;
+                                    width: 16px;
+                                    height: 16px;
+                                    border-radius: 50%;
+                                    font-size: 10px;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    line-height: 1;
+                                    opacity: 0.7;
+                                    transition: opacity 0.2s;
+                                " title="Remove ${cooldownNames[type] || type} cooldown">×</button>
+                            </div>
                         `;
+                        
+                        // Add event listeners for the remove button
+                        const removeBtn = cooldownDiv.querySelector('.remove-cooldown-btn');
+                        removeBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            this.removeCooldown(timer.id, type);
+                        });
+                        
+                        // Hover effects
+                        removeBtn.addEventListener('mouseenter', () => {
+                            removeBtn.style.opacity = '1';
+                        });
+                        removeBtn.addEventListener('mouseleave', () => {
+                            removeBtn.style.opacity = '0.7';
+                        });
+                        
                         contentArea.appendChild(cooldownDiv);
                     });
                 } else {
@@ -1151,6 +1231,84 @@
                 }
             } else {
                 console.error(`🔍 Could not find content area for timer ${id}`);
+            }
+        },
+
+        // Remove individual cooldown from timer
+        removeCooldown(timerId, cooldownType) {
+            console.log(`🗑️ Removing ${cooldownType} cooldown from timer ${timerId}`);
+            
+            const timer = this.timers.find(t => t.id === timerId);
+            if (!timer || !timer.cooldowns) {
+                console.warn(`⚠️ Timer ${timerId} not found or has no cooldowns`);
+                return;
+            }
+
+            // Remove the specific cooldown
+            if (timer.cooldowns[cooldownType]) {
+                delete timer.cooldowns[cooldownType];
+                console.log(`✅ Removed ${cooldownType} cooldown`);
+                
+                const remainingCooldowns = Object.keys(timer.cooldowns);
+                console.log(`🔍 Remaining cooldowns: ${remainingCooldowns.join(', ')}`);
+                
+                if (remainingCooldowns.length === 0) {
+                    // No cooldowns left - reset timer to blank state
+                    timer.name = 'Cooldown Timer';
+                    timer.color = '#666';
+                    timer.duration = 0;
+                    timer.remainingTime = 0;
+                    timer.isRunning = false;
+                    timer.isApiTimer = false;
+                    delete timer.cooldowns;
+                    
+                    // Stop the timer if it's running
+                    if (this.intervals.has(timerId)) {
+                        clearInterval(this.intervals.get(timerId));
+                        this.intervals.delete(timerId);
+                    }
+                    
+                    console.log(`🔄 Timer reset to blank state - all cooldowns removed`);
+                } else if (remainingCooldowns.length === 1) {
+                    // Only one cooldown left - show specific name
+                    const remainingType = remainingCooldowns[0];
+                    const cooldownNames = {
+                        'drug': 'Drug Cooldown',
+                        'medical': 'Medical Cooldown', 
+                        'booster': 'Booster Cooldown'
+                    };
+                    timer.name = cooldownNames[remainingType] || 'Cooldown';
+                    timer.color = this.getCooldownColor(remainingType);
+                    timer.remainingTime = timer.cooldowns[remainingType];
+                    timer.duration = timer.cooldowns[remainingType];
+                    console.log(`🔄 Timer updated to single cooldown: ${timer.name}`);
+                } else {
+                    // Multiple cooldowns remain - keep generic name
+                    timer.name = 'Cooldowns';
+                    timer.color = '#9b59b6';
+                    timer.remainingTime = Math.max(...Object.values(timer.cooldowns));
+                    timer.duration = Math.max(...Object.values(timer.cooldowns));
+                    console.log(`🔄 Timer kept as multi-cooldown: ${remainingCooldowns.length} remaining`);
+                }
+                
+                // Save and update display
+                this.saveTimers();
+                this.updateTimerDisplay(timerId);
+                
+                // Show notification
+                if (window.SidekickModules?.UI?.showNotification) {
+                    const cooldownNames = {
+                        'drug': 'Drug',
+                        'medical': 'Medical', 
+                        'booster': 'Booster'
+                    };
+                    window.SidekickModules.UI.showNotification(
+                        'INFO', 
+                        `${cooldownNames[cooldownType] || cooldownType} cooldown removed`
+                    );
+                }
+            } else {
+                console.warn(`⚠️ Cooldown ${cooldownType} not found in timer ${timerId}`);
             }
         },
 
