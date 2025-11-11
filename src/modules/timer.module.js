@@ -113,6 +113,18 @@
                     }
                 };
                 
+                // Add comprehensive diagnostic
+                window.debugTimerDiagnose = () => {
+                    console.log("🩺 TIMER DIAGNOSTIC START");
+                    console.log("🔍 Memory timers:", this.timers.length);
+                    console.log("🔍 localStorage exists:", !!localStorage);
+                    console.log("🔍 localStorage data:", localStorage.getItem('sidekick_timer_state'));
+                    console.log("🔍 sessionStorage data:", sessionStorage.getItem('sidekick_timer_state'));
+                    console.log("🔍 Module initialized:", this.isInitialized);
+                    console.log("🔍 Lazy initialized:", this.isLazyInitialized);
+                    console.log("🩺 DIAGNOSTIC END");
+                };
+                
                 this.isInitialized = true;
                 console.log("✅ Timer Module initialized successfully");
             } catch (error) {
