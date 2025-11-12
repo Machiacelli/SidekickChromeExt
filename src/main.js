@@ -85,6 +85,15 @@
                 console.warn("⚠️ Link Group module not available");
             }
 
+            // Initialize Attack List Module
+            console.log("⚔️ Sidekick: Initializing Attack List...");
+            if (window.SidekickModules.AttackList?.init) {
+                await window.SidekickModules.AttackList.init();
+                console.log("✅ Sidekick: Attack List initialized");
+            } else {
+                console.warn("⚠️ Attack List module not available");
+            }
+
             // Initialize Attack Button Mover Module
             console.log("⚔️ Sidekick: Initializing Attack Button Mover...");
             if (window.SidekickModules.AttackButtonMover?.init) {

@@ -322,6 +322,20 @@
                     }
                 }
                 
+                // Initialize/refresh Attack List module when sidebar opens
+                if (window.SidekickModules?.AttackList) {
+                    if (!window.SidekickModules.AttackList.isInitialized) {
+                        console.log("⚔️ Triggering Attack List initialization...");
+                        window.SidekickModules.AttackList.init().then(() => {
+                            // Render any existing attack lists
+                            window.SidekickModules.AttackList.renderAllAttackLists();
+                        });
+                    } else {
+                        console.log("⚔️ Refreshing existing Attack Lists...");
+                        window.SidekickModules.AttackList.renderAllAttackLists();
+                    }
+                }
+                
                 // Save state
                 this.saveSidebarState();
             }
@@ -519,6 +533,24 @@
                     ">
                         <span style="font-size: 13px; filter: grayscale(0.2);">🔗</span> Links
                     </button>
+                    <button class="module-option" data-module="attacklist" style="
+                        background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+                        border: 1px solid rgba(255,255,255,0.06);
+                        color: rgba(255,255,255,0.92);
+                        padding: 10px 12px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        text-align: left;
+                        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                        font-size: 11px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-weight: 500;
+                        letter-spacing: 0.3px;
+                    ">
+                        <span style="font-size: 13px; filter: grayscale(0.2);">⚔️</span> Attack List
+                    </button>
                 </div>
             `;
 
@@ -579,6 +611,9 @@
                     break;
                 case 'linkgroup':
                     this.createNewLinkGroup();
+                    break;
+                case 'attacklist':
+                    this.createNewAttackList();
                     break;
                 case 'todolist':
                     this.showNotification('Todo List Module', 'Todo list module coming soon!', 'info');
@@ -650,6 +685,28 @@
             } catch (error) {
                 console.error('Failed to create link group:', error);
                 this.showNotification('Link Group Error', 'Failed to create link group', 'error');
+            }
+        },
+
+        // Create a new attack list window in the sidebar
+        async createNewAttackList() {
+            try {
+                if (!window.SidekickModules?.AttackList) {
+                    this.showNotification('Attack List Error', 'Attack List module not loaded', 'error');
+                    return;
+                }
+
+                // Initialize if not already done
+                if (!window.SidekickModules.AttackList.isInitialized) {
+                    await window.SidekickModules.AttackList.init();
+                }
+                
+                // Create attack list immediately with default name
+                const attackList = window.SidekickModules.AttackList.createNewAttackList();
+                this.showNotification('Attack List Created', 'New attack list created', 'success');
+            } catch (error) {
+                console.error('Failed to create attack list:', error);
+                this.showNotification('Attack List Error', 'Failed to create attack list', 'error');
             }
         },
 

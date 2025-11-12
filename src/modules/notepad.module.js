@@ -648,6 +648,7 @@
             }
 
             // Resizing functionality (only if not pinned)
+            let resizeTimeout;
             const resizeObserver = new ResizeObserver(entries => {
                 if (notepad.pinned) return;
                 
@@ -655,7 +656,13 @@
                     if (entry.target === notepadElement) {
                         notepad.width = entry.contentRect.width;
                         notepad.height = entry.contentRect.height;
-                        this.saveNotepads();
+                        
+                        // Debounce saves to prevent excessive saving during resize
+                        clearTimeout(resizeTimeout);
+                        resizeTimeout = setTimeout(() => {
+                            this.saveNotepads();
+                            console.log(`📏 Saved notepad '${notepad.name}' size: ${notepad.width}x${notepad.height}`);
+                        }, 500);
                     }
                 }
             });

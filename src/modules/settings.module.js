@@ -167,8 +167,37 @@
                         <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px;">⏱️ Chain Timer Settings</h4>
                         
                         <div style="margin-bottom: 15px; display: flex; align-items: center;">
-                            <input type="checkbox" id="sidekick-chain-timer-active" style="margin-right: 10px;">
-                            <label for="sidekick-chain-timer-active" style="color: #ccc; font-weight: bold;">Enable Chain Timer</label>
+                            <div class="toggle-switch" id="sidekick-chain-timer-toggle" style="
+                                position: relative;
+                                display: inline-block;
+                                width: 50px;
+                                height: 24px;
+                                margin-right: 10px;
+                                cursor: pointer;
+                            ">
+                                <div class="toggle-track" style="
+                                    position: absolute;
+                                    top: 0;
+                                    left: 0;
+                                    right: 0;
+                                    bottom: 0;
+                                    background-color: #555;
+                                    border-radius: 24px;
+                                    transition: background-color 0.3s ease;
+                                "></div>
+                                <div class="toggle-thumb" style="
+                                    position: absolute;
+                                    top: 2px;
+                                    left: 2px;
+                                    width: 20px;
+                                    height: 20px;
+                                    background-color: white;
+                                    border-radius: 50%;
+                                    transition: transform 0.3s ease;
+                                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                                "></div>
+                            </div>
+                            <label style="color: #ccc; font-weight: bold; cursor: pointer;" onclick="document.getElementById('sidekick-chain-timer-toggle').click()">Enable Chain Timer</label>
                         </div>
                         
                         <div style="margin-bottom: 15px;">
@@ -217,7 +246,7 @@
             const xanaxStatusDiv = panel.querySelector('#sidekick-xanax-status');
 
             // Chain Timer elements
-            const chainTimerActiveCheckbox = panel.querySelector('#sidekick-chain-timer-active');
+            const chainTimerToggle = panel.querySelector('#sidekick-chain-timer-toggle');
             const chainTimerThresholdInput = panel.querySelector('#sidekick-chain-timer-threshold');
             const saveChainTimerBtn = panel.querySelector('#sidekick-save-chain-timer');
             const chainTimerStatusDiv = panel.querySelector('#sidekick-chain-timer-status');
@@ -245,9 +274,30 @@
                 }
             });
 
+            // Chain Timer toggle functionality
+            let chainTimerActive = false;
+            
+            function updateChainTimerToggle(isActive) {
+                chainTimerActive = isActive;
+                const track = chainTimerToggle.querySelector('.toggle-track');
+                const thumb = chainTimerToggle.querySelector('.toggle-thumb');
+                
+                if (isActive) {
+                    track.style.backgroundColor = '#4CAF50';
+                    thumb.style.transform = 'translateX(26px)';
+                } else {
+                    track.style.backgroundColor = '#555';
+                    thumb.style.transform = 'translateX(0px)';
+                }
+            }
+            
+            chainTimerToggle.addEventListener('click', () => {
+                updateChainTimerToggle(!chainTimerActive);
+            });
+
             // Load existing Chain Timer settings
             this.loadChainTimerSettings().then(settings => {
-                chainTimerActiveCheckbox.checked = settings.isActive || false;
+                updateChainTimerToggle(settings.isActive || false);
                 chainTimerThresholdInput.value = settings.alertThresholdInSeconds || 240;
                 
                 // Also update the Chain Timer module with loaded settings
@@ -382,7 +432,7 @@
             // Save Chain Timer settings
             saveChainTimerBtn.addEventListener('click', async () => {
                 const settings = {
-                    isActive: chainTimerActiveCheckbox.checked,
+                    isActive: chainTimerActive,
                     alertThresholdInSeconds: parseInt(chainTimerThresholdInput.value) || 240
                 };
 

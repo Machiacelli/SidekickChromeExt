@@ -12,7 +12,7 @@
   },
   "content_scripts": [{
     "matches": ["https://www.torn.com/*", "https://*.torn.com/*"],
-    "js": ["src/modules/core.module.js", "src/modules/settings.module.js", "src/modules/notepad.module.js", "src/modules/timer.module.js", "src/modules/clock.module.js", "src/modules/event-ticker.module.js", "src/modules/linkgroup.module.js", "src/modules/attack-button-mover.module.js", "src/modules/xanax-viewer.module.js", "src/modules/blocktraining.module.js", "src/modules/timeontab.module.js", "src/modules/chaintimer.module.js", "src/modules/npc-attack-timer.module.js", "src/modules/randomtarget.module.js", "src/modules/ui.module.js", "src/main.js"],
+    "js": ["src/modules/core.module.js", "src/modules/settings.module.js", "src/modules/notepad.module.js", "src/modules/timer.module.js", "src/modules/clock.module.js", "src/modules/event-ticker.module.js", "src/modules/linkgroup.module.js", "src/modules/attacklist.module.js", "src/modules/attack-button-mover.module.js", "src/modules/xanax-viewer.module.js", "src/modules/blocktraining.module.js", "src/modules/timeontab.module.js", "src/modules/chaintimer.module.js", "src/modules/npc-attack-timer.module.js", "src/modules/randomtarget.module.js", "src/modules/ui.module.js", "src/main.js"],
     "css": ["src/styles/main.css"],
     "run_at": "document_end"
   }],
