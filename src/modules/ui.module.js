@@ -227,7 +227,7 @@
             // Create content area (no header needed since logo is in top bar)
             const contentArea = document.createElement('div');
             contentArea.id = 'sidekick-content';
-            contentArea.style.cssText = 'flex: 1; overflow: hidden; position: relative; padding: 5px; margin-bottom: 50px;';
+            contentArea.style.cssText = 'flex: 1; overflow: hidden; position: relative; padding: 5px;';
 
             // Create Add Module button - position it on the left
             const addModuleButton = document.createElement('button');

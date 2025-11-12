@@ -641,14 +641,15 @@
             }
 
             const activeEvents = this.getActiveEvents();
-            const upcomingEvents = this.getUpcomingEvents(3);
+            const upcomingEvents = this.getUpcomingEvents(7); // Increased range to catch more events
 
             let displayText = '';
 
             console.log('🔄 Event Ticker: Updating display...', {
                 nearestEvent: !!this.nearestEvent,
                 activeCount: activeEvents.length,
-                upcomingCount: upcomingEvents.length
+                upcomingCount: upcomingEvents.length,
+                currentIndex: this.currentEventIndex
             });
 
             // Priority 1: Show nearest API event countdown
@@ -664,30 +665,51 @@
                 }
             }
 
-            // Priority 2: Active events
-            if (activeEvents.length > 0) {
-                const event = activeEvents[this.currentEventIndex % activeEvents.length];
-                
-                if (event.isBirthday) {
-                    displayText = event.notification;
-                } else {
-                    displayText = `🔴 LIVE: ${event.notification}`;
-                }
-                
-            } else if (upcomingEvents.length > 0) {
-                // Priority 3: Show upcoming event
-                const event = upcomingEvents[0];
-                
+            // Combine active and upcoming events for rotation
+            let allRelevantEvents = [];
+            
+            // Add active events
+            activeEvents.forEach(event => {
+                allRelevantEvents.push({
+                    ...event,
+                    type: 'active',
+                    displayText: event.isBirthday ? event.notification : `🔴 LIVE: ${event.notification}`
+                });
+            });
+            
+            // Add upcoming events (filter to next 7 days)
+            upcomingEvents.filter(event => {
+                const daysUntil = this.getDaysUntil(event);
+                return daysUntil <= 7; // Only show events within a week
+            }).forEach(event => {
                 if (event.isBirthday && event.daysUntil !== undefined) {
                     const daysText = event.daysUntil === 0 ? 'tomorrow' : 
                                     event.daysUntil === 1 ? 'in 1 day' : 
                                     `in ${event.daysUntil} days`;
-                    displayText = `🎂 Your Torn Birthday is ${daysText}! (${event.feature})`;
+                    allRelevantEvents.push({
+                        ...event,
+                        type: 'upcoming',
+                        displayText: `🎂 Your Torn Birthday is ${daysText}! (${event.feature})`
+                    });
                 } else {
                     const daysUntil = this.getDaysUntil(event);
-                    displayText = `📅 Coming ${daysUntil === 0 ? 'tomorrow' : `in ${daysUntil + 1} days`}: ${event.name} - ${event.feature}`;
+                    const timeText = daysUntil === 0 ? 'tomorrow' : 
+                                    daysUntil === 1 ? 'in 1 day' : 
+                                    `in ${daysUntil + 1} days`;
+                    allRelevantEvents.push({
+                        ...event,
+                        type: 'upcoming',
+                        displayText: `📅 Coming ${timeText}: ${event.name} - ${event.feature}`
+                    });
                 }
+            });
+
+            // Show events in rotation if we have any
+            if (allRelevantEvents.length > 0) {
+                const eventToShow = allRelevantEvents[this.currentEventIndex % allRelevantEvents.length];
+                displayText = eventToShow.displayText;
                 
+                console.log(`✅ Event Ticker: Showing event ${(this.currentEventIndex % allRelevantEvents.length) + 1}/${allRelevantEvents.length}:`, eventToShow.name, `(${eventToShow.type})`);
             } else {
                 displayText = '✨ No events currently scheduled - Stay sharp, stay violent';
                 console.log('📭 Event Ticker: No events, showing fallback message');
@@ -714,9 +736,16 @@
         startRotation() {
             this.rotationInterval = setInterval(() => {
                 const activeEvents = this.getActiveEvents();
+                const upcomingEvents = this.getUpcomingEvents(7).filter(event => {
+                    const daysUntil = this.getDaysUntil(event);
+                    return daysUntil <= 7;
+                });
                 
-                if (activeEvents.length > 1) {
+                const totalEvents = activeEvents.length + upcomingEvents.length;
+                
+                if (totalEvents > 1) {
                     this.currentEventIndex++;
+                    console.log(`🔄 Event Ticker: Rotating to event ${(this.currentEventIndex % totalEvents) + 1}/${totalEvents}`);
                 }
                 
                 this.updateTickerDisplay();

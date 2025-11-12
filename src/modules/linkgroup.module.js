@@ -280,19 +280,23 @@
                         </div>
                         
                         <button class="linkgroup-close" style="
-                            background: #f44336;
+                            background: #dc3545;
                             border: none;
                             color: white;
                             cursor: pointer;
-                            width: 16px;
+                            width: 14px;
                             height: 14px;
-                            border-radius: 3px;
-                            font-size: 8px;
+                            border-radius: 50%;
+                            font-size: 10px;
                             display: flex;
                             align-items: center;
                             justify-content: center;
                             line-height: 1;
-                        " title="Close">×</button>
+                            transition: all 0.2s;
+                            font-weight: bold;
+                        " onmouseover="this.style.background='#c82333'; this.style.transform='scale(1.1)'; this.style.boxShadow='0 0 8px rgba(220, 53, 69, 0.6)'" 
+                           onmouseout="this.style.background='#dc3545'; this.style.transform='scale(1)'; this.style.boxShadow='none'" 
+                           title="Close">×</button>
                     </div>
                 </div>
                 

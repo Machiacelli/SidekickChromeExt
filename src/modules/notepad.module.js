@@ -442,8 +442,8 @@
                             font-weight: bold;
                             flex-shrink: 0;
                             min-width: 14px;
-                        " onmouseover="this.style.background='#c82333'; this.style.transform='scale(1.1)'" 
-                           onmouseout="this.style.background='#dc3545'; this.style.transform='scale(1)'" 
+                        " onmouseover="this.style.background='#c82333'; this.style.transform='scale(1.1)'; this.style.boxShadow='0 0 8px rgba(220, 53, 69, 0.6)'" 
+                           onmouseout="this.style.background='#dc3545'; this.style.transform='scale(1)'; this.style.boxShadow='none'" 
                            title="Delete notepad">×</button>
                     </div>
                 </div>
