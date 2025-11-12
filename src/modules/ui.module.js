@@ -308,13 +308,18 @@
                     window.SidekickModules.Timer.lazyInit();
                 }
                 
-                // Initialize Link Group module when sidebar opens
-                if (window.SidekickModules?.LinkGroup && !window.SidekickModules.LinkGroup.isInitialized) {
-                    console.log("🔗 Triggering Link Group initialization...");
-                    window.SidekickModules.LinkGroup.init().then(() => {
-                        // Render any existing link groups
-                        window.SidekickModules.LinkGroup.renderAllLinkGroups();
-                    });
+                // Initialize/refresh Link Group module when sidebar opens
+                if (window.SidekickModules?.LinkGroup) {
+                    if (!window.SidekickModules.LinkGroup.isInitialized) {
+                        console.log("🔗 Triggering Link Group initialization...");
+                        window.SidekickModules.LinkGroup.init().then(() => {
+                            // Render any existing link groups
+                            window.SidekickModules.LinkGroup.renderAllLinkGroups();
+                        });
+                    } else {
+                        console.log("🔗 Refreshing existing Link Groups...");
+                        window.SidekickModules.LinkGroup.refresh();
+                    }
                 }
                 
                 // Save state

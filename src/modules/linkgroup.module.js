@@ -40,38 +40,75 @@
 
             try {
                 await waitForCore();
+                
+                // Additional check to ensure we have access to Chrome storage
+                if (!window.SidekickModules?.Core?.ChromeStorage) {
+                    throw new Error("Chrome storage not available");
+                }
+                
                 await this.loadLinkGroups();
+                
+                // Clear any existing link groups from previous initialization attempts
+                this.clearExistingLinkGroups();
+                
+                // Render all existing link groups
+                this.renderAllLinkGroups();
+                
                 this.isInitialized = true;
                 console.log("✅ Link Group Module initialized successfully");
             } catch (error) {
                 console.error("❌ Link Group Module initialization failed:", error);
+                
+                // Try again after a delay
+                setTimeout(() => {
+                    console.log("🔄 Retrying Link Group Module initialization...");
+                    this.isInitialized = false;
+                    this.init();
+                }, 2000);
             }
         },
 
         // Load link groups from storage
         async loadLinkGroups() {
             try {
-                const saved = localStorage.getItem('sidekick_linkgroups');
-                if (saved) {
-                    this.linkGroups = JSON.parse(saved);
-                    console.log("✅ Loaded", this.linkGroups.length, "link groups");
+                const saved = await window.SidekickModules.Core.ChromeStorage.get('sidekick_linkgroups');
+                if (saved && Array.isArray(saved)) {
+                    this.linkGroups = saved;
+                    console.log("✅ Loaded", this.linkGroups.length, "link groups from Chrome storage");
                 } else {
                     this.linkGroups = [];
-                    console.log("📭 No saved link groups found");
+                    console.log("📭 No saved link groups found in Chrome storage");
                 }
             } catch (error) {
-                console.error('Failed to load link groups:', error);
-                this.linkGroups = [];
+                console.error('Failed to load link groups from Chrome storage:', error);
+                
+                // Fallback to localStorage for migration
+                try {
+                    const localSaved = localStorage.getItem('sidekick_linkgroups');
+                    if (localSaved) {
+                        this.linkGroups = JSON.parse(localSaved);
+                        console.log("🔄 Migrated", this.linkGroups.length, "link groups from localStorage");
+                        
+                        // Save to Chrome storage and remove from localStorage
+                        await this.saveLinkGroups();
+                        localStorage.removeItem('sidekick_linkgroups');
+                    } else {
+                        this.linkGroups = [];
+                    }
+                } catch (migrationError) {
+                    console.error('Failed to migrate from localStorage:', migrationError);
+                    this.linkGroups = [];
+                }
             }
         },
 
         // Save link groups to storage
         async saveLinkGroups() {
             try {
-                localStorage.setItem('sidekick_linkgroups', JSON.stringify(this.linkGroups));
-                console.log('💾 Link groups saved successfully');
+                await window.SidekickModules.Core.ChromeStorage.set('sidekick_linkgroups', this.linkGroups);
+                console.log('💾 Link groups saved successfully to Chrome storage');
             } catch (error) {
-                console.error('Failed to save link groups:', error);
+                console.error('Failed to save link groups to Chrome storage:', error);
             }
         },
 
@@ -551,6 +588,13 @@
         clearExistingLinkGroups() {
             const existingLinkGroups = document.querySelectorAll('[id^="sidekick-linkgroup-"]');
             existingLinkGroups.forEach(element => element.remove());
+        },
+
+        // Refresh link groups (useful for when sidebar is reopened)
+        refresh() {
+            console.log('🔗 Refreshing link groups...');
+            this.clearExistingLinkGroups();
+            this.renderAllLinkGroups();
         },
 
         // Helper methods

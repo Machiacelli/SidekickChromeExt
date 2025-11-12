@@ -170,7 +170,7 @@
                     backdrop-filter: blur(5px);
                     opacity: 0.8;
                 ">
-                    Training blocked - Use popup to disable
+                    Training blocked
                 </div>
             `;
 

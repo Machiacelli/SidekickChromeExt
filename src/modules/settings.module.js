@@ -161,6 +161,38 @@
                             Xanax Viewer settings loaded
                         </div>
                     </div>
+                    
+                    <!-- Chain Timer Settings -->
+                    <div style="border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0; padding-top: 20px;">
+                        <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px;">⏱️ Chain Timer Settings</h4>
+                        
+                        <div style="margin-bottom: 15px; display: flex; align-items: center;">
+                            <input type="checkbox" id="sidekick-chain-timer-active" style="margin-right: 10px;">
+                            <label for="sidekick-chain-timer-active" style="color: #ccc; font-weight: bold;">Enable Chain Timer</label>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Alert Threshold (seconds):</label>
+                            <input type="number" id="sidekick-chain-timer-threshold" min="60" max="3600" step="10" 
+                                   style="width: 100%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
+                                          color: #fff; padding: 10px; border-radius: 5px; box-sizing: border-box;"
+                                   placeholder="240">
+                            <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
+                                Alert when chain timer drops below this value (default: 240 seconds / 4 minutes)
+                            </div>
+                        </div>
+                        
+                        <button id="sidekick-save-chain-timer" style="width: 100%; padding: 10px; background: #FF9800; 
+                                                                     border: none; color: white; border-radius: 5px; 
+                                                                     font-weight: bold; cursor: pointer; margin-bottom: 10px;">
+                            ⏱️ Save Chain Timer Settings
+                        </button>
+                        
+                        <div id="sidekick-chain-timer-status" style="text-align: center; padding: 10px; border-radius: 5px; 
+                                                                   background: rgba(255,255,255,0.1); color: #ccc;">
+                            Chain Timer settings loaded
+                        </div>
+                    </div>
                 </div>
             `;
 
@@ -184,6 +216,12 @@
             const clearCacheBtn = panel.querySelector('#sidekick-clear-xanax-cache');
             const xanaxStatusDiv = panel.querySelector('#sidekick-xanax-status');
 
+            // Chain Timer elements
+            const chainTimerActiveCheckbox = panel.querySelector('#sidekick-chain-timer-active');
+            const chainTimerThresholdInput = panel.querySelector('#sidekick-chain-timer-threshold');
+            const saveChainTimerBtn = panel.querySelector('#sidekick-save-chain-timer');
+            const chainTimerStatusDiv = panel.querySelector('#sidekick-chain-timer-status');
+
             // Load existing API key
             this.loadApiKey().then(apiKey => {
                 if (apiKey) {
@@ -204,6 +242,18 @@
                     window.SidekickModules.XanaxViewer.apiKey = settings.apiKey || '';
                     window.SidekickModules.XanaxViewer.autoLimit = settings.autoLimit || 0;
                     window.SidekickModules.XanaxViewer.showRelative = settings.showRelative || false;
+                }
+            });
+
+            // Load existing Chain Timer settings
+            this.loadChainTimerSettings().then(settings => {
+                chainTimerActiveCheckbox.checked = settings.isActive || false;
+                chainTimerThresholdInput.value = settings.alertThresholdInSeconds || 240;
+                
+                // Also update the Chain Timer module with loaded settings
+                if (window.SidekickModules?.ChainTimer) {
+                    window.SidekickModules.ChainTimer.isActive = settings.isActive || false;
+                    window.SidekickModules.ChainTimer.alertThresholdInSeconds = settings.alertThresholdInSeconds || 240;
                 }
             });
 
@@ -329,6 +379,41 @@
                 }
             });
 
+            // Save Chain Timer settings
+            saveChainTimerBtn.addEventListener('click', async () => {
+                const settings = {
+                    isActive: chainTimerActiveCheckbox.checked,
+                    alertThresholdInSeconds: parseInt(chainTimerThresholdInput.value) || 240
+                };
+
+                try {
+                    await window.SidekickModules.Core.ChromeStorage.set('sidekick_chain_timer', settings);
+                    
+                    // Update the Chain Timer module
+                    if (window.SidekickModules?.ChainTimer) {
+                        window.SidekickModules.ChainTimer.isActive = settings.isActive;
+                        window.SidekickModules.ChainTimer.alertThresholdInSeconds = settings.alertThresholdInSeconds;
+                        window.SidekickModules.ChainTimer.saveConfig();
+                    }
+                    
+                    chainTimerStatusDiv.textContent = 'Chain Timer settings saved successfully!';
+                    chainTimerStatusDiv.style.background = 'rgba(76, 175, 80, 0.3)';
+                    
+                    if (window.SidekickModules.Core.NotificationSystem) {
+                        window.SidekickModules.Core.NotificationSystem.show(
+                            'Chain Timer Settings',
+                            'Settings saved successfully',
+                            'success',
+                            3000
+                        );
+                    }
+                } catch (error) {
+                    console.error('Failed to save Chain Timer settings:', error);
+                    chainTimerStatusDiv.textContent = 'Failed to save Chain Timer settings';
+                    chainTimerStatusDiv.style.background = 'rgba(244, 67, 54, 0.3)';
+                }
+            });
+
             // Test API
             testBtn.addEventListener('click', async () => {
                 const apiKey = apiInput.value.trim();
@@ -394,6 +479,23 @@
                     apiKey: '',
                     autoLimit: 0,
                     showRelative: false
+                };
+            }
+        },
+
+        // Load Chain Timer settings from storage
+        async loadChainTimerSettings() {
+            try {
+                const settings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_chain_timer');
+                return settings || {
+                    isActive: false,
+                    alertThresholdInSeconds: 240
+                };
+            } catch (error) {
+                console.error('Failed to load Chain Timer settings:', error);
+                return {
+                    isActive: false,
+                    alertThresholdInSeconds: 240
                 };
             }
         },
