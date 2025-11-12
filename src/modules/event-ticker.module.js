@@ -538,6 +538,7 @@
                 font-size: 11px;
                 white-space: nowrap;
                 display: inline-block;
+                transition: opacity 0.3s ease;
             `;
 
             scrollWrapper.appendChild(textContainer);
@@ -710,12 +711,22 @@
                 displayText = eventToShow.displayText;
                 
                 console.log(`✅ Event Ticker: Showing event ${(this.currentEventIndex % allRelevantEvents.length) + 1}/${allRelevantEvents.length}:`, eventToShow.name, `(${eventToShow.type})`);
+                
+                // Add smooth transition effect
+                this.tickerElement.style.opacity = '0.5';
+                setTimeout(() => {
+                    this.tickerElement.textContent = displayText;
+                    this.tickerElement.style.opacity = '1';
+                }, 150);
             } else {
                 displayText = '✨ No events currently scheduled - Stay sharp, stay violent';
                 console.log('📭 Event Ticker: No events, showing fallback message');
+                this.tickerElement.style.opacity = '0.5';
+                setTimeout(() => {
+                    this.tickerElement.textContent = displayText;
+                    this.tickerElement.style.opacity = '1';
+                }, 150);
             }
-
-            console.log('✅ Event Ticker: Setting text to:', displayText);
             this.tickerElement.textContent = displayText;
         },
 
@@ -749,9 +760,9 @@
                 }
                 
                 this.updateTickerDisplay();
-            }, 8000);
+            }, 12000); // Increased from 8s to 12s to give more time for messages
 
-            console.log('✅ Event Ticker: Rotation started (8s interval)');
+            console.log('✅ Event Ticker: Rotation started (12s interval)');
         },
 
         stopRotation() {

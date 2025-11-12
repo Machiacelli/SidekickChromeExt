@@ -14,6 +14,7 @@
         isInitialized: false,
         attackLists: [],
         updateInterval: null,
+        displayUpdateInterval: null,
 
         // Initialize the attack list module
         async init() {
@@ -25,6 +26,16 @@
             console.log("⚔️ Initializing Attack List Module...");
 
             try {
+                // Clear any existing intervals
+                if (this.updateInterval) {
+                    clearInterval(this.updateInterval);
+                    this.updateInterval = null;
+                }
+                if (this.displayUpdateInterval) {
+                    clearInterval(this.displayUpdateInterval);
+                    this.displayUpdateInterval = null;
+                }
+
                 await this.loadAttackLists();
                 this.startStatusUpdates();
                 this.isInitialized = true;
@@ -133,7 +144,7 @@
                 width: ${width}px;
                 height: ${height}px;
                 background: linear-gradient(145deg, #37474F, #263238);
-                border: 1px solid ${attackList.color || '#f44336'};
+                border: 1px solid #555;
                 border-radius: 6px;
                 display: flex;
                 flex-direction: column;
@@ -364,20 +375,20 @@
 
             // Hospital status (red with timer)
             if (data.status.state === 'Hospital') {
-                const timeLeft = data.status.until ? this.formatTimeRemaining(data.status.until) : 'Unknown';
-                return `<span style="color: #f44336; font-weight: bold;">🏥 Hospital (${timeLeft})</span>`;
+                const timeLeft = data.status.until ? this.formatTimeRemaining(data.status.until) : '';
+                return `<span style="color: #f44336; font-weight: bold;">🏥 ${timeLeft}</span>`;
             }
 
             // Jail status (purple with timer)
             if (data.status.state === 'Jail') {
-                const timeLeft = data.status.until ? this.formatTimeRemaining(data.status.until) : 'Unknown';
-                return `<span style="color: #9c27b0; font-weight: bold;">🔒 Jail (${timeLeft})</span>`;
+                const timeLeft = data.status.until ? this.formatTimeRemaining(data.status.until) : '';
+                return `<span style="color: #9c27b0; font-weight: bold;">🔒 ${timeLeft}</span>`;
             }
 
             // Flying status (blue with timer)
             if (data.status.state === 'Traveling') {
-                const timeLeft = data.status.until ? this.formatTimeRemaining(data.status.until) : 'Unknown';
-                return `<span style="color: #2196f3; font-weight: bold;">✈️ Flying (${timeLeft})</span>`;
+                const timeLeft = data.status.until ? this.formatTimeRemaining(data.status.until) : '';
+                return `<span style="color: #2196f3; font-weight: bold;">✈️ ${timeLeft}</span>`;
             }
 
             // Other statuses
@@ -614,7 +625,13 @@
                 this.updateAllTargets();
             }, 300000); // 5 minutes
 
+            // Update display every second for countdown timers
+            this.displayUpdateInterval = setInterval(() => {
+                this.updateTimerDisplays();
+            }, 1000); // 1 second
+
             console.log('⚔️ Status updates started (5-minute interval)');
+            console.log('⚔️ Display timer updates started (1-second interval)');
         },
 
         // Update all targets in all attack lists
@@ -632,6 +649,13 @@
             
             this.saveAttackLists();
             console.log('✅ All targets updated');
+        },
+
+        // Update only the timer displays without API calls
+        updateTimerDisplays() {
+            for (const attackList of this.attackLists) {
+                this.renderTargets(attackList);
+            }
         },
 
         // Make element draggable
