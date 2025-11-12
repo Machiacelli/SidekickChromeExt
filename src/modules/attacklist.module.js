@@ -305,36 +305,38 @@
                     border-radius: 4px;
                     padding: 6px 8px;
                     display: flex;
-                    flex-direction: column;
-                    gap: 4px;
+                    justify-content: space-between;
+                    align-items: center;
                     transition: background 0.2s;
                 ">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <a href="https://www.torn.com/loader.php?sid=attack&user2ID=${target.id}" 
-                           target="_blank" 
-                           style="color: #4CAF50; text-decoration: none; font-size: 12px; font-weight: bold;">
-                            ${this.escapeHtml(playerName)}
-                        </a>
+                    <a href="https://www.torn.com/loader.php?sid=attack&user2ID=${target.id}" 
+                       target="_blank" 
+                       style="color: #4CAF50; text-decoration: none; font-size: 12px; font-weight: bold; flex: 1;">
+                        ${this.escapeHtml(playerName)}
+                    </a>
+                    
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <div style="font-size: 11px;">
+                            ${statusDisplay}
+                        </div>
                         <button class="remove-target-btn" data-target-id="${target.id}" style="
-                            background: #dc3545;
+                            background: rgba(220, 53, 69, 0.8);
                             border: none;
                             color: white;
                             cursor: pointer;
-                            width: 14px;
-                            height: 14px;
+                            width: 12px;
+                            height: 12px;
                             border-radius: 50%;
-                            font-size: 8px;
+                            font-size: 7px;
                             display: flex;
                             align-items: center;
                             justify-content: center;
                             line-height: 1;
                             transition: all 0.2s;
-                        " onmouseover="this.style.background='#c82333'; this.style.transform='scale(1.1)'" 
-                           onmouseout="this.style.background='#dc3545'; this.style.transform='scale(1)'" 
+                            opacity: 0.7;
+                        " onmouseover="this.style.background='rgba(200, 35, 51, 1)'; this.style.transform='scale(1.1)'; this.style.opacity='1'" 
+                           onmouseout="this.style.background='rgba(220, 53, 69, 0.8)'; this.style.transform='scale(1)'; this.style.opacity='0.7'" 
                            title="Remove target">×</button>
-                    </div>
-                    <div style="font-size: 11px;">
-                        ${statusDisplay}
                     </div>
                 </div>
             `;
@@ -357,7 +359,7 @@
 
             // OK status (green)
             if (data.status.state === 'Okay') {
-                return '<span style="color: #4CAF50; font-weight: bold;">✅ Online</span>';
+                return '<span style="color: #4CAF50; font-weight: bold;">Okay</span>';
             }
 
             // Hospital status (red with timer)
@@ -471,6 +473,27 @@
                     this.removeTarget(attackList.id, targetId);
                 });
             });
+
+            // Resizing functionality (only if not pinned)
+            let resizeTimeout;
+            const resizeObserver = new ResizeObserver(entries => {
+                if (attackList.pinned) return;
+                
+                for (let entry of entries) {
+                    if (entry.target === element) {
+                        attackList.width = entry.contentRect.width;
+                        attackList.height = entry.contentRect.height;
+                        
+                        // Debounce saves to prevent excessive saving during resize
+                        clearTimeout(resizeTimeout);
+                        resizeTimeout = setTimeout(() => {
+                            this.saveAttackLists();
+                            console.log(`📏 Saved attack list '${attackList.name}' size: ${attackList.width}x${attackList.height}`);
+                        }, 500);
+                    }
+                }
+            });
+            resizeObserver.observe(element);
 
             // Make draggable
             this.makeDraggable(element, attackList);
