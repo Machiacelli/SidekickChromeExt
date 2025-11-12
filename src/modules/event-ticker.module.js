@@ -641,6 +641,13 @@
                 return;
             }
 
+            // Prevent multiple simultaneous updates
+            if (this.isUpdating) {
+                console.log('⚠️ Event Ticker: Update already in progress, skipping');
+                return;
+            }
+            this.isUpdating = true;
+
             const activeEvents = this.getActiveEvents();
             const upcomingEvents = this.getUpcomingEvents(7); // Increased range to catch more events
 
@@ -661,7 +668,8 @@
                 if (timeUntil > 0) {
                     displayText = `⏰ Next Event: ${this.nearestEvent.title} in ${this.formatCountdown(timeUntil)}`;
                     console.log('✅ Event Ticker: Showing API countdown:', displayText);
-                    this.tickerElement.textContent = displayText;
+                    this.setTickerText(displayText);
+                    this.isUpdating = false;
                     return;
                 }
             }
@@ -712,22 +720,29 @@
                 
                 console.log(`✅ Event Ticker: Showing event ${(this.currentEventIndex % allRelevantEvents.length) + 1}/${allRelevantEvents.length}:`, eventToShow.name, `(${eventToShow.type})`);
                 
-                // Add smooth transition effect
-                this.tickerElement.style.opacity = '0.5';
-                setTimeout(() => {
-                    this.tickerElement.textContent = displayText;
-                    this.tickerElement.style.opacity = '1';
-                }, 150);
+                this.setTickerText(displayText);
             } else {
                 displayText = '✨ No events currently scheduled - Stay sharp, stay violent';
                 console.log('📭 Event Ticker: No events, showing fallback message');
-                this.tickerElement.style.opacity = '0.5';
-                setTimeout(() => {
-                    this.tickerElement.textContent = displayText;
-                    this.tickerElement.style.opacity = '1';
-                }, 150);
+                this.setTickerText(displayText);
             }
-            this.tickerElement.textContent = displayText;
+            
+            this.isUpdating = false;
+        },
+
+        // Helper method to set ticker text with smooth transition
+        setTickerText(text) {
+            // Clear any existing transition timeout
+            if (this.transitionTimeout) {
+                clearTimeout(this.transitionTimeout);
+            }
+            
+            this.tickerElement.style.opacity = '0.5';
+            this.transitionTimeout = setTimeout(() => {
+                this.tickerElement.textContent = text;
+                this.tickerElement.style.opacity = '1';
+                this.transitionTimeout = null;
+            }, 150);
         },
 
         getDaysUntil(event) {
@@ -783,6 +798,11 @@
             if (this.countdownInterval) {
                 clearInterval(this.countdownInterval);
             }
+            if (this.transitionTimeout) {
+                clearTimeout(this.transitionTimeout);
+                this.transitionTimeout = null;
+            }
+            this.isUpdating = false;
             if (this.tickerElement && this.tickerElement.parentElement) {
                 this.tickerElement.parentElement.remove();
             }

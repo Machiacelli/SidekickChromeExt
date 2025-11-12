@@ -24,7 +24,8 @@
                 icon: '⚡',
                 color: '#4ECDC4',
                 description: 'Daily energy refill',
-                apiField: 'refills_energy_used',
+                apiField: 'energyrefillsused', // Try different possible field names
+                alternativeFields: ['refills_energy_used', 'energy_refills_used', 'energyrefillsused'],
                 completed: false
             },
             nerveRefill: {
@@ -32,7 +33,8 @@
                 icon: '🧠',
                 color: '#45B7D1',
                 description: 'Daily nerve refill',
-                apiField: 'refills_nerve_used',
+                apiField: 'nerverefillsused', // Try different possible field names
+                alternativeFields: ['refills_nerve_used', 'nerve_refills_used', 'nerverefillsused'],
                 completed: false
             },
             xanaxDose: {
@@ -42,15 +44,6 @@
                 description: 'Daily Xanax dose (up to 3)',
                 apiField: 'xanax_taken',
                 maxCount: 3,
-                currentCount: 0,
-                completed: false
-            },
-            drugsUsed: {
-                name: 'Drugs Used',
-                icon: '💉',
-                color: '#9C27B0',
-                description: 'Daily drug usage',
-                apiField: 'drugs_used',
                 currentCount: 0,
                 completed: false
             }
@@ -199,11 +192,18 @@
                     return;
                 }
                 
+                console.log('🔍 Checking Torn API for daily task updates...');
+                
                 // Get user data with personalstats for daily tracking
                 const response = await fetch(`https://api.torn.com/user/?selections=personalstats&key=${apiKey}`);
                 const data = await response.json();
                 
                 if (data && !data.error && data.personalstats) {
+                    console.log('📊 API Response received:', {
+                        refills_energy_used: data.personalstats.refills_energy_used,
+                        refills_nerve_used: data.personalstats.refills_nerve_used,
+                        xanax_taken: data.personalstats.xanax_taken
+                    });
                     this.updateTasksFromApi(data.personalstats);
                 } else if (data && data.error) {
                     console.error('❌ API Error checking daily tasks:', data.error);
@@ -217,11 +217,30 @@
         updateTasksFromApi(personalstats) {
             let hasUpdates = false;
             
+            console.log('📋 Updating tasks from API data...');
+            
             for (const taskKey in this.dailyTasks) {
                 const task = this.dailyTasks[taskKey];
                 
+                // Try the main field first, then alternatives
+                let apiValue = undefined;
+                let usedField = task.apiField;
+                
                 if (task.apiField && personalstats[task.apiField] !== undefined) {
-                    const apiValue = personalstats[task.apiField];
+                    apiValue = personalstats[task.apiField];
+                } else if (task.alternativeFields) {
+                    // Try alternative field names
+                    for (const altField of task.alternativeFields) {
+                        if (personalstats[altField] !== undefined) {
+                            apiValue = personalstats[altField];
+                            usedField = altField;
+                            break;
+                        }
+                    }
+                }
+                
+                if (apiValue !== undefined) {
+                    console.log(`🔍 Checking ${task.name} (${usedField}): API value = ${apiValue}, current completed = ${task.completed}`);
                     
                     if (task.maxCount) {
                         // Multi-completion task (like xanax)
@@ -238,15 +257,20 @@
                         if (isCompleted !== task.completed) {
                             task.completed = isCompleted;
                             hasUpdates = true;
-                            console.log(`📋 Updated ${task.name}: ${isCompleted ? 'completed' : 'pending'}`);
+                            console.log(`📋 Updated ${task.name}: ${isCompleted ? 'completed' : 'pending'} (API value: ${apiValue})`);
                         }
                     }
+                } else {
+                    console.log(`⚠️ No valid API field found for ${task.name}. Tried: ${task.apiField}${task.alternativeFields ? ', ' + task.alternativeFields.join(', ') : ''}`);
                 }
             }
             
             if (hasUpdates) {
                 this.saveDailyTasks();
                 this.renderAllTodoLists();
+                console.log('✅ Daily tasks updated and saved');
+            } else {
+                console.log('ℹ️ No updates needed for daily tasks');
             }
         },
 
@@ -376,6 +400,24 @@
                            onmouseout="this.style.background='rgba(255,255,255,0.2)'" 
                            title="Add task">+</button>
                            
+                        <button class="refresh-api-btn" style="
+                            background: rgba(76, 175, 80, 0.3);
+                            border: none;
+                            color: #fff;
+                            cursor: pointer;
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 50%;
+                            font-size: 10px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            transition: all 0.2s;
+                            margin-left: 2px;
+                        " onmouseover="this.style.background='rgba(76, 175, 80, 0.5)'" 
+                           onmouseout="this.style.background='rgba(76, 175, 80, 0.3)'" 
+                           title="Check API now">🔄</button>
+                           
                         <button class="pin-todolist-btn" style="
                             background: none;
                             border: none;
@@ -419,7 +461,15 @@
                     display: flex;
                     flex-direction: column;
                     gap: 8px;
+                    scrollbar-width: none;
+                    -ms-overflow-style: none;
                 ">
+                    <style>
+                        .todolist-content::-webkit-scrollbar {
+                            width: 0px;
+                            background: transparent;
+                        }
+                    </style>
                     <div class="tasks-container">
                         ${this.renderTasksContent(todoList)}
                     </div>
@@ -578,6 +628,16 @@
                 e.stopPropagation();
                 this.showAddTaskDialog(todoList);
             });
+
+            // Refresh API button
+            const refreshApiBtn = element.querySelector('.refresh-api-btn');
+            if (refreshApiBtn) {
+                refreshApiBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    console.log('🔄 Manual API check triggered');
+                    await this.checkApiForCompletedTasks();
+                });
+            }
 
             // Pin button
             const pinBtn = element.querySelector('.pin-todolist-btn');
