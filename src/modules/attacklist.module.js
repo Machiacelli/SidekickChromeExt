@@ -302,6 +302,16 @@
             }
 
             container.innerHTML = attackList.targets.map(target => this.renderTarget(target)).join('');
+            
+            // Re-add event listeners for remove target buttons
+            container.querySelectorAll('.remove-target-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const targetId = btn.dataset.targetId;
+                    this.removeTarget(attackList.id, targetId);
+                });
+            });
         },
 
         // Render individual target
@@ -473,16 +483,6 @@
                 if (confirm(`Delete "${attackList.name}" attack list?`)) {
                     this.deleteAttackList(attackList.id);
                 }
-            });
-
-            // Remove target buttons
-            element.querySelectorAll('.remove-target-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const targetId = btn.dataset.targetId;
-                    this.removeTarget(attackList.id, targetId);
-                });
             });
 
             // Resizing functionality (only if not pinned)

@@ -157,6 +157,15 @@
                 console.warn("⚠️ Random Target module not available");
             }
 
+            // Initialize Todo List Module
+            console.log("📋 Sidekick: Initializing Todo List...");
+            if (window.SidekickModules.TodoList?.init) {
+                await window.SidekickModules.TodoList.init();
+                console.log("✅ Sidekick: Todo List initialized");
+            } else {
+                console.warn("⚠️ Todo List module not available");
+            }
+
             // UI and modules initialized successfully
             console.log("🎉 Sidekick Chrome Extension initialization complete!");
 

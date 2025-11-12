@@ -336,6 +336,20 @@
                     }
                 }
                 
+                // Initialize/refresh Todo List module when sidebar opens
+                if (window.SidekickModules?.TodoList) {
+                    if (!window.SidekickModules.TodoList.isInitialized) {
+                        console.log("📋 Triggering Todo List initialization...");
+                        window.SidekickModules.TodoList.init().then(() => {
+                            // Render any existing todo lists
+                            window.SidekickModules.TodoList.renderAllTodoLists();
+                        });
+                    } else {
+                        console.log("📋 Refreshing existing Todo Lists...");
+                        window.SidekickModules.TodoList.renderAllTodoLists();
+                    }
+                }
+                
                 // Save state
                 this.saveSidebarState();
             }
@@ -616,7 +630,7 @@
                     this.createNewAttackList();
                     break;
                 case 'todolist':
-                    this.showNotification('Todo List Module', 'Todo list module coming soon!', 'info');
+                    this.createNewTodoList();
                     break;
                 case 'stockticker':
                     this.showNotification('Stock Ticker Module', 'Stock ticker module coming soon!', 'info');
@@ -707,6 +721,28 @@
             } catch (error) {
                 console.error('Failed to create attack list:', error);
                 this.showNotification('Attack List Error', 'Failed to create attack list', 'error');
+            }
+        },
+
+        // Create a new todo list window in the sidebar
+        async createNewTodoList() {
+            try {
+                if (!window.SidekickModules?.TodoList) {
+                    this.showNotification('Todo List Error', 'Todo List module not loaded', 'error');
+                    return;
+                }
+
+                // Initialize if not already done
+                if (!window.SidekickModules.TodoList.isInitialized) {
+                    await window.SidekickModules.TodoList.init();
+                }
+                
+                // Create todo list immediately
+                const todoList = window.SidekickModules.TodoList.createNewTodoList();
+                this.showNotification('Todo List Created', 'New todo list with daily tasks created', 'success');
+            } catch (error) {
+                console.error('Failed to create todo list:', error);
+                this.showNotification('Todo List Error', 'Failed to create todo list', 'error');
             }
         },
 

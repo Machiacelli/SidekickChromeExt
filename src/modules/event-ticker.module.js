@@ -745,29 +745,35 @@
         },
 
         startRotation() {
-            this.rotationInterval = setInterval(() => {
-                const activeEvents = this.getActiveEvents();
-                const upcomingEvents = this.getUpcomingEvents(7).filter(event => {
-                    const daysUntil = this.getDaysUntil(event);
-                    return daysUntil <= 7;
-                });
-                
-                const totalEvents = activeEvents.length + upcomingEvents.length;
-                
-                if (totalEvents > 1) {
-                    this.currentEventIndex++;
-                    console.log(`🔄 Event Ticker: Rotating to event ${(this.currentEventIndex % totalEvents) + 1}/${totalEvents}`);
-                }
-                
-                this.updateTickerDisplay();
-            }, 12000); // Increased from 8s to 12s to give more time for messages
+            this.scheduleNextRotation();
+            console.log('✅ Event Ticker: Sequential rotation started');
+        },
 
-            console.log('✅ Event Ticker: Rotation started (12s interval)');
+        scheduleNextRotation() {
+            const activeEvents = this.getActiveEvents();
+            const upcomingEvents = this.getUpcomingEvents(7).filter(event => {
+                const daysUntil = this.getDaysUntil(event);
+                return daysUntil <= 7;
+            });
+            
+            const totalEvents = activeEvents.length + upcomingEvents.length;
+            
+            if (totalEvents > 1) {
+                this.currentEventIndex++;
+                console.log(`🔄 Event Ticker: Rotating to event ${(this.currentEventIndex % totalEvents) + 1}/${totalEvents}`);
+            }
+            
+            this.updateTickerDisplay();
+            
+            // Schedule next rotation only after current one completes
+            this.rotationInterval = setTimeout(() => {
+                this.scheduleNextRotation();
+            }, 12000); // 12 seconds per message
         },
 
         stopRotation() {
             if (this.rotationInterval) {
-                clearInterval(this.rotationInterval);
+                clearTimeout(this.rotationInterval);
                 this.rotationInterval = null;
             }
         },
