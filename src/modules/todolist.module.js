@@ -25,7 +25,7 @@
                 color: '#4ECDC4',
                 description: 'Daily energy refill',
                 apiField: 'energyrefillsused', // Try different possible field names
-                alternativeFields: ['refills_energy_used', 'energy_refills_used', 'energyrefillsused'],
+                alternativeFields: ['refills_energy_used', 'energy_refills_used', 'energyrefillsused', 'refillsenergyused'],
                 completed: false
             },
             nerveRefill: {
@@ -34,7 +34,7 @@
                 color: '#45B7D1',
                 description: 'Daily nerve refill',
                 apiField: 'nerverefillsused', // Try different possible field names
-                alternativeFields: ['refills_nerve_used', 'nerve_refills_used', 'nerverefillsused'],
+                alternativeFields: ['refills_nerve_used', 'nerve_refills_used', 'nerverefillsused', 'refillsnerveused'],
                 completed: false
             },
             xanaxDose: {
@@ -43,6 +43,7 @@
                 color: '#E74C3C', 
                 description: 'Daily Xanax dose (up to 3)',
                 apiField: 'xanax_taken',
+                alternativeFields: ['xanax_taken', 'xanaxtaken', 'xanaxused'],
                 maxCount: 3,
                 currentCount: 0,
                 completed: false
@@ -156,11 +157,12 @@
 
         // Start daily reset timer to check for UTC midnight
         startDailyResetTimer() {
-            // Check every minute for daily reset
+            // Check every minute for daily reset and custom task resets
             this.dailyResetInterval = setInterval(() => {
                 const now = new Date();
                 const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
                 
+                // Check for daily task reset
                 if (this.lastResetDate) {
                     const lastResetUTC = new Date(Date.UTC(this.lastResetDate.getUTCFullYear(), this.lastResetDate.getUTCMonth(), this.lastResetDate.getUTCDate()));
                     
@@ -168,19 +170,70 @@
                         this.resetDailyTasks();
                     }
                 }
+                
+                // Check for custom task auto-resets
+                this.checkCustomTaskResets();
             }, 60000); // Check every minute
             
             console.log('⏰ Daily reset timer started');
         },
 
+        // Check and reset custom tasks based on their reset duration
+        checkCustomTaskResets() {
+            let hasUpdates = false;
+            const now = new Date();
+            
+            for (const todoList of this.todoLists) {
+                for (const task of todoList.tasks) {
+                    if (task.completed && task.completedAt && task.resetDuration && task.resetDuration !== 'never') {
+                        const completedTime = new Date(task.completedAt);
+                        const resetMs = this.parseResetDuration(task.resetDuration);
+                        
+                        if (resetMs > 0 && (now.getTime() - completedTime.getTime()) >= resetMs) {
+                            task.completed = false;
+                            task.completedAt = null;
+                            todoList.modified = new Date().toISOString();
+                            hasUpdates = true;
+                            console.log(`🔄 Auto-reset task "${task.name}" after ${task.resetDuration}`);
+                        }
+                    }
+                }
+            }
+            
+            if (hasUpdates) {
+                this.saveTodoLists();
+                this.renderAllTodoLists();
+            }
+        },
+
+        // Parse reset duration string to milliseconds
+        parseResetDuration(duration) {
+            const match = duration.match(/^(\d+)([hd])$/);
+            if (!match) return 0;
+            
+            const value = parseInt(match[1]);
+            const unit = match[2];
+            
+            switch (unit) {
+                case 'h': return value * 60 * 60 * 1000; // hours to ms
+                case 'd': return value * 24 * 60 * 60 * 1000; // days to ms
+                default: return 0;
+            }
+        },
+
         // Start API check interval for automatic task completion
         startApiCheckInterval() {
-            // Check API every 5 minutes for task completion
+            // Do an immediate check
+            setTimeout(() => {
+                this.checkApiForCompletedTasks();
+            }, 2000); // Wait 2 seconds for initialization to complete
+            
+            // Check API every 1 minute for task completion (increased frequency for testing)
             this.apiCheckInterval = setInterval(async () => {
                 await this.checkApiForCompletedTasks();
-            }, 300000); // 5 minutes
+            }, 60000); // 1 minute instead of 5 minutes for better responsiveness
             
-            console.log('🔍 API check interval started');
+            console.log('🔍 API check interval started (checking every minute)');
         },
 
         // Check Torn API for completed daily tasks
@@ -199,10 +252,18 @@
                 const data = await response.json();
                 
                 if (data && !data.error && data.personalstats) {
-                    console.log('📊 API Response received:', {
+                    console.log('📊 Full API Response received:');
+                    console.log('Available personalstats fields:', Object.keys(data.personalstats));
+                    console.log('Sample values:', {
                         refills_energy_used: data.personalstats.refills_energy_used,
                         refills_nerve_used: data.personalstats.refills_nerve_used,
-                        xanax_taken: data.personalstats.xanax_taken
+                        refillsenergyused: data.personalstats.refillsenergyused,
+                        refillsnerveused: data.personalstats.refillsnerveused,
+                        energyrefillsused: data.personalstats.energyrefillsused,
+                        nerverefillsused: data.personalstats.nerverefillsused,
+                        xanax_taken: data.personalstats.xanax_taken,
+                        xanaxused: data.personalstats.xanaxused,
+                        xanaxtaken: data.personalstats.xanaxtaken
                     });
                     this.updateTasksFromApi(data.personalstats);
                 } else if (data && data.error) {
@@ -559,7 +620,27 @@
         },
 
         // Render custom task item
+        // Render custom task item
         renderCustomTask(task, todoListId) {
+            // Calculate reset info
+            let resetInfo = '';
+            if (task.resetDuration && task.resetDuration !== 'never') {
+                if (task.completed && task.completedAt) {
+                    const completedTime = new Date(task.completedAt);
+                    const resetMs = this.parseResetDuration(task.resetDuration);
+                    const now = new Date();
+                    const timeElapsed = now.getTime() - completedTime.getTime();
+                    const timeRemaining = resetMs - timeElapsed;
+                    
+                    if (timeRemaining > 0) {
+                        const remainingText = this.formatDuration(timeRemaining);
+                        resetInfo = ` (resets in ${remainingText})`;
+                    }
+                } else {
+                    resetInfo = ` (auto-resets: ${this.formatResetDuration(task.resetDuration)})`;
+                }
+            }
+            
             return `
                 <div class="task-item custom-task" style="
                     background: ${task.completed ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255,255,255,0.1)'};
@@ -575,6 +656,7 @@
                         <div style="color: #fff; font-size: 12px; font-weight: 500;">
                             ${this.escapeHtml(task.name)}
                         </div>
+                        ${resetInfo ? `<div style="color: #aaa; font-size: 10px;">${resetInfo}</div>` : ''}
                     </div>
                     <button class="toggle-task-btn" data-task-id="${task.id}" style="
                         width: 16px;
@@ -713,21 +795,181 @@
         },
 
         // Show add task dialog
+        // Show add task dialog with reset options
         showAddTaskDialog(todoList) {
-            const taskName = prompt('Enter task name:');
-            if (!taskName || !taskName.trim()) return;
+            this.createTaskDialog(todoList);
+        },
 
+        // Create advanced task dialog
+        createTaskDialog(todoList) {
+            // Remove existing dialog if present
+            const existingDialog = document.getElementById('sidekick-task-dialog');
+            if (existingDialog) {
+                existingDialog.remove();
+            }
+
+            // Create dialog overlay
+            const dialogOverlay = document.createElement('div');
+            dialogOverlay.id = 'sidekick-task-dialog';
+            dialogOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                backdrop-filter: blur(3px);
+            `;
+
+            // Create dialog box
+            const dialog = document.createElement('div');
+            dialog.style.cssText = `
+                background: linear-gradient(145deg, #37474F, #263238);
+                border: 1px solid #666;
+                border-radius: 8px;
+                padding: 20px;
+                min-width: 320px;
+                max-width: 400px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            `;
+
+            dialog.innerHTML = `
+                <h3 style="color: #fff; margin: 0 0 15px 0; font-size: 16px;">Add New Task</h3>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="color: #ccc; font-size: 12px; display: block; margin-bottom: 5px;">Task Name:</label>
+                    <input type="text" id="task-name-input" style="
+                        width: 100%;
+                        padding: 8px;
+                        border: 1px solid #555;
+                        border-radius: 4px;
+                        background: #2a2a2a;
+                        color: #fff;
+                        font-size: 14px;
+                        box-sizing: border-box;
+                    " placeholder="Enter task name..." maxlength="50">
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="color: #ccc; font-size: 12px; display: block; margin-bottom: 5px;">Auto-reset after completion:</label>
+                    <select id="reset-duration" style="
+                        width: 100%;
+                        padding: 8px;
+                        border: 1px solid #555;
+                        border-radius: 4px;
+                        background: #2a2a2a;
+                        color: #fff;
+                        font-size: 14px;
+                    ">
+                        <option value="never">Never (manual reset only)</option>
+                        <option value="1h">1 Hour</option>
+                        <option value="2h">2 Hours</option>
+                        <option value="4h">4 Hours</option>
+                        <option value="8h">8 Hours</option>
+                        <option value="12h">12 Hours</option>
+                        <option value="1d" selected>1 Day (24 hours)</option>
+                        <option value="2d">2 Days</option>
+                        <option value="3d">3 Days</option>
+                        <option value="7d">1 Week</option>
+                        <option value="30d">1 Month</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button id="cancel-task" style="
+                        padding: 8px 16px;
+                        border: 1px solid #666;
+                        border-radius: 4px;
+                        background: #444;
+                        color: #ccc;
+                        cursor: pointer;
+                        font-size: 12px;
+                    ">Cancel</button>
+                    <button id="create-task" style="
+                        padding: 8px 16px;
+                        border: none;
+                        border-radius: 4px;
+                        background: linear-gradient(135deg, #4CAF50, #388E3C);
+                        color: white;
+                        cursor: pointer;
+                        font-size: 12px;
+                        font-weight: 500;
+                    ">Create Task</button>
+                </div>
+            `;
+
+            dialogOverlay.appendChild(dialog);
+            document.body.appendChild(dialogOverlay);
+
+            // Focus on input
+            const nameInput = dialog.querySelector('#task-name-input');
+            nameInput.focus();
+
+            // Add event listeners
+            const cancelBtn = dialog.querySelector('#cancel-task');
+            const createBtn = dialog.querySelector('#create-task');
+            const resetSelect = dialog.querySelector('#reset-duration');
+
+            cancelBtn.addEventListener('click', () => {
+                dialogOverlay.remove();
+            });
+
+            createBtn.addEventListener('click', () => {
+                const taskName = nameInput.value.trim();
+                if (!taskName) {
+                    nameInput.style.borderColor = '#f44336';
+                    nameInput.focus();
+                    return;
+                }
+
+                const resetDuration = resetSelect.value;
+                this.createTaskWithReset(todoList, taskName, resetDuration);
+                dialogOverlay.remove();
+            });
+
+            // Enter key to create
+            nameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    createBtn.click();
+                }
+            });
+
+            // Escape key to cancel
+            dialogOverlay.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    dialogOverlay.remove();
+                }
+            });
+
+            // Click outside to cancel
+            dialogOverlay.addEventListener('click', (e) => {
+                if (e.target === dialogOverlay) {
+                    dialogOverlay.remove();
+                }
+            });
+        },
+
+        // Create task with reset duration
+        createTaskWithReset(todoList, taskName, resetDuration) {
             const task = {
                 id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                name: taskName.trim(),
+                name: taskName,
                 completed: false,
-                created: new Date().toISOString()
+                created: new Date().toISOString(),
+                resetDuration: resetDuration,
+                completedAt: null // Track when task was completed for auto-reset
             };
 
             todoList.tasks.push(task);
             todoList.modified = new Date().toISOString();
             this.saveTodoLists();
             this.renderTodoList(todoList);
+            
+            console.log(`📋 Created task "${taskName}" with reset: ${resetDuration}`);
         },
 
         // Toggle task completion
@@ -739,6 +981,17 @@
             if (!task) return;
 
             task.completed = !task.completed;
+            
+            if (task.completed) {
+                // Mark completion time for auto-reset functionality
+                task.completedAt = new Date().toISOString();
+                console.log(`✅ Task "${task.name}" completed at ${task.completedAt}`);
+            } else {
+                // Clear completion time if unchecked
+                task.completedAt = null;
+                console.log(`❌ Task "${task.name}" marked as incomplete`);
+            }
+            
             todoList.modified = new Date().toISOString();
             this.saveTodoLists();
             this.renderTodoList(todoList);
@@ -863,6 +1116,39 @@
                 "'": '&#039;'
             };
             return text.replace(/[&<>"']/g, (m) => map[m]);
+        },
+
+        // Format reset duration for display
+        formatResetDuration(duration) {
+            const match = duration.match(/^(\d+)([hd])$/);
+            if (!match) return duration;
+            
+            const value = parseInt(match[1]);
+            const unit = match[2];
+            
+            switch (unit) {
+                case 'h': return value === 1 ? '1 hour' : `${value} hours`;
+                case 'd': return value === 1 ? '1 day' : `${value} days`;
+                default: return duration;
+            }
+        },
+
+        // Format remaining time until reset
+        formatDuration(milliseconds) {
+            const seconds = Math.floor(milliseconds / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            
+            if (days > 0) {
+                return days === 1 ? '1 day' : `${days} days`;
+            } else if (hours > 0) {
+                return hours === 1 ? '1 hour' : `${hours} hours`;
+            } else if (minutes > 0) {
+                return minutes === 1 ? '1 minute' : `${minutes} minutes`;
+            } else {
+                return 'less than a minute';
+            }
         }
     };
 
