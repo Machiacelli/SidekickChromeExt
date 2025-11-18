@@ -157,13 +157,40 @@
                 console.warn("⚠️ Random Target module not available");
             }
 
-            // Initialize Todo List Module
+            // Initialize Timer Module
+            console.log("⏰ Sidekick: Initializing Timer...");
+            if (window.SidekickModules.Timer?.init) {
+                await window.SidekickModules.Timer.init();
+                console.log("✅ Sidekick: Timer initialized");
+            } else {
+                console.warn("⚠️ Timer module not available");
+            }
+
+            // Initialize Flight Tracker Module
+            console.log("✈️ Sidekick: Initializing Flight Tracker...");
+            if (window.SidekickModules.FlightTracker?.init) {
+                await window.SidekickModules.FlightTracker.init();
+                console.log("✅ Sidekick: Flight Tracker initialized");
+            } else {
+                console.warn("⚠️ Flight Tracker module not available");
+            }
+
+            // Initialize Todo List
             console.log("📋 Sidekick: Initializing Todo List...");
             if (window.SidekickModules.TodoList?.init) {
                 await window.SidekickModules.TodoList.init();
                 console.log("✅ Sidekick: Todo List initialized");
             } else {
                 console.warn("⚠️ Todo List module not available");
+            }
+
+            // Initialize Debt Module
+            console.log("💰 Sidekick: Initializing Debt Module...");
+            if (window.SidekickModules.Debt?.init) {
+                await window.SidekickModules.Debt.init();
+                console.log("✅ Sidekick: Debt Module initialized");
+            } else {
+                console.warn("⚠️ Debt Module not available");
             }
 
             // UI and modules initialized successfully

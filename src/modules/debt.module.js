@@ -1,0 +1,1432 @@
+/**
+ * Sidekick Chrome Extension - Debt Module
+ * Handles loan and debt tracking with automated API integration
+ * Version: 1.0.0
+ * Author: Machiacelli
+ */
+
+(function() {
+    'use strict';
+
+    console.log("💰 Loading Sidekick Debt Module...");
+
+    // Wait for Core module to be available
+    function waitForCore() {
+        return new Promise((resolve) => {
+            const checkCore = () => {
+                console.log("🔍 Checking for Core module...");
+                
+                if (window.SidekickModules?.Core?.ChromeStorage) {
+                    console.log("💰 Core module with ChromeStorage ready for Debt");
+                    resolve();
+                } else {
+                    setTimeout(checkCore, 100);
+                }
+            };
+            checkCore();
+        });
+    }
+
+    // Debt Module Implementation
+    const DebtModule = {
+        isInitialized: false,
+        debtsAndLoans: [], // Combined array for all debt/loan entries
+        apiKey: null,
+        apiCheckInterval: null,
+        interestUpdateInterval: null,
+
+        // Interest calculation types
+        interestTypes: {
+            NONE: 'none',
+            DAILY: 'daily',
+            WEEKLY: 'weekly',
+            FLAT: 'flat',
+            APR: 'apr'
+        },
+
+        // Initialize the debt module
+        async init() {
+            if (this.isInitialized) {
+                console.log("💰 Debt Module already initialized");
+                return;
+            }
+
+            try {
+                await waitForCore();
+                
+                console.log("💰 Debt Module: Starting initialization...");
+                
+                await this.loadDebtsAndLoans();
+                await this.loadApiKey();
+                this.startInterestUpdates();
+                this.startApiMonitoring();
+                
+                this.isInitialized = true;
+                console.log("💰 Debt Module initialized successfully");
+                
+            } catch (error) {
+                console.error('Failed to initialize Debt Module:', error);
+            }
+        },
+
+        // Load API key from settings
+        async loadApiKey() {
+            if (window.SidekickModules?.Settings?.getSetting) {
+                this.apiKey = window.SidekickModules.Settings.getSetting('apiKey');
+                if (this.apiKey) {
+                    console.log("💰 API Key loaded: ✓");
+                } else {
+                    console.log("💰 No API key found");
+                }
+            }
+        },
+
+        // Load debts and loans from storage
+        async loadDebtsAndLoans() {
+            try {
+                console.log("💰 Loading debts and loans from storage...");
+                
+                if (window.SidekickModules?.Core?.ChromeStorage?.get) {
+                    const debtData = await window.SidekickModules.Core.ChromeStorage.get('sidekick_debt_data');
+                    
+                    if (debtData) {
+                        this.debtsAndLoans = debtData.debtsAndLoans || [];
+                        console.log(`💰 Loaded ${this.debtsAndLoans.length} debt/loan entries`);
+                        
+                        // Don't auto-create panels - only show when tracker window is opened
+                    } else {
+                        console.log("💰 No existing debt data found");
+                    }
+                } else {
+                    console.error("💰 ChromeStorage not available");
+                }
+                
+            } catch (error) {
+                console.error('Failed to load debts and loans:', error);
+                this.debtsAndLoans = [];
+            }
+        },
+
+        // Save debts and loans to storage
+        async saveDebtsAndLoans() {
+            try {
+                const data = {
+                    debtsAndLoans: this.debtsAndLoans,
+                    lastSaved: Date.now()
+                };
+                
+                if (window.SidekickModules?.Core?.ChromeStorage?.set) {
+                    await window.SidekickModules.Core.ChromeStorage.set('sidekick_debt_data', data);
+                    console.log("💰 Debt data saved successfully");
+                }
+            } catch (error) {
+                console.error('Failed to save debt data:', error);
+            }
+        },
+
+        // Create new debt entry (someone owes you money)
+        createDebt(playerId, playerName, amount, interestType = 'none', interestRate = 0, notes = '') {
+            const debt = {
+                id: `debt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                type: 'debt',
+                playerId: playerId,
+                playerName: playerName,
+                principal: parseFloat(amount),
+                currentAmount: parseFloat(amount),
+                interestType: interestType,
+                interestRate: parseFloat(interestRate),
+                createdAt: new Date().toISOString(),
+                lastInterestUpdate: new Date().toISOString(),
+                notes: notes,
+                repayments: [],
+                frozen: false
+            };
+            
+            this.debts.push(debt);
+            this.saveDebtsAndLoans();
+            this.renderAllDebtPanels();
+            
+            console.log(`💰 Created new debt: ${playerName} owes $${amount.toLocaleString()}`);
+            return debt;
+        },
+
+        // Create new loan entry (you owe money to someone)
+        createLoan(playerId, playerName, amount, interestType = 'none', interestRate = 0, notes = '') {
+            const loan = {
+                id: `loan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                type: 'loan',
+                playerId: playerId,
+                playerName: playerName,
+                principal: parseFloat(amount),
+                currentAmount: parseFloat(amount),
+                interestType: interestType,
+                interestRate: parseFloat(interestRate),
+                createdAt: new Date().toISOString(),
+                lastInterestUpdate: new Date().toISOString(),
+                notes: notes,
+                repayments: [],
+                frozen: false
+            };
+            
+            this.loans.push(loan);
+            this.saveDebtsAndLoans();
+            this.renderAllDebtPanels();
+            
+            console.log(`💰 Created new loan: You owe ${playerName} $${amount.toLocaleString()}`);
+            return loan;
+        },
+
+        // Calculate interest for an entry
+        calculateInterest(entry) {
+            if (entry.frozen || entry.interestType === 'none' || entry.interestRate <= 0) {
+                return 0;
+            }
+
+            const now = new Date();
+            const lastUpdate = new Date(entry.lastInterestUpdate);
+            const timeDiffMs = now.getTime() - lastUpdate.getTime();
+            
+            let interest = 0;
+            
+            switch (entry.interestType) {
+                case 'daily':
+                    const daysPassed = timeDiffMs / (1000 * 60 * 60 * 24);
+                    interest = entry.currentAmount * (entry.interestRate / 100) * daysPassed;
+                    break;
+                    
+                case 'weekly':
+                    const weeksPassed = timeDiffMs / (1000 * 60 * 60 * 24 * 7);
+                    interest = entry.currentAmount * (entry.interestRate / 100) * weeksPassed;
+                    break;
+                    
+                case 'flat':
+                    // Flat fee applied once per day
+                    const daysForFlat = Math.floor(timeDiffMs / (1000 * 60 * 60 * 24));
+                    if (daysForFlat >= 1) {
+                        interest = entry.interestRate * daysForFlat;
+                    }
+                    break;
+                    
+                case 'apr':
+                    const yearsPassedAPR = timeDiffMs / (1000 * 60 * 60 * 24 * 365);
+                    interest = entry.currentAmount * (entry.interestRate / 100) * yearsPassedAPR;
+                    break;
+            }
+            
+            return Math.max(0, interest);
+        },
+
+        // Update interest for all entries
+        updateAllInterest() {
+            let hasUpdates = false;
+            const now = new Date().toISOString();
+            
+            // Update all debt and loan entries
+            for (const entry of this.debtsAndLoans) {
+                const interest = this.calculateInterest(entry);
+                if (interest > 0) {
+                    entry.currentAmount += interest;
+                    entry.lastInterestUpdate = now;
+                    hasUpdates = true;
+                    const type = entry.isDebt ? 'debt from' : 'loan to';
+                    console.log(`💰 Applied $${interest.toFixed(2)} interest to ${type} ${entry.playerName}`);
+                }
+            }
+            
+            if (hasUpdates) {
+                this.saveDebtsAndLoans();
+                this.renderAllDebtPanels();
+            }
+        },
+
+        // Start interest update intervals
+        startInterestUpdates() {
+            // Update interest every 10 minutes
+            this.interestUpdateInterval = setInterval(() => {
+                this.updateAllInterest();
+            }, 10 * 60 * 1000);
+            
+            console.log("💰 Interest update interval started (every 10 minutes)");
+        },
+
+        // Start API monitoring for automatic repayment detection
+        startApiMonitoring() {
+            if (!this.apiKey) {
+                console.log("💰 No API key available for payment monitoring");
+                return;
+            }
+            
+            // Check for payments every 2 minutes
+            this.apiCheckInterval = setInterval(() => {
+                this.checkForPayments();
+            }, 2 * 60 * 1000);
+            
+            // Do immediate check
+            setTimeout(() => {
+                this.checkForPayments();
+            }, 5000);
+            
+            console.log("💰 API payment monitoring started");
+        },
+
+        // Check for incoming/outgoing payments
+        async checkForPayments() {
+            try {
+                if (!this.apiKey) return;
+                
+                console.log("💰 Checking for payment logs...");
+                
+                const response = await fetch(`https://api.torn.com/user/?selections=log&key=${this.apiKey}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error("💰 API Error:", data.error);
+                    return;
+                }
+                
+                if (data.log) {
+                    this.processPaymentLogs(data.log);
+                }
+                
+            } catch (error) {
+                console.error("💰 Error checking payments:", error);
+            }
+        },
+
+        // Process payment logs for automatic tracking
+        processPaymentLogs(logs) {
+            const logsArray = Array.isArray(logs) ? logs : Object.values(logs);
+            const now = Date.now();
+            const fiveMinutesAgo = now - (5 * 60 * 1000); // Only check recent logs
+            
+            for (const log of logsArray) {
+                if (!log.timestamp || log.timestamp * 1000 < fiveMinutesAgo) continue;
+                
+                // Check if this is a money transfer log
+                if (this.isMoneyTransferLog(log)) {
+                    this.handleMoneyTransfer(log);
+                }
+            }
+        },
+
+        // Check if log entry is a money transfer
+        isMoneyTransferLog(log) {
+            // Check for known money transfer log codes
+            const moneyTransferCodes = [
+                5850, // sent money
+                5851, // received money
+                5400, // money from trade
+                // Add more codes as discovered
+            ];
+            
+            const logCode = parseInt(log.log);
+            return moneyTransferCodes.includes(logCode);
+        },
+
+        // Handle money transfer detection
+        handleMoneyTransfer(log) {
+            // For now, log the detection - more complex parsing would be needed
+            // to extract sender, receiver, amount, and message from the log
+            console.log("💰 Detected potential money transfer:", log);
+            
+            // TODO: Parse log details to extract:
+            // - sender ID
+            // - receiver ID  
+            // - amount
+            // - message
+            // Then match against existing debts/loans
+        },
+
+        // Add repayment to debt/loan
+        addRepayment(entryId, amount, message = '', automatic = false) {
+            const entry = this.debtsAndLoans.find(e => e.id === entryId);
+            if (!entry) return;
+            
+            const repayment = {
+                amount: parseFloat(amount),
+                timestamp: new Date().toISOString(),
+                message: message,
+                automatic: automatic
+            };
+            
+            entry.repayments.push(repayment);
+            entry.currentAmount = Math.max(0, entry.currentAmount - parseFloat(amount));
+            
+            // If fully paid, mark as completed
+            if (entry.currentAmount <= 0.01) { // Allow for rounding errors
+                entry.completed = true;
+                entry.completedAt = new Date().toISOString();
+            }
+            
+            this.saveDebtsAndLoans();
+            this.renderAllDebtPanels();
+            
+            const type = entry.type === 'debt' ? 'debt' : 'loan';
+            console.log(`💰 Added $${amount} repayment to ${type} with ${entry.playerName}`);
+            
+            // Show notification
+            if (window.SidekickModules?.UI?.showNotification) {
+                window.SidekickModules.UI.showNotification(
+                    'SUCCESS',
+                    `${automatic ? 'Auto-detected' : 'Manual'} repayment: $${amount.toLocaleString()} from ${entry.playerName}`
+                );
+            }
+        },
+
+        // Render all debt panels
+        renderAllDebtPanels() {
+            console.log("💰 Rendering all debt panels...");
+            
+            // Remove existing panels
+            const existingPanels = document.querySelectorAll('.sidekick-debt-panel');
+            existingPanels.forEach(panel => panel.remove());
+            
+            // Render active debts and loans
+            this.debtsAndLoans.forEach(entry => {
+                if (!entry.completed) {
+                    this.createDebtPanel(entry);
+                }
+            });
+        },
+
+        // Create debt panel (main method to create a debt/loan panel)
+        createDebtPanel(entry) {
+            const isDebt = entry.isDebt;
+            const backgroundColor = isDebt ? '#5a2727' : '#2d5a27'; // Red for debt, green for loan
+            
+            const panel = document.createElement('div');
+            panel.className = 'sidekick-debt-panel movable-panel';
+            panel.id = `sidekick-debt-${entry.id}`;
+            panel.setAttribute('data-entry-id', entry.id);
+            
+            // Calculate interest preview
+            const pendingInterest = this.calculateInterest(entry);
+            const projectedAmount = entry.currentAmount + pendingInterest;
+            
+            // Calculate days since creation
+            const daysSince = Math.floor((Date.now() - new Date(entry.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+            
+            panel.style.cssText = `
+                position: absolute;
+                left: ${entry.x || 20}px;
+                top: ${entry.y || 20}px;
+                width: ${entry.width || 300}px;
+                height: ${entry.height || 200}px;
+                background: ${backgroundColor};
+                border: 1px solid #444;
+                border-radius: 6px;
+                display: flex;
+                flex-direction: column;
+                min-width: 250px;
+                min-height: 150px;
+                z-index: 1000;
+                resize: both;
+                overflow: hidden;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+                font-family: Arial, sans-serif;
+            `;
+            
+            panel.innerHTML = `
+                <div class="debt-panel-header" style="
+                    background: rgba(0,0,0,0.2);
+                    padding: 8px 12px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    cursor: move;
+                    border-bottom: 1px solid #444;
+                ">
+                    <span style="color: #fff; font-weight: bold; font-size: 14px;">
+                        ${isDebt ? '💰' : '🏦'} ${isDebt ? 'Debt' : 'Loan'}: ${entry.playerName}
+                    </span>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="debt-settings-btn" data-entry-id="${entry.id}" style="
+                            background: #666;
+                            border: none;
+                            color: #fff;
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 3px;
+                            cursor: pointer;
+                            font-size: 12px;
+                        ">⚙️</button>
+                        <button class="debt-close-btn" data-entry-id="${entry.id}" style="
+                            background: #d32f2f;
+                            border: none;
+                            color: #fff;
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 3px;
+                            cursor: pointer;
+                            font-size: 12px;
+                        ">×</button>
+                    </div>
+                </div>
+                
+                <div class="debt-panel-content" style="
+                    padding: 12px;
+                    flex: 1;
+                    overflow-y: auto;
+                    color: #fff;
+                    font-size: 12px;
+                ">
+                    <div style="margin-bottom: 8px;">
+                        <strong>Player ID:</strong> ${entry.playerId}
+                    </div>
+                    
+                    <div style="margin-bottom: 8px;">
+                        <strong>Principal:</strong> $${entry.principal.toLocaleString()}
+                    </div>
+                    
+                    <div style="margin-bottom: 8px;">
+                        <strong>Current Amount:</strong> $${entry.currentAmount.toLocaleString()}
+                    </div>
+                    
+                    ${pendingInterest > 0.01 ? `
+                        <div style="margin-bottom: 8px; color: #ffeb3b;">
+                            <strong>Pending Interest:</strong> +$${pendingInterest.toFixed(2)}
+                        </div>
+                        <div style="margin-bottom: 8px; color: #ff9800;">
+                            <strong>Projected Total:</strong> $${projectedAmount.toLocaleString()}
+                        </div>
+                    ` : ''}
+                    
+                    ${entry.interestType !== 'none' ? `
+                        <div style="margin-bottom: 8px;">
+                            <strong>Interest:</strong> ${entry.interestRate}% ${entry.interestType}
+                            ${entry.frozen ? ' <span style="color: #03a9f4;">(FROZEN)</span>' : ''}
+                        </div>
+                    ` : ''}
+                    
+                    <div style="margin-bottom: 8px;">
+                        <strong>Created:</strong> ${daysSince} days ago
+                    </div>
+                    
+                    ${entry.repayments.length > 0 ? `
+                        <div style="margin-bottom: 8px;">
+                            <strong>Repayments:</strong> ${entry.repayments.length} 
+                            (Total: $${entry.repayments.reduce((sum, r) => sum + r.amount, 0).toLocaleString()})
+                        </div>
+                    ` : ''}
+                    
+                    ${entry.notes ? `
+                        <div style="margin-bottom: 8px; font-style: italic; color: #ccc;">
+                            "${entry.notes}"
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <div class="debt-panel-actions" style="
+                    padding: 8px 12px;
+                    border-top: 1px solid #444;
+                    display: flex;
+                    gap: 8px;
+                ">
+                    <button class="debt-repay-btn" data-entry-id="${entry.id}" style="
+                        background: #4caf50;
+                        border: none;
+                        color: #fff;
+                        padding: 4px 8px;
+                        border-radius: 3px;
+                        cursor: pointer;
+                        font-size: 11px;
+                        flex: 1;
+                    ">Add Repayment</button>
+                    
+                    <button class="debt-freeze-btn" data-entry-id="${entry.id}" style="
+                        background: ${entry.frozen ? '#ff9800' : '#2196f3'};
+                        border: none;
+                        color: #fff;
+                        padding: 4px 8px;
+                        border-radius: 3px;
+                        cursor: pointer;
+                        font-size: 11px;
+                    ">${entry.frozen ? 'Unfreeze' : 'Freeze'}</button>
+                </div>
+            `;
+            
+            this.attachDebtPanelEvents(panel);
+            return panel;
+        },
+
+        // Attach event listeners to debt panel
+        attachDebtPanelEvents(panel) {
+            // Repayment button
+            const repayBtn = panel.querySelector('.debt-repay-btn');
+            repayBtn.addEventListener('click', (e) => {
+                const entryId = e.target.getAttribute('data-entry-id');
+                this.showRepaymentDialog(entryId);
+            });
+            
+            // Freeze/unfreeze button
+            const freezeBtn = panel.querySelector('.debt-freeze-btn');
+            freezeBtn.addEventListener('click', (e) => {
+                const entryId = e.target.getAttribute('data-entry-id');
+                this.toggleFreeze(entryId);
+            });
+            
+            // Settings button
+            const settingsBtn = panel.querySelector('.debt-settings-btn');
+            settingsBtn.addEventListener('click', (e) => {
+                const entryId = e.target.getAttribute('data-entry-id');
+                this.showSettingsDialog(entryId);
+            });
+            
+            // Close button
+            const closeBtn = panel.querySelector('.debt-close-btn');
+            closeBtn.addEventListener('click', (e) => {
+                const entryId = e.target.getAttribute('data-entry-id');
+                this.markAsCompleted(entryId);
+            });
+        },
+
+        // Show repayment dialog
+        showRepaymentDialog(entryId) {
+            const entry = [...this.debts, ...this.loans].find(e => e.id === entryId);
+            if (!entry) return;
+            
+            const amount = prompt(`Enter repayment amount for ${entry.playerName}:`);
+            if (amount && !isNaN(parseFloat(amount))) {
+                const message = prompt('Optional message/note:', '');
+                this.addRepayment(entryId, parseFloat(amount), message || '', false);
+            }
+        },
+
+        // Toggle interest freeze
+        toggleFreeze(entryId) {
+            const entry = [...this.debts, ...this.loans].find(e => e.id === entryId);
+            if (!entry) return;
+            
+            entry.frozen = !entry.frozen;
+            this.saveDebtsAndLoans();
+            this.renderAllDebtPanels();
+            
+            console.log(`💰 ${entry.frozen ? 'Frozen' : 'Unfrozen'} interest for ${entry.playerName}`);
+        },
+
+        // Show settings dialog
+        showSettingsDialog(entryId) {
+            // TODO: Implement comprehensive settings dialog
+            console.log("💰 Settings dialog for entry:", entryId);
+        },
+
+        // Mark debt/loan as completed
+        markAsCompleted(entryId) {
+            const entry = [...this.debts, ...this.loans].find(e => e.id === entryId);
+            if (!entry) return;
+            
+            if (confirm(`Mark ${entry.type} with ${entry.playerName} as completed?`)) {
+                entry.completed = true;
+                entry.completedAt = new Date().toISOString();
+                this.saveDebtsAndLoans();
+                
+                // Remove panel
+                const panel = document.getElementById(`sidekick-debt-${entryId}`);
+                if (panel) panel.remove();
+                
+                console.log(`💰 Marked ${entry.type} with ${entry.playerName} as completed`);
+            }
+        },
+
+        // Make debt panel draggable
+        makeDebtPanelDraggable(panel, entry) {
+            const header = panel.querySelector('.debt-panel-header');
+            let isDragging = false;
+            let currentX = 0;
+            let currentY = 0;
+            let initialX = 0;
+            let initialY = 0;
+            
+            header.addEventListener('mousedown', (e) => {
+                if (e.target.tagName === 'BUTTON') return;
+                
+                isDragging = true;
+                initialX = e.clientX - (entry.x || 0);
+                initialY = e.clientY - (entry.y || 0);
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+                
+                panel.style.left = currentX + 'px';
+                panel.style.top = currentY + 'px';
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    entry.x = currentX;
+                    entry.y = currentY;
+                    this.saveDebtsAndLoans();
+                }
+                isDragging = false;
+            });
+        },
+
+        // Show unified debt tracker in sidebar
+        showDebtTrackerWindow() {
+            console.log('💰 Creating debt tracker in sidebar');
+            
+            const contentArea = document.getElementById('sidekick-content');
+            if (!contentArea) {
+                console.error('💰 Sidebar content area not found');
+                return;
+            }
+
+            // Remove existing debt tracker if present
+            const existingTracker = contentArea.querySelector('.sidekick-debt-tracker');
+            if (existingTracker) {
+                existingTracker.remove();
+                return; // Toggle behavior
+            }
+
+            // Remove placeholder if it exists
+            const placeholder = contentArea.querySelector('.sidekick-placeholder');
+            if (placeholder) {
+                placeholder.remove();
+            }
+
+            const contentWidth = contentArea.clientWidth || 480;
+            const contentHeight = contentArea.clientHeight || 500;
+            
+            const trackerElement = document.createElement('div');
+            trackerElement.className = 'sidekick-debt-tracker movable-panel';
+            trackerElement.style.cssText = `
+                position: absolute;
+                left: 10px;
+                top: 10px;
+                width: ${Math.min(350, contentWidth - 30)}px;
+                height: ${Math.min(400, contentHeight - 30)}px;
+                background: #2a2a2a;
+                border: 1px solid #444;
+                border-radius: 6px;
+                display: flex;
+                flex-direction: column;
+                min-width: 250px;
+                min-height: 200px;
+                z-index: 1000;
+                resize: both;
+                overflow: hidden;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            `;
+
+            trackerElement.innerHTML = `
+                <div class="debt-tracker-header" style="
+                    background: #4CAF50;
+                    padding: 8px 12px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    cursor: move;
+                    color: #fff;
+                    font-weight: bold;
+                    border-radius: 6px 6px 0 0;
+                    font-size: 12px;
+                ">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 14px;">💰</span>
+                        <span>Debt Tracker</span>
+                    </div>
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                        <div style="position: relative; display: inline-block;">
+                            <button class="debt-cogwheel-btn" style="
+                                background: none;
+                                border: 1px solid rgba(255,255,255,0.3);
+                                color: #fff;
+                                width: 20px;
+                                height: 20px;
+                                border-radius: 3px;
+                                cursor: pointer;
+                                font-size: 12px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            ">⚙️</button>
+                            <div class="debt-cogwheel-menu" style="
+                                position: absolute;
+                                top: 25px;
+                                right: 0;
+                                background: #2a2a2a;
+                                border: 1px solid #444;
+                                border-radius: 4px;
+                                box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+                                display: none;
+                                z-index: 10002;
+                                min-width: 120px;
+                            ">
+                                <div class="debt-menu-option" data-action="debt" style="
+                                    padding: 8px 12px;
+                                    color: #fff;
+                                    cursor: pointer;
+                                    font-size: 12px;
+                                    border-bottom: 1px solid #444;
+                                ">💸 Add Debt</div>
+                                <div class="debt-menu-option" data-action="loan" style="
+                                    padding: 8px 12px;
+                                    color: #fff;
+                                    cursor: pointer;
+                                    font-size: 12px;
+                                ">🏦 Add Loan</div>
+                            </div>
+                        </div>
+                        <button class="debt-tracker-close" style="
+                            background: none;
+                            border: 1px solid rgba(255,255,255,0.3);
+                            color: #fff;
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 3px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        ">×</button>
+                    </div>
+                </div>
+                
+                <div class="debt-tracker-content" style="
+                    flex: 1;
+                    padding: 15px;
+                    overflow-y: auto;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                    background: #1f1f1f;
+                    color: #fff;
+                ">
+                    <div id="debt-tracker-list" style="
+                        flex: 1;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 8px;
+                    ">
+                        <!-- Debt/loan entries will be populated here -->
+                    </div>
+                    
+                    <div id="debt-tracker-summary" style="
+                        border-top: 1px solid #444;
+                        padding-top: 10px;
+                        font-size: 12px;
+                        color: #ccc;
+                        border-radius: 0 0 6px 6px;
+                    ">
+                        <!-- Summary will be populated here -->
+                    </div>
+                </div>
+            `;
+
+            contentArea.appendChild(trackerElement);
+
+            // Set up event listeners
+            const closeBtn = trackerElement.querySelector('.debt-tracker-close');
+            const cogwheelBtn = trackerElement.querySelector('.debt-cogwheel-btn');
+            const cogwheelMenu = trackerElement.querySelector('.debt-cogwheel-menu');
+            const header = trackerElement.querySelector('.debt-tracker-header');
+
+            closeBtn?.addEventListener('click', () => {
+                trackerElement.remove();
+            });
+
+            // Cogwheel menu functionality
+            cogwheelBtn?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const menu = cogwheelMenu;
+                if (menu.style.display === 'block') {
+                    menu.style.display = 'none';
+                } else {
+                    menu.style.display = 'block';
+                }
+            });
+
+            // Menu option handlers
+            const menuOptions = trackerElement.querySelectorAll('.debt-menu-option');
+            menuOptions.forEach(option => {
+                option.addEventListener('mouseenter', () => {
+                    option.style.background = 'rgba(255,255,255,0.1)';
+                });
+                option.addEventListener('mouseleave', () => {
+                    option.style.background = 'transparent';
+                });
+                option.addEventListener('click', () => {
+                    const action = option.dataset.action;
+                    if (action === 'debt') {
+                        this.showAddDebtDialog();
+                    } else if (action === 'loan') {
+                        this.showAddLoanDialog();
+                    }
+                    cogwheelMenu.style.display = 'none';
+                });
+            });
+
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!cogwheelBtn.contains(e.target) && !cogwheelMenu.contains(e.target)) {
+                    cogwheelMenu.style.display = 'none';
+                }
+            });
+
+            // Make tracker draggable within sidebar
+            this.makeSidebarElementDraggable(trackerElement, header);
+
+            // Populate with existing entries
+            this.populateDebtTrackerWindow();
+
+            console.log('💰 Debt tracker created in sidebar');
+        },
+
+        // Populate debt tracker window with existing entries
+        populateDebtTrackerWindow() {
+            const listContainer = document.getElementById('debt-tracker-list');
+            const summaryContainer = document.getElementById('debt-tracker-summary');
+            
+            if (!listContainer || !summaryContainer) return;
+
+            // Clear existing content
+            listContainer.innerHTML = '';
+
+            let totalDebts = 0;
+            let totalLoans = 0;
+            let debtCount = 0;
+            let loanCount = 0;
+
+            if (this.debtsAndLoans.length === 0) {
+                listContainer.innerHTML = `
+                    <div style="
+                        text-align: center;
+                        color: #666;
+                        font-style: italic;
+                        margin: 40px 0;
+                    ">
+                        No debts or loans tracked yet.<br>
+                        Use the dropdown above to add entries.
+                    </div>
+                `;
+            } else {
+                // Sort entries: debts first, then loans
+                const sortedEntries = [...this.debtsAndLoans].sort((a, b) => {
+                    if (a.isDebt && !b.isDebt) return -1;
+                    if (!a.isDebt && b.isDebt) return 1;
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+                });
+
+                sortedEntries.forEach(entry => {
+                    const entryElement = this.createDebtTrackerEntry(entry);
+                    listContainer.appendChild(entryElement);
+
+                    // Calculate totals
+                    if (entry.isDebt) {
+                        totalDebts += entry.currentAmount;
+                        debtCount++;
+                    } else {
+                        totalLoans += entry.currentAmount;
+                        loanCount++;
+                    }
+                });
+            }
+
+            // Update summary
+            summaryContainer.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div style="background: rgba(211,47,47,0.2); padding: 8px; border-radius: 4px; text-align: center;">
+                        <div style="font-weight: bold; color: #ff5252;">Debts Owed</div>
+                        <div style="font-size: 14px;">$${totalDebts.toLocaleString()}</div>
+                        <div style="font-size: 11px; opacity: 0.7;">${debtCount} ${debtCount === 1 ? 'debt' : 'debts'}</div>
+                    </div>
+                    <div style="background: rgba(56,142,60,0.2); padding: 8px; border-radius: 4px; text-align: center;">
+                        <div style="font-weight: bold; color: #4caf50;">Loans Given</div>
+                        <div style="font-size: 14px;">$${totalLoans.toLocaleString()}</div>
+                        <div style="font-size: 11px; opacity: 0.7;">${loanCount} ${loanCount === 1 ? 'loan' : 'loans'}</div>
+                    </div>
+                </div>
+            `;
+        },
+
+        // Create individual entry for debt tracker window
+        createDebtTrackerEntry(entry) {
+            const isDebt = entry.isDebt;
+            const pendingInterest = this.calculateInterest(entry);
+            const totalAmount = entry.currentAmount + pendingInterest;
+
+            const entryDiv = document.createElement('div');
+            entryDiv.style.cssText = `
+                background: rgba(${isDebt ? '211,47,47' : '56,142,60'}, 0.15);
+                border: 1px solid rgba(${isDebt ? '255,82,82' : '76,175,80'}, 0.3);
+                border-radius: 6px;
+                padding: 12px;
+                margin-bottom: 8px;
+            `;
+
+            entryDiv.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                    <div>
+                        <div style="font-weight: bold; font-size: 14px; color: ${isDebt ? '#ff5252' : '#4caf50'};">
+                            ${isDebt ? '💸' : '🏦'} ${entry.playerName}
+                        </div>
+                        ${entry.playerId ? `<div style="font-size: 11px; color: #999;">ID: ${entry.playerId}</div>` : ''}
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: bold; font-size: 14px;">$${totalAmount.toLocaleString()}</div>
+                        ${pendingInterest > 0 ? `<div style="font-size: 10px; color: #ffa726;">+$${pendingInterest.toFixed(2)} interest</div>` : ''}
+                    </div>
+                </div>
+                
+                <div style="font-size: 11px; color: #ccc; margin-bottom: 6px;">
+                    Original: $${entry.originalAmount.toLocaleString()} • 
+                    ${entry.interestRate > 0 ? `${entry.interestRate}% ${entry.interestType}` : 'No interest'} • 
+                    ${this.getTimeAgo(entry.createdAt)}
+                </div>
+                
+                ${entry.notes ? `<div style="font-size: 11px; color: #bbb; font-style: italic; margin-bottom: 6px;">"${entry.notes}"</div>` : ''}
+                
+                <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                    <button class="entry-pay-btn" data-entry-id="${entry.id}" style="
+                        background: #2196f3;
+                        border: 1px solid #42a5f5;
+                        color: #fff;
+                        padding: 3px 8px;
+                        border-radius: 3px;
+                        cursor: pointer;
+                        font-size: 10px;
+                    ">Add Payment</button>
+                    <button class="entry-edit-btn" data-entry-id="${entry.id}" style="
+                        background: #666;
+                        border: 1px solid #888;
+                        color: #fff;
+                        padding: 3px 8px;
+                        border-radius: 3px;
+                        cursor: pointer;
+                        font-size: 10px;
+                    ">Edit</button>
+                    <button class="entry-delete-btn" data-entry-id="${entry.id}" style="
+                        background: #d32f2f;
+                        border: 1px solid #f44336;
+                        color: #fff;
+                        padding: 3px 8px;
+                        border-radius: 3px;
+                        cursor: pointer;
+                        font-size: 10px;
+                    ">Delete</button>
+                </div>
+            `;
+
+            // Add event listeners for buttons
+            const payBtn = entryDiv.querySelector('.entry-pay-btn');
+            const editBtn = entryDiv.querySelector('.entry-edit-btn');
+            const deleteBtn = entryDiv.querySelector('.entry-delete-btn');
+
+            payBtn?.addEventListener('click', () => {
+                this.showAddPaymentDialog(entry.id);
+            });
+
+            editBtn?.addEventListener('click', () => {
+                this.showEditEntryDialog(entry.id);
+            });
+
+            deleteBtn?.addEventListener('click', () => {
+                if (confirm(`Delete this ${isDebt ? 'debt' : 'loan'} entry for ${entry.playerName}?`)) {
+                    this.deleteEntry(entry.id);
+                    this.populateDebtTrackerWindow(); // Refresh window
+                }
+            });
+
+            return entryDiv;
+        },
+
+        // Helper method to get time ago string
+        getTimeAgo(dateString) {
+            const now = new Date();
+            const date = new Date(dateString);
+            const diffMs = now - date;
+            const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            
+            if (days === 0) return 'Today';
+            if (days === 1) return 'Yesterday';
+            if (days < 7) return `${days} days ago`;
+            if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
+            return `${Math.floor(days / 30)} months ago`;
+        },
+
+        // Delete entry
+        deleteEntry(entryId) {
+            const index = this.debtsAndLoans.findIndex(entry => entry.id === entryId);
+            if (index !== -1) {
+                this.debtsAndLoans.splice(index, 1);
+                this.saveDebtsAndLoans();
+                this.renderAllDebtPanels();
+            }
+        },
+
+        // Make window draggable
+        makeWindowDraggable(windowElement, headerElement) {
+            let isDragging = false;
+            let currentX = 0;
+            let currentY = 0;
+            let initialX = 0;
+            let initialY = 0;
+
+            headerElement.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                initialX = e.clientX - currentX;
+                initialY = e.clientY - currentY;
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+                
+                windowElement.style.left = currentX + 'px';
+                windowElement.style.top = currentY + 'px';
+                windowElement.style.right = 'auto'; // Remove right positioning
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+        },
+
+        // Make sidebar element draggable (constrained to sidebar content area)
+        makeSidebarElementDraggable(element, headerElement) {
+            let isDragging = false;
+            let currentX = parseInt(element.style.left) || 0;
+            let currentY = parseInt(element.style.top) || 0;
+            let initialX = 0;
+            let initialY = 0;
+
+            headerElement.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                initialX = e.clientX - currentX;
+                initialY = e.clientY - currentY;
+                element.style.zIndex = '1001'; // Bring to front
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                const contentArea = document.getElementById('sidekick-content');
+                if (!contentArea) return;
+                
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+                
+                // Constrain to content area bounds
+                const contentRect = contentArea.getBoundingClientRect();
+                const elementRect = element.getBoundingClientRect();
+                
+                const maxX = contentArea.clientWidth - element.offsetWidth;
+                const maxY = contentArea.clientHeight - element.offsetHeight;
+                
+                currentX = Math.max(0, Math.min(currentX, maxX));
+                currentY = Math.max(0, Math.min(currentY, maxY));
+                
+                element.style.left = currentX + 'px';
+                element.style.top = currentY + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    element.style.zIndex = '1000'; // Reset z-index
+                }
+                isDragging = false;
+            });
+        },
+
+        // Show Add Debt Dialog
+        showAddDebtDialog() {
+            this.showAddEntryDialog(true);
+        },
+
+        // Show Add Loan Dialog
+        showAddLoanDialog() {
+            this.showAddEntryDialog(false);
+        },
+
+        // Show Add Entry Dialog (generic for both debt and loan)
+        showAddEntryDialog(isDebt) {
+            // Remove existing dialog if present
+            const existingDialog = document.getElementById('sidekick-debt-dialog');
+            if (existingDialog) {
+                existingDialog.remove();
+                return;
+            }
+
+            const dialog = document.createElement('div');
+            dialog.id = 'sidekick-debt-dialog';
+            dialog.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 400px;
+                background: linear-gradient(135deg, #2a2a2a, #1f1f1f);
+                border: 1px solid #444;
+                border-radius: 8px;
+                padding: 0;
+                z-index: 10002;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+                backdrop-filter: blur(20px);
+                color: #fff;
+                font-family: Arial, sans-serif;
+                overflow: hidden;
+            `;
+
+            dialog.innerHTML = `
+                <div style="
+                    background: rgba(0,0,0,0.3);
+                    padding: 15px 20px;
+                    border-bottom: 1px solid #444;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
+                    <h3 style="margin: 0; color: #FFC107; font-size: 16px;">
+                        ${isDebt ? '💰 Add New Debt' : '🏦 Add New Loan'}
+                    </h3>
+                    <button id="debt-dialog-close" style="
+                        background: #d32f2f;
+                        border: none;
+                        color: #fff;
+                        width: 24px;
+                        height: 24px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 16px;
+                    ">×</button>
+                </div>
+                
+                <div style="padding: 20px;">
+                    <form id="debt-entry-form">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Player ID:</label>
+                            <input type="number" id="player-id" required style="
+                                width: 100%;
+                                padding: 8px;
+                                border: 1px solid #666;
+                                border-radius: 4px;
+                                background: rgba(255,255,255,0.1);
+                                color: #fff;
+                                font-size: 14px;
+                            " placeholder="Enter player ID">
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Amount ($):</label>
+                            <input type="number" id="amount" required min="0" step="0.01" style="
+                                width: 100%;
+                                padding: 8px;
+                                border: 1px solid #666;
+                                border-radius: 4px;
+                                background: rgba(255,255,255,0.1);
+                                color: #fff;
+                                font-size: 14px;
+                            " placeholder="Enter amount">
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Interest Rate (%):</label>
+                            <input type="number" id="interest-rate" min="0" step="0.01" style="
+                                width: 100%;
+                                padding: 8px;
+                                border: 1px solid #666;
+                                border-radius: 4px;
+                                background: rgba(255,255,255,0.1);
+                                color: #fff;
+                                font-size: 14px;
+                            " placeholder="0.00" value="0">
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Interest Type:</label>
+                            <select id="interest-type" style="
+                                width: 100%;
+                                padding: 8px;
+                                border: 1px solid #666;
+                                border-radius: 4px;
+                                background: #fff;
+                                color: #000;
+                                font-size: 14px;
+                            ">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="flat">Flat Fee</option>
+                                <option value="apr">Annual (APR)</option>
+                            </select>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Notes:</label>
+                            <textarea id="notes" rows="3" style="
+                                width: 100%;
+                                padding: 8px;
+                                border: 1px solid #666;
+                                border-radius: 4px;
+                                background: rgba(255,255,255,0.1);
+                                color: #fff;
+                                font-size: 14px;
+                                resize: vertical;
+                            " placeholder="Optional notes"></textarea>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                            <button type="button" id="debt-dialog-cancel" style="
+                                background: #666;
+                                border: 1px solid #888;
+                                color: #fff;
+                                padding: 8px 16px;
+                                border-radius: 4px;
+                                cursor: pointer;
+                                font-size: 14px;
+                            ">Cancel</button>
+                            <button type="submit" style="
+                                background: ${isDebt ? '#d32f2f' : '#388e3c'};
+                                border: 1px solid ${isDebt ? '#ff5252' : '#4caf50'};
+                                color: #fff;
+                                padding: 8px 16px;
+                                border-radius: 4px;
+                                cursor: pointer;
+                                font-size: 14px;
+                            ">${isDebt ? 'Add Debt' : 'Add Loan'}</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            document.body.appendChild(dialog);
+
+            // Set up event listeners
+            const closeBtn = dialog.querySelector('#debt-dialog-close');
+            const cancelBtn = dialog.querySelector('#debt-dialog-cancel');
+            const form = dialog.querySelector('#debt-entry-form');
+
+            const closeDialog = () => {
+                dialog.remove();
+            };
+
+            closeBtn?.addEventListener('click', closeDialog);
+            cancelBtn?.addEventListener('click', closeDialog);
+
+            // Handle form submission
+            form?.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const playerId = dialog.querySelector('#player-id').value.trim();
+                const amount = parseFloat(dialog.querySelector('#amount').value);
+                const interestRate = parseFloat(dialog.querySelector('#interest-rate').value) || 0;
+                const interestType = dialog.querySelector('#interest-type').value;
+                const notes = dialog.querySelector('#notes').value.trim();
+
+                if (!playerId || isNaN(amount) || amount <= 0) {
+                    alert('Please enter a valid player ID and amount.');
+                    return;
+                }
+
+                const entry = {
+                    id: Date.now().toString(),
+                    playerName: `Player [${playerId}]`, // Use ID as name until we can fetch real name
+                    playerId: playerId,
+                    originalAmount: amount,
+                    currentAmount: amount,
+                    interestRate: interestRate,
+                    interestType: interestType,
+                    notes: notes,
+                    createdAt: new Date().toISOString(),
+                    lastInterestUpdate: new Date().toISOString(),
+                    isDebt: isDebt,
+                    payments: [],
+                    x: Math.random() * (window.innerWidth - 300),
+                    y: Math.random() * (window.innerHeight - 200) + 50
+                };
+
+                // Add to storage
+                this.debtsAndLoans.push(entry);
+                this.saveDebtsAndLoans();
+
+                // Refresh tracker window if open
+                const trackerWindow = document.querySelector('.sidekick-debt-tracker');
+                if (trackerWindow) {
+                    this.populateDebtTrackerWindow();
+                }
+
+                // Create individual panel if not using tracker window
+                if (!document.querySelector('.sidekick-debt-tracker')) {
+                    this.createDebtPanel(entry);
+                }
+
+                // Close dialog
+                closeDialog();
+
+                console.log(`💰 ${isDebt ? 'Debt' : 'Loan'} added:`, entry);
+            });
+
+            // Click outside to close
+            const closeOnClickOutside = (e) => {
+                if (!dialog.contains(e.target)) {
+                    closeDialog();
+                    document.removeEventListener('click', closeOnClickOutside);
+                }
+            };
+            
+            setTimeout(() => {
+                document.addEventListener('click', closeOnClickOutside);
+            }, 100);
+
+            // Focus on player name field
+            const playerNameField = dialog.querySelector('#player-name');
+            if (playerNameField) {
+                setTimeout(() => playerNameField.focus(), 100);
+            }
+        },
+
+        // Show add payment dialog
+        showAddPaymentDialog(entryId) {
+            const entry = this.debtsAndLoans.find(e => e.id === entryId);
+            if (!entry) return;
+
+            // Simple prompt for now - could be enhanced with a full dialog
+            const amount = prompt(`Add payment for ${entry.playerName}:\nCurrent balance: $${entry.currentAmount.toLocaleString()}\n\nPayment amount:`);
+            if (amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0) {
+                this.addRepayment(entryId, parseFloat(amount), 'Manual payment', false);
+                this.populateDebtTrackerWindow();
+            }
+        },
+
+        // Show edit entry dialog  
+        showEditEntryDialog(entryId) {
+            // Simple alert for now - could be enhanced with a full dialog
+            alert('Edit functionality coming soon! For now, you can delete and recreate the entry.');
+        },
+
+        // Destroy module
+        destroy() {
+            if (this.apiCheckInterval) {
+                clearInterval(this.apiCheckInterval);
+                this.apiCheckInterval = null;
+            }
+            
+            if (this.interestUpdateInterval) {
+                clearInterval(this.interestUpdateInterval);
+                this.interestUpdateInterval = null;
+            }
+            
+            // Remove all panels
+            const panels = document.querySelectorAll('.sidekick-debt-panel');
+            panels.forEach(panel => panel.remove());
+            
+            this.isInitialized = false;
+            console.log('💰 Debt Module destroyed');
+        }
+    };
+
+    // Register module with SidekickModules
+    if (typeof window.SidekickModules === 'undefined') {
+        window.SidekickModules = {};
+    }
+    window.SidekickModules.Debt = DebtModule;
+
+    console.log("✅ Debt Module loaded and ready");
+
+})();

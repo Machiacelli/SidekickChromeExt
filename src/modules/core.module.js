@@ -68,12 +68,12 @@
                 // Check if extension context is valid
                 try {
                     if (chrome?.runtime?.id === undefined) {
-                        console.warn("Extension context invalidated, using localStorage fallback");
+                        // Silently fall back to localStorage when extension context is invalidated
                         resolve(JSON.parse(localStorage.getItem(key) || 'null'));
                         return;
                     }
                 } catch (error) {
-                    console.warn("Chrome runtime check failed, using localStorage fallback");
+                    // Silently fall back to localStorage when Chrome runtime check fails
                     resolve(JSON.parse(localStorage.getItem(key) || 'null'));
                     return;
                 }
@@ -84,7 +84,7 @@
                             if (chrome.runtime.lastError) {
                                 const errorMsg = chrome.runtime.lastError.message || 'Chrome storage error';
                                 if (errorMsg.includes('Extension context invalidated')) {
-                                    console.warn("Extension context invalidated during get, using localStorage");
+                                    console.debug("Extension context invalidated during get, using localStorage");
                                     resolve(JSON.parse(localStorage.getItem(key) || 'null'));
                                 } else {
                                     reject(new Error(errorMsg));
@@ -95,14 +95,14 @@
                         });
                     } catch (error) {
                         if (error.message && error.message.includes('Extension context invalidated')) {
-                            console.warn("Extension context invalidated, using localStorage fallback");
+                            console.debug("Extension context invalidated, using localStorage fallback");
                             resolve(JSON.parse(localStorage.getItem(key) || 'null'));
                         } else {
                             reject(error);
                         }
                     }
                 } else {
-                    console.warn("Chrome storage not available, using localStorage");
+                    console.debug("Chrome storage not available, using localStorage");
                     resolve(JSON.parse(localStorage.getItem(key) || 'null'));
                 }
             });
@@ -114,13 +114,14 @@
                 // Check if extension context is valid
                 try {
                     if (chrome?.runtime?.id === undefined) {
-                        console.warn("Extension context invalidated, using localStorage fallback");
+                        // Silently fall back to localStorage when extension context is invalidated
+                        console.debug("Extension context invalidated, using localStorage fallback");
                         localStorage.setItem(key, JSON.stringify(value));
                         resolve();
                         return;
                     }
                 } catch (error) {
-                    console.warn("Chrome runtime check failed, using localStorage fallback");
+                    console.debug("Chrome runtime check failed, using localStorage fallback");
                     localStorage.setItem(key, JSON.stringify(value));
                     resolve();
                     return;
@@ -132,7 +133,7 @@
                             if (chrome.runtime.lastError) {
                                 const errorMsg = chrome.runtime.lastError.message || 'Chrome storage error';
                                 if (errorMsg.includes('Extension context invalidated')) {
-                                    console.warn("Extension context invalidated during set, using localStorage");
+                                    console.debug("Extension context invalidated during set, using localStorage");
                                     localStorage.setItem(key, JSON.stringify(value));
                                     resolve();
                                 } else {
@@ -144,7 +145,7 @@
                         });
                     } catch (error) {
                         if (error.message && error.message.includes('Extension context invalidated')) {
-                            console.warn("Extension context invalidated, using localStorage fallback");
+                            console.debug("Extension context invalidated, using localStorage fallback");
                             localStorage.setItem(key, JSON.stringify(value));
                             resolve();
                         } else {
@@ -152,7 +153,7 @@
                         }
                     }
                 } else {
-                    console.warn("Chrome storage not available, using localStorage");
+                    console.debug("Chrome storage not available, using localStorage");
                     localStorage.setItem(key, JSON.stringify(value));
                     resolve();
                 }
@@ -165,13 +166,13 @@
                 // Check if extension context is valid
                 try {
                     if (chrome?.runtime?.id === undefined) {
-                        console.warn("Extension context invalidated, using localStorage fallback");
+                        console.debug("Extension context invalidated, using localStorage fallback");
                         localStorage.removeItem(key);
                         resolve();
                         return;
                     }
                 } catch (error) {
-                    console.warn("Chrome runtime check failed, using localStorage fallback");
+                    console.debug("Chrome runtime check failed, using localStorage fallback");
                     localStorage.removeItem(key);
                     resolve();
                     return;
@@ -183,7 +184,7 @@
                             if (chrome.runtime.lastError) {
                                 const errorMsg = chrome.runtime.lastError.message || 'Chrome storage error';
                                 if (errorMsg.includes('Extension context invalidated')) {
-                                    console.warn("Extension context invalidated during remove, using localStorage");
+                                    console.debug("Extension context invalidated during remove, using localStorage");
                                     localStorage.removeItem(key);
                                     resolve();
                                 } else {
@@ -195,7 +196,7 @@
                         });
                     } catch (error) {
                         if (error.message && error.message.includes('Extension context invalidated')) {
-                            console.warn("Extension context invalidated, using localStorage fallback");
+                            console.debug("Extension context invalidated, using localStorage fallback");
                             localStorage.removeItem(key);
                             resolve();
                         } else {
@@ -203,7 +204,7 @@
                         }
                     }
                 } else {
-                    console.warn("Chrome storage not available, using localStorage");
+                    console.debug("Chrome storage not available, using localStorage");
                     localStorage.removeItem(key);
                     resolve();
                 }
@@ -216,13 +217,13 @@
                 // Check if extension context is valid
                 try {
                     if (chrome?.runtime?.id === undefined) {
-                        console.warn("Extension context invalidated, using localStorage fallback");
+                        console.debug("Extension context invalidated, using localStorage fallback");
                         localStorage.clear();
                         resolve();
                         return;
                     }
                 } catch (error) {
-                    console.warn("Chrome runtime check failed, using localStorage fallback");
+                    console.debug("Chrome runtime check failed, using localStorage fallback");
                     localStorage.clear();
                     resolve();
                     return;
@@ -234,7 +235,7 @@
                             if (chrome.runtime.lastError) {
                                 const errorMsg = chrome.runtime.lastError.message || 'Chrome storage error';
                                 if (errorMsg.includes('Extension context invalidated')) {
-                                    console.warn("Extension context invalidated during clear, using localStorage");
+                                    console.debug("Extension context invalidated during clear, using localStorage");
                                     localStorage.clear();
                                     resolve();
                                 } else {
@@ -246,7 +247,7 @@
                         });
                     } catch (error) {
                         if (error.message && error.message.includes('Extension context invalidated')) {
-                            console.warn("Extension context invalidated, using localStorage fallback");
+                            console.debug("Extension context invalidated, using localStorage fallback");
                             localStorage.clear();
                             resolve();
                         } else {
@@ -254,7 +255,7 @@
                         }
                     }
                 } else {
-                    console.warn("Chrome storage not available, using localStorage");
+                    console.debug("Chrome storage not available, using localStorage");
                     localStorage.clear();
                     resolve();
                 }

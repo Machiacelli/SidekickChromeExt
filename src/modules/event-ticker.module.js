@@ -574,10 +574,10 @@
             }
 
             startDate.setHours(0, 0, 0, 0);
-            endDate.setHours(23, 59, 59, 999);
+            endDate.setHours(0, 0, 0, 0); // End at 00:00 on the end date (not 23:59)
             now.setHours(0, 0, 0, 0);
 
-            return now >= startDate && now <= endDate;
+            return now >= startDate && now < endDate; // Use < instead of <= for end date
         },
 
         getActiveEvents() {
@@ -595,6 +595,79 @@
             }
             
             return activeEvents;
+        },
+
+        // Get the next upcoming event (for countdown)
+        getNextEvent() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentTime = now.getTime();
+            
+            let nextEvent = null;
+            let minTimeDiff = Infinity;
+            
+            // Check all events for the current year and next year
+            for (let yearOffset = 0; yearOffset <= 1; yearOffset++) {
+                const checkYear = currentYear + yearOffset;
+                
+                for (const event of this.events) {
+                    const eventStart = new Date(checkYear, event.startMonth - 1, event.startDay);
+                    eventStart.setHours(0, 0, 0, 0);
+                    
+                    const timeDiff = eventStart.getTime() - currentTime;
+                    
+                    // Only consider future events
+                    if (timeDiff > 0 && timeDiff < minTimeDiff) {
+                        minTimeDiff = timeDiff;
+                        nextEvent = {
+                            ...event,
+                            startDate: eventStart,
+                            timeDiff: timeDiff
+                        };
+                    }
+                }
+            }
+            
+            // Check for upcoming birthday if we have player data
+            if (this.playerSignupDate && !this.isTornBirthdayToday()) {
+                const nextBirthday = this.getNextBirthday();
+                if (nextBirthday) {
+                    const birthdayDiff = nextBirthday.getTime() - currentTime;
+                    if (birthdayDiff > 0 && birthdayDiff < minTimeDiff) {
+                        const years = this.getYearsInTorn() + 1;
+                        nextEvent = {
+                            name: "Your Torn Birthday",
+                            feature: `${years} year${years !== 1 ? 's' : ''} celebration`,
+                            startDate: nextBirthday,
+                            timeDiff: birthdayDiff,
+                            isBirthday: true
+                        };
+                    }
+                }
+            }
+            
+            return nextEvent;
+        },
+
+        // Get next birthday date
+        getNextBirthday() {
+            if (!this.playerSignupDate) return null;
+            
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const signupMonth = this.playerSignupDate.getMonth();
+            const signupDay = this.playerSignupDate.getDate();
+            
+            let nextBirthday = new Date(currentYear, signupMonth, signupDay);
+            nextBirthday.setHours(0, 0, 0, 0);
+            
+            // If this year's birthday has passed, get next year's
+            if (nextBirthday <= now) {
+                nextBirthday = new Date(currentYear + 1, signupMonth, signupDay);
+                nextBirthday.setHours(0, 0, 0, 0);
+            }
+            
+            return nextBirthday;
         },
 
         getUpcomingEvents(daysAhead = 7) {
@@ -722,8 +795,23 @@
                 
                 this.setTickerText(displayText);
             } else {
-                displayText = '✨ No events currently scheduled - Stay sharp, stay violent';
-                console.log('📭 Event Ticker: No events, showing fallback message');
+                // Show countdown to next event when no active events
+                const nextEvent = this.getNextEvent();
+                if (nextEvent) {
+                    const timeUntilMs = nextEvent.timeDiff;
+                    const timeUntilSeconds = Math.floor(timeUntilMs / 1000);
+                    
+                    if (nextEvent.isBirthday) {
+                        displayText = `🎂 Next Event: Your Torn Birthday in ${this.formatCountdown(timeUntilSeconds)}`;
+                    } else {
+                        displayText = `⏰ Next Event: ${nextEvent.name} in ${this.formatCountdown(timeUntilSeconds)}`;
+                    }
+                    console.log('✅ Event Ticker: Showing countdown to next event:', nextEvent.name);
+                } else {
+                    displayText = '✨ No events currently scheduled - Stay sharp, stay violent';
+                    console.log('📭 Event Ticker: No next event found, showing fallback message');
+                }
+                
                 this.setTickerText(displayText);
             }
             

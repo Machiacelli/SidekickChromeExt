@@ -565,6 +565,24 @@
                     ">
                         <span style="font-size: 13px; filter: grayscale(0.2);">⚔️</span> Attack List
                     </button>
+                    <button class="module-option" data-module="debttracker" style="
+                        background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+                        border: 1px solid rgba(255,255,255,0.06);
+                        color: rgba(255,255,255,0.92);
+                        padding: 10px 12px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        text-align: left;
+                        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                        font-size: 11px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-weight: 500;
+                        letter-spacing: 0.3px;
+                    ">
+                        <span style="font-size: 13px; filter: grayscale(0.2);">💰</span> Debt Tracker
+                    </button>
                 </div>
             `;
 
@@ -634,6 +652,9 @@
                     break;
                 case 'stockticker':
                     this.showNotification('Stock Ticker Module', 'Stock ticker module coming soon!', 'info');
+                    break;
+                case 'debttracker':
+                    this.createNewDebtTracker();
                     break;
                 default:
                     this.showNotification('Unknown Module', 'Module type not recognized', 'error');
@@ -746,6 +767,28 @@
             }
         },
 
+        // Create a new debt tracker window
+        async createNewDebtTracker() {
+            try {
+                if (!window.SidekickModules?.Debt) {
+                    this.showNotification('Debt Tracker Error', 'Debt module not loaded', 'error');
+                    return;
+                }
+
+                // Initialize if not already done
+                if (!window.SidekickModules.Debt.isInitialized) {
+                    await window.SidekickModules.Debt.init();
+                }
+                
+                // Show unified debt tracker window
+                window.SidekickModules.Debt.showDebtTrackerWindow();
+                this.showNotification('Debt Tracker', 'Debt tracker window opened', 'info');
+            } catch (error) {
+                console.error('Failed to create debt tracker:', error);
+                this.showNotification('Debt Tracker Error', 'Failed to open debt tracker', 'error');
+            }
+        },
+
         // Show advanced settings panel
         showAdvancedSettings() {
             console.log("⚙️ Showing advanced settings panel");
@@ -810,6 +853,24 @@
                     </div>
                 </div>
                 
+                <div class="setting-item" style="margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 14px;">Debt Tracker</span>
+                        <button id="open-debt-tracker" style="
+                            background: #388e3c;
+                            border: 1px solid #4caf50;
+                            color: #fff;
+                            padding: 4px 12px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 11px;
+                        ">Open Tracker</button>
+                    </div>
+                    <div style="font-size: 11px; color: #aaa; margin-top: 2px;">
+                        Unified debt and loan tracking window
+                    </div>
+                </div>
+                
                 <div style="text-align: center; margin-top: 15px;">
                     <button id="close-advanced" style="
                         background: #444;
@@ -864,6 +925,15 @@
             if (closeBtn) {
                 closeBtn.addEventListener('click', () => {
                     panel.remove();
+                });
+            }
+
+            // Open Debt Tracker button
+            const openDebtTrackerBtn = panel.querySelector('#open-debt-tracker');
+            if (openDebtTrackerBtn && window.SidekickModules?.Debt) {
+                openDebtTrackerBtn.addEventListener('click', () => {
+                    panel.remove(); // Close the settings panel
+                    window.SidekickModules.Debt.showDebtTrackerWindow();
                 });
             }
 

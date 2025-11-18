@@ -131,12 +131,19 @@
         async getAttackTimes() {
             try {
                 console.log('📡 Fetching NPC attack times from Loot Rangers...');
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+                
                 const response = await fetch('https://api.lzpt.io/loot', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
                 
                 if (response.ok) {
                     this.lzptData = await response.json();
@@ -146,12 +153,16 @@
                     console.log('🔍 Data structure check - npcs object:', this.lzptData?.npcs);
                     return this.lzptData;
                 } else {
-                    console.warn('⚠️ Failed to fetch NPC attack times, status:', response.status);
+                    console.debug('⚠️ Failed to fetch NPC attack times, status:', response.status);
                     this.lzptData = null;
                     return null;
                 }
             } catch (error) {
-                console.error('❌ Error fetching NPC attack times:', error);
+                if (error.name === 'AbortError') {
+                    console.debug('⏱️ NPC timer request timed out');
+                } else {
+                    console.debug('⚠️ Could not fetch NPC attack times:', error.message);
+                }
                 this.lzptData = null;
                 return null;
             }

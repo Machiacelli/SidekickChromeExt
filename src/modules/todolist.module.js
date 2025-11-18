@@ -24,8 +24,8 @@
                 icon: '⚡',
                 color: '#4ECDC4',
                 description: 'Daily energy refill',
-                apiField: 'energyrefillsused', // Try different possible field names
-                alternativeFields: ['refills_energy_used', 'energy_refills_used', 'energyrefillsused', 'refillsenergyused'],
+                apiField: 'energydrinkused', // Updated to correct field name
+                alternativeFields: ['refills', 'tokenrefills'],
                 completed: false
             },
             nerveRefill: {
@@ -33,8 +33,8 @@
                 icon: '🧠',
                 color: '#45B7D1',
                 description: 'Daily nerve refill',
-                apiField: 'nerverefillsused', // Try different possible field names
-                alternativeFields: ['refills_nerve_used', 'nerve_refills_used', 'nerverefillsused', 'refillsnerveused'],
+                apiField: 'nerverefills', // Updated to correct field name
+                alternativeFields: ['refills', 'tokenrefills'],
                 completed: false
             },
             xanaxDose: {
@@ -42,13 +42,17 @@
                 icon: '💊',
                 color: '#E74C3C', 
                 description: 'Daily Xanax dose (up to 3)',
-                apiField: 'xanax_taken',
-                alternativeFields: ['xanax_taken', 'xanaxtaken', 'xanaxused'],
+                apiField: 'xanax', // Use xanax field directly
+                alternativeFields: ['xanaxtaken', 'xanaxused', 'medicalitemsused'],
                 maxCount: 3,
                 currentCount: 0,
-                completed: false
+                completed: false,
+                baseline: 0 // Track starting value for cumulative fields
             }
         },
+
+        // API baseline values for daily progress tracking
+        apiBaselines: {},
 
         // Initialize the todo list module
         async init() {
@@ -146,7 +150,13 @@
                 if (task.currentCount !== undefined) {
                     task.currentCount = 0;
                 }
+                if (task.baseline !== undefined) {
+                    task.baseline = 0;
+                }
             }
+            
+            // Clear API baselines for new day
+            this.apiBaselines = {};
             
             this.lastResetDate = new Date();
             this.saveDailyTasks();
@@ -160,15 +170,22 @@
             // Check every minute for daily reset and custom task resets
             this.dailyResetInterval = setInterval(() => {
                 const now = new Date();
-                const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+                const nowUTC = now.getTime();
                 
-                // Check for daily task reset
+                // Check for daily task reset - reset at 00:00 UTC
                 if (this.lastResetDate) {
-                    const lastResetUTC = new Date(Date.UTC(this.lastResetDate.getUTCFullYear(), this.lastResetDate.getUTCMonth(), this.lastResetDate.getUTCDate()));
+                    const lastResetTime = this.lastResetDate.getTime();
+                    const currentUTCDate = Math.floor(nowUTC / (24 * 60 * 60 * 1000));
+                    const lastResetUTCDate = Math.floor(lastResetTime / (24 * 60 * 60 * 1000));
                     
-                    if (todayUTC.getTime() !== lastResetUTC.getTime()) {
+                    if (currentUTCDate > lastResetUTCDate) {
+                        console.log('🔄 UTC midnight passed - resetting daily tasks');
                         this.resetDailyTasks();
                     }
+                } else {
+                    // First time - set the reset date
+                    this.lastResetDate = new Date();
+                    this.saveDailyTasks();
                 }
                 
                 // Check for custom task auto-resets
@@ -248,26 +265,18 @@
                 console.log('🔍 Checking Torn API for daily task updates...');
                 
                 // Get user data with personalstats for daily tracking
-                const response = await fetch(`https://api.torn.com/user/?selections=personalstats&key=${apiKey}`);
-                const data = await response.json();
+                const personalStatsResponse = await fetch(`https://api.torn.com/user/?selections=personalstats&key=${apiKey}`);
+                const personalStatsData = await personalStatsResponse.json();
                 
-                if (data && !data.error && data.personalstats) {
-                    console.log('📊 Full API Response received:');
-                    console.log('Available personalstats fields:', Object.keys(data.personalstats));
-                    console.log('Sample values:', {
-                        refills_energy_used: data.personalstats.refills_energy_used,
-                        refills_nerve_used: data.personalstats.refills_nerve_used,
-                        refillsenergyused: data.personalstats.refillsenergyused,
-                        refillsnerveused: data.personalstats.refillsnerveused,
-                        energyrefillsused: data.personalstats.energyrefillsused,
-                        nerverefillsused: data.personalstats.nerverefillsused,
-                        xanax_taken: data.personalstats.xanax_taken,
-                        xanaxused: data.personalstats.xanaxused,
-                        xanaxtaken: data.personalstats.xanaxtaken
-                    });
-                    this.updateTasksFromApi(data.personalstats);
-                } else if (data && data.error) {
-                    console.error('❌ API Error checking daily tasks:', data.error);
+                // Get log data for xanax checking since 00:00 UTC
+                const logResponse = await fetch(`https://api.torn.com/user/?selections=log&key=${apiKey}`);
+                const logData = await logResponse.json();
+                
+                if (personalStatsData && !personalStatsData.error && personalStatsData.personalstats) {
+                    console.log('📊 Personal stats received');
+                    this.updateTasksFromApi(personalStatsData.personalstats, logData?.log);
+                } else if (personalStatsData && personalStatsData.error) {
+                    console.error('❌ API Error checking daily tasks:', personalStatsData.error);
                 }
             } catch (error) {
                 console.error('❌ Error checking API for daily tasks:', error);
@@ -275,15 +284,51 @@
         },
 
         // Update daily task completion based on API data
-        updateTasksFromApi(personalstats) {
+        updateTasksFromApi(personalstats, logData = null) {
             let hasUpdates = false;
             
             console.log('📋 Updating tasks from API data...');
             
+            // Get today's UTC start time for log filtering
+            const todayUTCStart = new Date();
+            todayUTCStart.setUTCHours(0, 0, 0, 0);
+            const todayUTCStartTimestamp = Math.floor(todayUTCStart.getTime() / 1000);
+            
+            // Alternative calculation - try Torn's timezone (assuming Torn uses UTC)
+            const alternativeStart = new Date();
+            alternativeStart.setHours(0, 0, 0, 0); // Local timezone start
+            const alternativeTimestamp = Math.floor(alternativeStart.getTime() / 1000);
+            
+            console.log(`🕐 UTC timestamp calculation:`);
+            console.log(`🕐 Current time: ${new Date().toISOString()}`);
+            console.log(`🕐 Today UTC start: ${todayUTCStart.toISOString()}`);
+            console.log(`🕐 UTC start timestamp: ${todayUTCStartTimestamp}`);
+            console.log(`🕐 Local start timestamp: ${alternativeTimestamp}`);
+            console.log(`🕐 Your xanax time (19:39:17 18/11/25) would be timestamp: ${Math.floor(new Date('2025-11-18T19:39:17Z').getTime() / 1000)}`);
+            
             for (const taskKey in this.dailyTasks) {
                 const task = this.dailyTasks[taskKey];
                 
-                // Try the main field first, then alternatives
+                // Special handling for xanax - check logs instead of personal stats
+                if (taskKey === 'xanaxDose') {
+                    console.log('💊 Starting xanax detection...');
+                    // Try both UTC and local timezone calculations
+                    const xanaxCountUTC = this.countXanaxFromLogs(logData, todayUTCStartTimestamp, 'UTC');
+                    const xanaxCountLocal = this.countXanaxFromLogs(logData, alternativeTimestamp, 'LOCAL');
+                    
+                    // Use the higher count (in case timezone calculation is wrong)
+                    const xanaxCount = Math.max(xanaxCountUTC, xanaxCountLocal);
+                    console.log(`💊 Final xanax count: UTC=${xanaxCountUTC}, Local=${xanaxCountLocal}, Using=${xanaxCount}`);
+                    if (xanaxCount !== task.currentCount) {
+                        task.currentCount = xanaxCount;
+                        task.completed = xanaxCount >= task.maxCount;
+                        hasUpdates = true;
+                        console.log(`💊 Updated ${task.name}: ${xanaxCount}/${task.maxCount} from logs`);
+                    }
+                    continue;
+                }
+                
+                // Regular handling for other tasks using personal stats
                 let apiValue = undefined;
                 let usedField = task.apiField;
                 
@@ -303,18 +348,29 @@
                 if (apiValue !== undefined) {
                     console.log(`🔍 Checking ${task.name} (${usedField}): API value = ${apiValue}, current completed = ${task.completed}`);
                     
-                    if (task.maxCount) {
-                        // Multi-completion task (like xanax)
-                        const newCount = Math.min(apiValue, task.maxCount);
+                    // Set baseline if not already set (for cumulative fields)
+                    if (task.baseline !== undefined && this.apiBaselines[usedField] === undefined) {
+                        this.apiBaselines[usedField] = apiValue;
+                        task.baseline = apiValue;
+                        console.log(`📊 Set baseline for ${task.name} (${usedField}): ${apiValue}`);
+                    }
+                    
+                    if (task.maxCount && taskKey !== 'xanaxDose') {
+                        // Multi-completion task - use daily progress from baseline
+                        const dailyProgress = task.baseline !== undefined ? 
+                            Math.max(0, apiValue - task.baseline) : apiValue;
+                        const newCount = Math.min(dailyProgress, task.maxCount);
                         if (newCount !== task.currentCount) {
                             task.currentCount = newCount;
                             task.completed = newCount >= task.maxCount;
                             hasUpdates = true;
-                            console.log(`📋 Updated ${task.name}: ${newCount}/${task.maxCount}`);
+                            console.log(`📋 Updated ${task.name}: ${newCount}/${task.maxCount} (daily progress: ${dailyProgress})`);
                         }
                     } else {
-                        // Single completion task
-                        const isCompleted = apiValue > 0;
+                        // Single completion task - use daily progress from baseline if available
+                        const dailyProgress = task.baseline !== undefined ? 
+                            Math.max(0, apiValue - task.baseline) : apiValue;
+                        const isCompleted = dailyProgress > 0;
                         if (isCompleted !== task.completed) {
                             task.completed = isCompleted;
                             hasUpdates = true;
@@ -333,6 +389,140 @@
             } else {
                 console.log('ℹ️ No updates needed for daily tasks');
             }
+        },
+
+        // Count xanax usage from logs since 00:00 UTC
+        countXanaxFromLogs(logData, sinceTimestamp, timezone = 'UTC') {
+            console.log(`🔍 [${timezone}] Raw logData received:`, logData);
+            console.log(`🔍 [${timezone}] logData type:`, typeof logData);
+            console.log(`🔍 [${timezone}] logData keys:`, logData ? Object.keys(logData) : 'null');
+            
+            // Handle different log data formats from Torn API
+            let logsArray = [];
+            
+            if (!logData) {
+                console.log(`⚠️ [${timezone}] No log data provided`);
+                return 0;
+            }
+            
+            if (Array.isArray(logData)) {
+                // Direct array format
+                logsArray = logData;
+                console.log(`📊 [${timezone}] Using direct array format: ${logsArray.length} entries`);
+            } else if (logData.log && Array.isArray(logData.log)) {
+                // Nested under 'log' property
+                logsArray = logData.log;
+                console.log(`📊 [${timezone}] Using nested log array: ${logsArray.length} entries`);
+            } else if (typeof logData === 'object') {
+                // Object format - convert values to array
+                logsArray = Object.values(logData);
+                console.log(`📊 [${timezone}] Converting object to array: ${logsArray.length} entries`);
+            } else {
+                console.log(`⚠️ [${timezone}] Unknown log data format:`, logData);
+                return 0;
+            }
+            
+            if (!Array.isArray(logsArray) || logsArray.length === 0) {
+                console.log(`⚠️ [${timezone}] No valid log entries found`);
+                return 0;
+            }
+            
+            console.log(`🔍 [${timezone}] Searching logs for xanax usage since timestamp: ${sinceTimestamp} (${new Date(sinceTimestamp * 1000).toISOString()})`);
+            console.log(`📊 [${timezone}] Total log entries to check: ${logsArray.length}`);
+            
+            let xanaxCount = 0;
+            let checkedEntries = 0;
+            let recentEntries = [];
+            
+            // Search for xanax usage in logs
+            for (const entry of logsArray) {
+                // Ensure entry has required properties
+                if (!entry || !entry.timestamp || !entry.log) {
+                    continue;
+                }
+                
+                // Check if log entry is from today (after cutoff timestamp)
+                if (entry.timestamp < sinceTimestamp) {
+                    continue; // Skip older entries
+                }
+                
+                checkedEntries++;
+                recentEntries.push({
+                    time: new Date(entry.timestamp * 1000).toISOString(),
+                    log: entry.log
+                });
+                
+                console.log(`🔍 [${timezone}] Entry ${checkedEntries}: ${new Date(entry.timestamp * 1000).toISOString()} - "${entry.log}"`);
+                
+                // Look for xanax usage patterns in log text
+                if (entry.log && typeof entry.log === 'string') {
+                    const logText = entry.log;
+                    
+                    // Check for numeric log codes first (new format)
+                    const numericCode = parseInt(logText.trim());
+                    let foundXanax = false;
+                    let matchedPattern = '';
+                    
+                    if (!isNaN(numericCode)) {
+                        // Known Torn log codes for xanax usage (based on research)
+                        const xanaxCodes = [
+                            2290, // Primary xanax usage code
+                            2291, // Alternative xanax code 
+                            2292, // Another possible xanax variant
+                            // Add more codes as discovered
+                        ];
+                        
+                        if (xanaxCodes.includes(numericCode)) {
+                            foundXanax = true;
+                            matchedPattern = `Numeric Code: ${numericCode} (xanax usage)`;
+                        }
+                    }
+                    
+                    // Fallback to text patterns if no numeric match (legacy format)
+                    if (!foundXanax) {
+                        const xanaxPatterns = [
+                            /xanax.*?(used|took|consumed|taken)/i,
+                            /(used|took|consumed|taken).*?xanax/i,
+                            /you.*?(used|took|consumed).*?xanax/i,
+                            /xanax.*?effect/i,
+                            /took.*?xanax/i,
+                            /used.*?xanax/i,
+                            /consume.*?xanax/i,
+                            /xanax.*?active/i,
+                            /\bxanax\b/i  // Just the word xanax anywhere
+                        ];
+                        
+                        for (let i = 0; i < xanaxPatterns.length; i++) {
+                            const pattern = xanaxPatterns[i];
+                            if (pattern.test(logText)) {
+                                foundXanax = true;
+                                matchedPattern = `Text Pattern ${i + 1}: ${pattern.toString()}`;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (foundXanax) {
+                        xanaxCount++;
+                        console.log(`💊 [${timezone}] Found xanax usage #${xanaxCount} - Matched: ${matchedPattern}`);
+                        console.log(`💊 [${timezone}] Full log text: "${entry.log}"`);
+                    }
+                }
+            }
+            
+            console.log(`💊 [${timezone}] Search complete:`);
+            console.log(`💊 [${timezone}] - Checked ${checkedEntries} entries since ${new Date(sinceTimestamp * 1000).toISOString()}`);
+            console.log(`💊 [${timezone}] - Found ${xanaxCount} xanax usages`);
+            console.log(`💊 [${timezone}] Recent entries (last 5):`, recentEntries.slice(-5));
+            
+            if (xanaxCount === 0 && checkedEntries > 0) {
+                console.log(`⚠️ [${timezone}] No xanax found but entries exist. Sample log entries:`);
+                recentEntries.slice(0, 3).forEach((entry, i) => {
+                    console.log(`Sample ${i + 1}: ${entry.time} - "${entry.log}"`);
+                });
+            }
+            
+            return Math.min(xanaxCount, 3); // Cap at 3 per day
         },
 
         // Create a new todo list
@@ -444,55 +634,75 @@
                     " title="Edit name">
                     
                     <div style="display: flex; align-items: center; gap: 4px;">
-                        <button class="add-task-btn" style="
-                            background: rgba(255,255,255,0.2);
-                            border: none;
-                            color: #fff;
-                            cursor: pointer;
-                            width: 20px;
-                            height: 20px;
-                            border-radius: 50%;
-                            font-size: 12px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            transition: all 0.2s;
-                        " onmouseover="this.style.background='rgba(255,255,255,0.3)'" 
-                           onmouseout="this.style.background='rgba(255,255,255,0.2)'" 
-                           title="Add task">+</button>
-                           
-                        <button class="refresh-api-btn" style="
-                            background: rgba(76, 175, 80, 0.3);
-                            border: none;
-                            color: #fff;
-                            cursor: pointer;
-                            width: 20px;
-                            height: 20px;
-                            border-radius: 50%;
-                            font-size: 10px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            transition: all 0.2s;
-                            margin-left: 2px;
-                        " onmouseover="this.style.background='rgba(76, 175, 80, 0.5)'" 
-                           onmouseout="this.style.background='rgba(76, 175, 80, 0.3)'" 
-                           title="Check API now">🔄</button>
-                           
-                        <button class="pin-todolist-btn" style="
-                            background: none;
-                            border: none;
-                            color: rgba(255,255,255,0.8);
-                            cursor: pointer;
-                            font-size: 12px;
-                            padding: 2px 4px;
-                            border-radius: 2px;
-                            transition: background 0.2s;
-                        " onmouseover="this.style.background='rgba(255,255,255,0.2)'" 
-                           onmouseout="this.style.background='none'" 
-                           title="${todoList.pinned ? 'Unpin' : 'Pin'}">
-                            ${todoList.pinned ? '📌' : '📌'}
-                        </button>
+                        <div class="todolist-dropdown" style="position: relative;">
+                            <button class="todolist-dropdown-btn" style="
+                                background: rgba(255,255,255,0.2);
+                                border: none;
+                                color: #fff;
+                                cursor: pointer;
+                                width: 20px;
+                                height: 20px;
+                                border-radius: 50%;
+                                font-size: 12px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                transition: all 0.2s;
+                                z-index: 1001;
+                                position: relative;
+                            " onmouseover="this.style.background='rgba(255,255,255,0.3)'" 
+                               onmouseout="this.style.background='rgba(255,255,255,0.2)'" 
+                               title="Todo list options">⚙️</button>
+                            
+                            <div class="todolist-dropdown-content" style="
+                                display: none;
+                                position: absolute;
+                                right: 0;
+                                top: 100%;
+                                background: #2a2a2a;
+                                border: 1px solid #555;
+                                border-radius: 6px;
+                                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                                z-index: 10000;
+                                min-width: 160px;
+                                margin-top: 4px;
+                            ">
+                                <div class="todolist-option" data-action="refresh" style="
+                                    padding: 8px 12px;
+                                    cursor: pointer;
+                                    color: #fff;
+                                    font-size: 12px;
+                                    border-bottom: 1px solid #444;
+                                " onmouseover="this.style.background='#3a3a3a'" 
+                                   onmouseout="this.style.background='none'">♾️ Refresh Tasks</div>
+                                
+                                <div class="todolist-option" data-action="pin" style="
+                                    padding: 8px 12px;
+                                    cursor: pointer;
+                                    color: #fff;
+                                    font-size: 12px;
+                                    border-bottom: 1px solid #444;
+                                " onmouseover="this.style.background='#3a3a3a'" 
+                                   onmouseout="this.style.background='none'">${todoList.pinned ? '🗋 Unpin' : '📌 Pin'}</div>
+                                
+                                <div class="todolist-option" data-action="add" style="
+                                    padding: 8px 12px;
+                                    cursor: pointer;
+                                    color: #fff;
+                                    font-size: 12px;
+                                    border-bottom: 1px solid #444;
+                                " onmouseover="this.style.background='#3a3a3a'" 
+                                   onmouseout="this.style.background='none'">➕ Add Task</div>
+                                
+                                <div class="todolist-option" data-action="delete" style="
+                                    padding: 8px 12px;
+                                    cursor: pointer;
+                                    color: #ff6b6b;
+                                    font-size: 12px;
+                                " onmouseover="this.style.background='#3a3a3a'" 
+                                   onmouseout="this.style.background='none'">🗑️ Delete List</div>
+                            </div>
+                        </div>
                         
                         <button class="todolist-close" style="
                             background: #dc3545;
@@ -704,30 +914,75 @@
                 this.saveTodoLists();
             });
 
-            // Add task button
-            const addTaskBtn = element.querySelector('.add-task-btn');
-            addTaskBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.showAddTaskDialog(todoList);
-            });
-
-            // Refresh API button
-            const refreshApiBtn = element.querySelector('.refresh-api-btn');
-            if (refreshApiBtn) {
-                refreshApiBtn.addEventListener('click', async (e) => {
+            // Todo list dropdown menu - using working pattern from timer module
+            const dropdownBtn = element.querySelector('.todolist-dropdown-btn');
+            const dropdownContent = element.querySelector('.todolist-dropdown-content');
+            
+            if (dropdownBtn && dropdownContent) {
+                console.log('🔧 Setting up dropdown for todolist:', todoList.id);
+                
+                dropdownBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    console.log('🔄 Manual API check triggered');
-                    await this.checkApiForCompletedTasks();
+                    console.log('🔧 Dropdown button clicked');
+                    
+                    // Close all other dropdowns first
+                    document.querySelectorAll('.todolist-dropdown .todolist-dropdown-content').forEach(dropdown => {
+                        if (dropdown !== dropdownContent) {
+                            dropdown.style.display = 'none';
+                        }
+                    });
+                    
+                    // Toggle this dropdown
+                    const isVisible = dropdownContent.style.display === 'block';
+                    dropdownContent.style.display = isVisible ? 'none' : 'block';
+                    
+                    console.log('🔧 Dropdown toggled to:', dropdownContent.style.display);
                 });
+                
+                // Handle option clicks
+                const options = dropdownContent.querySelectorAll('.todolist-option');
+                options.forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const action = option.getAttribute('data-action');
+                        console.log('🔧 Option clicked:', action);
+                        
+                        dropdownContent.style.display = 'none';
+                        
+                        switch(action) {
+                            case 'refresh':
+                                window.SidekickModules.TodoList.checkApiForCompletedTasks();
+                                break;
+                            case 'pin':
+                                todoList.pinned = !todoList.pinned;
+                                window.SidekickModules.TodoList.saveTodoLists();
+                                window.SidekickModules.TodoList.renderAllTodoLists();
+                                break;
+                            case 'add':
+                                const taskName = prompt('Enter task name:');
+                                if (taskName) {
+                                    window.SidekickModules.TodoList.addCustomTask(todoList.id, taskName.trim());
+                                }
+                                break;
+                            case 'delete':
+                                if (confirm(`Delete "${todoList.name}" todo list?`)) {
+                                    window.SidekickModules.TodoList.deleteTodoList(todoList.id);
+                                }
+                                break;
+                        }
+                    });
+                });
+                
+                console.log('✅ Dropdown menu setup complete with', options.length, 'options');
+            } else {
+                console.error('❌ Dropdown elements not found. Btn:', !!dropdownBtn, 'Content:', !!dropdownContent);
             }
-
-            // Pin button
-            const pinBtn = element.querySelector('.pin-todolist-btn');
-            pinBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                todoList.pinned = !todoList.pinned;
-                this.saveTodoLists();
-                this.renderTodoList(todoList);
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!element.contains(e.target)) {
+                    dropdownContent.style.display = 'none';
+                }
             });
 
             // Close button
@@ -747,6 +1002,101 @@
 
             // Make draggable
             this.makeDraggable(element, todoList);
+        },
+
+        // Show todo list options menu
+        showTodoListOptionsMenu(todoListId, cogButton) {
+            console.log('🔧 showTodoListOptionsMenu called with:', todoListId, 'button:', !!cogButton);
+            
+            const existingMenu = document.querySelector('.todolist-options-menu');
+            if (existingMenu) {
+                console.log('🔧 Removing existing menu');
+                existingMenu.remove();
+                return;
+            }
+
+            const todoList = this.todoLists.find(t => t.id === todoListId);
+            if (!todoList) return;
+
+            const menu = document.createElement('div');
+            menu.className = 'todolist-options-menu';
+            menu.style.cssText = `
+                position: absolute;
+                background: #2a2a2a;
+                border: 1px solid #555;
+                border-radius: 4px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+                z-index: 10000;
+                min-width: 150px;
+                font-size: 12px;
+            `;
+
+            menu.innerHTML = `
+                <div class="menu-item add-task-menu" style="
+                    padding: 8px 12px;
+                    color: #fff;
+                    cursor: pointer;
+                    border-bottom: 1px solid #555;
+                    transition: background 0.2s;
+                " onmouseover="this.style.background='#444'" onmouseout="this.style.background='transparent'">
+                    ➕ Add Task
+                </div>
+                <div class="menu-item refresh-api-menu" style="
+                    padding: 8px 12px;
+                    color: #fff;
+                    cursor: pointer;
+                    border-bottom: 1px solid #555;
+                    transition: background 0.2s;
+                " onmouseover="this.style.background='#444'" onmouseout="this.style.background='transparent'">
+                    🔄 Check API Now
+                </div>
+                <div class="menu-item pin-todolist-menu" style="
+                    padding: 8px 12px;
+                    color: #fff;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                " onmouseover="this.style.background='#444'" onmouseout="this.style.background='transparent'">
+                    ${todoList.pinned ? '📌 Unpin' : '📌 Pin'}
+                </div>
+            `;
+
+            // Position menu
+            const rect = cogButton.getBoundingClientRect();
+            menu.style.left = rect.left + 'px';
+            menu.style.top = (rect.bottom + 5) + 'px';
+
+            document.body.appendChild(menu);
+
+            // Event handlers
+            menu.querySelector('.add-task-menu').addEventListener('click', () => {
+                this.showAddTaskDialog(todoList);
+                menu.remove();
+            });
+
+            menu.querySelector('.refresh-api-menu').addEventListener('click', async () => {
+                console.log('🔄 Manual API check triggered');
+                await this.checkApiForCompletedTasks();
+                window.SidekickModules.UI?.showNotification('Todo List', 'Checking API for completed tasks...', 'info');
+                menu.remove();
+            });
+
+            menu.querySelector('.pin-todolist-menu').addEventListener('click', () => {
+                todoList.pinned = !todoList.pinned;
+                this.saveTodoLists();
+                this.renderTodoList(todoList);
+                menu.remove();
+            });
+
+            // Close menu when clicking outside
+            setTimeout(() => {
+                const closeHandler = (e) => {
+                    if (!menu.contains(e.target)) {
+                        menu.remove();
+                        document.removeEventListener('click', closeHandler);
+                    }
+                };
+                document.addEventListener('click', closeHandler);
+            }, 10);
         },
 
         // Set up task event listeners

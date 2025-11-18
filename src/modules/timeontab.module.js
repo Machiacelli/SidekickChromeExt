@@ -149,51 +149,43 @@
             });
         },
 
-        // Update the tab title with timer information
+        // Update the tab title with timer information (simplified - no clock/emojis)
         updateTabTitle() {
             if (!this.isEnabled) return;
 
             const timerInfo = this.getActiveTimerInfo();
             
             if (timerInfo) {
-                document.title = `${timerInfo} | Torn`;
+                document.title = `${timerInfo} | TORN`;
             } else {
                 document.title = this.originalTitle;
             }
         },
 
-        // Get active timer information
+        // Get active timer information (only specific important timers)
         getActiveTimerInfo() {
-            const url = window.location.href;
-
-            // Travel time
-            if (url.includes('sid=travel') || url.includes('/travel.php')) {
-                return this.getTravelTime();
+            // Hospital timer (highest priority)
+            const hospitalTimer = document.querySelector('#theCounter');
+            if (hospitalTimer && hospitalTimer.textContent.trim() && hospitalTimer.textContent.match(/\d+:\d+/)) {
+                return hospitalTimer.textContent.trim();
             }
-
-            // Hospital time
-            if (url.includes('/hospitalview.php') || url.includes('hospital')) {
-                return this.getHospitalTime();
+            
+            // Chain timer
+            const chainTimer = document.querySelector('p.bar-timeleft___B9RGV');
+            if (chainTimer && chainTimer.textContent.trim() && chainTimer.textContent.match(/\d+:\d+/)) {
+                return `Chain: ${chainTimer.textContent.trim()}`;
             }
-
-            // Racing time
-            if (url.includes('sid=racing') || url.includes('/loader.php')) {
-                return this.getRacingTime();
+            
+            // Racing timer  
+            const racingTimer = document.querySelector('#infoSpot');
+            if (racingTimer && racingTimer.textContent.trim() && racingTimer.textContent.match(/\d+:\d+/)) {
+                return `Racing: ${racingTimer.textContent.trim()}`;
             }
-
-            // Chain time
-            if (url.includes('/factions.php')) {
-                return this.getChainTime();
-            }
-
-            // Gym time
-            if (url.includes('/gym.php') || document.querySelector('#gymroot')) {
-                return this.getGymTime();
-            }
-
-            // Jail time
-            if (url.includes('/jailview.php') || url.includes('jail')) {
-                return this.getJailTime();
+            
+            // Jail timer
+            const jailTimer = document.querySelector('[class*="jail"] [class*="timer"], #jailTimer');
+            if (jailTimer && jailTimer.textContent.trim() && jailTimer.textContent.match(/\d+:\d+/)) {
+                return `Jail: ${jailTimer.textContent.trim()}`;
             }
 
             return null;

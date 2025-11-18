@@ -419,3 +419,57 @@ body.sidekick-sidebar-hidden {
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
 }
+
+/* Flight Tracker Menu Styles */
+.flight-tracker-menu {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+.flight-tracker-menu .plane-option:hover {
+    background: #3a3a3a !important;
+}
+
+.flight-tracker-menu .plane-option:active {
+    background: #4a4a4a !important;
+    transform: scale(0.98);
+}
+
+/* Flight Tracker Button - Force no borders */
+.sidekick-flight-tracker-btn {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: #4CAF50 !important;
+    color: white !important;
+    padding: 6px 10px !important;
+    margin: 10px 0 5px 0 !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    width: fit-content !important;
+    max-width: 120px !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+    display: block !important;
+    clear: both !important;
+}
+
+.sidekick-flight-tracker-btn:hover {
+    background: #45a049 !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.sidekick-flight-tracker-btn:focus {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.sidekick-flight-tracker-btn:active {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}

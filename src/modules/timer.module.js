@@ -56,6 +56,22 @@
                 }
             });
             
+            // Auto-save timers every 30 seconds for better persistence
+            setInterval(() => {
+                if (this.timers.length > 0) {
+                    console.log("🔄 Auto-saving", this.timers.length, "timers");
+                    this.saveTimers();
+                }
+            }, 30000);
+            
+            // Save immediately when timers change
+            this.originalPushTimers = this.timers.push.bind(this.timers);
+            this.timers.push = (...items) => {
+                const result = this.originalPushTimers(...items);
+                this.saveTimers();
+                return result;
+            };
+            
             // Also save on visibility change (tab switching)
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState === 'hidden') {
@@ -85,17 +101,32 @@
             try {
                 await waitForCore();
                 
+                console.log("⏰ Timer Module: Starting initialization...");
+                
                 // Load saved state first (lightweight operation)
                 await this.loadTimers();
+                console.log(`⏰ Timer Module: Loaded ${this.timers.length} timers from storage`);
+                
                 await this.loadApiKey();
                 this.setupNavigationHandler();
+                this.startPeriodicSynchronization();
                 
-                // Restore timer panels after a short delay to ensure page is ready
+                // Restore timer panels immediately (no delay needed)
+                console.log(`⏰ Timer Module: Attempting to restore ${this.timers.length} timer panels`);
+                this.restoreTimerPanels();
+                
+                // Double-check after restoration
                 setTimeout(() => {
-                    this.restoreTimerPanels();
-                }, 1000);
+                    console.log(`⏰ Timer Module: Final check - ${this.timers.length} timers in memory`);
+                    this.timers.forEach((timer, index) => {
+                        console.log(`⏰ Timer ${index + 1}: ${timer.name} (${timer.type}) - Running: ${timer.isRunning}`);
+                    });
+                }, 100); // Reduced to just 100ms for verification
                 
                 console.log("⏰ Timer Module initialized with", this.timers.length, "saved timers");
+                
+                // Immediately trigger lazy initialization to render timers without delay
+                this.lazyInit();
                 
                 // Add manual test functions to window for debugging (always available)
                 window.debugTimerSave = () => {
@@ -423,6 +454,77 @@
             return currentTimer;
         },
 
+        // Start periodic time synchronization and API checks
+        startPeriodicSynchronization() {
+            console.log('🔄 Starting periodic timer synchronization...');
+            
+            // Synchronize timers every 30 seconds to prevent drift
+            setInterval(() => {
+                this.synchronizeTimers();
+            }, 30000);
+            
+            // Check for page visibility changes and sync immediately
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    console.log('👁️ Page became visible - synchronizing timers');
+                    setTimeout(() => {
+                        this.synchronizeTimers();
+                    }, 1000); // Small delay to ensure page is fully loaded
+                }
+            });
+            
+            // Start API monitoring if we have any API timers
+            const hasApiTimers = this.timers.some(timer => timer.isApiTimer);
+            if (hasApiTimers) {
+                this.startApiMonitoring();
+            }
+        },
+
+        // Synchronize timers with actual elapsed time (fix drift from navigation)
+        async synchronizeTimers() {
+            console.log("🔄 Synchronizing timers with actual elapsed time...");
+            
+            const now = Date.now();
+            let hasChanges = false;
+            
+            for (const timer of this.timers) {
+                if (timer.lastUpdated && timer.isRunning && timer.type === 'countdown') {
+                    const elapsed = Math.floor((now - new Date(timer.lastUpdated).getTime()) / 1000);
+                    
+                    if (elapsed > 2) { // Only sync if more than 2 seconds elapsed
+                        console.log(`⏰ Timer ${timer.name}: correcting ${elapsed} seconds of drift`);
+                        
+                        if (timer.cooldowns) {
+                            // Update multiple cooldowns
+                            for (let cooldownType in timer.cooldowns) {
+                                timer.cooldowns[cooldownType] = Math.max(0, timer.cooldowns[cooldownType] - elapsed);
+                            }
+                            timer.remainingTime = Math.max(...Object.values(timer.cooldowns));
+                        } else {
+                            // Single timer
+                            timer.remainingTime = Math.max(0, timer.remainingTime - elapsed);
+                        }
+                        
+                        // Check if timer expired while away
+                        if (timer.remainingTime <= 0) {
+                            timer.isRunning = false;
+                            console.log(`⏰ Timer ${timer.name} expired while away`);
+                        }
+                        
+                        hasChanges = true;
+                    }
+                }
+                
+                // Update last updated time
+                timer.lastUpdated = new Date().toISOString();
+            }
+            
+            if (hasChanges) {
+                this.saveTimers();
+                console.log("✅ Timer synchronization complete");
+            }
+        },
+
         // Load timers from storage
         async loadTimers() {
             try {
@@ -501,6 +603,9 @@
                     this.timers = [];
                     console.log("⚠️ No storage method succeeded, initialized empty timers array");
                 }
+                
+                // Synchronize timer times after loading (fix time drift from being away)
+                await this.synchronizeTimers();
                 
                 // Log each timer for debugging (like original script)
                 this.timers.forEach((timer, index) => {
@@ -625,7 +730,7 @@
                         console.log("✅ Chrome storage save completed");
                     }
                 } catch (chromeError) {
-                    console.warn("⚠️ Chrome storage failed:", chromeError);
+                    console.debug("🔧 Chrome storage backup failed (expected if context invalidated):", chromeError);
                 }
                 
                 // Immediate verification
@@ -656,7 +761,7 @@
             this.timers.forEach(timer => {
                 try {
                     console.log("🔄 Restoring timer:", timer.name, "at position", timer.x, timer.y);
-                    this.createTimerPanel(timer);
+                    this.renderTimer(timer);
                     
                     // If the timer was running, restart it
                     if (timer.isRunning && timer.remainingTime > 0) {
@@ -814,7 +919,14 @@
                     flex-direction: column;
                     gap: 10px;
                     overflow-y: auto;
+                    scrollbar-width: none;
+                    -ms-overflow-style: none;
                 ">
+                <style>
+                    .timer-cooldown-container::-webkit-scrollbar {
+                        display: none;
+                    }
+                </style>
                     ${Object.entries(cooldownTypes).map(([type, info]) => `
                         <button class="cooldown-option" data-type="${type}" style="
                             background: linear-gradient(135deg, ${info.color}, ${this.darkenColor(info.color, 15)});
@@ -1072,12 +1184,19 @@
                     flex-direction: column;
                     gap: 8px;
                     overflow-y: auto;
+                    scrollbar-width: none;
+                    -ms-overflow-style: none;
                     align-items: center;
                     justify-content: center;
                     color: #999;
                     font-size: 14px;
                     text-align: center;
                 ">
+                <style>
+                    .timer-content::-webkit-scrollbar {
+                        display: none;
+                    }
+                </style>
                     ${(function() {
                         console.log(`🔍 renderTimer - timer.remainingTime: ${timer.remainingTime}, name: ${timer.name}`);
                         
@@ -1341,6 +1460,9 @@
 
             // Make draggable
             this.makeDraggable(element, timer);
+            
+            // Add resize observer to save size changes
+            this.addResizeObserver(element, timer);
         },
 
         // Start/Resume timer
@@ -1350,6 +1472,7 @@
 
             timer.isRunning = true;
             timer.modified = new Date().toISOString();
+            timer.lastUpdated = new Date().toISOString();
 
             // Clear existing interval
             if (this.intervals.has(id)) {
@@ -1358,6 +1481,9 @@
 
             // Start new interval
             const interval = setInterval(() => {
+                // Update last updated time
+                timer.lastUpdated = new Date().toISOString();
+                
                 if (timer.type === 'countdown') {
                     if (timer.cooldowns) {
                         // Update multiple cooldowns
@@ -1639,79 +1765,77 @@
                 }
             }, 500);
             
-            console.log(`🗑️ Removing ${cooldownType} cooldown from timer ${timerId}`);
+            console.log(`🗑️ Attempting to remove ${cooldownType} cooldown from timer ${timerId}`);
             
             const timer = this.timers.find(t => t.id === timerId);
-            if (!timer || !timer.cooldowns) {
-                console.warn(`⚠️ Timer ${timerId} not found or has no cooldowns`);
+            if (!timer) {
+                console.warn(`⚠️ Timer ${timerId} not found`);
+                return;
+            }
+            
+            if (!timer.cooldowns) {
+                console.warn(`⚠️ Timer ${timerId} has no cooldowns object`);
+                return;
+            }
+            
+            // Check if the cooldown type exists before trying to remove it
+            if (!timer.cooldowns.hasOwnProperty(cooldownType)) {
+                console.warn(`⚠️ Cooldown ${cooldownType} not found in timer ${timerId}. Available cooldowns:`, Object.keys(timer.cooldowns));
                 return;
             }
 
             // Remove the specific cooldown
-            if (timer.cooldowns[cooldownType]) {
-                delete timer.cooldowns[cooldownType];
-                console.log(`✅ Removed ${cooldownType} cooldown`);
-                
-                const remainingCooldowns = Object.keys(timer.cooldowns);
-                console.log(`🔍 Remaining cooldowns: ${remainingCooldowns.join(', ')}`);
-                
-                if (remainingCooldowns.length === 0) {
-                    // No cooldowns left - reset timer to blank state
-                    timer.name = 'Cooldown Timer';
-                    timer.color = '#666';
-                    timer.duration = 0;
-                    timer.remainingTime = 0;
-                    timer.isRunning = false;
-                    timer.isApiTimer = false;
-                    delete timer.cooldowns;
-                    
-                    // Stop the timer if it's running
-                    if (this.intervals.has(timerId)) {
-                        clearInterval(this.intervals.get(timerId));
-                        this.intervals.delete(timerId);
-                    }
-                    
-                    console.log(`🔄 Timer reset to blank state - all cooldowns removed`);
-                } else if (remainingCooldowns.length === 1) {
-                    // Only one cooldown left - show specific name
-                    const remainingType = remainingCooldowns[0];
-                    const cooldownNames = {
-                        'drug': 'Drug Cooldown',
-                        'medical': 'Medical Cooldown', 
-                        'booster': 'Booster Cooldown'
-                    };
-                    timer.name = cooldownNames[remainingType] || 'Cooldown';
-                    timer.color = this.getCooldownColor(remainingType);
-                    timer.remainingTime = timer.cooldowns[remainingType];
-                    timer.duration = timer.cooldowns[remainingType];
-                    console.log(`🔄 Timer updated to single cooldown: ${timer.name}`);
-                } else {
-                    // Multiple cooldowns remain - keep generic name
-                    timer.name = 'Cooldowns';
-                    timer.color = '#9b59b6';
-                    timer.remainingTime = Math.max(...Object.values(timer.cooldowns));
-                    timer.duration = Math.max(...Object.values(timer.cooldowns));
-                    console.log(`🔄 Timer kept as multi-cooldown: ${remainingCooldowns.length} remaining`);
-                }
-                
+            delete timer.cooldowns[cooldownType];
+            console.log(`✅ Removed ${cooldownType} cooldown`);
+            
+            const remainingCooldowns = Object.keys(timer.cooldowns);
+            console.log(`🔍 Remaining cooldowns: ${remainingCooldowns.join(', ')}`);
+            
+            if (remainingCooldowns.length === 0) {
+                // No cooldowns left - delete the entire timer
+                console.log(`🗑️ No cooldowns remaining, deleting timer ${timerId}`);
+                this.deleteTimer(timerId);
+                return;
+            } else if (remainingCooldowns.length === 1) {
+                // Only one cooldown left - convert to single cooldown timer
+                const remainingType = remainingCooldowns[0];
+                const cooldownNames = {
+                    'drug': 'Drug Cooldown',
+                    'medical': 'Medical Cooldown', 
+                    'booster': 'Booster Cooldown'
+                };
+                timer.name = cooldownNames[remainingType] || 'Cooldown';
+                timer.color = this.getCooldownColor(remainingType);
+                timer.remainingTime = timer.cooldowns[remainingType];
+                timer.duration = timer.cooldowns[remainingType];
+                console.log(`🔄 Timer updated to single cooldown: ${timer.name}`);
+            } else {
+                // Multiple cooldowns remain - keep as multi-cooldown timer
+                timer.name = 'Cooldowns';
+                timer.color = '#9b59b6';
+                timer.remainingTime = Math.max(...Object.values(timer.cooldowns));
+                timer.duration = Math.max(...Object.values(timer.cooldowns));
+                console.log(`🔄 Timer kept as multi-cooldown: ${remainingCooldowns.length} remaining`);
+            }
+            
                 // Save and update display
                 this.saveTimers();
                 this.updateTimerDisplay(timerId);
                 
-                // Show notification
-                if (window.SidekickModules?.UI?.showNotification) {
-                    const cooldownNames = {
-                        'drug': 'Drug',
-                        'medical': 'Medical', 
-                        'booster': 'Booster'
-                    };
-                    window.SidekickModules.UI.showNotification(
-                        'INFO', 
-                        `${cooldownNames[cooldownType] || cooldownType} cooldown removed`
-                    );
-                }
-            } else {
-                console.warn(`⚠️ Cooldown ${cooldownType} not found in timer ${timerId}`);
+                // Start API monitoring for this timer if it's API-based
+                if (timer.isApiTimer) {
+                    this.startApiMonitoring(timerId);
+                }            // Show notification
+            if (window.SidekickModules?.UI?.showNotification) {
+                const cooldownNames = {
+                    'drug': 'Drug',
+                    'medical': 'Medical', 
+                    'booster': 'Booster'
+                };
+                window.SidekickModules.UI.showNotification(
+                    'INFO', 
+                    `${cooldownNames[cooldownType] || cooldownType} cooldown removed`
+                );
             }
         },
 
@@ -1818,6 +1942,215 @@
                     console.log(`⏰ Timer position saved: x=${currentX}, y=${currentY}`);
                 }
             }
+        },
+
+        // Add resize observer to save size changes
+        addResizeObserver(element, timer) {
+            const resizeObserver = new ResizeObserver((entries) => {
+                for (let entry of entries) {
+                    const { width, height } = entry.contentRect;
+                    
+                    // Update timer object with new size
+                    timer.width = Math.max(width, 140);
+                    timer.height = Math.max(height, 80);
+                    timer.modified = new Date().toISOString();
+                    
+                    // Debounced save to avoid too frequent saves during resize
+                    clearTimeout(timer._resizeTimeout);
+                    timer._resizeTimeout = setTimeout(() => {
+                        this.saveTimers();
+                        console.log(`⏰ Timer size saved: ${timer.width}x${timer.height}`);
+                    }, 500);
+                }
+            });
+            
+            resizeObserver.observe(element);
+            
+            // Store observer for cleanup
+            element._resizeObserver = resizeObserver;
+            
+            // Cleanup on element removal
+            const originalRemove = element.remove;
+            element.remove = function() {
+                if (this._resizeObserver) {
+                    this._resizeObserver.disconnect();
+                    this._resizeObserver = null;
+                }
+                originalRemove.call(this);
+            };
+        },
+
+        // Start API monitoring for cooldown timers
+        startApiMonitoring(timerId = null) {
+            // Get API key
+            if (!this.apiKey && window.SidekickModules?.Settings?.getSetting) {
+                this.apiKey = window.SidekickModules.Settings.getSetting('apiKey');
+            }
+            
+            if (!this.apiKey) {
+                console.log('⚠️ No API key available for cooldown monitoring');
+                return;
+            }
+            
+            // Start interval to check API for cooldown updates every 30 seconds
+            if (!this.apiCheckInterval) {
+                console.log('🔍 Starting API cooldown monitoring...');
+                this.apiCheckInterval = setInterval(() => {
+                    this.checkApiForCooldowns();
+                }, 30000); // Check every 30 seconds
+                
+                // Do immediate check
+                setTimeout(() => {
+                    this.checkApiForCooldowns();
+                }, 2000);
+            }
+        },
+
+        // Check API for new/updated cooldowns
+        async checkApiForCooldowns() {
+            try {
+                if (!this.apiKey) return;
+                
+                console.log('🔍 Checking API for cooldown updates...');
+                
+                // Get cooldowns from API
+                const response = await fetch(`https://api.torn.com/user/?selections=cooldowns&key=${this.apiKey}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('❌ API Error checking cooldowns:', data.error);
+                    return;
+                }
+                
+                if (data.cooldowns) {
+                    this.updateTimersFromApiCooldowns(data.cooldowns);
+                }
+                
+            } catch (error) {
+                console.error('❌ Error checking API for cooldowns:', error);
+            }
+        },
+
+        // Update existing timers and create new ones from API cooldowns
+        updateTimersFromApiCooldowns(apiCooldowns) {
+            console.log('📊 Processing API cooldowns:', apiCooldowns);
+            
+            let hasUpdates = false;
+            const now = Date.now();
+            
+            // Check each API cooldown
+            for (const cooldownType in apiCooldowns) {
+                const apiCooldown = apiCooldowns[cooldownType];
+                if (apiCooldown <= 0) continue; // Skip expired cooldowns
+                
+                console.log(`🔍 Processing ${cooldownType} cooldown: ${apiCooldown}s`);
+                
+                // Find existing timer with this cooldown
+                let existingTimer = this.timers.find(timer => 
+                    timer.isApiTimer && 
+                    timer.cooldowns && 
+                    timer.cooldowns[cooldownType]
+                );
+                
+                if (existingTimer) {
+                    // Update existing timer
+                    const currentTime = existingTimer.cooldowns[cooldownType];
+                    const apiTime = apiCooldown;
+                    
+                    // Only update if API time is significantly different (more than 5 seconds)
+                    if (Math.abs(currentTime - apiTime) > 5) {
+                        console.log(`⏰ Updating ${cooldownType}: ${currentTime}s → ${apiTime}s`);
+                        existingTimer.cooldowns[cooldownType] = apiTime;
+                        existingTimer.remainingTime = Math.max(...Object.values(existingTimer.cooldowns));
+                        existingTimer.lastUpdated = new Date().toISOString();
+                        this.updateTimerDisplay(existingTimer.id);
+                        hasUpdates = true;
+                    }
+                } else {
+                    // Check if we should create a new timer or add to existing multi-cooldown timer
+                    let targetTimer = this.timers.find(timer => 
+                        timer.isApiTimer && 
+                        timer.cooldowns && 
+                        Object.keys(timer.cooldowns).length < 3 // Max 3 cooldowns per timer
+                    );
+                    
+                    if (targetTimer) {
+                        // Add to existing multi-cooldown timer
+                        console.log(`➕ Adding ${cooldownType} to existing timer: ${targetTimer.id}`);
+                        targetTimer.cooldowns[cooldownType] = apiCooldown;
+                        targetTimer.remainingTime = Math.max(...Object.values(targetTimer.cooldowns));
+                        targetTimer.name = 'Cooldowns';
+                        targetTimer.lastUpdated = new Date().toISOString();
+                        this.updateTimerDisplay(targetTimer.id);
+                        hasUpdates = true;
+                    } else {
+                        // Create new timer for this cooldown
+                        console.log(`🆕 Creating new timer for ${cooldownType}`);
+                        this.createApiCooldownTimer(cooldownType, apiCooldown);
+                        hasUpdates = true;
+                    }
+                }
+            }
+            
+            // Remove expired cooldowns from existing timers
+            for (const timer of this.timers) {
+                if (timer.isApiTimer && timer.cooldowns) {
+                    for (const cooldownType in timer.cooldowns) {
+                        if (!apiCooldowns[cooldownType] || apiCooldowns[cooldownType] <= 0) {
+                            console.log(`🗑️ Removing expired ${cooldownType} from timer ${timer.id}`);
+                            delete timer.cooldowns[cooldownType];
+                            hasUpdates = true;
+                            
+                            // Check if timer is now empty
+                            if (Object.keys(timer.cooldowns).length === 0) {
+                                console.log(`🗑️ Timer ${timer.id} has no cooldowns left, removing`);
+                                this.deleteTimer(timer.id);
+                            } else {
+                                timer.remainingTime = Math.max(...Object.values(timer.cooldowns));
+                                this.updateTimerDisplay(timer.id);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (hasUpdates) {
+                this.saveTimers();
+                console.log('✅ Timer updates from API complete');
+            }
+        },
+
+        // Create a new API-based cooldown timer
+        createApiCooldownTimer(cooldownType, remainingTime) {
+            const timer = {
+                id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                name: this.getCooldownDisplayName(cooldownType),
+                color: this.getCooldownColor(cooldownType),
+                type: 'countdown',
+                remainingTime: remainingTime,
+                duration: remainingTime,
+                isRunning: true,
+                isApiTimer: true,
+                cooldownType: cooldownType,
+                cooldowns: {
+                    [cooldownType]: remainingTime
+                },
+                created: new Date().toISOString(),
+                modified: new Date().toISOString(),
+                lastUpdated: new Date().toISOString(),
+                x: 20 + (this.timers.length * 30) % 300,
+                y: 20 + Math.floor((this.timers.length * 30) / 300) * 30,
+                width: 200,
+                height: 100
+            };
+            
+            this.timers.push(timer);
+            this.renderTimer(timer);
+            this.startTimer(timer.id);
+            this.saveTimers();
+            
+            console.log(`🆕 Created API cooldown timer for ${cooldownType}: ${remainingTime}s`);
+            return timer;
         },
 
         // Clear all intervals and reset
