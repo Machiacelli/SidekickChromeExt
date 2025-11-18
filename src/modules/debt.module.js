@@ -61,6 +61,11 @@
                 this.startInterestUpdates();
                 this.startApiMonitoring();
                 
+                // Restore window state if it was open before
+                setTimeout(() => {
+                    this.restoreWindowState();
+                }, 2000); // Wait for sidebar to be ready
+                
                 this.isInitialized = true;
                 console.log("💰 Debt Module initialized successfully");
                 
@@ -129,8 +134,10 @@
             const debt = {
                 id: `debt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 type: 'debt',
+                isDebt: true,
                 playerId: playerId,
                 playerName: playerName,
+                originalAmount: parseFloat(amount),
                 principal: parseFloat(amount),
                 currentAmount: parseFloat(amount),
                 interestType: interestType,
@@ -142,9 +149,9 @@
                 frozen: false
             };
             
-            this.debts.push(debt);
+            this.debtsAndLoans.push(debt);
             this.saveDebtsAndLoans();
-            this.renderAllDebtPanels();
+            this.populateDebtTrackerWindow();
             
             console.log(`💰 Created new debt: ${playerName} owes $${amount.toLocaleString()}`);
             return debt;
@@ -155,8 +162,10 @@
             const loan = {
                 id: `loan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 type: 'loan',
+                isDebt: false,
                 playerId: playerId,
                 playerName: playerName,
+                originalAmount: parseFloat(amount),
                 principal: parseFloat(amount),
                 currentAmount: parseFloat(amount),
                 interestType: interestType,
@@ -168,9 +177,9 @@
                 frozen: false
             };
             
-            this.loans.push(loan);
+            this.debtsAndLoans.push(loan);
             this.saveDebtsAndLoans();
-            this.renderAllDebtPanels();
+            this.populateDebtTrackerWindow();
             
             console.log(`💰 Created new loan: You owe ${playerName} $${amount.toLocaleString()}`);
             return loan;
@@ -325,16 +334,45 @@
 
         // Handle money transfer detection
         handleMoneyTransfer(log) {
-            // For now, log the detection - more complex parsing would be needed
-            // to extract sender, receiver, amount, and message from the log
-            console.log("💰 Detected potential money transfer:", log);
-            
-            // TODO: Parse log details to extract:
-            // - sender ID
-            // - receiver ID  
-            // - amount
-            // - message
-            // Then match against existing debts/loans
+            try {
+                // Parse the log entry to extract payment details
+                const logText = log.log || '';
+                
+                // Look for money received patterns with "loan" in message
+                const receivedMoneyPattern = /received \$([\d,]+) from ([^\s]+)(?:.*message[^:]*:\s*(.*))?/i;
+                const match = logText.match(receivedMoneyPattern);
+                
+                if (match) {
+                    const amount = parseFloat(match[1].replace(/,/g, ''));
+                    const senderName = match[2];
+                    const message = match[3] || '';
+                    
+                    console.log(`💰 Detected payment: $${amount} from ${senderName} with message: "${message}"`);
+                    
+                    // Check if message contains "loan" (case insensitive)
+                    if (message.toLowerCase().includes('loan')) {
+                        console.log('💰 Payment contains "loan" - checking for matching debt entries');
+                        
+                        // Find debt entries where this sender owes us money
+                        const matchingEntries = this.debtsAndLoans.filter(entry => {
+                            return entry.isDebt && (
+                                entry.playerName.toLowerCase().includes(senderName.toLowerCase()) ||
+                                senderName.toLowerCase().includes(entry.playerName.toLowerCase().replace('player [', '').replace(']', ''))
+                            );
+                        });
+                        
+                        if (matchingEntries.length > 0) {
+                            const entry = matchingEntries[0]; // Use first match
+                            console.log(`💰 Auto-applying payment of $${amount} to debt from ${entry.playerName}`);
+                            this.addRepayment(entry.id, amount, `Auto-detected: ${message}`, true);
+                        } else {
+                            console.log('💰 No matching debt entries found for automatic payment');
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('💰 Error handling money transfer:', error);
+            }
         },
 
         // Add repayment to debt/loan
@@ -449,17 +487,28 @@
                             border-radius: 3px;
                             cursor: pointer;
                             font-size: 12px;
+                            outline: none;
                         ">⚙️</button>
                         <button class="debt-close-btn" data-entry-id="${entry.id}" style="
-                            background: #d32f2f;
+                            background: #dc3545;
                             border: none;
-                            color: #fff;
-                            width: 20px;
-                            height: 20px;
-                            border-radius: 3px;
+                            color: white;
                             cursor: pointer;
-                            font-size: 12px;
-                        ">×</button>
+                            font-size: 10px;
+                            padding: 0;
+                            width: 14px;
+                            height: 14px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            border-radius: 50%;
+                            transition: all 0.2s;
+                            font-weight: bold;
+                            flex-shrink: 0;
+                            min-width: 14px;
+                            outline: none;
+                        " onmouseover="this.style.background='#c82333'; this.style.transform='scale(1.1)'; this.style.boxShadow='0 0 8px rgba(220, 53, 69, 0.6)'" 
+                           onmouseout="this.style.background='#dc3545'; this.style.transform='scale(1)'; this.style.boxShadow='none'">×</button>
                     </div>
                 </div>
                 
@@ -582,7 +631,7 @@
 
         // Show repayment dialog
         showRepaymentDialog(entryId) {
-            const entry = [...this.debts, ...this.loans].find(e => e.id === entryId);
+            const entry = this.debtsAndLoans.find(e => e.id === entryId);
             if (!entry) return;
             
             const amount = prompt(`Enter repayment amount for ${entry.playerName}:`);
@@ -594,12 +643,12 @@
 
         // Toggle interest freeze
         toggleFreeze(entryId) {
-            const entry = [...this.debts, ...this.loans].find(e => e.id === entryId);
+            const entry = this.debtsAndLoans.find(e => e.id === entryId);
             if (!entry) return;
             
             entry.frozen = !entry.frozen;
             this.saveDebtsAndLoans();
-            this.renderAllDebtPanels();
+            this.populateDebtTrackerWindow();
             
             console.log(`💰 ${entry.frozen ? 'Frozen' : 'Unfrozen'} interest for ${entry.playerName}`);
         },
@@ -612,7 +661,7 @@
 
         // Mark debt/loan as completed
         markAsCompleted(entryId) {
-            const entry = [...this.debts, ...this.loans].find(e => e.id === entryId);
+            const entry = this.debtsAndLoans.find(e => e.id === entryId);
             if (!entry) return;
             
             if (confirm(`Mark ${entry.type} with ${entry.playerName} as completed?`)) {
@@ -620,9 +669,8 @@
                 entry.completedAt = new Date().toISOString();
                 this.saveDebtsAndLoans();
                 
-                // Remove panel
-                const panel = document.getElementById(`sidekick-debt-${entryId}`);
-                if (panel) panel.remove();
+                // Refresh tracker window if open
+                this.populateDebtTrackerWindow();
                 
                 console.log(`💰 Marked ${entry.type} with ${entry.playerName} as completed`);
             }
@@ -687,6 +735,9 @@
             if (placeholder) {
                 placeholder.remove();
             }
+            
+            // Save that tracker window is open for persistence
+            this.saveWindowState(true);
 
             const contentWidth = contentArea.clientWidth || 480;
             const contentHeight = contentArea.clientHeight || 500;
@@ -743,6 +794,7 @@
                                 display: flex;
                                 align-items: center;
                                 justify-content: center;
+                                outline: none;
                             ">⚙️</button>
                             <div class="debt-cogwheel-menu" style="
                                 position: absolute;
@@ -772,18 +824,25 @@
                             </div>
                         </div>
                         <button class="debt-tracker-close" style="
-                            background: none;
-                            border: 1px solid rgba(255,255,255,0.3);
-                            color: #fff;
-                            width: 20px;
-                            height: 20px;
-                            border-radius: 3px;
+                            background: #dc3545;
+                            border: none;
+                            color: white;
                             cursor: pointer;
-                            font-size: 14px;
+                            font-size: 10px;
+                            padding: 0;
+                            width: 14px;
+                            height: 14px;
                             display: flex;
                             align-items: center;
                             justify-content: center;
-                        ">×</button>
+                            border-radius: 50%;
+                            transition: all 0.2s;
+                            font-weight: bold;
+                            flex-shrink: 0;
+                            min-width: 14px;
+                            outline: none;
+                        " onmouseover="this.style.background='#c82333'; this.style.transform='scale(1.1)'; this.style.boxShadow='0 0 8px rgba(220, 53, 69, 0.6)'" 
+                           onmouseout="this.style.background='#dc3545'; this.style.transform='scale(1)'; this.style.boxShadow='none'">×</button>
                     </div>
                 </div>
                 
@@ -827,6 +886,7 @@
             const header = trackerElement.querySelector('.debt-tracker-header');
 
             closeBtn?.addEventListener('click', () => {
+                this.saveWindowState(false);
                 trackerElement.remove();
             });
 
@@ -1324,42 +1384,19 @@
                     return;
                 }
 
-                const entry = {
-                    id: Date.now().toString(),
-                    playerName: `Player [${playerId}]`, // Use ID as name until we can fetch real name
-                    playerId: playerId,
-                    originalAmount: amount,
-                    currentAmount: amount,
-                    interestRate: interestRate,
-                    interestType: interestType,
-                    notes: notes,
-                    createdAt: new Date().toISOString(),
-                    lastInterestUpdate: new Date().toISOString(),
-                    isDebt: isDebt,
-                    payments: [],
-                    x: Math.random() * (window.innerWidth - 300),
-                    y: Math.random() * (window.innerHeight - 200) + 50
-                };
+                const playerName = `Player [${playerId}]`; // Use ID as name until we can fetch real name
 
-                // Add to storage
-                this.debtsAndLoans.push(entry);
-                this.saveDebtsAndLoans();
-
-                // Refresh tracker window if open
-                const trackerWindow = document.querySelector('.sidekick-debt-tracker');
-                if (trackerWindow) {
-                    this.populateDebtTrackerWindow();
-                }
-
-                // Create individual panel if not using tracker window
-                if (!document.querySelector('.sidekick-debt-tracker')) {
-                    this.createDebtPanel(entry);
+                // Use the proper create methods
+                if (isDebt) {
+                    this.createDebt(playerId, playerName, amount, interestType, interestRate, notes);
+                } else {
+                    this.createLoan(playerId, playerName, amount, interestType, interestRate, notes);
                 }
 
                 // Close dialog
                 closeDialog();
 
-                console.log(`💰 ${isDebt ? 'Debt' : 'Loan'} added:`, entry);
+                console.log(`💰 ${isDebt ? 'Debt' : 'Loan'} added for player ${playerName}`);
             });
 
             // Click outside to close
@@ -1398,6 +1435,43 @@
         showEditEntryDialog(entryId) {
             // Simple alert for now - could be enhanced with a full dialog
             alert('Edit functionality coming soon! For now, you can delete and recreate the entry.');
+        },
+
+        // Save window state for persistence
+        async saveWindowState(isOpen) {
+            try {
+                if (window.SidekickModules?.Core?.ChromeStorage?.set) {
+                    await window.SidekickModules.Core.ChromeStorage.set('debt_tracker_window_state', { isOpen });
+                    console.log("💰 Window state saved:", isOpen);
+                }
+            } catch (error) {
+                console.error('Failed to save window state:', error);
+            }
+        },
+
+        // Load window state for persistence
+        async loadWindowState() {
+            try {
+                if (window.SidekickModules?.Core?.ChromeStorage?.get) {
+                    const state = await window.SidekickModules.Core.ChromeStorage.get('debt_tracker_window_state');
+                    return state?.isOpen || false;
+                }
+            } catch (error) {
+                console.error('Failed to load window state:', error);
+            }
+            return false;
+        },
+
+        // Restore window state on page load
+        async restoreWindowState() {
+            const wasOpen = await this.loadWindowState();
+            if (wasOpen) {
+                console.log("💰 Restoring debt tracker window state");
+                // Small delay to ensure sidebar is ready
+                setTimeout(() => {
+                    this.showDebtTrackerWindow();
+                }, 1000);
+            }
         },
 
         // Destroy module
