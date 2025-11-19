@@ -34,6 +34,7 @@
         alerts: [],
         alertCheckInterval: null,
         lastAlertCheck: Date.now(),
+        processedPayments: new Set(), // Track processed payment IDs
         isDebtTrackerOpen: false,
         apiKey: null,
         apiCheckInterval: null,
@@ -187,7 +188,8 @@
                     
                     if (debtData) {
                         this.debtsAndLoans = debtData.debtsAndLoans || [];
-                        console.log(`💰 Loaded ${this.debtsAndLoans.length} debt/loan entries`);
+                        this.processedPayments = new Set(debtData.processedPayments || []);
+                        console.log(`💰 Loaded ${this.debtsAndLoans.length} debt/loan entries and ${this.processedPayments.size} processed payments`);
                         
                         // Debug: Show what debts/loans we have
                         if (this.debtsAndLoans.length > 0) {
@@ -227,6 +229,7 @@
             try {
                 const data = {
                     debtsAndLoans: this.debtsAndLoans,
+                    processedPayments: Array.from(this.processedPayments),
                     lastSaved: Date.now()
                 };
                 
@@ -597,6 +600,14 @@
                     const amount = parseFloat(data.money);
                     const senderId = data.sender;
                     const message = data.message || '';
+                    const logTimestamp = log.timestamp;
+                    
+                    // Create unique payment ID to prevent duplicates
+                    const paymentId = `receive_${senderId}_${amount}_${logTimestamp}`;
+                    if (this.processedPayments.has(paymentId)) {
+                        console.log(`💰 Skipping duplicate received payment: ${paymentId}`);
+                        return;
+                    }
                     
                     console.log(`💰 Detected RECEIVED payment: $${amount} from sender ID ${senderId} with message: "${message}"`);
                     
@@ -621,6 +632,7 @@
                             const entry = matchingEntries[0];
                             console.log(`💰 Auto-applying received payment of $${amount} to debt from ${entry.playerName}`);
                             this.addRepayment(entry.id, amount, `Auto-detected payment: ${message}`, true);
+                            this.processedPayments.add(paymentId); // Mark as processed
                             return;
                         } else {
                             console.log(`💰 No matching debt entries found for received payment from sender ID ${senderId}`);
@@ -636,6 +648,14 @@
                     const amount = parseFloat(data.money);
                     const receiverId = data.receiver;
                     const message = data.message || '';
+                    const logTimestamp = log.timestamp;
+                    
+                    // Create unique payment ID to prevent duplicates
+                    const paymentId = `send_${receiverId}_${amount}_${logTimestamp}`;
+                    if (this.processedPayments.has(paymentId)) {
+                        console.log(`💰 Skipping duplicate sent payment: ${paymentId}`);
+                        return;
+                    }
                     
                     console.log(`💰 Detected SENT payment: $${amount} to receiver ID ${receiverId} with message: "${message}"`);
                     
@@ -660,6 +680,7 @@
                             const entry = matchingEntries[0];
                             console.log(`💰 Auto-applying sent payment of $${amount} to loan to ${entry.playerName}`);
                             this.addRepayment(entry.id, amount, `Auto-detected payment: ${message}`, true);
+                            this.processedPayments.add(paymentId); // Mark as processed
                             return;
                         } else {
                             console.log(`💰 No matching loan entries found for sent payment to receiver ID ${receiverId}`);
@@ -1369,9 +1390,34 @@
                 border-radius: 6px;
                 padding: 12px;
                 margin-bottom: 8px;
+                position: relative;
             `;
 
+            const alerts = this.getEntryAlerts(entry);
+            const alertBadge = alerts.length > 0 ? `
+                <div class="entry-alert-badge" data-entry-id="${entry.id}" style="
+                    position: absolute;
+                    top: -8px;
+                    right: -8px;
+                    background: ${alerts.some(a => a.severity === 'high') ? '#f44336' : alerts.some(a => a.severity === 'medium') ? '#ff9800' : '#4caf50'};
+                    color: white;
+                    border-radius: 50%;
+                    width: 20px;
+                    height: 20px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 10px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    border: 2px solid rgba(${isDebt ? '211,47,47' : '56,142,60'}, 0.8);
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                    z-index: 10;
+                ">${alerts.length}</div>
+            ` : '';
+
             entryDiv.innerHTML = `
+                ${alertBadge}
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
                     <div>
                         <div style="font-weight: bold; font-size: 14px; color: ${isDebt ? '#ff5252' : '#4caf50'};">
@@ -1395,36 +1441,25 @@
                 
                 ${entry.notes ? `<div style="font-size: 11px; color: #bbb; font-style: italic; margin-bottom: 6px;">"${entry.notes}"</div>` : ''}
                 
-                <div style="display: flex; gap: 4px; justify-content: flex-end; align-items: center;">
+                <div style="display: flex; gap: 6px; justify-content: flex-end;">
                     <button class="entry-pay-btn" data-entry-id="${entry.id}" style="
                         background: #2196f3;
                         border: 1px solid #42a5f5;
                         color: #fff;
-                        padding: 2px 6px;
+                        padding: 3px 8px;
                         border-radius: 3px;
                         cursor: pointer;
-                        font-size: 9px;
-                    ">💳 Pay</button>
-                    ${this.getEntryAlerts(entry).length > 0 ? `
-                    <button class="entry-alert-btn" data-entry-id="${entry.id}" style="
-                        background: #ff9800;
-                        border: 1px solid #ffb74d;
-                        color: #fff;
-                        padding: 2px 6px;
-                        border-radius: 3px;
-                        cursor: pointer;
-                        font-size: 9px;
-                        position: relative;
-                    ">⚠️ ${this.getEntryAlerts(entry).length}</button>` : ''}
+                        font-size: 10px;
+                    ">Add Payment</button>
                     <button class="entry-edit-btn" data-entry-id="${entry.id}" style="
                         background: #4caf50;
                         border: 1px solid #66bb6a;
                         color: #fff;
-                        padding: 2px 6px;
+                        padding: 3px 8px;
                         border-radius: 3px;
                         cursor: pointer;
-                        font-size: 9px;
-                    ">📋</button>
+                        font-size: 10px;
+                    ">📋 Receipt</button>
                     <button class="entry-delete-btn" data-entry-id="${entry.id}" style="
                         background: #d32f2f;
                         border: 1px solid #f44336;
@@ -1441,7 +1476,7 @@
             const payBtn = entryDiv.querySelector('.entry-pay-btn');
             const editBtn = entryDiv.querySelector('.entry-edit-btn');
             const deleteBtn = entryDiv.querySelector('.entry-delete-btn');
-            const alertBtn = entryDiv.querySelector('.entry-alert-btn');
+            const alertElement = entryDiv.querySelector('.entry-alert-badge');
 
             payBtn?.addEventListener('click', () => {
                 this.showAddPaymentDialog(entry.id);
@@ -1451,7 +1486,7 @@
                 this.generateReceipt(entry.id);
             });
             
-            alertBtn?.addEventListener('click', () => {
+            alertElement?.addEventListener('click', () => {
                 this.showEntryAlertsDialog(entry.id);
             });
 
