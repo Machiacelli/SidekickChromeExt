@@ -1565,33 +1565,39 @@
             }
 
             const isDebt = entry.type === 'debt';
-            const totalAmount = entry.amount + (entry.accruedInterest || 0);
+            const entryAmount = entry.amount || 0;
+            const accruedInterest = entry.accruedInterest || 0;
+            const totalAmount = entryAmount + accruedInterest;
             const interestRate = entry.interestRate || 0;
             const interestType = entry.interestType || 'weekly';
             const currentDate = new Date().toLocaleDateString();
             const createdDate = new Date(entry.createdAt).toLocaleDateString();
             
-            // Calculate total payments made
-            const totalPaid = (entry.payments || []).reduce((sum, payment) => sum + payment.amount, 0);
+            // Calculate total payments made - ensure all values are numbers
+            const totalPaid = (entry.payments || []).reduce((sum, payment) => {
+                const paymentAmount = payment.amount || 0;
+                return sum + (isNaN(paymentAmount) ? 0 : paymentAmount);
+            }, 0);
+            
             const remainingBalance = totalAmount - totalPaid;
             
             // Calculate due date (30 days from creation for simplicity)
             const dueDate = new Date(entry.createdAt);
             dueDate.setDate(dueDate.getDate() + 30);
             
-            // Generate receipt text in requested format
+            // Generate receipt text in requested format - ensure all numbers are valid
             const receiptType = isDebt ? 'Debt Receipt' : 'Loan Receipt';
             const borrowerLabel = isDebt ? 'Debtor' : 'Borrower';
             const receipt = `${receiptType}
 -------------
 ${borrowerLabel}: ${entry.playerName}
-${isDebt ? 'Debt' : 'Loan'} Amount: $${entry.amount.toLocaleString()}
+${isDebt ? 'Debt' : 'Loan'} Amount: $${(entryAmount || 0).toLocaleString()}
 Interest: ${interestRate}% ${interestType}
-Remaining Balance: $${remainingBalance.toLocaleString()}
+Remaining Balance: $${(remainingBalance || 0).toLocaleString()}
 Start Date: ${createdDate}
 Due Date: ${dueDate.toLocaleDateString()}
 ${entry.notes ? `Notes: ${entry.notes}` : 'Notes: None'}
-${totalPaid > 0 ? `\nTotal Paid: $${totalPaid.toLocaleString()}` : ''}
+${totalPaid > 0 ? `\nTotal Paid: $${(totalPaid || 0).toLocaleString()}` : ''}
 ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
             
             // Copy to clipboard
