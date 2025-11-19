@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const npcAttackTimerCheckbox = document.getElementById('npcAttackTimer');
     const randomTargetCheckbox = document.getElementById('randomTarget');
     const saveButton = document.getElementById('saveSettings');
+    const reportIssuesButton = document.getElementById('reportIssues');
     const clearDataButton = document.getElementById('clearData');
     const statusDiv = document.getElementById('status');
     
@@ -22,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Event listeners
     saveButton.addEventListener('click', saveSettings);
+    reportIssuesButton.addEventListener('click', reportIssues);
     clearDataButton.addEventListener('click', clearData);
     attackButtonMoverCheckbox.addEventListener('change', handleAttackButtonMoverToggle);
     blockTrainingCheckbox.addEventListener('change', handleBlockTrainingToggle);
@@ -140,6 +142,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Ignore errors for tabs without content script
                 });
             });
+        });
+    }
+    
+    function reportIssues() {
+        // Send message to the active tab to open the bug reporter
+        chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+            if (tabs[0] && tabs[0].url.includes('torn.com')) {
+                chrome.tabs.sendMessage(tabs[0].id, {
+                    action: 'openBugReporter'
+                }).then(response => {
+                    if (response && response.success) {
+                        showStatus('Bug reporter opened!', 'success');
+                        window.close(); // Close the popup
+                    } else {
+                        showStatus('Please navigate to Torn.com to report issues', 'error');
+                    }
+                }).catch(() => {
+                    showStatus('Please navigate to Torn.com to report issues', 'error');
+                });
+            } else {
+                showStatus('Please navigate to Torn.com to report issues', 'error');
+            }
         });
     }
     

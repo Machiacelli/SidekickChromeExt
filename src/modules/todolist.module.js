@@ -256,21 +256,25 @@
         // Check Torn API for completed daily tasks
         async checkApiForCompletedTasks() {
             try {
-                const apiKey = await window.SidekickModules.Settings.getApiKey();
-                if (!apiKey) {
-                    console.log('⚠️ No API key configured for daily task checking');
+                // Wait for API system to be ready
+                let attempts = 0;
+                while (attempts < 10 && !window.SidekickModules?.Api?.makeRequest) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    attempts++;
+                }
+                
+                if (!window.SidekickModules?.Api?.makeRequest) {
+                    console.log('⚠️ No API system available for daily task checking');
                     return;
                 }
                 
                 console.log('🔍 Checking Torn API for daily task updates...');
                 
                 // Get user data with personalstats for daily tracking
-                const personalStatsResponse = await fetch(`https://api.torn.com/user/?selections=personalstats&key=${apiKey}`);
-                const personalStatsData = await personalStatsResponse.json();
+                const personalStatsData = await window.SidekickModules.Api.makeRequest('user', 'personalstats');
                 
                 // Get log data for xanax checking since 00:00 UTC
-                const logResponse = await fetch(`https://api.torn.com/user/?selections=log&key=${apiKey}`);
-                const logData = await logResponse.json();
+                const logData = await window.SidekickModules.Api.makeRequest('user', 'log');
                 
                 if (personalStatsData && !personalStatsData.error && personalStatsData.personalstats) {
                     console.log('📊 Personal stats received');

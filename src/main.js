@@ -193,6 +193,15 @@
                 console.warn("⚠️ Debt Module not available");
             }
 
+            // Initialize Notion Bug Reporter Module
+            console.log("🐛 Sidekick: Initializing Notion Bug Reporter...");
+            if (window.SidekickModules.NotionBugReporter?.init) {
+                await window.SidekickModules.NotionBugReporter.init();
+                console.log("✅ Sidekick: Notion Bug Reporter initialized");
+            } else {
+                console.warn("⚠️ Notion Bug Reporter module not available");
+            }
+
             // UI and modules initialized successfully
             console.log("🎉 Sidekick Chrome Extension initialization complete!");
 
@@ -230,6 +239,11 @@
             if (request.action === 'dataCleared') {
                 handleDataCleared();
                 sendResponse({ success: true });
+            }
+            
+            if (request.action === 'openBugReporter') {
+                handleOpenBugReporter(sendResponse);
+                return true; // Keep message channel open for async response
             }
         });
     }
@@ -292,6 +306,22 @@
         console.log('🗑️ Data cleared, reloading page...');
         // Reload page to reset everything
         window.location.reload();
+    }
+
+    // Handle opening bug reporter from popup
+    function handleOpenBugReporter(sendResponse) {
+        try {
+            if (window.SidekickModules?.NotionBugReporter?.openReporter) {
+                window.SidekickModules.NotionBugReporter.openReporter();
+                sendResponse({ success: true });
+            } else {
+                console.warn('⚠️ Bug reporter not available');
+                sendResponse({ success: false, error: 'Bug reporter not available' });
+            }
+        } catch (error) {
+            console.error('❌ Failed to open bug reporter:', error);
+            sendResponse({ success: false, error: error.message });
+        }
     }
 
     // Fallback function to create hamburger button if modules fail
