@@ -256,25 +256,37 @@
         // Check Torn API for completed daily tasks
         async checkApiForCompletedTasks() {
             try {
-                // Wait for API system to be ready
+                // Get API key using Settings module
+                let apiKey;
                 let attempts = 0;
-                while (attempts < 10 && !window.SidekickModules?.Api?.makeRequest) {
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    attempts++;
+                while (attempts < 10 && !apiKey) {
+                    try {
+                        if (window.SidekickModules?.Settings?.getApiKey) {
+                            apiKey = await window.SidekickModules.Settings.getApiKey();
+                        }
+                    } catch (error) {
+                        console.log('⚠️ Waiting for Settings module...');
+                    }
+                    if (!apiKey) {
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        attempts++;
+                    }
                 }
                 
-                if (!window.SidekickModules?.Api?.makeRequest) {
-                    console.log('⚠️ No API system available for daily task checking');
+                if (!apiKey) {
+                    console.log('⚠️ No API key available for daily task checking');
                     return;
                 }
                 
                 console.log('🔍 Checking Torn API for daily task updates...');
                 
                 // Get user data with personalstats for daily tracking
-                const personalStatsData = await window.SidekickModules.Api.makeRequest('user', 'personalstats');
+                const personalStatsResponse = await fetch(`https://api.torn.com/user?selections=personalstats&key=${apiKey}`);
+                const personalStatsData = await personalStatsResponse.json();
                 
                 // Get log data for xanax checking since 00:00 UTC
-                const logData = await window.SidekickModules.Api.makeRequest('user', 'log');
+                const logResponse = await fetch(`https://api.torn.com/user?selections=log&key=${apiKey}`);
+                const logData = await logResponse.json();
                 
                 if (personalStatsData && !personalStatsData.error && personalStatsData.personalstats) {
                     console.log('📊 Personal stats received');

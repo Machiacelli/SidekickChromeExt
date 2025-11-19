@@ -183,6 +183,7 @@
                 transform: translateY(-50%);
                 background: none;
                 border: none;
+                outline: none;
                 color: rgba(255,255,255,0.8);
                 cursor: pointer;
                 font-size: 16px;

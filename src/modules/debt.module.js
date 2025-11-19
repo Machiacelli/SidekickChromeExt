@@ -210,21 +210,31 @@
             try {
                 console.log(`💰 fetchPlayerName called for player ${playerId}, entry ${entryId}`);
                 
-                // Wait for API system to be ready with more attempts
+                // Get API key using Settings module
+                let apiKey;
                 let attempts = 0;
-                while (attempts < 20 && !window.SidekickModules?.Api?.makeRequest) {
-                    console.log(`💰 Waiting for API system... attempt ${attempts + 1}/20`);
-                    await new Promise(resolve => setTimeout(resolve, 250));
-                    attempts++;
+                while (attempts < 20 && !apiKey) {
+                    try {
+                        if (window.SidekickModules?.Settings?.getApiKey) {
+                            apiKey = await window.SidekickModules.Settings.getApiKey();
+                        }
+                    } catch (error) {
+                        console.log(`💰 Waiting for Settings module... attempt ${attempts + 1}/20`);
+                    }
+                    if (!apiKey) {
+                        await new Promise(resolve => setTimeout(resolve, 250));
+                        attempts++;
+                    }
                 }
                 
-                if (!window.SidekickModules?.Api?.makeRequest) {
-                    console.log(`💰 No API system available after ${attempts} attempts for player ${playerId}`);
+                if (!apiKey) {
+                    console.log(`💰 No API key available after ${attempts} attempts for player ${playerId}`);
                     return;
                 }
                 
-                console.log(`💰 API system ready, fetching name for player ID: ${playerId}`);
-                const data = await window.SidekickModules.Api.makeRequest(`user/${playerId}`, 'basic,profile');
+                console.log(`💰 API key ready, fetching name for player ID: ${playerId}`);
+                const response = await fetch(`https://api.torn.com/user/${playerId}?selections=basic,profile&key=${apiKey}`);
+                const data = await response.json();
                 
                 console.log(`💰 API response for player ${playerId}:`, data);
                 
@@ -1158,14 +1168,14 @@
                         font-size: 10px;
                     ">Add Payment</button>
                     <button class="entry-edit-btn" data-entry-id="${entry.id}" style="
-                        background: #666;
-                        border: 1px solid #888;
+                        background: #4caf50;
+                        border: 1px solid #66bb6a;
                         color: #fff;
                         padding: 3px 8px;
                         border-radius: 3px;
                         cursor: pointer;
                         font-size: 10px;
-                    ">Edit</button>
+                    ">📋 Receipt</button>
                     <button class="entry-delete-btn" data-entry-id="${entry.id}" style="
                         background: #d32f2f;
                         border: 1px solid #f44336;
@@ -1557,31 +1567,32 @@
             const isDebt = entry.type === 'debt';
             const totalAmount = entry.amount + (entry.accruedInterest || 0);
             const interestRate = entry.interestRate || 0;
+            const interestType = entry.interestType || 'weekly';
             const currentDate = new Date().toLocaleDateString();
+            const createdDate = new Date(entry.createdAt).toLocaleDateString();
             
             // Calculate total payments made
             const totalPaid = (entry.payments || []).reduce((sum, payment) => sum + payment.amount, 0);
             const remainingBalance = totalAmount - totalPaid;
             
-            // Generate receipt text
-            const receipt = `
-═══════════════════════════════════════
-             ${isDebt ? 'DEBT' : 'LOAN'} RECEIPT
-═══════════════════════════════════════
-
-🏢 From: ${entry.playerName} [${entry.playerId}]
-📅 Date: ${currentDate}
-💰 Original Amount: $${entry.amount.toLocaleString()}
-📈 Interest Rate: ${interestRate}% ${entry.interestType === 'daily' ? 'daily' : entry.interestType === 'weekly' ? 'weekly' : 'per period'}
-${entry.accruedInterest > 0 ? `🔄 Accrued Interest: $${entry.accruedInterest.toFixed(2)}\n` : ''}💸 Total Amount: $${totalAmount.toLocaleString()}
-${totalPaid > 0 ? `✅ Total Paid: $${totalPaid.toLocaleString()}\n` : ''}${remainingBalance !== totalAmount ? `⚖️ Remaining Balance: $${remainingBalance.toLocaleString()}\n` : ''}📝 Status: ${entry.frozen ? '🧊 Frozen' : '🔥 Active'}
-${entry.notes ? `💬 Notes: "${entry.notes}"\n` : ''}
-═══════════════════════════════════════
-${isDebt ? '⚠️ This person owes you money' : '💳 You owe this person money'}
-═══════════════════════════════════════
-
-Generated by Sidekick Debt Tracker
-            `.trim();
+            // Calculate due date (30 days from creation for simplicity)
+            const dueDate = new Date(entry.createdAt);
+            dueDate.setDate(dueDate.getDate() + 30);
+            
+            // Generate receipt text in requested format
+            const receiptType = isDebt ? 'Debt Receipt' : 'Loan Receipt';
+            const borrowerLabel = isDebt ? 'Debtor' : 'Borrower';
+            const receipt = `${receiptType}
+-------------
+${borrowerLabel}: ${entry.playerName}
+${isDebt ? 'Debt' : 'Loan'} Amount: $${entry.amount.toLocaleString()}
+Interest: ${interestRate}% ${interestType}
+Remaining Balance: $${remainingBalance.toLocaleString()}
+Start Date: ${createdDate}
+Due Date: ${dueDate.toLocaleDateString()}
+${entry.notes ? `Notes: ${entry.notes}` : 'Notes: None'}
+${totalPaid > 0 ? `\nTotal Paid: $${totalPaid.toLocaleString()}` : ''}
+${entry.frozen ? '\nStatus: FROZEN' : ''}`;
             
             // Copy to clipboard
             navigator.clipboard.writeText(receipt).then(() => {
