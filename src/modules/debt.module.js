@@ -31,6 +31,10 @@
     const DebtModule = {
         isInitialized: false,
         debtsAndLoans: [], // Combined array for all debt/loan entries
+        alerts: [],
+        alertCheckInterval: null,
+        lastAlertCheck: Date.now(),
+        isDebtTrackerOpen: false,
         apiKey: null,
         apiCheckInterval: null,
         interestUpdateInterval: null,
@@ -253,7 +257,9 @@
                 dueDate: dueDate,
                 notes: notes,
                 repayments: [],
-                frozen: false
+                frozen: false,
+                lastAction: null,
+                lastActionFetched: null
             };
             
             this.debtsAndLoans.push(debt);
@@ -288,7 +294,9 @@
                 dueDate: dueDate,
                 notes: notes,
                 repayments: [],
-                frozen: false
+                frozen: false,
+                lastAction: null,
+                lastActionFetched: null
             };
             
             this.debtsAndLoans.push(loan);
@@ -1215,6 +1223,9 @@
 
             contentArea.appendChild(trackerElement);
 
+            this.isDebtTrackerOpen = true;
+            this.startAlertMonitoring();
+
             // Set up event listeners
             const closeBtn = trackerElement.querySelector('.debt-tracker-close');
             const cogwheelBtn = trackerElement.querySelector('.debt-cogwheel-btn');
@@ -1223,6 +1234,8 @@
 
             closeBtn?.addEventListener('click', () => {
                 this.saveWindowState(false, trackerElement);
+                this.isDebtTrackerOpen = false;
+                this.stopAlertMonitoring();
                 trackerElement.remove();
             });
 
@@ -1382,25 +1395,36 @@
                 
                 ${entry.notes ? `<div style="font-size: 11px; color: #bbb; font-style: italic; margin-bottom: 6px;">"${entry.notes}"</div>` : ''}
                 
-                <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                <div style="display: flex; gap: 4px; justify-content: flex-end; align-items: center;">
                     <button class="entry-pay-btn" data-entry-id="${entry.id}" style="
                         background: #2196f3;
                         border: 1px solid #42a5f5;
                         color: #fff;
-                        padding: 3px 8px;
+                        padding: 2px 6px;
                         border-radius: 3px;
                         cursor: pointer;
-                        font-size: 10px;
-                    ">Add Payment</button>
+                        font-size: 9px;
+                    ">💳 Pay</button>
+                    ${this.getEntryAlerts(entry).length > 0 ? `
+                    <button class="entry-alert-btn" data-entry-id="${entry.id}" style="
+                        background: #ff9800;
+                        border: 1px solid #ffb74d;
+                        color: #fff;
+                        padding: 2px 6px;
+                        border-radius: 3px;
+                        cursor: pointer;
+                        font-size: 9px;
+                        position: relative;
+                    ">⚠️ ${this.getEntryAlerts(entry).length}</button>` : ''}
                     <button class="entry-edit-btn" data-entry-id="${entry.id}" style="
                         background: #4caf50;
                         border: 1px solid #66bb6a;
                         color: #fff;
-                        padding: 3px 8px;
+                        padding: 2px 6px;
                         border-radius: 3px;
                         cursor: pointer;
-                        font-size: 10px;
-                    ">📋 Receipt</button>
+                        font-size: 9px;
+                    ">📋</button>
                     <button class="entry-delete-btn" data-entry-id="${entry.id}" style="
                         background: #d32f2f;
                         border: 1px solid #f44336;
@@ -1417,6 +1441,7 @@
             const payBtn = entryDiv.querySelector('.entry-pay-btn');
             const editBtn = entryDiv.querySelector('.entry-edit-btn');
             const deleteBtn = entryDiv.querySelector('.entry-delete-btn');
+            const alertBtn = entryDiv.querySelector('.entry-alert-btn');
 
             payBtn?.addEventListener('click', () => {
                 this.showAddPaymentDialog(entry.id);
@@ -1424,6 +1449,10 @@
 
             editBtn?.addEventListener('click', () => {
                 this.generateReceipt(entry.id);
+            });
+            
+            alertBtn?.addEventListener('click', () => {
+                this.showEntryAlertsDialog(entry.id);
             });
 
             deleteBtn?.addEventListener('click', () => {
@@ -2064,6 +2093,208 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
     console.log("🔍 Debug: SidekickModules.Debt available:", !!window.SidekickModules.Debt);
     console.log("🔍 Debug: Available modules:", Object.keys(window.SidekickModules));
     
+    // Alert System Methods
+    DebtModule.getEntryAlerts = function(entry) {
+        const alerts = [];
+        const now = new Date();
+        
+        // Due date alerts
+        if (entry.dueDate) {
+            const dueDate = new Date(entry.dueDate);
+            const daysUntilDue = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+            
+            if (daysUntilDue < 0) {
+                alerts.push({
+                    type: 'overdue',
+                    severity: 'high',
+                    message: `${entry.isDebt ? 'Debt' : 'Loan'} is ${Math.abs(daysUntilDue)} days overdue!`,
+                    icon: '🔴',
+                    entry: entry
+                });
+            } else if (daysUntilDue <= 3) {
+                alerts.push({
+                    type: 'due_soon',
+                    severity: 'medium',
+                    message: `${entry.isDebt ? 'Debt' : 'Loan'} due in ${daysUntilDue} day${daysUntilDue === 1 ? '' : 's'}`,
+                    icon: '🟡',
+                    entry: entry
+                });
+            } else if (daysUntilDue <= 7) {
+                alerts.push({
+                    type: 'due_week',
+                    severity: 'low',
+                    message: `${entry.isDebt ? 'Debt' : 'Loan'} due in ${daysUntilDue} days`,
+                    icon: '🟠',
+                    entry: entry
+                });
+            }
+        }
+        
+        // Player activity alert (if we have last_action data)
+        if (entry.lastAction) {
+            const lastSeen = new Date(entry.lastAction * 1000);
+            const daysSinceLastSeen = Math.floor((now - lastSeen) / (1000 * 60 * 60 * 24));
+            
+            if (daysSinceLastSeen >= 7) {
+                alerts.push({
+                    type: 'player_inactive',
+                    severity: 'low',
+                    message: `Player last seen ${daysSinceLastSeen} days ago`,
+                    icon: '😴',
+                    entry: entry
+                });
+            }
+        }
+        
+        return alerts;
+    };
+
+    DebtModule.getAllAlerts = function() {
+        const allAlerts = [];
+        this.debtsAndLoans.forEach(entry => {
+            const entryAlerts = this.getEntryAlerts(entry);
+            allAlerts.push(...entryAlerts);
+        });
+        return allAlerts;
+    };
+
+    DebtModule.showEntryAlertsDialog = function(entryId) {
+        const entry = this.debtsAndLoans.find(e => e.id === entryId);
+        if (!entry) return;
+        
+        const alerts = this.getEntryAlerts(entry);
+        
+        const dialog = document.createElement('div');
+        dialog.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #2c1810, #3d2317);
+            border: 2px solid #8b4513;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            z-index: 10002;
+            max-width: 400px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        `;
+        
+        dialog.innerHTML = `
+            <div style="padding: 15px; border-bottom: 1px solid #666;">
+                <h3 style="margin: 0; color: #fff; font-size: 16px;">🚨 Alerts for ${entry.playerName}</h3>
+                <button id="alert-dialog-close" style="
+                    position: absolute;
+                    top: 10px;
+                    right: 10px;
+                    background: #d32f2f;
+                    border: none;
+                    color: #fff;
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 14px;
+                ">×</button>
+            </div>
+            
+            <div style="padding: 15px;">
+                ${alerts.length > 0 ? alerts.map(alert => `
+                    <div style="
+                        margin-bottom: 10px;
+                        padding: 10px;
+                        border-radius: 5px;
+                        background: ${alert.severity === 'high' ? 'rgba(244, 67, 54, 0.2)' : alert.severity === 'medium' ? 'rgba(255, 152, 0, 0.2)' : 'rgba(76, 175, 80, 0.2)'};
+                        border-left: 3px solid ${alert.severity === 'high' ? '#f44336' : alert.severity === 'medium' ? '#ff9800' : '#4caf50'};
+                        color: #fff;
+                    ">
+                        <div style="font-size: 14px; font-weight: bold;">${alert.icon} ${alert.message}</div>
+                        <div style="font-size: 11px; color: #ccc; margin-top: 5px;">${alert.type.replace('_', ' ').toUpperCase()}</div>
+                    </div>
+                `).join('') : '<div style="color: #ccc; text-align: center; padding: 20px;">No alerts for this entry</div>'}
+            </div>
+        `;
+        
+        document.body.appendChild(dialog);
+        
+        const closeBtn = dialog.querySelector('#alert-dialog-close');
+        const closeDialog = () => dialog.remove();
+        
+        closeBtn?.addEventListener('click', closeDialog);
+        
+        // Close on outside click
+        setTimeout(() => {
+            const closeOnClickOutside = (e) => {
+                if (!dialog.contains(e.target)) {
+                    closeDialog();
+                    document.removeEventListener('click', closeOnClickOutside);
+                }
+            };
+            document.addEventListener('click', closeOnClickOutside);
+        }, 100);
+    };
+
+    DebtModule.startAlertMonitoring = function() {
+        // Check alerts every 60 seconds
+        this.alertCheckInterval = setInterval(() => {
+            this.checkAndUpdateAlerts();
+        }, 60000);
+        
+        // Initial check
+        this.checkAndUpdateAlerts();
+    };
+
+    DebtModule.stopAlertMonitoring = function() {
+        if (this.alertCheckInterval) {
+            clearInterval(this.alertCheckInterval);
+            this.alertCheckInterval = null;
+        }
+    };
+
+    DebtModule.checkAndUpdateAlerts = async function() {
+        // Update player activity data for entries that need it
+        for (const entry of this.debtsAndLoans) {
+            if (entry.playerId && (!entry.lastAction || (Date.now() - (entry.lastActionFetched || 0) > 24 * 60 * 60 * 1000))) {
+                try {
+                    await this.updatePlayerActivity(entry.playerId, entry.id);
+                } catch (error) {
+                    console.log(`💰 Could not update activity for player ${entry.playerId}:`, error);
+                }
+            }
+        }
+        
+        // Refresh UI if needed
+        if (this.isDebtTrackerOpen) {
+            this.renderAllDebtPanels();
+        }
+    };
+
+    DebtModule.updatePlayerActivity = async function(playerId, entryId) {
+        try {
+            // Use Core module's makeApiCall if available
+            const apiMethod = window.SidekickModules?.Core?.makeApiCall || this.makeApiCall?.bind(this);
+            if (!apiMethod) {
+                console.log('💰 No API method available for player activity update');
+                return;
+            }
+
+            const data = await apiMethod(`user/${playerId}?selections=profile`, 'GET');
+            
+            if (data && data.last_action) {
+                const entryIndex = this.debtsAndLoans.findIndex(e => e.id === entryId);
+                if (entryIndex !== -1) {
+                    this.debtsAndLoans[entryIndex].lastAction = data.last_action.timestamp;
+                    this.debtsAndLoans[entryIndex].lastActionFetched = Date.now();
+                    this.saveDebtsAndLoans();
+                    console.log(`💰 Updated activity for ${this.debtsAndLoans[entryIndex].playerName}: last seen ${new Date(data.last_action.timestamp * 1000).toLocaleDateString()}`);
+                }
+            }
+        } catch (error) {
+            console.log(`💰 Failed to fetch activity for player ${playerId}:`, error);
+        }
+    };
+
     // Make sure functions are accessible
     setTimeout(() => {
         console.log("🔍 Debug: Debt module functions available:");
