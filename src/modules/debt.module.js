@@ -57,9 +57,8 @@
                 console.log("💰 Debt Module: Starting initialization...");
                 
                 await this.loadDebtsAndLoans();
-                await this.loadApiKey();
+                await this.loadApiKey(); // This will start API monitoring if key is available
                 this.startInterestUpdates();
-                this.startApiMonitoring();
                 
                 // Restore window state if it was open before
                 this.restoreWindowState();
@@ -74,14 +73,104 @@
 
         // Load API key from settings
         async loadApiKey() {
-            if (window.SidekickModules?.Settings?.getSetting) {
-                this.apiKey = window.SidekickModules.Settings.getSetting('apiKey');
+            try {
+                // Try multiple approaches to get the API key
+                let attempts = 0;
+                const maxAttempts = 10;
+                
+                while (attempts < maxAttempts && !this.apiKey) {
+                    if (window.SidekickModules?.Settings?.getApiKey) {
+                        try {
+                            this.apiKey = await window.SidekickModules.Settings.getApiKey();
+                        } catch (error) {
+                            console.log(`💰 Attempt ${attempts + 1} failed:`, error.message);
+                        }
+                    }
+                    
+                    if (!this.apiKey) {
+                        attempts++;
+                        if (attempts < maxAttempts) {
+                            console.log(`💰 Waiting for Settings module... attempt ${attempts}/${maxAttempts}`);
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                        }
+                    }
+                }
+                
                 if (this.apiKey) {
                     console.log("💰 API Key loaded: ✓");
+                    
+                    // Start API monitoring now that we have the key
+                    this.startApiMonitoring();
                 } else {
-                    console.log("💰 No API key found");
+                    console.log("💰 No API key found after all attempts");
+                    console.log("💰 Manual testing: You can call window.SidekickModules.Debt.testPaymentDetection() to test patterns");
                 }
+            } catch (error) {
+                console.error("💰 Error loading API key:", error);
             }
+        },
+        
+        // Manual test function for debugging payment detection
+        testPaymentDetection() {
+            console.log("💰 === Testing Payment Detection Patterns ===");
+            
+            // Test with your specific log format
+            const testLogs = [
+                { log: "You were sent $14 from cybex with the message: Loan", timestamp: Math.floor(Date.now() / 1000) },
+                { log: "You sent $100 to cybex with the message: loan payment", timestamp: Math.floor(Date.now() / 1000) }
+            ];
+            
+            console.log("💰 Current debts/loans:", this.debtsAndLoans);
+            
+            testLogs.forEach((log, index) => {
+                console.log(`💰 Testing log ${index + 1}: ${log.log}`);
+                this.handleMoneyTransfer(log);
+            });
+        },
+        
+        // Search ALL logs for loan payments (no time restriction)
+        searchAllLogsForPayments() {
+            console.log("💰 === Searching ALL logs for loan payments ===");
+            
+            if (!this.apiKey) {
+                console.log("💰 No API key available");
+                return;
+            }
+            
+            // Force a manual search of all logs
+            this.makeApiCallViaBackground(this.apiKey, ['logs']).then(result => {
+                if (result.success && result.logs) {
+                    console.log(`💰 Searching ${Object.keys(result.logs).length} total logs...`);
+                    
+                    const logsArray = Object.values(result.logs);
+                    let moneyTransferLogs = 0;
+                    let loanPayments = 0;
+                    
+                    for (const log of logsArray) {
+                        if (log.log && typeof log.log === 'string') {
+                            // Check if this looks like a money transfer
+                            if (log.log.includes('sent $') || log.log.includes('received $') || log.log.includes('were sent $')) {
+                                moneyTransferLogs++;
+                                
+                                // Check for loan keyword
+                                if (log.log.toLowerCase().includes('loan')) {
+                                    loanPayments++;
+                                    const logDate = new Date(log.timestamp * 1000);
+                                    console.log(`💰 LOAN PAYMENT FOUND (${logDate.toLocaleString()}): ${log.log}`);
+                                    // Process this payment
+                                    this.handleMoneyTransfer(log);
+                                }
+                            }
+                        }
+                    }
+                    
+                    console.log(`💰 Search complete: ${moneyTransferLogs} money transfers, ${loanPayments} loan payments found`);
+                } else {
+                    console.log("💰 Failed to fetch logs for search");
+                }
+            }).catch(error => {
+                console.error("💰 Error searching logs:", error);
+            });
         },
 
         // Load debts and loans from storage
@@ -95,6 +184,15 @@
                     if (debtData) {
                         this.debtsAndLoans = debtData.debtsAndLoans || [];
                         console.log(`💰 Loaded ${this.debtsAndLoans.length} debt/loan entries`);
+                        
+                        // Debug: Show what debts/loans we have
+                        if (this.debtsAndLoans.length > 0) {
+                            console.log("💰 Current debts/loans:");
+                            this.debtsAndLoans.forEach(entry => {
+                                const type = entry.isDebt ? 'DEBT' : 'LOAN';
+                                console.log(`💰   ${type}: ${entry.playerName} (ID: ${entry.playerId}) - $${entry.currentAmount.toLocaleString()}`);
+                            });
+                        }
                         
                         // Fetch real names for entries that still show as Player [ID]
                         setTimeout(() => {
@@ -138,7 +236,7 @@
         },
 
         // Create new debt entry (someone owes you money)
-        createDebt(playerId, playerName, amount, interestType = 'none', interestRate = 0, notes = '') {
+        createDebt(playerId, playerName, amount, interestType = 'none', interestRate = 0, notes = '', dueDate = null) {
             const debt = {
                 id: `debt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 type: 'debt',
@@ -152,6 +250,7 @@
                 interestRate: parseFloat(interestRate),
                 createdAt: new Date().toISOString(),
                 lastInterestUpdate: new Date().toISOString(),
+                dueDate: dueDate,
                 notes: notes,
                 repayments: [],
                 frozen: false
@@ -172,7 +271,7 @@
         },
 
         // Create new loan entry (you owe money to someone)
-        createLoan(playerId, playerName, amount, interestType = 'none', interestRate = 0, notes = '') {
+        createLoan(playerId, playerName, amount, interestType = 'none', interestRate = 0, notes = '', dueDate = null) {
             const loan = {
                 id: `loan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 type: 'loan',
@@ -186,6 +285,7 @@
                 interestRate: parseFloat(interestRate),
                 createdAt: new Date().toISOString(),
                 lastInterestUpdate: new Date().toISOString(),
+                dueDate: dueDate,
                 notes: notes,
                 repayments: [],
                 frozen: false
@@ -351,26 +451,45 @@
                 return;
             }
             
-            // Check for payments every 2 minutes
+            // Check for payments every 1 minute for better responsiveness
             this.apiCheckInterval = setInterval(() => {
                 this.checkForPayments();
-            }, 2 * 60 * 1000);
+            }, 1 * 60 * 1000);
             
-            // Do immediate check
+            // Do immediate check after 2 seconds
             setTimeout(() => {
+                console.log("💰 Starting immediate payment check...");
                 this.checkForPayments();
-            }, 5000);
+            }, 2000);
             
-            console.log("💰 API payment monitoring started");
+            console.log("💰 API payment monitoring started (checking every minute)");
         },
 
-        // Check for incoming/outgoing payments
+        // Check for incoming/outgoing payments using background script or direct fetch
         async checkForPayments() {
             try {
-                if (!this.apiKey) return;
+                if (!this.apiKey) {
+                    console.log("💰 No API key available for payment monitoring");
+                    return;
+                }
                 
                 console.log("💰 Checking for payment logs...");
                 
+                // Try background script approach first (better for CORS issues)
+                if (chrome?.runtime?.sendMessage) {
+                    try {
+                        const backgroundResult = await this.makeApiCallViaBackground(this.apiKey, ['logs']);
+                        if (backgroundResult.success && backgroundResult.logs) {
+                            console.log('✅ Background script logs API call successful');
+                            this.processPaymentLogs(backgroundResult.logs);
+                            return;
+                        }
+                    } catch (bgError) {
+                        console.log('⚠️ Background script logs API failed, trying direct fetch...');
+                    }
+                }
+                
+                // Fallback to direct fetch
                 const response = await fetch(`https://api.torn.com/user/?selections=log&key=${this.apiKey}`);
                 const data = await response.json();
                 
@@ -380,85 +499,191 @@
                 }
                 
                 if (data.log) {
+                    console.log('✅ Direct logs API call successful');
                     this.processPaymentLogs(data.log);
+                } else {
+                    console.log("💰 No logs data received from API");
                 }
                 
             } catch (error) {
                 console.error("💰 Error checking payments:", error);
             }
         },
+        
+        // Helper method to make API calls via background script
+        async makeApiCallViaBackground(apiKey, selections) {
+            return new Promise((resolve, reject) => {
+                chrome.runtime.sendMessage({
+                    action: 'fetchTornApi',
+                    apiKey: apiKey,
+                    selections: selections
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        reject(new Error(chrome.runtime.lastError.message));
+                    } else {
+                        resolve(response);
+                    }
+                });
+            });
+        },
 
         // Process payment logs for automatic tracking
         processPaymentLogs(logs) {
             const logsArray = Array.isArray(logs) ? logs : Object.values(logs);
             const now = Date.now();
-            const fiveMinutesAgo = now - (5 * 60 * 1000); // Only check recent logs
+            const twoHoursAgo = now - (2 * 60 * 60 * 1000); // Check last 2 hours
+            
+            console.log(`💰 Processing ${logsArray.length} logs for automatic payment detection...`);
+            
+            let recentLogs = 0;
+            let moneyTransferLogs = 0;
             
             for (const log of logsArray) {
-                if (!log.timestamp || log.timestamp * 1000 < fiveMinutesAgo) continue;
+                if (!log.timestamp || log.timestamp * 1000 < twoHoursAgo) continue;
                 
-                // Check if this is a money transfer log
-                if (this.isMoneyTransferLog(log)) {
+                recentLogs++;
+                
+                // Debug: Show ALL recent log entries to see the format
+                if (recentLogs <= 5) {
+                    console.log(`💰 DEBUG - Recent log ${recentLogs}:`);
+                    console.log(`  timestamp: ${log.timestamp}`);
+                    console.log(`  log text: "${log.log}"`);
+                    console.log(`  log type: ${typeof log.log}`);
+                    console.log(`  log length: ${log.log ? log.log.length : 0}`);
+                    console.log(`  full object:`, JSON.stringify(log, null, 2));
+                }
+                
+                // Check the log for money transfers
+                if (log.category && log.category === 'Money sending') {
+                    // Check if this looks like a money transfer
+                    if (log.title === 'Money receive' || log.title === 'Money send') {
+                        moneyTransferLogs++;
+                        console.log(`💰 Found money transfer log (${log.timestamp}): ${log.title} - $${log.data?.money || 0}`);
+                    }
                     this.handleMoneyTransfer(log);
                 }
             }
+            
+            console.log(`💰 Processed: ${recentLogs} recent logs (last 2 hours), ${moneyTransferLogs} money transfers found`);
         },
 
-        // Check if log entry is a money transfer
-        isMoneyTransferLog(log) {
-            // Check for known money transfer log codes
-            const moneyTransferCodes = [
-                5850, // sent money
-                5851, // received money
-                5400, // money from trade
-                // Add more codes as discovered
-            ];
-            
-            const logCode = parseInt(log.log);
-            return moneyTransferCodes.includes(logCode);
-        },
+
 
         // Handle money transfer detection
         handleMoneyTransfer(log) {
             try {
-                // Parse the log entry to extract payment details
-                const logText = log.log || '';
+                // The Torn API returns structured data, not text
+                // Check if this is a money transfer by category and title
+                if (!log.category || log.category !== 'Money sending') {
+                    return;
+                }
                 
-                // Look for money received patterns with "loan" in message
-                const receivedMoneyPattern = /received \$([\d,]+) from ([^\s]+)(?:.*message[^:]*:\s*(.*))?/i;
-                const match = logText.match(receivedMoneyPattern);
+                const title = log.title || '';
+                const data = log.data || {};
                 
-                if (match) {
-                    const amount = parseFloat(match[1].replace(/,/g, ''));
-                    const senderName = match[2];
-                    const message = match[3] || '';
+                console.log(`💰 Checking money transfer log: ${title}`, data);
+                
+                // Pattern 1: Money received (someone paying us)
+                // Title: "Money receive", data: { sender: ID, money: amount, message: "text" }
+                if (title === 'Money receive' && data.sender && data.money) {
+                    const amount = parseFloat(data.money);
+                    const senderId = data.sender;
+                    const message = data.message || '';
                     
-                    console.log(`💰 Detected payment: $${amount} from ${senderName} with message: "${message}"`);
+                    console.log(`💰 Detected RECEIVED payment: $${amount} from sender ID ${senderId} with message: "${message}"`);
                     
                     // Check if message contains "loan" (case insensitive)
                     if (message.toLowerCase().includes('loan')) {
-                        console.log('💰 Payment contains "loan" - checking for matching debt entries');
+                        console.log('💰 Received payment contains "loan" - checking for matching debt entries');
+                        
+                        // Debug: Show all current debts
+                        const allDebts = this.debtsAndLoans.filter(e => e.isDebt);
+                        console.log(`💰 Current debts: ${allDebts.map(d => `${d.playerName} (ID: ${d.playerId})`).join(', ')}`);
                         
                         // Find debt entries where this sender owes us money
                         const matchingEntries = this.debtsAndLoans.filter(entry => {
-                            return entry.isDebt && (
-                                entry.playerName.toLowerCase().includes(senderName.toLowerCase()) ||
-                                senderName.toLowerCase().includes(entry.playerName.toLowerCase().replace('player [', '').replace(']', ''))
-                            );
+                            const matches = entry.isDebt && (entry.playerId == senderId);
+                            if (entry.isDebt) {
+                                console.log(`💰 Checking debt: ${entry.playerName} (ID: ${entry.playerId}) vs sender ID ${senderId} - matches: ${matches}`);
+                            }
+                            return matches;
                         });
                         
                         if (matchingEntries.length > 0) {
-                            const entry = matchingEntries[0]; // Use first match
-                            console.log(`💰 Auto-applying payment of $${amount} to debt from ${entry.playerName}`);
-                            this.addRepayment(entry.id, amount, `Auto-detected: ${message}`, true);
+                            const entry = matchingEntries[0];
+                            console.log(`💰 Auto-applying received payment of $${amount} to debt from ${entry.playerName}`);
+                            this.addRepayment(entry.id, amount, `Auto-detected payment: ${message}`, true);
+                            return;
                         } else {
-                            console.log('💰 No matching debt entries found for automatic payment');
+                            console.log(`💰 No matching debt entries found for received payment from sender ID ${senderId}`);
+                        }
+                    } else {
+                        console.log(`💰 Payment message does not contain "loan": "${message}"`);
+                    }
+                }
+                
+                // Pattern 2: Money sent (we're paying someone)
+                // Title: "Money send", data: { receiver: ID, money: amount, message: "text" }
+                if (title === 'Money send' && data.receiver && data.money) {
+                    const amount = parseFloat(data.money);
+                    const receiverId = data.receiver;
+                    const message = data.message || '';
+                    
+                    console.log(`💰 Detected SENT payment: $${amount} to receiver ID ${receiverId} with message: "${message}"`);
+                    
+                    // Check if message contains "loan" (case insensitive)
+                    if (message.toLowerCase().includes('loan')) {
+                        console.log('💰 Sent payment contains "loan" - checking for matching loan entries');
+                        
+                        // Debug: Show all current loans
+                        const allLoans = this.debtsAndLoans.filter(e => !e.isDebt);
+                        console.log(`💰 Current loans: ${allLoans.map(l => `${l.playerName} (ID: ${l.playerId})`).join(', ')}`);
+                        
+                        // Find loan entries where we owe this person money
+                        const matchingEntries = this.debtsAndLoans.filter(entry => {
+                            const matches = !entry.isDebt && (entry.playerId == receiverId);
+                            if (!entry.isDebt) {
+                                console.log(`💰 Checking loan: ${entry.playerName} (ID: ${entry.playerId}) vs receiver ID ${receiverId} - matches: ${matches}`);
+                            }
+                            return matches;
+                        });
+                        
+                        if (matchingEntries.length > 0) {
+                            const entry = matchingEntries[0];
+                            console.log(`💰 Auto-applying sent payment of $${amount} to loan to ${entry.playerName}`);
+                            this.addRepayment(entry.id, amount, `Auto-detected payment: ${message}`, true);
+                            return;
+                        } else {
+                            console.log(`💰 No matching loan entries found for sent payment to receiver ID ${receiverId}`);
                         }
                     }
                 }
+                
             } catch (error) {
                 console.error('💰 Error handling money transfer:', error);
             }
+        },
+        
+        // Helper method to match player names flexibly
+        matchesPlayer(entry, playerName) {
+            if (!entry.playerName || !playerName) return false;
+            
+            const entryName = entry.playerName.toLowerCase();
+            const logName = playerName.toLowerCase();
+            
+            // Direct match
+            if (entryName === logName) return true;
+            
+            // Handle Player [ID] format
+            if (entryName.startsWith('player [') && entry.playerId) {
+                const playerId = entry.playerId.toString();
+                if (logName === playerId || logName.includes(playerId)) return true;
+            }
+            
+            // Partial name matching (both ways)
+            if (entryName.includes(logName) || logName.includes(entryName)) return true;
+            
+            return false;
         },
 
         // Add repayment to debt/loan
@@ -1442,6 +1667,24 @@
                             </select>
                         </div>
                         
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Due Date:</label>
+                            <input type="date" id="due-date" style="
+                                width: 100%;
+                                padding: 8px;
+                                border: 1px solid #666;
+                                border-radius: 4px;
+                                background: rgba(255,255,255,0.1);
+                                color: #fff;
+                                font-size: 14px;
+                            ">
+                            <div style="margin-top: 5px;">
+                                <label style="font-size: 12px; color: #ccc;">
+                                    <input type="checkbox" id="no-due-date" style="margin-right: 5px;"> No due date
+                                </label>
+                            </div>
+                        </div>
+                        
                         <div style="margin-bottom: 20px;">
                             <label style="display: block; margin-bottom: 5px; font-weight: bold;">Notes:</label>
                             <textarea id="notes" rows="3" style="
@@ -1503,6 +1746,9 @@
                 const interestRate = parseFloat(dialog.querySelector('#interest-rate').value) || 0;
                 const interestType = dialog.querySelector('#interest-type').value;
                 const notes = dialog.querySelector('#notes').value.trim();
+                const dueDateInput = dialog.querySelector('#due-date').value;
+                const noDueDate = dialog.querySelector('#no-due-date').checked;
+                const dueDate = noDueDate ? null : (dueDateInput ? new Date(dueDateInput).toISOString() : null);
 
                 if (!playerId || isNaN(amount) || amount <= 0) {
                     alert('Please enter a valid player ID and amount.');
@@ -1513,15 +1759,38 @@
 
                 // Use the proper create methods
                 if (isDebt) {
-                    this.createDebt(playerId, playerName, amount, interestType, interestRate, notes);
+                    this.createDebt(playerId, playerName, amount, interestType, interestRate, notes, dueDate);
                 } else {
-                    this.createLoan(playerId, playerName, amount, interestType, interestRate, notes);
+                    this.createLoan(playerId, playerName, amount, interestType, interestRate, notes, dueDate);
                 }
 
                 // Close dialog
                 closeDialog();
 
                 console.log(`💰 ${isDebt ? 'Debt' : 'Loan'} added for player ${playerName}`);
+            });
+
+            // Handle due date form interactions
+            const dueDateInput = dialog.querySelector('#due-date');
+            const noDueDateCheckbox = dialog.querySelector('#no-due-date');
+            
+            // Disable/enable due date input based on checkbox
+            noDueDateCheckbox?.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    dueDateInput.disabled = true;
+                    dueDateInput.value = '';
+                    dueDateInput.style.opacity = '0.5';
+                } else {
+                    dueDateInput.disabled = false;
+                    dueDateInput.style.opacity = '1';
+                }
+            });
+            
+            // If user selects a date, uncheck the "no due date" option
+            dueDateInput?.addEventListener('change', (e) => {
+                if (e.target.value) {
+                    noDueDateCheckbox.checked = false;
+                }
             });
 
             // Click outside to close
@@ -1565,25 +1834,23 @@
             }
 
             const isDebt = entry.type === 'debt';
-            const entryAmount = entry.amount || 0;
-            const accruedInterest = entry.accruedInterest || 0;
-            const totalAmount = entryAmount + accruedInterest;
+            const originalAmount = entry.originalAmount || 0;
+            const currentAmount = entry.currentAmount || 0;
             const interestRate = entry.interestRate || 0;
             const interestType = entry.interestType || 'weekly';
             const currentDate = new Date().toLocaleDateString();
             const createdDate = new Date(entry.createdAt).toLocaleDateString();
             
             // Calculate total payments made - ensure all values are numbers
-            const totalPaid = (entry.payments || []).reduce((sum, payment) => {
+            const totalPaid = (entry.repayments || []).reduce((sum, payment) => {
                 const paymentAmount = payment.amount || 0;
                 return sum + (isNaN(paymentAmount) ? 0 : paymentAmount);
             }, 0);
             
-            const remainingBalance = totalAmount - totalPaid;
+            const remainingBalance = currentAmount;
             
-            // Calculate due date (30 days from creation for simplicity)
-            const dueDate = new Date(entry.createdAt);
-            dueDate.setDate(dueDate.getDate() + 30);
+            // Use stored due date or show 'No due date'
+            const dueDate = entry.dueDate ? new Date(entry.dueDate) : null;
             
             // Generate receipt text in requested format - ensure all numbers are valid
             const receiptType = isDebt ? 'Debt Receipt' : 'Loan Receipt';
@@ -1591,11 +1858,11 @@
             const receipt = `${receiptType}
 -------------
 ${borrowerLabel}: ${entry.playerName}
-${isDebt ? 'Debt' : 'Loan'} Amount: $${(entryAmount || 0).toLocaleString()}
+${isDebt ? 'Debt' : 'Loan'} Amount: $${(originalAmount || 0).toLocaleString()}
 Interest: ${interestRate}% ${interestType}
 Remaining Balance: $${(remainingBalance || 0).toLocaleString()}
 Start Date: ${createdDate}
-Due Date: ${dueDate.toLocaleDateString()}
+Due Date: ${dueDate ? dueDate.toLocaleDateString() : 'No due date'}
 ${entry.notes ? `Notes: ${entry.notes}` : 'Notes: None'}
 ${totalPaid > 0 ? `\nTotal Paid: $${(totalPaid || 0).toLocaleString()}` : ''}
 ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
@@ -1792,6 +2059,59 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
     }
     window.SidekickModules.Debt = DebtModule;
 
+    // Debug: Log registration status
     console.log("✅ Debt Module loaded and ready");
+    console.log("🔍 Debug: SidekickModules.Debt available:", !!window.SidekickModules.Debt);
+    console.log("🔍 Debug: Available modules:", Object.keys(window.SidekickModules));
+    
+    // Make sure functions are accessible
+    setTimeout(() => {
+        console.log("🔍 Debug: Debt module functions available:");
+        console.log("  - testPaymentDetection:", typeof window.SidekickModules.Debt.testPaymentDetection);
+        console.log("  - searchAllLogsForPayments:", typeof window.SidekickModules.Debt.searchAllLogsForPayments);
+        console.log("  - checkForPayments:", typeof window.SidekickModules.Debt.checkForPayments);
+        console.log("  - debtsAndLoans:", !!window.SidekickModules.Debt.debtsAndLoans);
+    }, 2000);
+
+    // Create a global debug function for easier access
+    window.debugDebtModule = function() {
+        console.log("🔍 Debt Module Debug Information:");
+        console.log("  SidekickModules exists:", typeof window.SidekickModules);
+        console.log("  Available modules:", window.SidekickModules ? Object.keys(window.SidekickModules) : 'none');
+        console.log("  Debt module exists:", !!window.SidekickModules?.Debt);
+        
+        if (window.SidekickModules?.Debt) {
+            console.log("  Functions available:");
+            console.log("    testPaymentDetection:", typeof window.SidekickModules.Debt.testPaymentDetection);
+            console.log("    searchAllLogsForPayments:", typeof window.SidekickModules.Debt.searchAllLogsForPayments);
+            console.log("    checkForPayments:", typeof window.SidekickModules.Debt.checkForPayments);
+            console.log("  Current debts/loans:", window.SidekickModules.Debt.debtsAndLoans);
+        }
+    };
+
+    // Create direct access functions for testing
+    window.testDebtPaymentDetection = function() {
+        if (window.SidekickModules?.Debt) {
+            return window.SidekickModules.Debt.testPaymentDetection();
+        } else {
+            console.error("❌ Debt module not available");
+        }
+    };
+
+    window.searchAllLogsForPayments = function() {
+        if (window.SidekickModules?.Debt) {
+            return window.SidekickModules.Debt.searchAllLogsForPayments();
+        } else {
+            console.error("❌ Debt module not available");
+        }
+    };
+
+    window.checkDebtPayments = function() {
+        if (window.SidekickModules?.Debt) {
+            return window.SidekickModules.Debt.checkForPayments();
+        } else {
+            console.error("❌ Debt module not available");
+        }
+    };
 
 })();

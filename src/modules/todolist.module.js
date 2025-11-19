@@ -24,8 +24,14 @@
                 icon: '⚡',
                 color: '#4ECDC4',
                 description: 'Daily energy refill',
-                apiField: 'energydrinkused', // Updated to correct field name
-                alternativeFields: ['refills', 'tokenrefills'],
+                detectFromLogs: true, // Changed to use log detection
+                logPatterns: [
+                    /energy.*?(refill|drink|can)/i,
+                    /(refill|drink|can).*?energy/i,
+                    /you.*?(used|consumed|drank).*?energy/i,
+                    /energy.*?(used|consumed|active)/i,
+                    /\benergy\s*(drink|refill|can)\b/i
+                ],
                 completed: false
             },
             nerveRefill: {
@@ -33,8 +39,14 @@
                 icon: '🧠',
                 color: '#45B7D1',
                 description: 'Daily nerve refill',
-                apiField: 'nerverefills', // Updated to correct field name
-                alternativeFields: ['refills', 'tokenrefills'],
+                detectFromLogs: true, // Changed to use log detection
+                logPatterns: [
+                    /nerve.*?(refill|pill)/i,
+                    /(refill|pill).*?nerve/i,
+                    /you.*?(used|consumed|took).*?nerve/i,
+                    /nerve.*?(used|consumed|active)/i,
+                    /\bnerve\s*(refill|pill)\b/i
+                ],
                 completed: false
             },
             xanaxDose: {
@@ -42,8 +54,18 @@
                 icon: '💊',
                 color: '#E74C3C', 
                 description: 'Daily Xanax dose (up to 3)',
-                apiField: 'xanax', // Use xanax field directly
-                alternativeFields: ['xanaxtaken', 'xanaxused', 'medicalitemsused'],
+                detectFromLogs: true, // Already using log detection
+                logPatterns: [
+                    /xanax.*?(used|took|consumed|taken)/i,
+                    /(used|took|consumed|taken).*?xanax/i,
+                    /you.*?(used|took|consumed).*?xanax/i,
+                    /xanax.*?effect/i,
+                    /took.*?xanax/i,
+                    /used.*?xanax/i,
+                    /consume.*?xanax/i,
+                    /xanax.*?active/i,
+                    /\bxanax\b/i  // Just the word xanax anywhere
+                ],
                 maxCount: 3,
                 currentCount: 0,
                 completed: false,
@@ -158,41 +180,50 @@
             // Clear API baselines for new day
             this.apiBaselines = {};
             
-            this.lastResetDate = new Date();
+            // Set last reset date to current UTC date (not time)
+            const now = new Date();
+            this.lastResetDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
             this.saveDailyTasks();
             
             // Refresh any open todo lists
             this.renderAllTodoLists();
+            
+            console.log('✅ Daily tasks reset complete for:', this.lastResetDate.toISOString());
         },
 
         // Start daily reset timer to check for UTC midnight
         startDailyResetTimer() {
             // Check every minute for daily reset and custom task resets
             this.dailyResetInterval = setInterval(() => {
-                const now = new Date();
-                const nowUTC = now.getTime();
-                
-                // Check for daily task reset - reset at 00:00 UTC
-                if (this.lastResetDate) {
-                    const lastResetTime = this.lastResetDate.getTime();
-                    const currentUTCDate = Math.floor(nowUTC / (24 * 60 * 60 * 1000));
-                    const lastResetUTCDate = Math.floor(lastResetTime / (24 * 60 * 60 * 1000));
-                    
-                    if (currentUTCDate > lastResetUTCDate) {
-                        console.log('🔄 UTC midnight passed - resetting daily tasks');
-                        this.resetDailyTasks();
-                    }
-                } else {
-                    // First time - set the reset date
-                    this.lastResetDate = new Date();
-                    this.saveDailyTasks();
-                }
-                
-                // Check for custom task auto-resets
+                this.checkForDailyReset();
                 this.checkCustomTaskResets();
             }, 60000); // Check every minute
             
             console.log('⏰ Daily reset timer started');
+        },
+
+        // Check if daily reset is needed (proper UTC midnight detection)
+        checkForDailyReset() {
+            const now = new Date();
+            const currentUTCDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+            
+            if (this.lastResetDate) {
+                const lastReset = new Date(this.lastResetDate);
+                const lastResetUTCDate = new Date(Date.UTC(lastReset.getUTCFullYear(), lastReset.getUTCMonth(), lastReset.getUTCDate()));
+                
+                // Compare UTC dates - if current UTC date is different from last reset UTC date, we need to reset
+                if (currentUTCDate.getTime() !== lastResetUTCDate.getTime()) {
+                    console.log('🔄 UTC midnight passed - resetting daily tasks');
+                    console.log(`Last reset: ${lastResetUTCDate.toISOString()}`);
+                    console.log(`Current UTC: ${currentUTCDate.toISOString()}`);
+                    this.resetDailyTasks();
+                }
+            } else {
+                // First time - set the reset date to current UTC date
+                this.lastResetDate = currentUTCDate;
+                this.saveDailyTasks();
+                console.log('⏰ Initial daily reset date set:', currentUTCDate.toISOString());
+            }
         },
 
         // Check and reset custom tasks based on their reset duration
@@ -240,17 +271,35 @@
 
         // Start API check interval for automatic task completion
         startApiCheckInterval() {
+            // Initialize failure counter
+            this.apiCheckFailureCount = 0;
+            
             // Do an immediate check
             setTimeout(() => {
                 this.checkApiForCompletedTasks();
             }, 2000); // Wait 2 seconds for initialization to complete
             
-            // Check API every 1 minute for task completion (increased frequency for testing)
+            // Check API with adaptive interval based on failures
             this.apiCheckInterval = setInterval(async () => {
+                // Adaptive interval: increase delay after failures
+                const baseInterval = 60000; // 1 minute
+                const failureMultiplier = Math.min(this.apiCheckFailureCount || 0, 5); // Max 5x delay
+                const actualInterval = baseInterval * (1 + failureMultiplier);
+                
+                if (failureMultiplier > 0) {
+                    console.log(`⚠️ Using longer interval due to failures: ${actualInterval / 1000}s`);
+                }
+                
                 await this.checkApiForCompletedTasks();
-            }, 60000); // 1 minute instead of 5 minutes for better responsiveness
+                
+                // Reset failure count on successful check (will be reset in success case)
+                if (this.apiCheckFailureCount > 0) {
+                    // This will be decremented in the success case
+                    this.apiCheckFailureCount = Math.max(0, this.apiCheckFailureCount - 0.5);
+                }
+            }, 60000); // Base interval of 1 minute
             
-            console.log('🔍 API check interval started (checking every minute)');
+            console.log('🔍 API check interval started (adaptive timing based on success rate)');
         },
 
         // Check Torn API for completed daily tasks
@@ -280,22 +329,143 @@
                 
                 console.log('🔍 Checking Torn API for daily task updates...');
                 
-                // Get user data with personalstats for daily tracking
-                const personalStatsResponse = await fetch(`https://api.torn.com/user?selections=personalstats&key=${apiKey}`);
-                const personalStatsData = await personalStatsResponse.json();
-                
-                // Get log data for xanax checking since 00:00 UTC
-                const logResponse = await fetch(`https://api.torn.com/user?selections=log&key=${apiKey}`);
-                const logData = await logResponse.json();
-                
-                if (personalStatsData && !personalStatsData.error && personalStatsData.personalstats) {
-                    console.log('📊 Personal stats received');
-                    this.updateTasksFromApi(personalStatsData.personalstats, logData?.log);
-                } else if (personalStatsData && personalStatsData.error) {
-                    console.error('❌ API Error checking daily tasks:', personalStatsData.error);
+                // Try background script approach first (better for CORS issues)
+                if (chrome?.runtime?.sendMessage) {
+                    try {
+                        console.log('📡 Attempting API call via background script...');
+                        const backgroundResult = await this.makeApiCallViaBackground(apiKey);
+                        if (backgroundResult.success) {
+                            console.log('✅ Background API call successful');
+                            this.updateTasksFromApi(backgroundResult.personalstats, backgroundResult.logs);
+                            this.apiCheckFailureCount = 0;
+                            return;
+                        }
+                    } catch (bgError) {
+                        console.log('⚠️ Background script API failed, trying direct fetch...');
+                    }
                 }
+                
+                // Fallback to direct fetch with better error handling
+                await this.makeDirectApiCall(apiKey);
+                
             } catch (error) {
                 console.error('❌ Error checking API for daily tasks:', error);
+                this.handleApiError(error);
+            }
+        },
+
+        // Make API call via background script (avoids CORS issues)
+        async makeApiCallViaBackground(apiKey) {
+            return new Promise((resolve, reject) => {
+                chrome.runtime.sendMessage({
+                    action: 'fetchTornApi',
+                    apiKey: apiKey,
+                    selections: ['personalstats', 'log']
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        reject(new Error(chrome.runtime.lastError.message));
+                    } else {
+                        resolve(response);
+                    }
+                });
+            });
+        },
+
+        // Make direct API call (fallback method)
+        async makeDirectApiCall(apiKey) {
+            // Add timeout and better error handling for API calls
+            const fetchWithTimeout = async (url, timeout = 10000) => {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), timeout);
+                
+                try {
+                    const response = await fetch(url, { 
+                        signal: controller.signal,
+                        headers: {
+                            'User-Agent': 'Sidekick Chrome Extension'
+                        }
+                    });
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    return response;
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    throw error;
+                }
+            };
+            
+            // Get user data with personalstats for daily tracking
+            let personalStatsData = null;
+            let logData = null;
+            
+            try {
+                console.log('📊 Fetching personal stats...');
+                const personalStatsResponse = await fetchWithTimeout(`https://api.torn.com/user?selections=personalstats&key=${apiKey}`);
+                personalStatsData = await personalStatsResponse.json();
+                console.log('✅ Personal stats received');
+            } catch (error) {
+                console.error('❌ Failed to fetch personal stats:', error.message);
+                throw error; // Re-throw to be handled by main error handler
+            }
+            
+            try {
+                console.log('📋 Fetching log data...');
+                const logResponse = await fetchWithTimeout(`https://api.torn.com/user?selections=log&key=${apiKey}`);
+                logData = await logResponse.json();
+                console.log('✅ Log data received');
+            } catch (error) {
+                console.error('❌ Failed to fetch log data:', error.message);
+                // Don't throw here, continue with just personal stats
+            }
+            
+            // Process data if we got anything
+            if (personalStatsData && !personalStatsData.error && personalStatsData.personalstats) {
+                console.log('📊 Processing personal stats data');
+                this.updateTasksFromApi(personalStatsData.personalstats, logData?.log);
+                
+                // Reset failure count on successful API call
+                this.apiCheckFailureCount = 0;
+            } else if (personalStatsData && personalStatsData.error) {
+                console.error('❌ API Error in personal stats:', personalStatsData.error);
+                
+                // Handle specific API errors
+                if (personalStatsData.error.code === 2) {
+                    console.error('🔑 Invalid API key - please check your settings');
+                } else if (personalStatsData.error.code === 5) {
+                    console.error('⏱️ API rate limit exceeded - will retry later');
+                }
+                
+                throw new Error(`API Error ${personalStatsData.error.code}: ${personalStatsData.error.error}`);
+            } else {
+                console.log('ℹ️ No valid personal stats data received - skipping update');
+            }
+        },
+
+        // Handle API errors consistently
+        handleApiError(error) {
+            // Check if it's a network error
+            if (error.name === 'AbortError') {
+                console.error('🕐 API request timed out');
+            } else if (error.message.includes('Failed to fetch')) {
+                console.error('🌐 Network error - check internet connection or API permissions');
+            } else if (error.message.includes('CORS')) {
+                console.error('🚫 CORS error - browser blocking request');
+            }
+            
+            // Increment failure counter
+            if (this.apiCheckFailureCount) {
+                this.apiCheckFailureCount++;
+            } else {
+                this.apiCheckFailureCount = 1;
+            }
+            
+            // If we've had multiple failures, increase retry interval
+            if (this.apiCheckFailureCount > 3) {
+                console.log('⚠️ Multiple API failures detected - reducing check frequency');
             }
         },
 
@@ -325,26 +495,39 @@
             for (const taskKey in this.dailyTasks) {
                 const task = this.dailyTasks[taskKey];
                 
-                // Special handling for xanax - check logs instead of personal stats
-                if (taskKey === 'xanaxDose') {
-                    console.log('💊 Starting xanax detection...');
+                // Check if this task should be detected from logs
+                if (task.detectFromLogs && task.logPatterns) {
+                    console.log(`🔍 Starting ${task.name} detection from logs...`);
+                    
                     // Try both UTC and local timezone calculations
-                    const xanaxCountUTC = this.countXanaxFromLogs(logData, todayUTCStartTimestamp, 'UTC');
-                    const xanaxCountLocal = this.countXanaxFromLogs(logData, alternativeTimestamp, 'LOCAL');
+                    const countUTC = this.countItemUsageFromLogs(logData, todayUTCStartTimestamp, task.logPatterns, task.name, 'UTC');
+                    const countLocal = this.countItemUsageFromLogs(logData, alternativeTimestamp, task.logPatterns, task.name, 'LOCAL');
                     
                     // Use the higher count (in case timezone calculation is wrong)
-                    const xanaxCount = Math.max(xanaxCountUTC, xanaxCountLocal);
-                    console.log(`💊 Final xanax count: UTC=${xanaxCountUTC}, Local=${xanaxCountLocal}, Using=${xanaxCount}`);
-                    if (xanaxCount !== task.currentCount) {
-                        task.currentCount = xanaxCount;
-                        task.completed = xanaxCount >= task.maxCount;
-                        hasUpdates = true;
-                        console.log(`💊 Updated ${task.name}: ${xanaxCount}/${task.maxCount} from logs`);
+                    const itemCount = Math.max(countUTC, countLocal);
+                    console.log(`${task.icon} Final ${task.name} count: UTC=${countUTC}, Local=${countLocal}, Using=${itemCount}`);
+                    
+                    if (task.maxCount) {
+                        // Multi-completion task (like xanax)
+                        if (itemCount !== task.currentCount) {
+                            task.currentCount = itemCount;
+                            task.completed = itemCount >= task.maxCount;
+                            hasUpdates = true;
+                            console.log(`${task.icon} Updated ${task.name}: ${itemCount}/${task.maxCount} from logs`);
+                        }
+                    } else {
+                        // Single completion task (like refills)
+                        const isCompleted = itemCount > 0;
+                        if (isCompleted !== task.completed) {
+                            task.completed = isCompleted;
+                            hasUpdates = true;
+                            console.log(`${task.icon} Updated ${task.name}: ${isCompleted ? 'completed' : 'pending'} (count: ${itemCount})`);
+                        }
                     }
                     continue;
                 }
                 
-                // Regular handling for other tasks using personal stats
+                // Legacy handling for tasks not using log detection (kept for backward compatibility)
                 let apiValue = undefined;
                 let usedField = task.apiField;
                 
@@ -407,9 +590,9 @@
             }
         },
 
-        // Count xanax usage from logs since 00:00 UTC
-        countXanaxFromLogs(logData, sinceTimestamp, timezone = 'UTC') {
-            console.log(`🔍 [${timezone}] Raw logData received:`, logData);
+        // Count item usage from logs since 00:00 UTC (generic version)
+        countItemUsageFromLogs(logData, sinceTimestamp, logPatterns, itemName, timezone = 'UTC') {
+            console.log(`🔍 [${timezone}] Raw logData received for ${itemName}:`, logData);
             console.log(`🔍 [${timezone}] logData type:`, typeof logData);
             console.log(`🔍 [${timezone}] logData keys:`, logData ? Object.keys(logData) : 'null');
             
@@ -417,40 +600,40 @@
             let logsArray = [];
             
             if (!logData) {
-                console.log(`⚠️ [${timezone}] No log data provided`);
+                console.log(`⚠️ [${timezone}] No log data provided for ${itemName}`);
                 return 0;
             }
             
             if (Array.isArray(logData)) {
                 // Direct array format
                 logsArray = logData;
-                console.log(`📊 [${timezone}] Using direct array format: ${logsArray.length} entries`);
+                console.log(`📊 [${timezone}] Using direct array format for ${itemName}: ${logsArray.length} entries`);
             } else if (logData.log && Array.isArray(logData.log)) {
                 // Nested under 'log' property
                 logsArray = logData.log;
-                console.log(`📊 [${timezone}] Using nested log array: ${logsArray.length} entries`);
+                console.log(`📊 [${timezone}] Using nested log array for ${itemName}: ${logsArray.length} entries`);
             } else if (typeof logData === 'object') {
                 // Object format - convert values to array
                 logsArray = Object.values(logData);
-                console.log(`📊 [${timezone}] Converting object to array: ${logsArray.length} entries`);
+                console.log(`📊 [${timezone}] Converting object to array for ${itemName}: ${logsArray.length} entries`);
             } else {
-                console.log(`⚠️ [${timezone}] Unknown log data format:`, logData);
+                console.log(`⚠️ [${timezone}] Unknown log data format for ${itemName}:`, logData);
                 return 0;
             }
             
             if (!Array.isArray(logsArray) || logsArray.length === 0) {
-                console.log(`⚠️ [${timezone}] No valid log entries found`);
+                console.log(`⚠️ [${timezone}] No valid log entries found for ${itemName}`);
                 return 0;
             }
             
-            console.log(`🔍 [${timezone}] Searching logs for xanax usage since timestamp: ${sinceTimestamp} (${new Date(sinceTimestamp * 1000).toISOString()})`);
+            console.log(`🔍 [${timezone}] Searching logs for ${itemName} usage since timestamp: ${sinceTimestamp} (${new Date(sinceTimestamp * 1000).toISOString()})`);
             console.log(`📊 [${timezone}] Total log entries to check: ${logsArray.length}`);
             
-            let xanaxCount = 0;
+            let itemCount = 0;
             let checkedEntries = 0;
             let recentEntries = [];
             
-            // Search for xanax usage in logs
+            // Search for item usage in logs
             for (const entry of logsArray) {
                 // Ensure entry has required properties
                 if (!entry || !entry.timestamp || !entry.log) {
@@ -470,75 +653,96 @@
                 
                 console.log(`🔍 [${timezone}] Entry ${checkedEntries}: ${new Date(entry.timestamp * 1000).toISOString()} - "${entry.log}"`);
                 
-                // Look for xanax usage patterns in log text
+                // Look for item usage patterns in log text
                 if (entry.log && typeof entry.log === 'string') {
                     const logText = entry.log;
                     
                     // Check for numeric log codes first (new format)
                     const numericCode = parseInt(logText.trim());
-                    let foundXanax = false;
+                    let foundItem = false;
                     let matchedPattern = '';
                     
                     if (!isNaN(numericCode)) {
-                        // Known Torn log codes for xanax usage (based on research)
-                        const xanaxCodes = [
-                            2290, // Primary xanax usage code
-                            2291, // Alternative xanax code 
-                            2292, // Another possible xanax variant
-                            // Add more codes as discovered
-                        ];
+                        // Known Torn log codes for different items
+                        const itemCodes = this.getLogCodesForItem(itemName);
                         
-                        if (xanaxCodes.includes(numericCode)) {
-                            foundXanax = true;
-                            matchedPattern = `Numeric Code: ${numericCode} (xanax usage)`;
+                        if (itemCodes.includes(numericCode)) {
+                            foundItem = true;
+                            matchedPattern = `Numeric Code: ${numericCode} (${itemName} usage)`;
                         }
                     }
                     
                     // Fallback to text patterns if no numeric match (legacy format)
-                    if (!foundXanax) {
-                        const xanaxPatterns = [
-                            /xanax.*?(used|took|consumed|taken)/i,
-                            /(used|took|consumed|taken).*?xanax/i,
-                            /you.*?(used|took|consumed).*?xanax/i,
-                            /xanax.*?effect/i,
-                            /took.*?xanax/i,
-                            /used.*?xanax/i,
-                            /consume.*?xanax/i,
-                            /xanax.*?active/i,
-                            /\bxanax\b/i  // Just the word xanax anywhere
-                        ];
-                        
-                        for (let i = 0; i < xanaxPatterns.length; i++) {
-                            const pattern = xanaxPatterns[i];
+                    if (!foundItem && logPatterns) {
+                        for (let i = 0; i < logPatterns.length; i++) {
+                            const pattern = logPatterns[i];
                             if (pattern.test(logText)) {
-                                foundXanax = true;
+                                foundItem = true;
                                 matchedPattern = `Text Pattern ${i + 1}: ${pattern.toString()}`;
                                 break;
                             }
                         }
                     }
                     
-                    if (foundXanax) {
-                        xanaxCount++;
-                        console.log(`💊 [${timezone}] Found xanax usage #${xanaxCount} - Matched: ${matchedPattern}`);
-                        console.log(`💊 [${timezone}] Full log text: "${entry.log}"`);
+                    if (foundItem) {
+                        itemCount++;
+                        console.log(`✅ [${timezone}] Found ${itemName} usage #${itemCount} - Matched: ${matchedPattern}`);
+                        console.log(`✅ [${timezone}] Full log text: "${entry.log}"`);
                     }
                 }
             }
             
-            console.log(`💊 [${timezone}] Search complete:`);
-            console.log(`💊 [${timezone}] - Checked ${checkedEntries} entries since ${new Date(sinceTimestamp * 1000).toISOString()}`);
-            console.log(`💊 [${timezone}] - Found ${xanaxCount} xanax usages`);
-            console.log(`💊 [${timezone}] Recent entries (last 5):`, recentEntries.slice(-5));
+            console.log(`📊 [${timezone}] ${itemName} search complete:`);
+            console.log(`📊 [${timezone}] - Checked ${checkedEntries} entries since ${new Date(sinceTimestamp * 1000).toISOString()}`);
+            console.log(`📊 [${timezone}] - Found ${itemCount} ${itemName} usages`);
+            console.log(`📊 [${timezone}] Recent entries (last 5):`, recentEntries.slice(-5));
             
-            if (xanaxCount === 0 && checkedEntries > 0) {
-                console.log(`⚠️ [${timezone}] No xanax found but entries exist. Sample log entries:`);
+            if (itemCount === 0 && checkedEntries > 0) {
+                console.log(`⚠️ [${timezone}] No ${itemName} found but entries exist. Sample log entries:`);
                 recentEntries.slice(0, 3).forEach((entry, i) => {
                     console.log(`Sample ${i + 1}: ${entry.time} - "${entry.log}"`);
                 });
             }
             
-            return Math.min(xanaxCount, 3); // Cap at 3 per day
+            return itemCount;
+        },
+
+        // Get known log codes for specific items
+        getLogCodesForItem(itemName) {
+            const logCodes = {
+                'Xanax Dose': [
+                    2290, 2291, 2292, // Known xanax usage codes
+                ],
+                'Energy Refill': [
+                    // Add energy refill codes as discovered
+                    // These will need to be found through testing
+                ],
+                'Nerve Refill': [
+                    // Add nerve refill codes as discovered  
+                    // These will need to be found through testing
+                ]
+            };
+            
+            return logCodes[itemName] || [];
+        },
+
+        // Count xanax usage from logs since 00:00 UTC (legacy - now uses generic function)
+        countXanaxFromLogs(logData, sinceTimestamp, timezone = 'UTC') {
+            // Use the generic function with xanax patterns
+            const xanaxPatterns = [
+                /xanax.*?(used|took|consumed|taken)/i,
+                /(used|took|consumed|taken).*?xanax/i,
+                /you.*?(used|took|consumed).*?xanax/i,
+                /xanax.*?effect/i,
+                /took.*?xanax/i,
+                /used.*?xanax/i,
+                /consume.*?xanax/i,
+                /xanax.*?active/i,
+                /\bxanax\b/i  // Just the word xanax anywhere
+            ];
+            
+            const count = this.countItemUsageFromLogs(logData, sinceTimestamp, xanaxPatterns, 'Xanax Dose', timezone);
+            return Math.min(count, 3); // Cap at 3 per day
         },
 
         // Create a new todo list
@@ -690,7 +894,16 @@
                                     font-size: 12px;
                                     border-bottom: 1px solid #444;
                                 " onmouseover="this.style.background='#3a3a3a'" 
-                                   onmouseout="this.style.background='none'">♾️ Refresh Tasks</div>
+                                   onmouseout="this.style.background='none'">🔄 Refresh API</div>
+                                
+                                <div class="todolist-option" data-action="reset-daily" style="
+                                    padding: 8px 12px;
+                                    cursor: pointer;
+                                    color: #fff;
+                                    font-size: 12px;
+                                    border-bottom: 1px solid #444;
+                                " onmouseover="this.style.background='#3a3a3a'" 
+                                   onmouseout="this.style.background='none'">♻️ Reset Daily Tasks</div>
                                 
                                 <div class="todolist-option" data-action="pin" style="
                                     padding: 8px 12px;
@@ -968,6 +1181,11 @@
                         switch(action) {
                             case 'refresh':
                                 window.SidekickModules.TodoList.checkApiForCompletedTasks();
+                                break;
+                            case 'reset-daily':
+                                if (confirm('Reset all daily tasks? This will mark them as incomplete.')) {
+                                    window.SidekickModules.TodoList.resetDailyTasks();
+                                }
                                 break;
                             case 'pin':
                                 todoList.pinned = !todoList.pinned;
@@ -1514,6 +1732,25 @@
                 return minutes === 1 ? '1 minute' : `${minutes} minutes`;
             } else {
                 return 'less than a minute';
+            }
+        },
+
+        // Debug function to check current reset state
+        debugResetState() {
+            const now = new Date();
+            const currentUTCDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+            
+            console.log('🐛 DEBUG: Current reset state:');
+            console.log('🐛 Current time:', now.toISOString());
+            console.log('🐛 Current UTC date:', currentUTCDate.toISOString());
+            console.log('🐛 Last reset date:', this.lastResetDate ? new Date(this.lastResetDate).toISOString() : 'null');
+            console.log('🐛 Daily tasks state:', this.dailyTasks);
+            
+            if (this.lastResetDate) {
+                const lastReset = new Date(this.lastResetDate);
+                const lastResetUTCDate = new Date(Date.UTC(lastReset.getUTCFullYear(), lastReset.getUTCMonth(), lastReset.getUTCDate()));
+                console.log('🐛 Last reset UTC date:', lastResetUTCDate.toISOString());
+                console.log('🐛 Need reset?', currentUTCDate.getTime() !== lastResetUTCDate.getTime());
             }
         }
     };

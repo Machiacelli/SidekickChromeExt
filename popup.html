@@ -88,7 +88,7 @@
         }
         
         .header .logo {
-            width: 120px;
+            width: 180px;
             height: auto;
             margin-bottom: 10px;
             border: none !important;
@@ -104,6 +104,28 @@
             image-rendering: crisp-edges;
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
+        }
+        
+        .logo-container {
+            margin-bottom: 10px;
+        }
+        
+        .logo-fallback {
+            text-align: center;
+        }
+        
+        .logo-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 5px;
+            letter-spacing: 2px;
+        }
+        
+        .logo-subtitle {
+            font-size: 10px;
+            color: rgba(255,255,255,0.7);
+            letter-spacing: 1px;
         }
         
         .header h1 {
@@ -213,9 +235,15 @@
 </head>
 <body>
     <div class="header">
-        <img src="../assets/icons/sidekick-logo.png" alt="Sidekick" class="logo">
+        <div class="logo-container">
+            <img src="assets/icons/sidekick-logo.png" alt="Sidekick" class="logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="logo-fallback" style="display: none;">
+                <div class="logo-text">SIDEKICK</div>
+                <div class="logo-subtitle">Torn Enhancement Tool</div>
+            </div>
+        </div>
         <h1>Sidekick</h1>
-        <div class="version">Chrome Extension v1.0.0</div>
+        <div class="version">Chrome Extension v1.0</div>
     </div>
     
     <div class="content">

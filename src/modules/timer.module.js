@@ -250,24 +250,45 @@
 
             try {
                 console.log('🔄 Fetching cooldown data for restore...');
-                const response = await fetch(`https://api.torn.com/user/?selections=cooldowns&key=${this.apiKey}`);
-                const data = await response.json();
+                
+                // Try background script first
+                let cooldownData = null;
+                if (chrome?.runtime?.sendMessage) {
+                    try {
+                        const backgroundResult = await this.makeCooldownApiCallViaBackground(this.apiKey);
+                        if (backgroundResult.success && backgroundResult.cooldowns) {
+                            cooldownData = backgroundResult.cooldowns;
+                            console.log('✅ Background fetch API successful');
+                        }
+                    } catch (bgError) {
+                        console.log('⚠️ Background fetch failed, trying direct...');
+                    }
+                }
+                
+                // Fallback to direct fetch
+                if (!cooldownData) {
+                    const response = await fetch(`https://api.torn.com/user/?selections=cooldowns&key=${this.apiKey}`);
+                    const data = await response.json();
 
-                if (data.error) {
-                    console.warn("⚠️ API Error during fetch:", data.error.error);
-                    return;
+                    if (data.error) {
+                        console.warn("⚠️ API Error during fetch:", data.error.error);
+                        return;
+                    }
+                    cooldownData = data.cooldowns;
                 }
 
-                if (data.cooldowns) {
-                    this.cooldownData = data.cooldowns;
+                if (cooldownData) {
+                    this.cooldownData = cooldownData;
                     console.log('✅ Cooldown data refreshed:', Object.keys(this.cooldownData).length, 'cooldowns');
                 } else {
                     this.cooldownData = {};
                     console.log('📭 No active cooldowns found');
                 }
+
+                this.restoreTimersFromCooldownData();
             } catch (error) {
-                console.warn("⚠️ Failed to fetch cooldown data:", error);
-                this.cooldownData = {};
+                console.error('❌ Error fetching cooldown data:', error);
+                this.handleCooldownApiError(error);
             }
         },
 
@@ -276,6 +297,22 @@
             if (!this.apiKey) return;
 
             try {
+                console.log('🔍 Checking API cooldowns via enhanced method...');
+                
+                // Try background script first
+                if (chrome?.runtime?.sendMessage) {
+                    try {
+                        const backgroundResult = await this.makeCooldownApiCallViaBackground(this.apiKey);
+                        if (backgroundResult.success && backgroundResult.cooldowns) {
+                            this.updateCooldownTimers(backgroundResult.cooldowns);
+                            return;
+                        }
+                    } catch (bgError) {
+                        console.log('⚠️ Background checkApiCooldowns failed, trying direct...');
+                    }
+                }
+                
+                // Fallback to direct fetch
                 const response = await fetch(`https://api.torn.com/user/?selections=cooldowns&key=${this.apiKey}`);
                 const data = await response.json();
 
@@ -288,7 +325,8 @@
                     this.updateCooldownTimers(data.cooldowns);
                 }
             } catch (error) {
-                console.warn("⚠️ Failed to fetch cooldowns from API:", error);
+                console.error('❌ Error in checkApiCooldowns:', error);
+                this.handleCooldownApiError(error);
             }
         },
 
@@ -327,8 +365,26 @@
 
             try {
                 console.log(`🔍 Checking ${cooldownType} cooldown with API key...`);
-                const response = await fetch(`https://api.torn.com/user/?selections=cooldowns&key=${this.apiKey}`);
-                const data = await response.json();
+                
+                // Try background script first
+                let data = null;
+                if (chrome?.runtime?.sendMessage) {
+                    try {
+                        const backgroundResult = await this.makeCooldownApiCallViaBackground(this.apiKey);
+                        if (backgroundResult.success) {
+                            data = { cooldowns: backgroundResult.cooldowns };
+                            console.log('✅ Background checkSpecificCooldown successful');
+                        }
+                    } catch (bgError) {
+                        console.log('⚠️ Background checkSpecificCooldown failed, trying direct...');
+                    }
+                }
+                
+                // Fallback to direct fetch
+                if (!data) {
+                    const response = await fetch(`https://api.torn.com/user/?selections=cooldowns&key=${this.apiKey}`);
+                    data = await response.json();
+                }
 
                 console.log('🔍 Full API Response:', data);
 
@@ -2013,22 +2069,130 @@
                 
                 console.log('🔍 Checking API for cooldown updates...');
                 
-                // Get cooldowns from API
-                const response = await fetch(`https://api.torn.com/user/?selections=cooldowns&key=${this.apiKey}`);
-                const data = await response.json();
-                
-                if (data.error) {
-                    console.error('❌ API Error checking cooldowns:', data.error);
-                    return;
+                // Try background script approach first (better for CORS issues)
+                if (chrome?.runtime?.sendMessage) {
+                    try {
+                        console.log('📡 Attempting cooldown API call via background script...');
+                        const backgroundResult = await this.makeCooldownApiCallViaBackground(this.apiKey);
+                        if (backgroundResult.success && backgroundResult.cooldowns) {
+                            console.log('✅ Background cooldown API call successful');
+                            this.updateTimersFromApiCooldowns(backgroundResult.cooldowns);
+                            return;
+                        }
+                    } catch (bgError) {
+                        console.log('⚠️ Background script cooldown API failed, trying direct fetch...');
+                    }
                 }
                 
-                if (data.cooldowns) {
-                    this.updateTimersFromApiCooldowns(data.cooldowns);
-                }
+                // Fallback to direct fetch with better error handling
+                await this.makeDirectCooldownApiCall(this.apiKey);
                 
             } catch (error) {
                 console.error('❌ Error checking API for cooldowns:', error);
+                this.handleCooldownApiError(error);
             }
+        },
+
+        // Make cooldown API call via background script (avoids CORS issues)
+        async makeCooldownApiCallViaBackground(apiKey) {
+            return new Promise((resolve, reject) => {
+                chrome.runtime.sendMessage({
+                    action: 'fetchTornApi',
+                    apiKey: apiKey,
+                    selections: ['cooldowns']
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        reject(new Error(chrome.runtime.lastError.message));
+                    } else if (response && response.success) {
+                        resolve({
+                            success: response.success,
+                            cooldowns: response.cooldowns
+                        });
+                    } else {
+                        reject(new Error('Background script returned unsuccessful response'));
+                    }
+                });
+            });
+        },
+
+        // Make direct cooldown API call (fallback method)
+        async makeDirectCooldownApiCall(apiKey) {
+            const fetchWithTimeout = async (url, timeout = 10000) => {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), timeout);
+                
+                try {
+                    const response = await fetch(url, { 
+                        signal: controller.signal,
+                        headers: {
+                            'User-Agent': 'Sidekick Chrome Extension Timer'
+                        }
+                    });
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    return response;
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    throw error;
+                }
+            };
+
+            console.log('📊 Making direct cooldown API call...');
+            const response = await fetchWithTimeout(`https://api.torn.com/user/?selections=cooldowns&key=${apiKey}`);
+            const data = await response.json();
+            
+            if (data.error) {
+                console.error('❌ API Error checking cooldowns:', data.error);
+                
+                // Handle specific API errors
+                if (data.error.code === 2) {
+                    console.error('🔑 Invalid API key for cooldowns - please check settings');
+                } else if (data.error.code === 5) {
+                    console.error('⏱️ Cooldown API rate limit exceeded - will retry later');
+                }
+                
+                throw new Error(`API Error ${data.error.code}: ${data.error.error}`);
+            }
+            
+            if (data.cooldowns) {
+                console.log('✅ Direct cooldown API call successful');
+                this.updateTimersFromApiCooldowns(data.cooldowns);
+            }
+        },
+
+        // Handle API errors with categorization and logging
+        handleCooldownApiError(error, errorCode, context = 'cooldown check') {
+            console.error(`❌ Error during ${context}:`, error);
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                console.error('CORS/Network issue detected');
+            } else if (errorCode === 2) {
+                console.error('Invalid API key error');
+                this.showTemporaryMessage('Invalid API key. Please check your settings.', 3000);
+            } else if (errorCode === 5) {
+                console.error('API too many requests error');
+                this.showTemporaryMessage('Too many API requests. Please wait a moment.', 3000);
+            } else {
+                console.error(`API error code: ${errorCode || 'unknown'}`);
+            }
+        },
+
+        // Handle cooldown API errors consistently
+        handleCooldownApiError(error) {
+            // Check if it's a network error
+            if (error.name === 'AbortError') {
+                console.error('🕐 Cooldown API request timed out');
+            } else if (error.message.includes('Failed to fetch')) {
+                console.error('🌐 Cooldown network error - check internet connection or API permissions');
+            } else if (error.message.includes('CORS')) {
+                console.error('🚫 Cooldown CORS error - browser blocking request');
+            }
+            
+            // Could add failure counting here similar to todolist if needed
+            console.log('⚠️ Cooldown API check will retry on next interval');
         },
 
         // Update existing timers and create new ones from API cooldowns

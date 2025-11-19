@@ -42,6 +42,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('📨 Background received message:', request);
     
     switch (request.action) {
+        case 'fetchTornApi':
+            // Handle Torn API calls from content scripts (avoids CORS)
+            handleTornApiCall(request)
+                .then(result => sendResponse(result))
+                .catch(error => sendResponse({ success: false, error: error.message }));
+            return true; // Keep message channel open for async response
+            
         case 'reportBug':
             // Handle Notion bug reporting
             handleBugReport(request.data)
@@ -96,6 +103,130 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Notion API Configuration
 const NOTION_API_KEY = 'YOUR_NOTION_API_KEY_HERE'; // Replace with your Notion API key
 const NOTION_DATABASE_ID = 'YOUR_NOTION_DATABASE_ID_HERE'; // Replace with your Notion database ID
+
+// Handle Torn API calls from content scripts (avoids CORS issues)
+async function handleTornApiCall(request) {
+    try {
+        console.log('🔍 Background: Making Torn API call:', request.selections);
+        
+        const { apiKey, selections } = request;
+        
+        if (!apiKey) {
+            throw new Error('No API key provided');
+        }
+        
+        // Prepare results object
+        const results = {
+            success: true,
+            personalstats: null,
+            logs: null
+        };
+        
+        // Fetch personal stats if requested
+        if (selections.includes('personalstats')) {
+            console.log('📊 Background: Fetching personal stats...');
+            try {
+                const statsResponse = await fetch(`https://api.torn.com/user?selections=personalstats&key=${apiKey}`, {
+                    method: 'GET',
+                    headers: {
+                        'User-Agent': 'Sidekick Chrome Extension Background'
+                    }
+                });
+                
+                if (!statsResponse.ok) {
+                    throw new Error(`Personal stats fetch failed: ${statsResponse.status}`);
+                }
+                
+                const statsData = await statsResponse.json();
+                
+                if (statsData.error) {
+                    throw new Error(`API Error: ${statsData.error.error} (${statsData.error.code})`);
+                }
+                
+                results.personalstats = statsData.personalstats;
+                console.log('✅ Background: Personal stats retrieved successfully');
+                
+            } catch (error) {
+                console.error('❌ Background: Personal stats fetch failed:', error);
+                throw error;
+            }
+        }
+        
+        // Fetch cooldowns if requested
+        if (selections.includes('cooldowns')) {
+            console.log('⏰ Background: Fetching cooldowns...');
+            try {
+                const cooldownResponse = await fetch(`https://api.torn.com/user?selections=cooldowns&key=${apiKey}`, {
+                    method: 'GET',
+                    headers: {
+                        'User-Agent': 'Sidekick Chrome Extension Background'
+                    }
+                });
+                
+                if (!cooldownResponse.ok) {
+                    console.warn('⚠️ Background: Cooldown fetch failed:', cooldownResponse.status);
+                    // Don't throw here, cooldowns are optional
+                } else {
+                    const cooldownData = await cooldownResponse.json();
+                    
+                    if (cooldownData.error) {
+                        console.warn('⚠️ Background: Cooldown API error:', cooldownData.error);
+                        // Don't throw here, cooldowns are optional
+                    } else {
+                        results.cooldowns = cooldownData.cooldowns;
+                        console.log('✅ Background: Cooldowns retrieved successfully');
+                    }
+                }
+                
+            } catch (error) {
+                console.warn('⚠️ Background: Cooldown fetch failed (non-fatal):', error);
+                // Continue without cooldowns
+            }
+        }
+
+        // Fetch logs if requested
+        if (selections.includes('logs')) {
+            console.log('📋 Background: Fetching logs...');
+            try {
+                const logResponse = await fetch(`https://api.torn.com/user?selections=log&key=${apiKey}`, {
+                    method: 'GET',
+                    headers: {
+                        'User-Agent': 'Sidekick Chrome Extension Background'
+                    }
+                });
+                
+                if (!logResponse.ok) {
+                    console.warn('⚠️ Background: Log fetch failed:', logResponse.status);
+                    // Don't throw here, logs are optional
+                } else {
+                    const logData = await logResponse.json();
+                    
+                    if (logData.error) {
+                        console.warn('⚠️ Background: Log API error:', logData.error);
+                        // Don't throw here, logs are optional
+                    } else {
+                        results.logs = logData.log;
+                        console.log('✅ Background: Logs retrieved successfully');
+                    }
+                }
+                
+            } catch (error) {
+                console.warn('⚠️ Background: Log fetch failed (non-fatal):', error);
+                // Continue without logs
+            }
+        }
+        
+        console.log('🎯 Background: API call completed successfully');
+        return results;
+        
+    } catch (error) {
+        console.error('❌ Background: Torn API call failed:', error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
 
 // Handle bug reports to Notion
 async function handleBugReport(bugData) {
