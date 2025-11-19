@@ -609,7 +609,10 @@
                         return;
                     }
                     
-                    console.log(`💰 Detected RECEIVED payment: $${amount} from sender ID ${senderId} with message: "${message}"`);
+                    // IMMEDIATELY mark as processed to prevent race conditions
+                    this.processedPayments.add(paymentId);
+                    
+                    console.log(`💰 Detected RECEIVED payment: $${amount} from sender ID ${senderId} with message: "${message}" (ID: ${paymentId})`);
                     
                     // Check if message contains "loan" (case insensitive)
                     if (message.toLowerCase().includes('loan')) {
@@ -632,7 +635,6 @@
                             const entry = matchingEntries[0];
                             console.log(`💰 Auto-applying received payment of $${amount} to debt from ${entry.playerName}`);
                             this.addRepayment(entry.id, amount, `Auto-detected payment: ${message}`, true);
-                            this.processedPayments.add(paymentId); // Mark as processed
                             return;
                         } else {
                             console.log(`💰 No matching debt entries found for received payment from sender ID ${senderId}`);
@@ -654,10 +656,13 @@
                     const paymentId = `send_${receiverId}_${amount}_${logTimestamp}`;
                     if (this.processedPayments.has(paymentId)) {
                         console.log(`💰 Skipping duplicate sent payment: ${paymentId}`);
-                        return;
+                        return; // Exit the function early to prevent further processing
                     }
                     
-                    console.log(`💰 Detected SENT payment: $${amount} to receiver ID ${receiverId} with message: "${message}"`);
+                    // IMMEDIATELY mark as processed to prevent race conditions
+                    this.processedPayments.add(paymentId);
+                    
+                    console.log(`💰 Detected SENT payment: $${amount} to receiver ID ${receiverId} with message: "${message}" (ID: ${paymentId})`);
                     
                     // Check if message contains "loan" (case insensitive)
                     if (message.toLowerCase().includes('loan')) {
@@ -680,7 +685,6 @@
                             const entry = matchingEntries[0];
                             console.log(`💰 Auto-applying sent payment of $${amount} to loan to ${entry.playerName}`);
                             this.addRepayment(entry.id, amount, `Auto-detected payment: ${message}`, true);
-                            this.processedPayments.add(paymentId); // Mark as processed
                             return;
                         } else {
                             console.log(`💰 No matching loan entries found for sent payment to receiver ID ${receiverId}`);
@@ -1451,6 +1455,15 @@
                         cursor: pointer;
                         font-size: 10px;
                     ">Add Payment</button>
+                    ${!isDebt ? `<button class="entry-increase-btn" data-entry-id="${entry.id}" style="
+                        background: #ff9800;
+                        border: 1px solid #ffb74d;
+                        color: #fff;
+                        padding: 3px 8px;
+                        border-radius: 3px;
+                        cursor: pointer;
+                        font-size: 10px;
+                    ">Increase Loan</button>` : ''}
                     <button class="entry-edit-btn" data-entry-id="${entry.id}" style="
                         background: #4caf50;
                         border: 1px solid #66bb6a;
@@ -1476,6 +1489,7 @@
             const payBtn = entryDiv.querySelector('.entry-pay-btn');
             const editBtn = entryDiv.querySelector('.entry-edit-btn');
             const deleteBtn = entryDiv.querySelector('.entry-delete-btn');
+            const increaseBtn = entryDiv.querySelector('.entry-increase-btn');
             const alertElement = entryDiv.querySelector('.entry-alert-badge');
 
             payBtn?.addEventListener('click', () => {
@@ -1484,6 +1498,10 @@
 
             editBtn?.addEventListener('click', () => {
                 this.generateReceipt(entry.id);
+            });
+            
+            increaseBtn?.addEventListener('click', () => {
+                this.showIncreaseLoanDialog(entry.id);
             });
             
             alertElement?.addEventListener('click', () => {
@@ -1886,6 +1904,48 @@
             if (amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0) {
                 this.addRepayment(entryId, parseFloat(amount), 'Manual payment', false);
                 this.populateDebtTrackerWindow();
+            }
+        },
+
+        showIncreaseLoanDialog(entryId) {
+            const entry = this.debtsAndLoans.find(e => e.id === entryId);
+            if (!entry) return;
+
+            // Only show for loans
+            if (entry.type !== 'loan') {
+                alert('Can only increase loan amounts, not debt amounts.');
+                return;
+            }
+
+            const increaseAmount = prompt(`Increase loan amount for ${entry.playerName}:\nCurrent loan: $${entry.originalAmount.toLocaleString()}\nCurrent balance: $${entry.currentAmount.toLocaleString()}\n\nIncrease amount:`);
+            
+            if (increaseAmount && !isNaN(parseFloat(increaseAmount)) && parseFloat(increaseAmount) > 0) {
+                const increase = parseFloat(increaseAmount);
+                
+                // Update the loan amounts
+                entry.originalAmount += increase;
+                entry.currentAmount += increase;
+                
+                // Add a payment history entry for the increase
+                const timestamp = new Date().toISOString();
+                if (!entry.paymentHistory) {
+                    entry.paymentHistory = [];
+                }
+                
+                entry.paymentHistory.push({
+                    id: `increase_${Date.now()}`,
+                    amount: increase,
+                    type: 'increase',
+                    timestamp: timestamp,
+                    description: 'Loan amount increased'
+                });
+
+                // Save and update UI
+                this.saveToStorage();
+                this.populateDebtTrackerWindow();
+                this.showNotification(`Loan to ${entry.playerName} increased by $${increase.toLocaleString()}`, 'success');
+                
+                console.log(`Increased loan to ${entry.playerName} by $${increase.toLocaleString()}`);
             }
         },
 
