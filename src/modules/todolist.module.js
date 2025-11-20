@@ -736,6 +736,14 @@
         updateTasksFromApi(personalstats, logData = null, barsData = null, cooldownsData = null) {
             let hasUpdates = false;
             
+            // Store API data for debugging
+            this.lastApiData = {
+                personalstats,
+                logs: logData,
+                bars: barsData,
+                cooldowns: cooldownsData
+            };
+            
             console.log('📋 Updating tasks from API data...');
             console.log('📋 Available data:', {
                 personalstats: !!personalstats,
@@ -743,6 +751,12 @@
                 barsData: !!barsData,
                 cooldownsData: !!cooldownsData
             });
+            
+            // Add debug function to global console for easy access
+            if (typeof window !== 'undefined') {
+                window.debugXanaxLogs = () => this.debugXanaxLogs();
+                console.log('💊 Debug function available: debugXanaxLogs()');
+            }
             
             // First, check for actual refill availability to override completed state if needed
             this.checkRefillAvailability(barsData);
@@ -996,6 +1010,81 @@
             };
             
             return logCodes[itemName] || [];
+        },
+
+        // Debug function to analyze recent logs for xanax detection
+        debugXanaxLogs() {
+            console.log('🔍 === XANAX DEBUG ANALYSIS ===');
+            
+            if (!this.lastApiData || !this.lastApiData.logs) {
+                console.log('❌ No log data available for debugging');
+                return;
+            }
+            
+            const logs = this.lastApiData.logs;
+            let logsArray = [];
+            
+            if (Array.isArray(logs)) {
+                logsArray = logs;
+            } else if (logs.log && Array.isArray(logs.log)) {
+                logsArray = logs.log;
+            } else if (typeof logs === 'object') {
+                logsArray = Object.values(logs);
+            }
+            
+            console.log(`📊 Total log entries: ${logsArray.length}`);
+            
+            // Get today's start time
+            const todayUTCStart = new Date();
+            todayUTCStart.setUTCHours(0, 0, 0, 0);
+            const todayTimestamp = Math.floor(todayUTCStart.getTime() / 1000);
+            
+            console.log(`📅 Today UTC start: ${todayUTCStart.toISOString()} (${todayTimestamp})`);
+            
+            let recentLogs = [];
+            let xanaxRelated = [];
+            
+            for (let i = 0; i < Math.min(50, logsArray.length); i++) {
+                const entry = logsArray[i];
+                if (!entry || !entry.timestamp || !entry.log) continue;
+                
+                const entryDate = new Date(entry.timestamp * 1000);
+                const logText = entry.log.toString();
+                const numericCode = parseInt(logText.trim());
+                
+                // Collect recent logs
+                if (entry.timestamp >= todayTimestamp) {
+                    recentLogs.push({
+                        time: entryDate.toISOString(),
+                        timestamp: entry.timestamp,
+                        log: logText,
+                        numericCode: !isNaN(numericCode) ? numericCode : null
+                    });
+                }
+                
+                // Look for anything xanax-related
+                if (logText.toLowerCase().includes('xanax') || [2290, 2291, 2292].includes(numericCode)) {
+                    xanaxRelated.push({
+                        time: entryDate.toISOString(),
+                        timestamp: entry.timestamp,
+                        log: logText,
+                        numericCode: !isNaN(numericCode) ? numericCode : null,
+                        isToday: entry.timestamp >= todayTimestamp
+                    });
+                }
+            }
+            
+            console.log(`📋 Recent logs since today (${recentLogs.length}):`);
+            recentLogs.slice(0, 10).forEach((log, i) => {
+                console.log(`  ${i + 1}. ${log.time} - Code:${log.numericCode || 'text'} - "${log.log}"`);
+            });
+            
+            console.log(`💊 Xanax-related logs found (${xanaxRelated.length}):`);
+            xanaxRelated.forEach((log, i) => {
+                console.log(`  ${i + 1}. ${log.time} - ${log.isToday ? 'TODAY' : 'OLD'} - Code:${log.numericCode || 'text'} - "${log.log}"`);
+            });
+            
+            console.log('🔍 === END XANAX DEBUG ===');
         },
 
         // Count xanax usage from logs since 00:00 UTC (legacy - now uses generic function)

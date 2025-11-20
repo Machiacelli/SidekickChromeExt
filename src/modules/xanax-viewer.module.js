@@ -142,7 +142,10 @@
                     personalstats: response.personalstats
                 };
                 
-                console.log("✅ Xanax Viewer: Own stats loaded");
+                console.log("✅ Xanax Viewer: Own stats loaded", {
+                    xantaken: response.personalstats.xantaken,
+                    refills: response.personalstats.refills
+                });
                 this.initializePageSpecificFunctionality();
                 
             } catch (error) {
@@ -193,11 +196,11 @@
         },
 
         // Initialize Faction Page functionality
-        initializeFactionPage() {
+        async initializeFactionPage() {
             console.log("💊 Xanax Viewer: Initializing faction page");
             
-            this.waitForElementToExist('.members-list .positionCol___Lk6E4').then(() => {
-                setTimeout(() => {
+            this.waitForElementToExist('.members-list .positionCol___Lk6E4').then(async () => {
+                setTimeout(async () => {
                     // Add header column
                     const tableHeader = document.querySelector('.faction-info-wrap .table-header');
                     if (tableHeader) {
@@ -207,6 +210,7 @@
                     }
 
                     let profiles = {};
+                    const cache = await this.getXanaxViewerCache();
 
                     // Add cached results or refresh buttons
                     const tableRows = document.querySelectorAll('.faction-info-wrap .table-body .table-row');
@@ -217,7 +221,7 @@
                         const uid = this.extractUserIdFromUrl(userLink.href);
                         if (!uid) return;
 
-                        const cachedInfo = this.getXanaxViewerCache()[uid];
+                        const cachedInfo = cache[uid];
                         const levelElement = row.querySelector(".lvl");
                         const level = levelElement ? levelElement.textContent.trim() : '0';
 
@@ -254,13 +258,13 @@
         },
 
         // Initialize Preferences Page
-        initializePreferencesPage() {
+        async initializePreferencesPage() {
             console.log("💊 Xanax Viewer: Initializing preferences page");
             
             const preferencesContainer = document.querySelector(".preferences-container");
             if (!preferencesContainer) return;
 
-            const cache = this.getXanaxViewerCache();
+            const cache = await this.getXanaxViewerCache();
             
             preferencesContainer.insertAdjacentHTML('afterend', `
                 <div class="xanaxviewer_container" data-feature="connect">
@@ -412,10 +416,18 @@
                     throw new Error('No personal stats received');
                 }
                 
-                return {
+                const stats = {
                     xantaken: response.personalstats.xantaken || 0,
+                    cantaken: response.personalstats.cantaken || 0,
+                    lsdtaken: response.personalstats.lsdtaken || 0,
                     refills: response.personalstats.refills || 0
                 };
+                
+                // Cache the results
+                await this.cacheUserStats(uid, stats);
+                
+                console.log(`✅ Xanax Viewer: Stats fetched for user ${uid}:`, stats);
+                return stats;
                 
             } catch (error) {
                 if (error.message.includes('Extension context invalidated')) {
@@ -428,44 +440,40 @@
                 // Return default values on error
                 return {
                     xantaken: 0,
+                    cantaken: 0,
+                    lsdtaken: 0,
                     refills: 0
                 };
             }
         },
-                const data = await response.json();
 
-                if (data.error) {
-                    throw new Error(data.error.error);
-                }
+        // Get cached xanax viewer data
+        async getXanaxViewerCache() {
+            try {
+                const cache = await window.SidekickModules.Core.ChromeStorage.get('xanaxviewer_cache');
+                return cache || {};
+            } catch (error) {
+                console.error('💊 Error getting xanax cache:', error);
+                return {};
+            }
+        },
 
-                const stats = data.personalstats;
-                
-                // Cache the result
-                const cache = this.getXanaxViewerCache();
+        // Cache user stats
+        async cacheUserStats(uid, stats) {
+            try {
+                const cache = await this.getXanaxViewerCache();
                 cache[uid] = {
-                    xantaken: stats.xantaken,
-                    cantaken: stats.cantaken,
-                    lsdtaken: stats.lsdtaken,
-                    refills: stats.refills,
+                    xantaken: stats.xantaken || 0,
+                    cantaken: stats.cantaken || 0,
+                    lsdtaken: stats.lsdtaken || 0,
+                    refills: stats.refills || 0,
                     updated: Date.now()
                 };
                 
                 await window.SidekickModules.Core.ChromeStorage.set('xanaxviewer_cache', cache);
-                
-                return stats;
+                console.log(`💊 Cached stats for user ${uid}:`, cache[uid]);
             } catch (error) {
-                console.error("❌ Xanax Viewer: Error fetching user stats:", error);
-                throw error;
-            }
-        },
-
-        // Get cached xanax viewer data
-        getXanaxViewerCache() {
-            try {
-                // Try to get from Chrome storage synchronously if possible, otherwise return empty object
-                return {};
-            } catch (error) {
-                return {};
+                console.error('💊 Error caching user stats:', error);
             }
         },
 
