@@ -44,7 +44,21 @@
             try {
                 await waitForCore();
                 await this.loadSettings();
-                this.originalTitle = document.title;
+                
+                // Store original title, ensuring we don't capture a timer title
+                if (!this.originalTitle || this.originalTitle.includes('Chain:') || this.originalTitle.includes('Hospital:') || this.originalTitle.includes('Jail:')) {
+                    this.originalTitle = 'TORN'; // Default fallback
+                    // Try to get clean title from page
+                    const titleElement = document.querySelector('title');
+                    if (titleElement && titleElement.textContent && !titleElement.textContent.includes(':') && !titleElement.textContent.includes('|')) {
+                        this.originalTitle = titleElement.textContent.trim();
+                    }
+                } else {
+                    this.originalTitle = document.title;
+                }
+                
+                console.log('⏰ Original title stored:', this.originalTitle);
+                
                 this.isInitialized = true;
                 
                 if (this.isEnabled) {
@@ -151,14 +165,24 @@
 
         // Update the tab title with timer information (simplified - no clock/emojis)
         updateTabTitle() {
-            if (!this.isEnabled) return;
+            if (!this.isEnabled) {
+                this.restoreTitle();
+                return;
+            }
 
             const timerInfo = this.getActiveTimerInfo();
             
             if (timerInfo) {
-                document.title = `${timerInfo} | TORN`;
+                // Only update if we have an actual active timer
+                const newTitle = `${timerInfo} | TORN`;
+                if (document.title !== newTitle) {
+                    document.title = newTitle;
+                }
             } else {
-                document.title = this.originalTitle;
+                // No active timers - restore original title
+                if (document.title !== this.originalTitle) {
+                    document.title = this.originalTitle;
+                }
             }
         },
 
@@ -166,26 +190,59 @@
         getActiveTimerInfo() {
             // Hospital timer (highest priority)
             const hospitalTimer = document.querySelector('#theCounter');
-            if (hospitalTimer && hospitalTimer.textContent.trim() && hospitalTimer.textContent.match(/\d+:\d+/)) {
-                return hospitalTimer.textContent.trim();
+            if (hospitalTimer && hospitalTimer.textContent.trim()) {
+                const hospitalTime = hospitalTimer.textContent.trim();
+                if (hospitalTime.match(/\d+:\d+/) && hospitalTime !== '00:00' && hospitalTime !== '0:00') {
+                    return `Hospital: ${hospitalTime}`;
+                }
             }
             
-            // Chain timer
+            // Chain timer - only show if chain is actually active
             const chainTimer = document.querySelector('p.bar-timeleft___B9RGV');
-            if (chainTimer && chainTimer.textContent.trim() && chainTimer.textContent.match(/\d+:\d+/)) {
-                return `Chain: ${chainTimer.textContent.trim()}`;
+            const chainValue = document.querySelector('.bar-value___uxnah');
+            
+            if (chainTimer && chainTimer.textContent.trim()) {
+                const chainTime = chainTimer.textContent.trim();
+                const chainLength = chainValue ? chainValue.textContent.trim() : '0';
+                
+                // Only show if there's an active chain (not 00:00 and chain length > 0)
+                if (chainTime.match(/\d+:\d+/) && 
+                    chainTime !== '00:00' && 
+                    chainTime !== '0:00' && 
+                    parseInt(chainLength) > 0) {
+                    return `Chain ${chainLength}: ${chainTime}`;
+                }
             }
             
-            // Racing timer  
-            const racingTimer = document.querySelector('#infoSpot');
-            if (racingTimer && racingTimer.textContent.trim() && racingTimer.textContent.match(/\d+:\d+/)) {
-                return `Racing: ${racingTimer.textContent.trim()}`;
-            }
-            
-            // Jail timer
+            // Jail timer - only show if actually in jail
             const jailTimer = document.querySelector('[class*="jail"] [class*="timer"], #jailTimer');
-            if (jailTimer && jailTimer.textContent.trim() && jailTimer.textContent.match(/\d+:\d+/)) {
-                return `Jail: ${jailTimer.textContent.trim()}`;
+            if (jailTimer && jailTimer.textContent.trim()) {
+                const jailTime = jailTimer.textContent.trim();
+                if (jailTime.match(/\d+:\d+/) && jailTime !== '00:00' && jailTime !== '0:00') {
+                    return `Jail: ${jailTime}`;
+                }
+            }
+            
+            // Racing timer - only show if actually racing
+            const racingTimer = document.querySelector('#infoSpot');
+            if (racingTimer && racingTimer.textContent.trim()) {
+                const racingTime = racingTimer.textContent.trim();
+                if (racingTime.match(/\d+:\d+/) && racingTime !== '00:00' && racingTime !== '0:00') {
+                    return `Racing: ${racingTime}`;
+                }
+            }
+            
+            // Travel timer - check if actually traveling
+            const travelTimer = document.querySelector('.time, [class*="travel-time"]');
+            if (travelTimer && travelTimer.textContent.trim()) {
+                const travelTime = travelTimer.textContent.trim();
+                if (travelTime.match(/\d+:\d+/) && 
+                    travelTime !== '00:00' && 
+                    travelTime !== '0:00' &&
+                    !travelTime.toLowerCase().includes('none') &&
+                    !travelTime.toLowerCase().includes('torn')) {
+                    return `Travel: ${travelTime}`;
+                }
             }
 
             return null;
