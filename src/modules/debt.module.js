@@ -1146,7 +1146,7 @@
                         <div style="position: relative; display: inline-block;">
                             <button class="debt-cogwheel-btn" style="
                                 background: none;
-                                border: 1px solid rgba(255,255,255,0.3);
+                                border: none;
                                 color: #fff;
                                 width: 20px;
                                 height: 20px;
@@ -1157,7 +1157,9 @@
                                 align-items: center;
                                 justify-content: center;
                                 outline: none;
-                            ">⚙️</button>
+                                padding: 0;
+                                transition: background 0.2s;
+                            " onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'">⚙️</button>
                             <div class="debt-cogwheel-menu" style="
                                 position: absolute;
                                 top: 25px;
@@ -1445,42 +1447,50 @@
                 
                 ${entry.notes ? `<div style="font-size: 11px; color: #bbb; font-style: italic; margin-bottom: 6px;">"${entry.notes}"</div>` : ''}
                 
-                <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                <div style="display: flex; gap: 4px; justify-content: flex-end; flex-wrap: wrap; margin-top: 4px;">
                     <button class="entry-pay-btn" data-entry-id="${entry.id}" style="
                         background: #2196f3;
                         border: 1px solid #42a5f5;
                         color: #fff;
-                        padding: 3px 8px;
+                        padding: 3px 6px;
                         border-radius: 3px;
                         cursor: pointer;
-                        font-size: 10px;
+                        font-size: 9px;
+                        white-space: nowrap;
+                        flex-shrink: 0;
                     ">Add Payment</button>
                     ${!isDebt ? `<button class="entry-increase-btn" data-entry-id="${entry.id}" style="
                         background: #ff9800;
                         border: 1px solid #ffb74d;
                         color: #fff;
-                        padding: 3px 8px;
+                        padding: 3px 6px;
                         border-radius: 3px;
                         cursor: pointer;
-                        font-size: 10px;
+                        font-size: 9px;
+                        white-space: nowrap;
+                        flex-shrink: 0;
                     ">Increase Loan</button>` : ''}
                     <button class="entry-edit-btn" data-entry-id="${entry.id}" style="
                         background: #4caf50;
                         border: 1px solid #66bb6a;
                         color: #fff;
-                        padding: 3px 8px;
+                        padding: 3px 6px;
                         border-radius: 3px;
                         cursor: pointer;
-                        font-size: 10px;
+                        font-size: 9px;
+                        white-space: nowrap;
+                        flex-shrink: 0;
                     ">📋 Receipt</button>
                     <button class="entry-delete-btn" data-entry-id="${entry.id}" style="
                         background: #d32f2f;
                         border: 1px solid #f44336;
                         color: #fff;
-                        padding: 3px 8px;
+                        padding: 3px 6px;
                         border-radius: 3px;
                         cursor: pointer;
-                        font-size: 10px;
+                        font-size: 9px;
+                        white-space: nowrap;
+                        flex-shrink: 0;
                     ">Delete</button>
                 </div>
             `;
