@@ -756,6 +756,12 @@
             if (typeof window !== 'undefined') {
                 window.debugXanaxLogs = () => this.debugXanaxLogs();
                 console.log('💊 Debug function available: debugXanaxLogs()');
+                
+                // Also expose it immediately for testing
+                setTimeout(() => {
+                    window.debugXanaxLogs = () => this.debugXanaxLogs();
+                    console.log('💊 Debug function re-exposed after timeout');
+                }, 1000);
             }
             
             // First, check for actual refill availability to override completed state if needed
