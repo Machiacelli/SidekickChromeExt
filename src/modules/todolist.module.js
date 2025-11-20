@@ -24,13 +24,19 @@
                 icon: '⚡',
                 color: '#4ECDC4',
                 description: 'Daily energy refill',
-                detectFromLogs: true, // Changed to use log detection
+                detectFromLogs: true,
                 logPatterns: [
                     /energy.*?(refill|drink|can)/i,
                     /(refill|drink|can).*?energy/i,
                     /you.*?(used|consumed|drank).*?energy/i,
                     /energy.*?(used|consumed|active)/i,
-                    /\benergy\s*(drink|refill|can)\b/i
+                    /\benergy\s*(drink|refill|can)\b/i,
+                    /\benergy\s*drink\b/i,
+                    /\brefill\s*energy\b/i,
+                    /consumed.*?energy/i,
+                    /drank.*?energy/i,
+                    /used.*?energy.*?(can|drink|refill)/i,
+                    /gained.*?energy/i
                 ],
                 completed: false
             },
@@ -39,13 +45,19 @@
                 icon: '🧠',
                 color: '#45B7D1',
                 description: 'Daily nerve refill',
-                detectFromLogs: true, // Changed to use log detection
+                detectFromLogs: true,
                 logPatterns: [
                     /nerve.*?(refill|pill)/i,
                     /(refill|pill).*?nerve/i,
                     /you.*?(used|consumed|took).*?nerve/i,
                     /nerve.*?(used|consumed|active)/i,
-                    /\bnerve\s*(refill|pill)\b/i
+                    /\bnerve\s*(refill|pill)\b/i,
+                    /\bnerve\s*pill\b/i,
+                    /\brefill\s*nerve\b/i,
+                    /consumed.*?nerve/i,
+                    /took.*?nerve/i,
+                    /used.*?nerve.*?(pill|refill)/i,
+                    /gained.*?nerve/i
                 ],
                 completed: false
             },
@@ -54,7 +66,7 @@
                 icon: '💊',
                 color: '#E74C3C', 
                 description: 'Daily Xanax dose (up to 3)',
-                detectFromLogs: true, // Already using log detection
+                detectFromLogs: true,
                 logPatterns: [
                     /xanax.*?(used|took|consumed|taken)/i,
                     /(used|took|consumed|taken).*?xanax/i,
@@ -88,6 +100,11 @@
             try {
                 await this.loadTodoLists();
                 await this.loadDailyTasks();
+                
+                // ALWAYS check for reset on initialization - this handles reconnection scenarios
+                console.log("📋 Checking for daily reset on initialization...");
+                this.checkForDailyReset();
+                
                 this.startDailyResetTimer();
                 this.startApiCheckInterval();
                 this.isInitialized = true;
@@ -120,21 +137,46 @@
                 const saved = await window.SidekickModules.Core.ChromeStorage.get('sidekick_dailytasks');
                 const lastReset = await window.SidekickModules.Core.ChromeStorage.get('sidekick_dailytasks_reset');
                 
+                console.log("📋 Loading daily tasks...");
+                console.log("📋 Saved data:", saved);
+                console.log("📋 Last reset:", lastReset);
+                
+                const now = new Date();
+                console.log("📋 Current time:", now.toISOString());
+                
                 if (saved && lastReset) {
-                    const now = new Date();
                     const lastResetDate = new Date(lastReset);
+                    
+                    // Calculate today's UTC date (00:00:00)
                     const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+                    
+                    // Calculate last reset's UTC date (00:00:00)
                     const lastResetUTC = new Date(Date.UTC(lastResetDate.getUTCFullYear(), lastResetDate.getUTCMonth(), lastResetDate.getUTCDate()));
                     
+                    console.log("📋 Today UTC midnight:", todayUTC.toISOString());
+                    console.log("📋 Last reset UTC midnight:", lastResetUTC.toISOString());
+                    console.log("📋 Same day?", todayUTC.getTime() === lastResetUTC.getTime());
+                    
                     if (todayUTC.getTime() !== lastResetUTC.getTime()) {
-                        console.log("🔄 Daily reset needed - clearing daily tasks");
-                        this.resetDailyTasks();
-                    } else {
+                        console.log("🔄 Daily reset needed - clearing daily tasks (different day detected)");
+                        console.log("🔄 Time difference:", (todayUTC.getTime() - lastResetUTC.getTime()) / (1000 * 60 * 60), "hours");
+                        
+                        // Don't call resetDailyTasks() here, just initialize defaults
+                        // The actual reset will happen in checkForDailyReset()
+                        this.lastResetDate = lastResetUTC; // Keep the old date for comparison
+                        
+                        // Load saved data but mark that reset is needed
                         Object.assign(this.dailyTasks, saved);
-                        console.log("✅ Loaded daily tasks from Chrome storage");
+                        console.log("📋 Loaded daily tasks (reset pending):", this.dailyTasks);
+                    } else {
+                        // Same day - load saved data
+                        Object.assign(this.dailyTasks, saved);
+                        this.lastResetDate = lastResetDate;
+                        console.log("✅ Loaded daily tasks from Chrome storage (same day):", this.dailyTasks);
                     }
                 } else {
                     console.log("📭 No saved daily tasks found, using defaults");
+                    this.lastResetDate = null; // This will trigger a reset check
                 }
             } catch (error) {
                 console.error('Failed to load daily tasks from Chrome storage:', error);
@@ -207,19 +249,45 @@
             const now = new Date();
             const currentUTCDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
             
+            console.log("🔄 Checking for daily reset...");
+            console.log("🔄 Current time:", now.toISOString());
+            console.log("🔄 Current UTC date:", currentUTCDate.toISOString());
+            console.log("🔄 Last reset date:", this.lastResetDate ? new Date(this.lastResetDate).toISOString() : 'null');
+            
             if (this.lastResetDate) {
                 const lastReset = new Date(this.lastResetDate);
                 const lastResetUTCDate = new Date(Date.UTC(lastReset.getUTCFullYear(), lastReset.getUTCMonth(), lastReset.getUTCDate()));
                 
+                console.log("🔄 Last reset UTC date:", lastResetUTCDate.toISOString());
+                console.log("🔄 Time comparison:", {
+                    currentUTCTime: currentUTCDate.getTime(),
+                    lastResetUTCTime: lastResetUTCDate.getTime(),
+                    difference: currentUTCDate.getTime() - lastResetUTCDate.getTime(),
+                    differenceHours: (currentUTCDate.getTime() - lastResetUTCDate.getTime()) / (1000 * 60 * 60)
+                });
+                
                 // Compare UTC dates - if current UTC date is different from last reset UTC date, we need to reset
                 if (currentUTCDate.getTime() !== lastResetUTCDate.getTime()) {
                     console.log('🔄 UTC midnight passed - resetting daily tasks');
-                    console.log(`Last reset: ${lastResetUTCDate.toISOString()}`);
-                    console.log(`Current UTC: ${currentUTCDate.toISOString()}`);
+                    console.log(`🔄 Last reset: ${lastResetUTCDate.toISOString()}`);
+                    console.log(`🔄 Current UTC: ${currentUTCDate.toISOString()}`);
+                    console.log(`🔄 Hours since last reset: ${(currentUTCDate.getTime() - lastResetUTCDate.getTime()) / (1000 * 60 * 60)}`);
+                    
                     this.resetDailyTasks();
+                    
+                    // Show notification to user
+                    if (window.SidekickModules?.UI?.showNotification) {
+                        window.SidekickModules.UI.showNotification(
+                            'INFO',
+                            'Daily tasks have been reset for the new day!'
+                        );
+                    }
+                } else {
+                    console.log('✅ No daily reset needed - same UTC day');
                 }
             } else {
                 // First time - set the reset date to current UTC date
+                console.log('⏰ First time setup - setting initial daily reset date');
                 this.lastResetDate = currentUTCDate;
                 this.saveDailyTasks();
                 console.log('⏰ Initial daily reset date set:', currentUTCDate.toISOString());
@@ -1751,7 +1819,31 @@
                 const lastResetUTCDate = new Date(Date.UTC(lastReset.getUTCFullYear(), lastReset.getUTCMonth(), lastReset.getUTCDate()));
                 console.log('🐛 Last reset UTC date:', lastResetUTCDate.toISOString());
                 console.log('🐛 Need reset?', currentUTCDate.getTime() !== lastResetUTCDate.getTime());
+                console.log('🐛 Hours difference:', (currentUTCDate.getTime() - lastResetUTCDate.getTime()) / (1000 * 60 * 60));
             }
+        },
+        
+        // Manual refresh function for testing and debugging
+        manualRefresh() {
+            console.log('🔄 Manual refresh triggered');
+            
+            // Force check for daily reset
+            this.checkForDailyReset();
+            
+            // Force API check
+            this.checkApiForCompletedTasks();
+            
+            // Refresh all todo lists
+            this.renderAllTodoLists();
+            
+            console.log('✅ Manual refresh complete');
+        },
+        
+        // Force reset daily tasks (for testing)
+        forceResetDailyTasks() {
+            console.log('🔄 Force reset daily tasks triggered');
+            this.resetDailyTasks();
+            console.log('✅ Daily tasks force reset complete');
         }
     };
 
@@ -1762,6 +1854,35 @@
 
     // Export Todo List module to global namespace
     window.SidekickModules.TodoList = TodoListModule;
+    
+    // Add global debugging functions for easy console access
+    window.debugTodoList = function() {
+        if (window.SidekickModules?.TodoList) {
+            window.SidekickModules.TodoList.debugResetState();
+        } else {
+            console.error("❌ Todo List module not available");
+        }
+    };
+    
+    window.refreshTodoList = function() {
+        if (window.SidekickModules?.TodoList) {
+            window.SidekickModules.TodoList.manualRefresh();
+        } else {
+            console.error("❌ Todo List module not available");
+        }
+    };
+    
+    window.forceResetTodoList = function() {
+        if (window.SidekickModules?.TodoList) {
+            if (confirm('Are you sure you want to force reset all daily tasks?')) {
+                window.SidekickModules.TodoList.forceResetDailyTasks();
+            }
+        } else {
+            console.error("❌ Todo List module not available");
+        }
+    };
+    
     console.log("✅ Todo List Module loaded and ready");
+    console.log("🔧 Debug functions available: debugTodoList(), refreshTodoList(), forceResetTodoList()");
 
 })();
