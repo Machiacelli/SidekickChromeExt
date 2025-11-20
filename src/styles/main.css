@@ -30,7 +30,6 @@
 /* Sidekick Notification Styles */
 .sidekick-notification {
     position: fixed !important;
-    top: 20px !important;
     right: 20px !important;
     z-index: 999999 !important;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
@@ -40,11 +39,37 @@
     transition: all 0.3s ease !important;
     max-width: 350px !important;
     word-wrap: break-word !important;
+    pointer-events: auto !important;
 }
 
 .sidekick-notification:hover {
     transform: translateY(-2px) !important;
     box-shadow: 0 6px 16px rgba(0,0,0,0.4) !important;
+}
+
+/* Notification type styles */
+.sidekick-notification.info {
+    background: #2196F3 !important;
+    color: white !important;
+    border-left: 4px solid #1976D2 !important;
+}
+
+.sidekick-notification.success {
+    background: #4CAF50 !important;
+    color: white !important;
+    border-left: 4px solid #388E3C !important;
+}
+
+.sidekick-notification.warning {
+    background: #FF9800 !important;
+    color: white !important;
+    border-left: 4px solid #F57C00 !important;
+}
+
+.sidekick-notification.error {
+    background: #F44336 !important;
+    color: white !important;
+    border-left: 4px solid #D32F2F !important;
 }
 
 /* Sidebar Base Styles - Original Design */

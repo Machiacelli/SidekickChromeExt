@@ -28,36 +28,111 @@
 
     // === NOTIFICATION SYSTEM ===
     const NotificationSystem = {
+        notifications: [], // Track active notifications
+        
         show(title, message, type = 'info', duration = 4000) {
             const notification = document.createElement('div');
             notification.className = `sidekick-notification ${type}`;
+            
+            // Create unique ID for this notification
+            const notificationId = Date.now() + Math.random();
+            notification.dataset.notificationId = notificationId;
             
             notification.innerHTML = `
                 <div style="font-weight: bold; margin-bottom: 4px;">${title}</div>
                 <div style="font-size: 13px; opacity: 0.9;">${message}</div>
             `;
             
+            // Add notification styles based on type
+            const typeStyles = {
+                'info': 'background: #2196F3; color: white; padding: 16px; animation: slideInRight 0.3s ease;',
+                'success': 'background: #4CAF50; color: white; padding: 16px; animation: slideInRight 0.3s ease;',
+                'warning': 'background: #FF9800; color: white; padding: 16px; animation: slideInRight 0.3s ease;',
+                'error': 'background: #F44336; color: white; padding: 16px; animation: slideInRight 0.3s ease;'
+            };
+            
+            notification.style.cssText += typeStyles[type] || typeStyles['info'];
+            
+            // Calculate position based on existing notifications
+            const position = this.calculatePosition();
+            notification.style.top = position + 'px';
+            
+            // Add to notifications array and DOM
+            this.notifications.push({
+                id: notificationId,
+                element: notification,
+                position: position
+            });
+            
             document.body.appendChild(notification);
             
-            // Auto remove
+            // Auto remove with repositioning
             setTimeout(() => {
-                notification.style.animation = 'slideOutRight 0.3s ease';
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 300);
+                this.removeNotification(notificationId);
             }, duration);
+        },
+        
+        calculatePosition() {
+            let baseTop = 20;
+            let currentTop = baseTop;
+            
+            // Calculate position based on existing notifications
+            this.notifications.forEach(notification => {
+                if (notification.element && notification.element.parentNode) {
+                    currentTop = Math.max(currentTop, notification.position + notification.element.offsetHeight + 10);
+                }
+            });
+            
+            return currentTop;
+        },
+        
+        removeNotification(notificationId) {
+            const notificationIndex = this.notifications.findIndex(n => n.id === notificationId);
+            if (notificationIndex === -1) return;
+            
+            const notification = this.notifications[notificationIndex];
+            
+            // Animate out
+            if (notification.element && notification.element.parentNode) {
+                notification.element.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => {
+                    if (notification.element && notification.element.parentNode) {
+                        notification.element.parentNode.removeChild(notification.element);
+                    }
+                    
+                    // Remove from array
+                    this.notifications.splice(notificationIndex, 1);
+                    
+                    // Reposition remaining notifications
+                    this.repositionNotifications();
+                }, 300);
+            } else {
+                // Remove from array if element is already gone
+                this.notifications.splice(notificationIndex, 1);
+            }
+        },
+        
+        repositionNotifications() {
+            let currentTop = 20;
+            
+            this.notifications.forEach((notification, index) => {
+                if (notification.element && notification.element.parentNode) {
+                    notification.position = currentTop;
+                    notification.element.style.transition = 'top 0.3s ease';
+                    notification.element.style.top = currentTop + 'px';
+                    currentTop += notification.element.offsetHeight + 10;
+                }
+            });
         },
 
         // Clear all existing notifications
         clearAll() {
-            const notifications = document.querySelectorAll('.sidekick-notification');
-            notifications.forEach(notification => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
+            this.notifications.forEach(notification => {
+                if (notification.element && notification.element.parentNode) {
+                    notification.element.parentNode.removeChild(notification.element);
                 }
             });
+            this.notifications = [];
         }
     };
     // === CHROME STORAGE WRAPPER ===
