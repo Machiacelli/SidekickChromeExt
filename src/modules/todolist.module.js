@@ -80,8 +80,8 @@
                 ],
                 maxCount: 3,
                 currentCount: 0,
-                completed: false,
-                baseline: 0 // Track starting value for cumulative fields
+                completed: false
+                // NO apiField or baseline - this uses log detection only
             }
         },
 
@@ -819,6 +819,12 @@
                     continue;
                 }
                 
+                // Skip API-based tracking for tasks using log detection
+                if (task.detectFromLogs) {
+                    console.log(`🔍 Skipping API tracking for ${task.name} - uses log detection`);
+                    continue;
+                }
+                
                 // Legacy handling for tasks not using log detection (kept for backward compatibility)
                 let apiValue = undefined;
                 let usedField = task.apiField;
@@ -1003,7 +1009,9 @@
         getLogCodesForItem(itemName) {
             const logCodes = {
                 'Xanax Dose': [
-                    2290, 2291, 2292, // Known xanax usage codes
+                    // Drug usage codes - to be discovered through testing
+                    // Xanax is a DRUG that gives energy, not a medical item
+                    // Focus on text patterns instead of specific codes for now
                 ],
                 'Energy Refill': [
                     // Add energy refill codes as discovered
