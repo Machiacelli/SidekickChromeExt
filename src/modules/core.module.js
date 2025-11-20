@@ -29,6 +29,7 @@
     // === NOTIFICATION SYSTEM ===
     const NotificationSystem = {
         notifications: [], // Track active notifications
+        baseTop: 20, // Fixed top position for new notifications
         
         show(title, message, type = 'info', duration = 4000) {
             const notification = document.createElement('div');
@@ -53,18 +54,29 @@
             
             notification.style.cssText += typeStyles[type] || typeStyles['info'];
             
-            // Calculate position based on existing notifications
-            const position = this.calculatePosition();
-            notification.style.top = position + 'px';
+            // New notifications always appear at the top position
+            notification.style.top = this.baseTop + 'px';
             
-            // Add to notifications array and DOM
-            this.notifications.push({
-                id: notificationId,
-                element: notification,
-                position: position
+            // Set z-index to be higher than existing notifications (newest on top)
+            notification.style.zIndex = 999999 + this.notifications.length;
+            
+            // Add click to dismiss functionality
+            notification.addEventListener('click', () => {
+                this.removeNotification(notificationId);
             });
             
+            // Add to DOM first to get proper dimensions
             document.body.appendChild(notification);
+            
+            // Push down existing notifications BEFORE adding new one to array
+            this.pushDownExistingNotifications(notification.offsetHeight + 10);
+            
+            // Add new notification to the beginning of array (top position)
+            this.notifications.unshift({
+                id: notificationId,
+                element: notification,
+                position: this.baseTop
+            });
             
             // Auto remove with repositioning
             setTimeout(() => {
@@ -72,18 +84,18 @@
             }, duration);
         },
         
-        calculatePosition() {
-            let baseTop = 20;
-            let currentTop = baseTop;
-            
-            // Calculate position based on existing notifications
+        pushDownExistingNotifications(newNotificationSpace) {
+            // Move all existing notifications down by the new notification's space
             this.notifications.forEach(notification => {
                 if (notification.element && notification.element.parentNode) {
-                    currentTop = Math.max(currentTop, notification.position + notification.element.offsetHeight + 10);
+                    const currentTop = parseInt(notification.element.style.top) || notification.position;
+                    const newTop = currentTop + newNotificationSpace;
+                    
+                    notification.position = newTop;
+                    notification.element.style.transition = 'top 0.3s ease';
+                    notification.element.style.top = newTop + 'px';
                 }
             });
-            
-            return currentTop;
         },
         
         removeNotification(notificationId) {
@@ -103,7 +115,7 @@
                     // Remove from array
                     this.notifications.splice(notificationIndex, 1);
                     
-                    // Reposition remaining notifications
+                    // Reposition remaining notifications to fill the gap
                     this.repositionNotifications();
                 }, 300);
             } else {
@@ -113,7 +125,8 @@
         },
         
         repositionNotifications() {
-            let currentTop = 20;
+            // Reposition all notifications from top to bottom with proper spacing
+            let currentTop = this.baseTop;
             
             this.notifications.forEach((notification, index) => {
                 if (notification.element && notification.element.parentNode) {

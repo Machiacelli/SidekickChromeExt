@@ -27,6 +27,17 @@
     }
 }
 
+@keyframes slideDown {
+    from {
+        transform: translateY(-10px);
+        opacity: 0.8;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
 /* Sidekick Notification Styles */
 .sidekick-notification {
     position: fixed !important;
@@ -40,11 +51,17 @@
     max-width: 350px !important;
     word-wrap: break-word !important;
     pointer-events: auto !important;
+    user-select: none !important;
 }
 
 .sidekick-notification:hover {
-    transform: translateY(-2px) !important;
+    transform: translateY(-2px) translateX(-5px) !important;
     box-shadow: 0 6px 16px rgba(0,0,0,0.4) !important;
+}
+
+.sidekick-notification:active {
+    transform: translateY(0) translateX(-2px) !important;
+    transition: all 0.1s ease !important;
 }
 
 /* Notification type styles */
