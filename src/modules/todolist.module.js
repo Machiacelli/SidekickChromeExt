@@ -549,8 +549,11 @@
         checkRefillAvailability(barsData, cooldownsData) {
             console.log('🔍 Checking refill availability...');
             
-            if (!barsData || !cooldownsData) {
-                console.log('⚠️ Missing bars or cooldowns data for refill availability check');
+            // Note: Energy and nerve refills are DAILY POINT PURCHASES (30 points each)
+            // that reset at midnight UTC regardless of current levels or cooldowns
+            
+            if (!barsData) {
+                console.log('⚠️ Missing bars data for refill availability check');
                 return false;
             }
             
@@ -559,11 +562,11 @@
             // Check Energy Refill availability
             const energyTask = this.dailyTasks.energyRefill;
             if (energyTask && energyTask.completed) {
-                const canUseEnergyRefill = this.canUseEnergyRefill(barsData, cooldownsData);
-                console.log(`⚡ Energy refill check: completed=${energyTask.completed}, canUse=${canUseEnergyRefill}`);
+                const canPurchaseEnergyRefill = this.canPurchaseEnergyRefill(barsData);
+                console.log(`⚡ Energy refill check: completed=${energyTask.completed}, canPurchase=${canPurchaseEnergyRefill}`);
                 
-                if (canUseEnergyRefill) {
-                    console.log('⚡ Energy refill is marked completed but is available - resetting to incomplete');
+                if (canPurchaseEnergyRefill) {
+                    console.log('⚡ Energy refill is marked completed but can still be purchased - resetting to incomplete');
                     energyTask.completed = false;
                     hasAvailabilityChanges = true;
                     
@@ -571,7 +574,7 @@
                     if (window.SidekickModules?.UI?.showNotification) {
                         window.SidekickModules.UI.showNotification(
                             'INFO',
-                            'Energy refill reset - it is still available!'
+                            'Energy refill reset - daily purchase still available!'
                         );
                     }
                 }
@@ -580,11 +583,11 @@
             // Check Nerve Refill availability
             const nerveTask = this.dailyTasks.nerveRefill;
             if (nerveTask && nerveTask.completed) {
-                const canUseNerveRefill = this.canUseNerveRefill(barsData, cooldownsData);
-                console.log(`🧠 Nerve refill check: completed=${nerveTask.completed}, canUse=${canUseNerveRefill}`);
+                const canPurchaseNerveRefill = this.canPurchaseNerveRefill(barsData);
+                console.log(`🧠 Nerve refill check: completed=${nerveTask.completed}, canPurchase=${canPurchaseNerveRefill}`);
                 
-                if (canUseNerveRefill) {
-                    console.log('🧠 Nerve refill is marked completed but is available - resetting to incomplete');
+                if (canPurchaseNerveRefill) {
+                    console.log('🧠 Nerve refill is marked completed but can still be purchased - resetting to incomplete');
                     nerveTask.completed = false;
                     hasAvailabilityChanges = true;
                     
@@ -592,7 +595,7 @@
                     if (window.SidekickModules?.UI?.showNotification) {
                         window.SidekickModules.UI.showNotification(
                             'INFO',
-                            'Nerve refill reset - it is still available!'
+                            'Nerve refill reset - daily purchase still available!'
                         );
                     }
                 }
@@ -609,65 +612,85 @@
             return false;
         },
 
-        // Check if energy refill can be used
-        canUseEnergyRefill(barsData, cooldownsData) {
+        // Check if energy refill can be purchased (daily 30-point purchase)
+        canPurchaseEnergyRefill(barsData) {
             try {
-                // Check if there's an active energy cooldown (means refill was used recently)
-                if (cooldownsData?.drug) {
-                    console.log('⚡ Energy cooldown active:', cooldownsData.drug);
-                    return false; // Can't use refill if there's a drug cooldown
+                console.log('⚡ DEBUG: Full barsData structure:', JSON.stringify(barsData, null, 2));
+                
+                // Energy refill is a daily purchase with points (30 points)
+                // It's available once per day regardless of current energy level or cooldowns
+                // We need to check if the purchase has been made today
+                
+                // The only way to know if it's been purchased is through the refill counter
+                // If the bars data includes refill information, use that
+                if (barsData?.refill) {
+                    const energyRefillsUsed = barsData.refill.energy || 0;
+                    console.log(`⚡ Energy refills used today: ${energyRefillsUsed}/1`);
+                    
+                    // Can purchase if we haven't used our daily refill yet
+                    return energyRefillsUsed < 1;
                 }
                 
-                // Check current energy level vs maximum
-                if (barsData?.energy) {
-                    const currentEnergy = barsData.energy.current || 0;
-                    const maxEnergy = barsData.energy.maximum || 100;
-                    const energyPercentage = (currentEnergy / maxEnergy) * 100;
-                    
-                    console.log(`⚡ Energy status: ${currentEnergy}/${maxEnergy} (${energyPercentage.toFixed(1)}%)`);
-                    
-                    // If energy is below 95%, refill would be useful and likely available
-                    // (assuming you haven't used your daily refill yet)
-                    return energyPercentage < 95;
+                // Check for other possible refill indicators in the API data
+                if (barsData?.energy?.refill_used !== undefined) {
+                    console.log(`⚡ Alternative: energy.refill_used = ${barsData.energy.refill_used}`);
+                    return !barsData.energy.refill_used;
                 }
                 
-                console.log('⚡ Unable to determine energy status');
-                return true; // Default to available if we can't determine
+                // If we don't have refill data, we need to rely on other methods
+                // Check if there's any indication in the bars data about available refills
+                console.log('⚡ No refill counter data available - checking other indicators');
+                console.log('⚡ Available energy properties:', Object.keys(barsData?.energy || {}));
+                
+                // For now, since we can't definitively determine, let the reset system handle it
+                // The daily reset should clear these tasks at midnight UTC
+                console.log('⚡ Cannot determine purchase status - relying on daily reset system');
+                return false; // Don't override completed state if we can't determine
                 
             } catch (error) {
-                console.error('⚡ Error checking energy refill availability:', error);
-                return true; // Default to available on error
+                console.error('⚡ Error checking energy refill purchase availability:', error);
+                return false; // Don't override on error
             }
         },
 
-        // Check if nerve refill can be used
-        canUseNerveRefill(barsData, cooldownsData) {
+        // Check if nerve refill can be purchased (daily 30-point purchase)
+        canPurchaseNerveRefill(barsData) {
             try {
-                // Check if there's an active nerve cooldown (means refill was used recently)
-                if (cooldownsData?.drug) {
-                    console.log('🧠 Nerve cooldown active:', cooldownsData.drug);
-                    return false; // Can't use refill if there's a drug cooldown
+                console.log('🧠 DEBUG: Full barsData structure:', JSON.stringify(barsData, null, 2));
+                
+                // Nerve refill is a daily purchase with points (30 points)
+                // It's available once per day regardless of current nerve level or cooldowns
+                // We need to check if the purchase has been made today
+                
+                // The only way to know if it's been purchased is through the refill counter
+                // If the bars data includes refill information, use that
+                if (barsData?.refill) {
+                    const nerveRefillsUsed = barsData.refill.nerve || 0;
+                    console.log(`🧠 Nerve refills used today: ${nerveRefillsUsed}/1`);
+                    
+                    // Can purchase if we haven't used our daily refill yet
+                    return nerveRefillsUsed < 1;
                 }
                 
-                // Check current nerve level vs maximum
-                if (barsData?.nerve) {
-                    const currentNerve = barsData.nerve.current || 0;
-                    const maxNerve = barsData.nerve.maximum || 100;
-                    const nervePercentage = (currentNerve / maxNerve) * 100;
-                    
-                    console.log(`🧠 Nerve status: ${currentNerve}/${maxNerve} (${nervePercentage.toFixed(1)}%)`);
-                    
-                    // If nerve is below 95%, refill would be useful and likely available
-                    // (assuming you haven't used your daily refill yet)
-                    return nervePercentage < 95;
+                // Check for other possible refill indicators in the API data
+                if (barsData?.nerve?.refill_used !== undefined) {
+                    console.log(`🧠 Alternative: nerve.refill_used = ${barsData.nerve.refill_used}`);
+                    return !barsData.nerve.refill_used;
                 }
                 
-                console.log('🧠 Unable to determine nerve status');
-                return true; // Default to available if we can't determine
+                // If we don't have refill data, we need to rely on other methods
+                // Check if there's any indication in the bars data about available refills
+                console.log('🧠 No refill counter data available - checking other indicators');
+                console.log('🧠 Available nerve properties:', Object.keys(barsData?.nerve || {}));
+                
+                // For now, since we can't definitively determine, let the reset system handle it
+                // The daily reset should clear these tasks at midnight UTC
+                console.log('🧠 Cannot determine purchase status - relying on daily reset system');
+                return false; // Don't override completed state if we can't determine
                 
             } catch (error) {
-                console.error('🧠 Error checking nerve refill availability:', error);
-                return true; // Default to available on error
+                console.error('🧠 Error checking nerve refill purchase availability:', error);
+                return false; // Don't override on error
             }
         },
 
@@ -708,7 +731,7 @@
             });
             
             // First, check for actual refill availability to override completed state if needed
-            this.checkRefillAvailability(barsData, cooldownsData);
+            this.checkRefillAvailability(barsData);
             
             // Get today's UTC start time for log filtering
             const todayUTCStart = new Date();
@@ -2058,7 +2081,41 @@
         }
     };
     
+    window.forceResetRefills = function() {
+        if (window.SidekickModules?.TodoList) {
+            console.log('🔄 Force resetting refill tasks...');
+            const todoList = window.SidekickModules.TodoList;
+            
+            // Reset energy and nerve refill tasks
+            if (todoList.dailyTasks.energyRefill) {
+                todoList.dailyTasks.energyRefill.completed = false;
+                console.log('⚡ Energy refill reset to incomplete');
+            }
+            
+            if (todoList.dailyTasks.nerveRefill) {
+                todoList.dailyTasks.nerveRefill.completed = false;
+                console.log('🧠 Nerve refill reset to incomplete');
+            }
+            
+            // Save and render
+            todoList.saveDailyTasks();
+            todoList.renderAllTodoLists();
+            
+            console.log('✅ Refill tasks force reset complete');
+            
+            // Show notification
+            if (window.SidekickModules?.UI?.showNotification) {
+                window.SidekickModules.UI.showNotification(
+                    'SUCCESS',
+                    'Refill tasks manually reset to incomplete'
+                );
+            }
+        } else {
+            console.error("❌ Todo List module not available");
+        }
+    };
+    
     console.log("✅ Todo List Module loaded and ready");
-    console.log("🔧 Debug functions available: debugTodoList(), refreshTodoList(), forceResetTodoList(), checkRefillAvailability()");
+    console.log("🔧 Debug functions available: debugTodoList(), refreshTodoList(), forceResetTodoList(), checkRefillAvailability(), forceResetRefills()");
 
 })();
