@@ -2218,7 +2218,18 @@
         }
     };
     
+    // Global debug function for xanax tracking troubleshooting
+    window.debugXanaxLogs = function() {
+        if (window.SidekickModules?.TodoList) {
+            const todoModule = window.SidekickModules.TodoList;
+            console.log('🔍 Calling debugXanaxLogs...');
+            todoModule.debugXanaxLogs();
+        } else {
+            console.error("❌ Todo List module not available for debugXanaxLogs");
+        }
+    };
+
     console.log("✅ Todo List Module loaded and ready");
-    console.log("🔧 Debug functions available: debugTodoList(), refreshTodoList(), forceResetTodoList(), checkRefillAvailability(), forceResetRefills()");
+    console.log("🔧 Debug functions available: debugTodoList(), refreshTodoList(), forceResetTodoList(), checkRefillAvailability(), forceResetRefills(), debugXanaxLogs()");
 
 })();
