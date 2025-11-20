@@ -124,7 +124,9 @@ async function handleTornApiCall(request) {
         const results = {
             success: true,
             personalstats: null,
-            logs: null
+            logs: null,
+            bars: null,
+            cooldowns: null
         };
         
         // Fetch personal stats if requested
@@ -186,6 +188,38 @@ async function handleTornApiCall(request) {
             } catch (error) {
                 console.warn('⚠️ Background: Cooldown fetch failed (non-fatal):', error);
                 // Continue without cooldowns
+            }
+        }
+
+        // Fetch bars if requested
+        if (selections.includes('bars')) {
+            console.log('📊 Background: Fetching bars...');
+            try {
+                const barsResponse = await fetch(`https://api.torn.com/user?selections=bars&key=${apiKey}`, {
+                    method: 'GET',
+                    headers: {
+                        'User-Agent': 'Sidekick Chrome Extension Background'
+                    }
+                });
+                
+                if (!barsResponse.ok) {
+                    console.warn('⚠️ Background: Bars fetch failed:', barsResponse.status);
+                    // Don't throw here, bars are optional
+                } else {
+                    const barsData = await barsResponse.json();
+                    
+                    if (barsData.error) {
+                        console.warn('⚠️ Background: Bars API error:', barsData.error);
+                        // Don't throw here, bars are optional
+                    } else {
+                        results.bars = barsData.bars;
+                        console.log('✅ Background: Bars retrieved successfully');
+                    }
+                }
+                
+            } catch (error) {
+                console.warn('⚠️ Background: Bars fetch failed (non-fatal):', error);
+                // Continue without bars
             }
         }
 

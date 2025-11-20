@@ -404,7 +404,12 @@
                         const backgroundResult = await this.makeApiCallViaBackground(apiKey);
                         if (backgroundResult.success) {
                             console.log('✅ Background API call successful');
-                            this.updateTasksFromApi(backgroundResult.personalstats, backgroundResult.logs);
+                            this.updateTasksFromApi(
+                                backgroundResult.personalstats, 
+                                backgroundResult.logs,
+                                backgroundResult.bars,
+                                backgroundResult.cooldowns
+                            );
                             this.apiCheckFailureCount = 0;
                             return;
                         }
@@ -428,7 +433,7 @@
                 chrome.runtime.sendMessage({
                     action: 'fetchTornApi',
                     apiKey: apiKey,
-                    selections: ['personalstats', 'log']
+                    selections: ['personalstats', 'log', 'bars', 'cooldowns']
                 }, (response) => {
                     if (chrome.runtime.lastError) {
                         reject(new Error(chrome.runtime.lastError.message));
@@ -469,6 +474,8 @@
             // Get user data with personalstats for daily tracking
             let personalStatsData = null;
             let logData = null;
+            let barsData = null;
+            let cooldownsData = null;
             
             try {
                 console.log('📊 Fetching personal stats...');
@@ -478,6 +485,26 @@
             } catch (error) {
                 console.error('❌ Failed to fetch personal stats:', error.message);
                 throw error; // Re-throw to be handled by main error handler
+            }
+            
+            try {
+                console.log('📊 Fetching bars data...');
+                const barsResponse = await fetchWithTimeout(`https://api.torn.com/user?selections=bars&key=${apiKey}`);
+                barsData = await barsResponse.json();
+                console.log('✅ Bars data received');
+            } catch (error) {
+                console.error('❌ Failed to fetch bars data:', error.message);
+                // Don't throw here, continue with other data
+            }
+            
+            try {
+                console.log('📊 Fetching cooldowns data...');
+                const cooldownsResponse = await fetchWithTimeout(`https://api.torn.com/user?selections=cooldowns&key=${apiKey}`);
+                cooldownsData = await cooldownsResponse.json();
+                console.log('✅ Cooldowns data received');
+            } catch (error) {
+                console.error('❌ Failed to fetch cooldowns data:', error.message);
+                // Don't throw here, continue with other data
             }
             
             try {
@@ -493,7 +520,12 @@
             // Process data if we got anything
             if (personalStatsData && !personalStatsData.error && personalStatsData.personalstats) {
                 console.log('📊 Processing personal stats data');
-                this.updateTasksFromApi(personalStatsData.personalstats, logData?.log);
+                this.updateTasksFromApi(
+                    personalStatsData.personalstats, 
+                    logData?.log, 
+                    barsData?.bars, 
+                    cooldownsData?.cooldowns
+                );
                 
                 // Reset failure count on successful API call
                 this.apiCheckFailureCount = 0;
@@ -510,6 +542,132 @@
                 throw new Error(`API Error ${personalStatsData.error.code}: ${personalStatsData.error.error}`);
             } else {
                 console.log('ℹ️ No valid personal stats data received - skipping update');
+            }
+        },
+
+        // Check if refills are actually available and override completed state if needed
+        checkRefillAvailability(barsData, cooldownsData) {
+            console.log('🔍 Checking refill availability...');
+            
+            if (!barsData || !cooldownsData) {
+                console.log('⚠️ Missing bars or cooldowns data for refill availability check');
+                return false;
+            }
+            
+            let hasAvailabilityChanges = false;
+            
+            // Check Energy Refill availability
+            const energyTask = this.dailyTasks.energyRefill;
+            if (energyTask && energyTask.completed) {
+                const canUseEnergyRefill = this.canUseEnergyRefill(barsData, cooldownsData);
+                console.log(`⚡ Energy refill check: completed=${energyTask.completed}, canUse=${canUseEnergyRefill}`);
+                
+                if (canUseEnergyRefill) {
+                    console.log('⚡ Energy refill is marked completed but is available - resetting to incomplete');
+                    energyTask.completed = false;
+                    hasAvailabilityChanges = true;
+                    
+                    // Show notification
+                    if (window.SidekickModules?.UI?.showNotification) {
+                        window.SidekickModules.UI.showNotification(
+                            'INFO',
+                            'Energy refill reset - it is still available!'
+                        );
+                    }
+                }
+            }
+            
+            // Check Nerve Refill availability
+            const nerveTask = this.dailyTasks.nerveRefill;
+            if (nerveTask && nerveTask.completed) {
+                const canUseNerveRefill = this.canUseNerveRefill(barsData, cooldownsData);
+                console.log(`🧠 Nerve refill check: completed=${nerveTask.completed}, canUse=${canUseNerveRefill}`);
+                
+                if (canUseNerveRefill) {
+                    console.log('🧠 Nerve refill is marked completed but is available - resetting to incomplete');
+                    nerveTask.completed = false;
+                    hasAvailabilityChanges = true;
+                    
+                    // Show notification
+                    if (window.SidekickModules?.UI?.showNotification) {
+                        window.SidekickModules.UI.showNotification(
+                            'INFO',
+                            'Nerve refill reset - it is still available!'
+                        );
+                    }
+                }
+            }
+            
+            if (hasAvailabilityChanges) {
+                console.log('✅ Refill availability check completed with updates');
+                this.saveDailyTasks();
+                this.renderAllTodoLists();
+                return true;
+            }
+            
+            console.log('✅ Refill availability check completed - no changes needed');
+            return false;
+        },
+
+        // Check if energy refill can be used
+        canUseEnergyRefill(barsData, cooldownsData) {
+            try {
+                // Check if there's an active energy cooldown (means refill was used recently)
+                if (cooldownsData?.drug) {
+                    console.log('⚡ Energy cooldown active:', cooldownsData.drug);
+                    return false; // Can't use refill if there's a drug cooldown
+                }
+                
+                // Check current energy level vs maximum
+                if (barsData?.energy) {
+                    const currentEnergy = barsData.energy.current || 0;
+                    const maxEnergy = barsData.energy.maximum || 100;
+                    const energyPercentage = (currentEnergy / maxEnergy) * 100;
+                    
+                    console.log(`⚡ Energy status: ${currentEnergy}/${maxEnergy} (${energyPercentage.toFixed(1)}%)`);
+                    
+                    // If energy is below 95%, refill would be useful and likely available
+                    // (assuming you haven't used your daily refill yet)
+                    return energyPercentage < 95;
+                }
+                
+                console.log('⚡ Unable to determine energy status');
+                return true; // Default to available if we can't determine
+                
+            } catch (error) {
+                console.error('⚡ Error checking energy refill availability:', error);
+                return true; // Default to available on error
+            }
+        },
+
+        // Check if nerve refill can be used
+        canUseNerveRefill(barsData, cooldownsData) {
+            try {
+                // Check if there's an active nerve cooldown (means refill was used recently)
+                if (cooldownsData?.drug) {
+                    console.log('🧠 Nerve cooldown active:', cooldownsData.drug);
+                    return false; // Can't use refill if there's a drug cooldown
+                }
+                
+                // Check current nerve level vs maximum
+                if (barsData?.nerve) {
+                    const currentNerve = barsData.nerve.current || 0;
+                    const maxNerve = barsData.nerve.maximum || 100;
+                    const nervePercentage = (currentNerve / maxNerve) * 100;
+                    
+                    console.log(`🧠 Nerve status: ${currentNerve}/${maxNerve} (${nervePercentage.toFixed(1)}%)`);
+                    
+                    // If nerve is below 95%, refill would be useful and likely available
+                    // (assuming you haven't used your daily refill yet)
+                    return nervePercentage < 95;
+                }
+                
+                console.log('🧠 Unable to determine nerve status');
+                return true; // Default to available if we can't determine
+                
+            } catch (error) {
+                console.error('🧠 Error checking nerve refill availability:', error);
+                return true; // Default to available on error
             }
         },
 
@@ -538,10 +696,19 @@
         },
 
         // Update daily task completion based on API data
-        updateTasksFromApi(personalstats, logData = null) {
+        updateTasksFromApi(personalstats, logData = null, barsData = null, cooldownsData = null) {
             let hasUpdates = false;
             
             console.log('📋 Updating tasks from API data...');
+            console.log('📋 Available data:', {
+                personalstats: !!personalstats,
+                logData: !!logData,
+                barsData: !!barsData,
+                cooldownsData: !!cooldownsData
+            });
+            
+            // First, check for actual refill availability to override completed state if needed
+            this.checkRefillAvailability(barsData, cooldownsData);
             
             // Get today's UTC start time for log filtering
             const todayUTCStart = new Date();
@@ -1882,7 +2049,16 @@
         }
     };
     
+    window.checkRefillAvailability = function() {
+        if (window.SidekickModules?.TodoList) {
+            console.log('🔍 Manually checking refill availability...');
+            window.SidekickModules.TodoList.checkApiForCompletedTasks();
+        } else {
+            console.error("❌ Todo List module not available");
+        }
+    };
+    
     console.log("✅ Todo List Module loaded and ready");
-    console.log("🔧 Debug functions available: debugTodoList(), refreshTodoList(), forceResetTodoList()");
+    console.log("🔧 Debug functions available: debugTodoList(), refreshTodoList(), forceResetTodoList(), checkRefillAvailability()");
 
 })();
