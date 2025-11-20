@@ -232,16 +232,16 @@
                 }
             }
             
-            // Travel timer - check if actually traveling
-            const travelTimer = document.querySelector('.time, [class*="travel-time"]');
-            if (travelTimer && travelTimer.textContent.trim()) {
-                const travelTime = travelTimer.textContent.trim();
-                if (travelTime.match(/\d+:\d+/) && 
-                    travelTime !== '00:00' && 
-                    travelTime !== '0:00' &&
-                    !travelTime.toLowerCase().includes('none') &&
-                    !travelTime.toLowerCase().includes('torn')) {
-                    return `Travel: ${travelTime}`;
+            // Travel timer - only on travel page with specific selector
+            if (window.location.href.includes('page.php?sid=travel')) {
+                const travelTimer = document.querySelector("#travel-root > div.flightProgressSection___fhrD5 > div.progressText___qJFfY > span > span:nth-child(2) > time");
+                if (travelTimer && travelTimer.textContent.trim()) {
+                    const travelTime = travelTimer.textContent.trim();
+                    if (travelTime.match(/\d+:\d+/) && 
+                        travelTime !== '00:00' && 
+                        travelTime !== '0:00') {
+                        return `Travel: ${travelTime}`;
+                    }
                 }
             }
 
