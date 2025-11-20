@@ -133,6 +133,46 @@
             });
         },
         
+        // Test background script communication
+        async testBackgroundConnection() {
+            console.log("💰 === Testing Background Script Communication ===");
+            
+            if (!chrome?.runtime?.sendMessage) {
+                console.error('💰 Chrome runtime not available');
+                return false;
+            }
+            
+            try {
+                console.log('💰 Testing simple ping to background script...');
+                
+                const response = await new Promise((resolve, reject) => {
+                    chrome.runtime.sendMessage({ action: 'ping' }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            reject(new Error(chrome.runtime.lastError.message));
+                        } else {
+                            resolve(response);
+                        }
+                    });
+                });
+                
+                console.log('💰 Background script ping response:', response);
+                
+                if (this.apiKey) {
+                    console.log('💰 Testing API call via background script...');
+                    const apiResponse = await this.makeApiCallViaBackground(this.apiKey, ['logs']);
+                    console.log('💰 API call response:', apiResponse);
+                    return true;
+                } else {
+                    console.log('💰 No API key available for testing');
+                    return false;
+                }
+                
+            } catch (error) {
+                console.error('💰 Background script test failed:', error);
+                return false;
+            }
+        },
+        
         // Search ALL logs for loan payments (no time restriction)
         searchAllLogsForPayments() {
             console.log("💰 === Searching ALL logs for loan payments ===");
@@ -489,52 +529,83 @@
                 // Try background script approach first (better for CORS issues)
                 if (chrome?.runtime?.sendMessage) {
                     try {
+                        console.log('💰 Attempting background script API call...');
                         const backgroundResult = await this.makeApiCallViaBackground(this.apiKey, ['logs']);
-                        if (backgroundResult.success && backgroundResult.logs) {
+                        console.log('💰 Background script result:', backgroundResult);
+                        
+                        if (backgroundResult && backgroundResult.success && backgroundResult.logs) {
                             console.log('✅ Background script logs API call successful');
                             this.processPaymentLogs(backgroundResult.logs);
                             return;
+                        } else {
+                            console.log('⚠️ Background script failed or returned no logs:', backgroundResult);
                         }
                     } catch (bgError) {
-                        console.log('⚠️ Background script logs API failed, trying direct fetch...');
+                        console.error('❌ Background script logs API failed:', bgError);
                     }
-                }
-                
-                // Fallback to direct fetch
-                const response = await fetch(`https://api.torn.com/user/?selections=log&key=${this.apiKey}`);
-                const data = await response.json();
-                
-                if (data.error) {
-                    console.error("💰 API Error:", data.error);
-                    return;
-                }
-                
-                if (data.log) {
-                    console.log('✅ Direct logs API call successful');
-                    this.processPaymentLogs(data.log);
                 } else {
-                    console.log("💰 No logs data received from API");
+                    console.log('⚠️ Chrome runtime not available for background script calls');
+                }
+                
+                // Since we're in a Chrome extension content script, direct fetch to Torn API will fail due to CORS
+                // The background script approach should be the primary method
+                console.log('💰 Background script approach failed, payment monitoring disabled until next check');
+                
+                // Show a user-friendly notification about the API issue
+                if (window.SidekickModules?.UI?.showNotification) {
+                    window.SidekickModules.UI.showNotification(
+                        'WARNING',
+                        'Payment monitoring temporarily unavailable - API connection issue'
+                    );
                 }
                 
             } catch (error) {
                 console.error("💰 Error checking payments:", error);
+                
+                // Show user-friendly error notification
+                if (window.SidekickModules?.UI?.showNotification) {
+                    window.SidekickModules.UI.showNotification(
+                        'ERROR',
+                        'Payment monitoring error - check console for details'
+                    );
+                }
             }
         },
         
         // Helper method to make API calls via background script
         async makeApiCallViaBackground(apiKey, selections) {
             return new Promise((resolve, reject) => {
-                chrome.runtime.sendMessage({
-                    action: 'fetchTornApi',
-                    apiKey: apiKey,
-                    selections: selections
-                }, (response) => {
-                    if (chrome.runtime.lastError) {
-                        reject(new Error(chrome.runtime.lastError.message));
-                    } else {
-                        resolve(response);
-                    }
-                });
+                // Add timeout to prevent hanging
+                const timeout = setTimeout(() => {
+                    reject(new Error('Background script API call timeout (30s)'));
+                }, 30000);
+                
+                try {
+                    console.log('💰 Sending message to background script:', { action: 'fetchTornApi', selections });
+                    
+                    chrome.runtime.sendMessage({
+                        action: 'fetchTornApi',
+                        apiKey: apiKey,
+                        selections: selections
+                    }, (response) => {
+                        clearTimeout(timeout);
+                        
+                        if (chrome.runtime.lastError) {
+                            console.error('💰 Chrome runtime error:', chrome.runtime.lastError);
+                            reject(new Error(chrome.runtime.lastError.message));
+                        } else if (!response) {
+                            console.error('💰 No response from background script');
+                            reject(new Error('No response from background script'));
+                        } else {
+                            console.log('💰 Background script response received:', response);
+                            resolve(response);
+                        }
+                    });
+                } catch (error) {
+                    clearTimeout(timeout);
+                    console.error('💰 Error sending message to background script:', error);
+                    reject(error);
+                }
             });
         },
 
@@ -2445,6 +2516,14 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
     window.checkDebtPayments = function() {
         if (window.SidekickModules?.Debt) {
             return window.SidekickModules.Debt.checkForPayments();
+        } else {
+            console.error("❌ Debt module not available");
+        }
+    };
+
+    window.testBackgroundConnection = function() {
+        if (window.SidekickModules?.Debt) {
+            return window.SidekickModules.Debt.testBackgroundConnection();
         } else {
             console.error("❌ Debt module not available");
         }

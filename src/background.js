@@ -42,6 +42,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('📨 Background received message:', request);
     
     switch (request.action) {
+        case 'ping':
+            // Simple ping test for debugging
+            sendResponse({ success: true, message: 'Background script is alive', timestamp: Date.now() });
+            break;
+            
         case 'fetchTornApi':
             // Handle Torn API calls from content scripts (avoids CORS)
             handleTornApiCall(request)
