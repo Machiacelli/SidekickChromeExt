@@ -114,11 +114,15 @@ async function handleTornApiCall(request) {
     try {
         console.log('🔍 Background: Making Torn API call:', request.selections);
         
-        const { apiKey, selections } = request;
+        const { apiKey, selections, userId } = request;
         
         if (!apiKey) {
             throw new Error('No API key provided');
         }
+        
+        // Determine the API endpoint based on whether userId is provided
+        const endpoint = userId ? `user/${userId}` : 'user';
+        console.log(`🔍 Background: Using endpoint: ${endpoint}`);
         
         // Prepare results object
         const results = {
@@ -133,7 +137,7 @@ async function handleTornApiCall(request) {
         if (selections.includes('personalstats')) {
             console.log('📊 Background: Fetching personal stats...');
             try {
-                const statsResponse = await fetch(`https://api.torn.com/user?selections=personalstats&key=${apiKey}`, {
+                const statsResponse = await fetch(`https://api.torn.com/${endpoint}?selections=personalstats&key=${apiKey}`, {
                     method: 'GET',
                     headers: {
                         'User-Agent': 'Sidekick Chrome Extension Background'
@@ -163,7 +167,7 @@ async function handleTornApiCall(request) {
         if (selections.includes('cooldowns')) {
             console.log('⏰ Background: Fetching cooldowns...');
             try {
-                const cooldownResponse = await fetch(`https://api.torn.com/user?selections=cooldowns&key=${apiKey}`, {
+                const cooldownResponse = await fetch(`https://api.torn.com/${endpoint}?selections=cooldowns&key=${apiKey}`, {
                     method: 'GET',
                     headers: {
                         'User-Agent': 'Sidekick Chrome Extension Background'
@@ -195,7 +199,7 @@ async function handleTornApiCall(request) {
         if (selections.includes('bars')) {
             console.log('📊 Background: Fetching bars...');
             try {
-                const barsResponse = await fetch(`https://api.torn.com/user?selections=bars&key=${apiKey}`, {
+                const barsResponse = await fetch(`https://api.torn.com/${endpoint}?selections=bars&key=${apiKey}`, {
                     method: 'GET',
                     headers: {
                         'User-Agent': 'Sidekick Chrome Extension Background'
@@ -227,7 +231,7 @@ async function handleTornApiCall(request) {
         if (selections.includes('logs')) {
             console.log('📋 Background: Fetching logs...');
             try {
-                const logResponse = await fetch(`https://api.torn.com/user?selections=log&key=${apiKey}`, {
+                const logResponse = await fetch(`https://api.torn.com/${endpoint}?selections=log&key=${apiKey}`, {
                     method: 'GET',
                     headers: {
                         'User-Agent': 'Sidekick Chrome Extension Background'

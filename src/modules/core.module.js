@@ -351,11 +351,77 @@
         }
     };
 
+    // === SAFE MESSAGE SENDER ===
+    const SafeMessageSender = {
+        // Safely send message to background script with extension context handling
+        async sendToBackground(message, timeout = 30000) {
+            return new Promise((resolve, reject) => {
+                try {
+                    // Check if extension context is valid
+                    if (!chrome?.runtime?.id) {
+                        console.warn('🔄 Extension context invalidated, message cannot be sent:', message.action);
+                        reject(new Error('Extension context invalidated'));
+                        return;
+                    }
+
+                    const timeoutId = setTimeout(() => {
+                        reject(new Error(`Background script timeout after ${timeout}ms`));
+                    }, timeout);
+
+                    chrome.runtime.sendMessage(message, (response) => {
+                        clearTimeout(timeoutId);
+                        
+                        if (chrome.runtime.lastError) {
+                            const error = chrome.runtime.lastError.message;
+                            console.warn('🔄 Runtime error:', error);
+                            
+                            if (error.includes('Extension context invalidated') || error.includes('receiving end does not exist')) {
+                                console.warn('🔄 Extension context lost, rejecting message');
+                                reject(new Error('Extension context invalidated'));
+                            } else {
+                                reject(new Error(error));
+                            }
+                        } else if (!response) {
+                            reject(new Error('No response from background script'));
+                        } else {
+                            resolve(response);
+                        }
+                    });
+                } catch (error) {
+                    console.warn('🔄 Message send failed:', error);
+                    reject(error);
+                }
+            });
+        },
+
+        // Check if extension context is valid
+        isExtensionContextValid() {
+            try {
+                return !!(chrome?.runtime?.id);
+            } catch (error) {
+                return false;
+            }
+        },
+
+        // Show user-friendly notification about extension reload
+        showExtensionReloadNotification() {
+            if (window.SidekickModules?.Core?.NotificationSystem) {
+                window.SidekickModules.Core.NotificationSystem.show(
+                    'Extension Reloaded',
+                    'Please refresh the page to restore full functionality.',
+                    'warning',
+                    8000
+                );
+            }
+        }
+    };
+
     // === CORE MODULE EXPORT ===
     const CoreModule = {
         STORAGE_KEYS,
         NotificationSystem,
         ChromeStorage,
+        SafeMessageSender,
         
         // Initialize core functionality
         async init() {

@@ -398,7 +398,7 @@
                 console.log('🔍 Checking Torn API for daily task updates...');
                 
                 // Try background script approach first (better for CORS issues)
-                if (chrome?.runtime?.sendMessage) {
+                if (window.SidekickModules?.Core?.SafeMessageSender?.isExtensionContextValid()) {
                     try {
                         console.log('📡 Attempting API call via background script...');
                         const backgroundResult = await this.makeApiCallViaBackground(apiKey);
@@ -414,7 +414,13 @@
                             return;
                         }
                     } catch (bgError) {
-                        console.log('⚠️ Background script API failed, trying direct fetch...');
+                        if (bgError.message.includes('Extension context invalidated')) {
+                            console.warn('📋 Extension context invalidated, showing notification');
+                            window.SidekickModules?.Core?.SafeMessageSender?.showExtensionReloadNotification();
+                            return;
+                        } else {
+                            console.log('⚠️ Background script API failed, trying direct fetch...', bgError.message);
+                        }
                     }
                 }
                 
@@ -429,19 +435,27 @@
 
         // Make API call via background script (avoids CORS issues)
         async makeApiCallViaBackground(apiKey) {
-            return new Promise((resolve, reject) => {
-                chrome.runtime.sendMessage({
+            try {
+                // Check if extension context is valid first
+                if (!window.SidekickModules?.Core?.SafeMessageSender?.isExtensionContextValid()) {
+                    throw new Error('Extension context invalidated - please refresh page');
+                }
+
+                const response = await window.SidekickModules.Core.SafeMessageSender.sendToBackground({
                     action: 'fetchTornApi',
                     apiKey: apiKey,
-                    selections: ['personalstats', 'log', 'bars', 'cooldowns']
-                }, (response) => {
-                    if (chrome.runtime.lastError) {
-                        reject(new Error(chrome.runtime.lastError.message));
-                    } else {
-                        resolve(response);
-                    }
+                    selections: ['personalstats', 'logs', 'bars', 'cooldowns']
                 });
-            });
+                
+                return response;
+                
+            } catch (error) {
+                if (error.message.includes('Extension context invalidated')) {
+                    console.warn('📋 Extension context lost during API call');
+                    window.SidekickModules?.Core?.SafeMessageSender?.showExtensionReloadNotification();
+                }
+                throw error;
+            }
         },
 
         // Make direct API call (fallback method)

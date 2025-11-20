@@ -114,23 +114,44 @@
                 return;
             }
 
-            // Fetch our own stats first
+            // Fetch our own stats first using background script to avoid CORS
             try {
-                const response = await fetch(`https://api.torn.com/user/?selections=basic,personalstats&key=${this.apiKey}&comment=xanaxviewer`);
-                const data = await response.json();
+                console.log("💊 Xanax Viewer: Fetching own stats via background script...");
                 
-                if (data.error) {
-                    console.error("❌ Xanax Viewer API Error:", data.error.error);
-                    this.showApiError(data.error.error);
+                // Check if extension context is valid first
+                if (!window.SidekickModules?.Core?.SafeMessageSender?.isExtensionContextValid()) {
+                    console.warn('💊 Extension context invalidated, cannot fetch user stats');
+                    window.SidekickModules?.Core?.SafeMessageSender?.showExtensionReloadNotification();
+                    return;
+                }
+
+                const response = await window.SidekickModules.Core.SafeMessageSender.sendToBackground({
+                    action: 'fetchTornApi',
+                    apiKey: this.apiKey,
+                    selections: ['personalstats']
+                });
+                
+                if (!response.success) {
+                    console.error("❌ Xanax Viewer API Error:", response.error);
+                    this.showApiError(response.error);
                     return;
                 }
                 
-                this.myInfo = data;
+                // Build data structure similar to direct API call
+                this.myInfo = {
+                    personalstats: response.personalstats
+                };
+                
                 console.log("✅ Xanax Viewer: Own stats loaded");
                 this.initializePageSpecificFunctionality();
                 
             } catch (error) {
-                console.error("❌ Xanax Viewer: Failed to fetch own stats:", error);
+                if (error.message.includes('Extension context invalidated')) {
+                    console.warn('💊 Extension context lost during stats fetch');
+                    window.SidekickModules?.Core?.SafeMessageSender?.showExtensionReloadNotification();
+                } else {
+                    console.error("❌ Xanax Viewer: Failed to fetch own stats:", error);
+                }
             }
         },
 
@@ -366,7 +387,51 @@
         // Get user stats from API
         async getUserStats(uid) {
             try {
-                const response = await fetch(`https://api.torn.com/user/${uid}?selections=personalstats&key=${this.apiKey}&comment=xanaxviewer`);
+                console.log(`💊 Xanax Viewer: Fetching stats for user ${uid} via background script...`);
+                
+                // Check if extension context is valid first
+                if (!window.SidekickModules?.Core?.SafeMessageSender?.isExtensionContextValid()) {
+                    console.warn('💊 Extension context invalidated, cannot fetch user stats');
+                    window.SidekickModules?.Core?.SafeMessageSender?.showExtensionReloadNotification();
+                    throw new Error('Extension context invalidated');
+                }
+
+                const response = await window.SidekickModules.Core.SafeMessageSender.sendToBackground({
+                    action: 'fetchTornApi',
+                    apiKey: this.apiKey,
+                    selections: ['personalstats'],
+                    userId: uid // Add user ID for specific user lookup
+                });
+                
+                if (!response.success) {
+                    console.error(`❌ Xanax Viewer: Failed to fetch stats for user ${uid}:`, response.error);
+                    throw new Error(response.error);
+                }
+                
+                if (!response.personalstats) {
+                    throw new Error('No personal stats received');
+                }
+                
+                return {
+                    xantaken: response.personalstats.xantaken || 0,
+                    refills: response.personalstats.refills || 0
+                };
+                
+            } catch (error) {
+                if (error.message.includes('Extension context invalidated')) {
+                    console.warn(`💊 Extension context lost during user ${uid} stats fetch`);
+                    window.SidekickModules?.Core?.SafeMessageSender?.showExtensionReloadNotification();
+                } else {
+                    console.error(`❌ Xanax Viewer: Error fetching stats for user ${uid}:`, error);
+                }
+                
+                // Return default values on error
+                return {
+                    xantaken: 0,
+                    refills: 0
+                };
+            }
+        },
                 const data = await response.json();
 
                 if (data.error) {

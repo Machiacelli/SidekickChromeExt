@@ -137,24 +137,15 @@
         async testBackgroundConnection() {
             console.log("💰 === Testing Background Script Communication ===");
             
-            if (!chrome?.runtime?.sendMessage) {
-                console.error('💰 Chrome runtime not available');
+            if (!window.SidekickModules?.Core?.SafeMessageSender?.isExtensionContextValid()) {
+                console.error('💰 Extension context not available');
                 return false;
             }
             
             try {
                 console.log('💰 Testing simple ping to background script...');
                 
-                const response = await new Promise((resolve, reject) => {
-                    chrome.runtime.sendMessage({ action: 'ping' }, (response) => {
-                        if (chrome.runtime.lastError) {
-                            reject(new Error(chrome.runtime.lastError.message));
-                        } else {
-                            resolve(response);
-                        }
-                    });
-                });
-                
+                const response = await window.SidekickModules.Core.SafeMessageSender.sendToBackground({ action: 'ping' });
                 console.log('💰 Background script ping response:', response);
                 
                 if (this.apiKey) {
@@ -168,7 +159,12 @@
                 }
                 
             } catch (error) {
-                console.error('💰 Background script test failed:', error);
+                if (error.message.includes('Extension context invalidated')) {
+                    console.warn('💰 Extension context invalidated during test');
+                    window.SidekickModules?.Core?.SafeMessageSender?.showExtensionReloadNotification();
+                } else {
+                    console.error('💰 Background script test failed:', error);
+                }
                 return false;
             }
         },
@@ -574,39 +570,34 @@
         
         // Helper method to make API calls via background script
         async makeApiCallViaBackground(apiKey, selections) {
-            return new Promise((resolve, reject) => {
-                // Add timeout to prevent hanging
-                const timeout = setTimeout(() => {
-                    reject(new Error('Background script API call timeout (30s)'));
-                }, 30000);
-                
-                try {
-                    console.log('💰 Sending message to background script:', { action: 'fetchTornApi', selections });
-                    
-                    chrome.runtime.sendMessage({
-                        action: 'fetchTornApi',
-                        apiKey: apiKey,
-                        selections: selections
-                    }, (response) => {
-                        clearTimeout(timeout);
-                        
-                        if (chrome.runtime.lastError) {
-                            console.error('💰 Chrome runtime error:', chrome.runtime.lastError);
-                            reject(new Error(chrome.runtime.lastError.message));
-                        } else if (!response) {
-                            console.error('💰 No response from background script');
-                            reject(new Error('No response from background script'));
-                        } else {
-                            console.log('💰 Background script response received:', response);
-                            resolve(response);
-                        }
-                    });
-                } catch (error) {
-                    clearTimeout(timeout);
-                    console.error('💰 Error sending message to background script:', error);
-                    reject(error);
+            try {
+                // Check if extension context is valid first
+                if (!window.SidekickModules?.Core?.SafeMessageSender?.isExtensionContextValid()) {
+                    console.warn('💰 Extension context invalidated, cannot make API call');
+                    window.SidekickModules?.Core?.SafeMessageSender?.showExtensionReloadNotification();
+                    throw new Error('Extension context invalidated - please refresh page');
                 }
-            });
+
+                console.log('💰 Sending message to background script:', { action: 'fetchTornApi', selections });
+                
+                const response = await window.SidekickModules.Core.SafeMessageSender.sendToBackground({
+                    action: 'fetchTornApi',
+                    apiKey: apiKey,
+                    selections: selections
+                });
+                
+                console.log('💰 Background script response received:', response);
+                return response;
+                
+            } catch (error) {
+                if (error.message.includes('Extension context invalidated')) {
+                    console.warn('💰 Extension context lost, showing user notification');
+                    window.SidekickModules?.Core?.SafeMessageSender?.showExtensionReloadNotification();
+                } else {
+                    console.error('💰 Error sending message to background script:', error);
+                }
+                throw error;
+            }
         },
 
         // Process payment logs for automatic tracking
