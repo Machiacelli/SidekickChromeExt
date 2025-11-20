@@ -354,44 +354,72 @@
     // === SAFE MESSAGE SENDER ===
     const SafeMessageSender = {
         // Safely send message to background script with extension context handling
-        async sendToBackground(message, timeout = 30000) {
-            return new Promise((resolve, reject) => {
+        async sendToBackground(message, timeout = 30000, retryCount = 2) {
+            let lastError = null;
+            
+            for (let attempt = 0; attempt < retryCount; attempt++) {
                 try {
-                    // Check if extension context is valid
-                    if (!chrome?.runtime?.id) {
-                        console.warn('🔄 Extension context invalidated, message cannot be sent:', message.action);
-                        reject(new Error('Extension context invalidated'));
-                        return;
-                    }
-
-                    const timeoutId = setTimeout(() => {
-                        reject(new Error(`Background script timeout after ${timeout}ms`));
-                    }, timeout);
-
-                    chrome.runtime.sendMessage(message, (response) => {
-                        clearTimeout(timeoutId);
-                        
-                        if (chrome.runtime.lastError) {
-                            const error = chrome.runtime.lastError.message;
-                            console.warn('🔄 Runtime error:', error);
-                            
-                            if (error.includes('Extension context invalidated') || error.includes('receiving end does not exist')) {
-                                console.warn('🔄 Extension context lost, rejecting message');
-                                reject(new Error('Extension context invalidated'));
-                            } else {
-                                reject(new Error(error));
+                    return await new Promise((resolve, reject) => {
+                        try {
+                            // Check if extension context is valid
+                            if (!chrome?.runtime?.id) {
+                                const error = new Error('Extension context invalidated');
+                                console.warn(`🔄 Extension context check failed (attempt ${attempt + 1}/${retryCount}):`, message.action);
+                                reject(error);
+                                return;
                             }
-                        } else if (!response) {
-                            reject(new Error('No response from background script'));
-                        } else {
-                            resolve(response);
+
+                            const timeoutId = setTimeout(() => {
+                                reject(new Error(`Background script timeout after ${timeout}ms`));
+                            }, timeout);
+
+                            chrome.runtime.sendMessage(message, (response) => {
+                                clearTimeout(timeoutId);
+                                
+                                if (chrome.runtime.lastError) {
+                                    const error = chrome.runtime.lastError.message;
+                                    console.warn(`🔄 Runtime error (attempt ${attempt + 1}/${retryCount}):`, error);
+                                    
+                                    if (error.includes('Extension context invalidated') || error.includes('receiving end does not exist')) {
+                                        reject(new Error('Extension context invalidated'));
+                                    } else {
+                                        reject(new Error(error));
+                                    }
+                                } else if (!response) {
+                                    reject(new Error('No response from background script'));
+                                } else {
+                                    resolve(response);
+                                }
+                            });
+                        } catch (error) {
+                            console.warn(`🔄 Message send failed (attempt ${attempt + 1}/${retryCount}):`, error);
+                            reject(error);
                         }
                     });
                 } catch (error) {
-                    console.warn('🔄 Message send failed:', error);
-                    reject(error);
+                    lastError = error;
+                    
+                    if (error.message.includes('Extension context invalidated')) {
+                        console.warn(`🔄 Extension context lost on attempt ${attempt + 1}/${retryCount}`);
+                        
+                        // Wait a bit before retrying
+                        if (attempt < retryCount - 1) {
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            console.log(`🔄 Retrying message send (${attempt + 2}/${retryCount})...`);
+                        }
+                    } else {
+                        // Non-context errors should not be retried
+                        break;
+                    }
                 }
-            });
+            }
+            
+            // All retries failed
+            if (lastError?.message.includes('Extension context invalidated')) {
+                this.showExtensionReloadNotification();
+            }
+            
+            throw lastError;
         },
 
         // Check if extension context is valid
@@ -407,11 +435,17 @@
         showExtensionReloadNotification() {
             if (window.SidekickModules?.Core?.NotificationSystem) {
                 window.SidekickModules.Core.NotificationSystem.show(
-                    'Extension Reloaded',
-                    'Please refresh the page to restore full functionality.',
+                    'Extension Connection Lost',
+                    'Please refresh the page or reload the extension to restore functionality.',
                     'warning',
-                    8000
+                    10000
                 );
+            } else {
+                // Fallback notification if NotificationSystem isn't available
+                console.warn('🔄 Extension context lost - please refresh the page');
+                if (confirm('Extension connection lost. Refresh the page to restore functionality?')) {
+                    window.location.reload();
+                }
             }
         }
     };
