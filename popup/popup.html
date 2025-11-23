@@ -116,8 +116,49 @@
             margin-top: 5px;
         }
         
-        .content {
+        .tabs {
+            display: flex;
+            background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab-button:hover {
+            color: rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .tab-button.active {
+            color: white;
+            border-bottom-color: rgba(76, 175, 80, 1);
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .tab-content {
+            display: none;
             padding: 20px;
+            max-height: 450px;
+            overflow-y: auto;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .content {
+            padding: 0;
         }
         
         .setting-group {
@@ -149,6 +190,19 @@
         
         .setting-group input[type="checkbox"] {
             margin-right: 8px;
+        }
+        
+        .setting-group input[type="range"] {
+            width: 100%;
+            margin-top: 8px;
+        }
+        
+        .setting-group .range-value {
+            display: inline-block;
+            min-width: 30px;
+            text-align: center;
+            font-weight: bold;
+            color: rgba(76, 175, 80, 1);
         }
         
         .button {
@@ -209,92 +263,141 @@
         .links a:hover {
             color: white;
         }
+        
+        .cache-info {
+            font-size: 13px;
+            opacity: 0.8;
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <img src="../assets/icons/sidekick-logo.png" alt="Sidekick" class="logo">
         <h1>Sidekick</h1>
-        <div class="version">Chrome Extension v1.0.2</div>
+        <div class="version">Chrome Extension v1.0.3</div>
+    </div>
+    
+    <div class="tabs">
+        <button class="tab-button active" data-tab="general">General</button>
+        <button class="tab-button" data-tab="xanax">Xanax Viewer</button>
     </div>
     
     <div class="content">
-        <div class="setting-group">
-            <label for="apiKey">Torn API Key:</label>
-            <input type="text" id="apiKey" placeholder="Enter your Torn API key...">
-        </div>
-        
-        <div class="switch-container">
-            <div class="switch-label">
-                <div>Xanax Viewer</div>
-                <div class="switch-description">Shows individual Xanax usage on Faction and Profile pages</div>
+        <!-- General Settings Tab -->
+        <div class="tab-content active" id="general-tab">
+            <div class="setting-group">
+                <label for="apiKey">Torn API Key:</label>
+                <input type="text" id="apiKey" placeholder="Enter your Torn API key...">
             </div>
-            <label class="switch">
-                <input type="checkbox" id="xanaxViewer">
-                <span class="slider"></span>
-            </label>
-        </div>
-        
-        <div class="switch-container">
-            <div class="switch-label">
-                <div>Fast Attack</div>
-                <div class="switch-description">Moves Start Fight button over weapon for faster attacks</div>
+            
+            <div class="switch-container">
+                <div class="switch-label">
+                    <div>Xanax Viewer</div>
+                    <div class="switch-description">Shows individual Xanax usage on Faction and Profile pages</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="xanaxViewer">
+                    <span class="slider"></span>
+                </label>
             </div>
-            <label class="switch">
-                <input type="checkbox" id="attackButtonMover">
-                <span class="slider"></span>
-            </label>
-        </div>
-        
-        <div class="switch-container">
-            <div class="switch-label">
-                <div>Block Training</div>
-                <div class="switch-description">Blocks gym access to prevent accidental training</div>
+            
+            <div class="switch-container">
+                <div class="switch-label">
+                    <div>Fast Attack</div>
+                    <div class="switch-description">Moves Start Fight button over weapon for faster attacks</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="attackButtonMover">
+                    <span class="slider"></span>
+                </label>
             </div>
-            <label class="switch">
-                <input type="checkbox" id="blockTraining">
-                <span class="slider"></span>
-            </label>
-        </div>
-        
-        <div class="switch-container">
-            <div class="switch-label">
-                <div>Time on Tab</div>
-                <div class="switch-description">Shows remaining time for activities in browser tab</div>
+            
+            <div class="switch-container">
+                <div class="switch-label">
+                    <div>Block Training</div>
+                    <div class="switch-description">Blocks gym access to prevent accidental training</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="blockTraining">
+                    <span class="slider"></span>
+                </label>
             </div>
-            <label class="switch">
-                <input type="checkbox" id="timeOnTab">
-                <span class="slider"></span>
-            </label>
-        </div>
-        
-        <div class="switch-container">
-            <div class="switch-label">
-                <div>NPC Attack Timer</div>
-                <div class="switch-description">Shows NPC attack countdowns in news ticker</div>
+            
+            <div class="switch-container">
+                <div class="switch-label">
+                    <div>Time on Tab</div>
+                    <div class="switch-description">Shows remaining time for activities in browser tab</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="timeOnTab">
+                    <span class="slider"></span>
+                </label>
             </div>
-            <label class="switch">
-                <input type="checkbox" id="npcAttackTimer">
-                <span class="slider"></span>
-            </label>
-        </div>
-        
-        <div class="switch-container">
-            <div class="switch-label">
-                <div>Random Target</div>
-                <div class="switch-description">Adds random target button to attack pages</div>
+            
+            <div class="switch-container">
+                <div class="switch-label">
+                    <div>NPC Attack Timer</div>
+                    <div class="switch-description">Shows NPC attack countdowns in news ticker</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="npcAttackTimer">
+                    <span class="slider"></span>
+                </label>
             </div>
-            <label class="switch">
-                <input type="checkbox" id="randomTarget">
-                <span class="slider"></span>
-            </label>
+            
+            <div class="switch-container">
+                <div class="switch-label">
+                    <div>Random Target</div>
+                    <div class="switch-description">Adds random target button to attack pages</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="randomTarget">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <button class="button" id="saveSettings">Save Settings</button>
+            <button class="button" id="reportIssues">🐛 Report Issues</button>
+            <button class="button danger" id="clearData">Clear All Data</button>
+            
+            <div class="status" id="status"></div>
         </div>
         
-        <button class="button" id="saveSettings">Save Settings</button>
-        <button class="button" id="reportIssues">🐛 Report Issues</button>
-        <button class="button danger" id="clearData">Clear All Data</button>
-        
-        <div class="status" id="status"></div>
+        <!-- Xanax Viewer Settings Tab -->
+        <div class="tab-content" id="xanax-tab">
+            <div class="setting-group">
+                <label for="xanaxApiKey">Torn API Key (Public Only):</label>
+                <input type="text" id="xanaxApiKey" placeholder="Enter your Torn API key..." maxlength="16">
+                <div style="font-size: 12px; opacity: 0.7; margin-top: 5px;">Used for fetching Xanax stats. If empty, uses global API key.</div>
+            </div>
+            
+            <div class="setting-group">
+                <label>Auto-fetch Limit: <span class="range-value" id="autoLimitValue">0</span> users</label>
+                <input type="range" id="autoLimitSlider" min="0" max="100" value="0">
+                <div style="font-size: 12px; opacity: 0.7; margin-top: 5px;">Automatically fetch closest level users when visiting faction page (0 = disabled)</div>
+            </div>
+            
+            <div class="setting-group">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="showRelativeCheckbox">
+                    <span>Show Relative Value</span>
+                </label>
+                <div style="font-size: 12px; opacity: 0.7; margin-top: 5px;">Display Xanax usage relative to your own usage</div>
+            </div>
+            
+            <div class="cache-info">
+                <div><strong>Cache:</strong> <span id="cacheCounter">0</span> profiles saved</div>
+            </div>
+            
+            <button class="button" id="saveXanaxSettings">Save Xanax Settings</button>
+            <button class="button danger" id="clearCache">Clear Cache</button>
+            
+            <div class="status" id="xanaxStatus"></div>
+        </div>
     </div>
     
     <script src="popup.js"></script>

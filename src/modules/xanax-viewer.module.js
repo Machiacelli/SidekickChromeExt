@@ -212,9 +212,8 @@
                 this.initializeProfilePage();
             } else if (currentPage === "factions.php" && this.apiKey) {
                 this.initializeFactionPage();
-            } else if (currentPage === "preferences.php") {
-                this.initializePreferencesPage();
             }
+            // Preferences page integration removed - settings now in popup
         },
 
         // Initialize Profile Page functionality
@@ -303,8 +302,8 @@
             });
         },
 
-        // Initialize Preferences Page
-        async initializePreferencesPage() {
+        // Initialize Preferences Page - DISABLED: Settings moved to popup extension
+        /* async initializePreferencesPage() {
             console.log("💊 Xanax Viewer: Initializing preferences page");
             
             const preferencesContainer = document.querySelector(".preferences-container");
@@ -368,6 +367,7 @@
                 }, 2000);
             });
         },
+        */
 
         // Perform auto refresh based on autoLimit setting
         performAutoRefresh(profiles) {

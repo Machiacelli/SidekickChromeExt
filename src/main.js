@@ -376,6 +376,11 @@
                 sendResponse({ success: true });
             }
             
+            if (request.action === 'reloadXanaxViewer') {
+                handleReloadXanaxViewer(sendResponse);
+                return true;
+            }
+            
             if (request.action === 'dataCleared') {
                 handleDataCleared();
                 sendResponse({ success: true });
@@ -443,6 +448,34 @@
     function handleSettingsUpdate(settings) {
         console.log('⚙️ Settings updated:', settings);
         // Modules will automatically pick up new settings on next operation
+    }
+    
+    // Handle Xanax Viewer reload from popup
+    async function handleReloadXanaxViewer(sendResponse) {
+        try {
+            const module = window.SidekickModules?.XanaxViewer;
+            if (module) {
+                console.log('💊 Reloading Xanax Viewer settings...');
+                
+                // Reload settings
+                await module.loadSettings();
+                
+                // If enabled, restart the viewer
+                if (module.isEnabled) {
+                    module.stopXanaxViewer();
+                    await module.startXanaxViewer();
+                }
+                
+                console.log('✅ Xanax Viewer reloaded successfully');
+                sendResponse({ success: true });
+            } else {
+                console.warn('⚠️ Xanax Viewer module not available');
+                sendResponse({ success: false, error: 'Module not available' });
+            }
+        } catch (error) {
+            console.error('❌ Failed to reload Xanax Viewer:', error);
+            sendResponse({ success: false, error: error.message });
+        }
     }
 
     // Handle data cleared from popup

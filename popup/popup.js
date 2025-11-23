@@ -6,7 +6,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🎛️ Sidekick popup loaded');
     
-    // Get DOM elements
+    // Get DOM elements - General Tab
     const apiKeyInput = document.getElementById('apiKey');
     const xanaxViewerCheckbox = document.getElementById('xanaxViewer');
     const attackButtonMoverCheckbox = document.getElementById('attackButtonMover');
@@ -19,10 +19,44 @@ document.addEventListener('DOMContentLoaded', function() {
     const clearDataButton = document.getElementById('clearData');
     const statusDiv = document.getElementById('status');
     
+    // Get DOM elements - Xanax Tab
+    const xanaxApiKeyInput = document.getElementById('xanaxApiKey');
+    const autoLimitSlider = document.getElementById('autoLimitSlider');
+    const autoLimitValue = document.getElementById('autoLimitValue');
+    const showRelativeCheckbox = document.getElementById('showRelativeCheckbox');
+    const cacheCounter = document.getElementById('cacheCounter');
+    const saveXanaxButton = document.getElementById('saveXanaxSettings');
+    const clearCacheButton = document.getElementById('clearCache');
+    const xanaxStatusDiv = document.getElementById('xanaxStatus');
+    
+    // Get tab buttons
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    // Tab switching functionality
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.getAttribute('data-tab');
+            
+            // Remove active class from all buttons and contents
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Add active class to clicked button and corresponding content
+            button.classList.add('active');
+            document.getElementById(`${targetTab}-tab`).classList.add('active');
+            
+            // Reload cache counter if switching to xanax tab
+            if (targetTab === 'xanax') {
+                loadCacheCounter();
+            }
+        });
+    });
+    
     // Load saved settings
     loadSettings();
     
-    // Event listeners
+    // Event listeners - General Tab
     saveButton.addEventListener('click', saveSettings);
     reportIssuesButton.addEventListener('click', reportIssues);
     clearDataButton.addEventListener('click', clearData);
@@ -32,6 +66,15 @@ document.addEventListener('DOMContentLoaded', function() {
     timeOnTabCheckbox.addEventListener('change', handleTimeOnTabToggle);
     npcAttackTimerCheckbox.addEventListener('change', handleNpcAttackTimerToggle);
     randomTargetCheckbox.addEventListener('change', handleRandomTargetToggle);
+    
+    // Event listeners - Xanax Tab
+    autoLimitSlider.addEventListener('input', updateAutoLimitValue);
+    saveXanaxButton.addEventListener('click', saveXanaxSettings);
+    clearCacheButton.addEventListener('click', clearXanaxCache);
+    
+    function updateAutoLimitValue() {
+        autoLimitValue.textContent = autoLimitSlider.value;
+    }
     
     function loadSettings() {
         chrome.storage.local.get([
@@ -43,15 +86,25 @@ document.addEventListener('DOMContentLoaded', function() {
             'sidekick_npc_attack_timer',
             'sidekick_random_target'
         ], function(result) {
+            // Load global API key
             if (result.sidekick_api_key) {
                 apiKeyInput.value = result.sidekick_api_key;
             }
             
-            // Load xanax viewer setting
+            // Load xanax viewer settings
             if (result.sidekick_xanax_viewer) {
                 xanaxViewerCheckbox.checked = result.sidekick_xanax_viewer.isEnabled !== false;
+                
+                // Load Xanax-specific settings
+                xanaxApiKeyInput.value = result.sidekick_xanax_viewer.apiKey || '';
+                autoLimitSlider.value = result.sidekick_xanax_viewer.autoLimit || 0;
+                autoLimitValue.textContent = autoLimitSlider.value;
+                showRelativeCheckbox.checked = result.sidekick_xanax_viewer.showRelative || false;
             } else {
                 xanaxViewerCheckbox.checked = true; // Default enabled
+                autoLimitSlider.value = 0;
+                autoLimitValue.textContent = '0';
+                showRelativeCheckbox.checked = false;
             }
             
             // Load attack button mover setting
@@ -88,6 +141,16 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 randomTargetCheckbox.checked = false; // Default disabled
             }
+            
+            // Load cache counter
+            loadCacheCounter();
+        });
+    }
+    
+    function loadCacheCounter() {
+        chrome.storage.local.get(['xanaxviewer_cache'], function(result) {
+            const cache = result.xanaxviewer_cache || {};
+            cacheCounter.textContent = Object.keys(cache).length;
         });
     }
     
@@ -111,6 +174,45 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             });
         });
+    }
+    
+    function saveXanaxSettings() {
+        // Get current xanax viewer settings
+        chrome.storage.local.get(['sidekick_xanax_viewer'], function(result) {
+            const currentSettings = result.sidekick_xanax_viewer || {};
+            
+            // Update with new values
+            const updatedSettings = {
+                ...currentSettings,
+                apiKey: xanaxApiKeyInput.value.trim(),
+                autoLimit: parseInt(autoLimitSlider.value),
+                showRelative: showRelativeCheckbox.checked
+            };
+            
+            chrome.storage.local.set({ sidekick_xanax_viewer: updatedSettings }, function() {
+                showXanaxStatus('Xanax Viewer settings saved successfully!', 'success');
+                
+                // Send message to all Torn.com tabs to reload xanax viewer
+                chrome.tabs.query({ url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function(tabs) {
+                    tabs.forEach(tab => {
+                        chrome.tabs.sendMessage(tab.id, {
+                            action: 'reloadXanaxViewer'
+                        }).catch(() => {
+                            // Ignore errors for tabs without content script
+                        });
+                    });
+                });
+            });
+        });
+    }
+    
+    function clearXanaxCache() {
+        if (confirm('Are you sure you want to clear the Xanax Viewer cache?')) {
+            chrome.storage.local.set({ xanaxviewer_cache: {} }, function() {
+                showXanaxStatus('Cache cleared successfully!', 'success');
+                loadCacheCounter();
+            });
+        }
     }
     
     function handleXanaxViewerToggle() {
@@ -218,6 +320,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         setTimeout(() => {
             statusDiv.style.display = 'none';
+        }, 3000);
+    }
+    
+    function showXanaxStatus(message, type = 'success') {
+        xanaxStatusDiv.textContent = message;
+        xanaxStatusDiv.className = `status ${type === 'error' ? 'error' : ''}`;
+        xanaxStatusDiv.style.display = 'block';
+        
+        setTimeout(() => {
+            xanaxStatusDiv.style.display = 'none';
         }, 3000);
     }
 });
