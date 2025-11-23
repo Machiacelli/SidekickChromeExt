@@ -216,6 +216,26 @@
 
             // Expose global helper functions for testing
             exposeGlobalHelpers();
+            
+            // Test that functions are immediately accessible
+            setTimeout(() => {
+                console.log('🧪 Testing global function accessibility:');
+                try {
+                    if (typeof window.testExtensionConnection === 'function') {
+                        console.log('✅ testExtensionConnection is accessible via window');
+                    } else {
+                        console.error('❌ testExtensionConnection is not accessible via window:', typeof window.testExtensionConnection);
+                    }
+                    
+                    if (typeof testExtensionConnection === 'function') {
+                        console.log('✅ testExtensionConnection is globally accessible (no window prefix)');
+                    } else {
+                        console.error('❌ testExtensionConnection is not globally accessible (no window prefix)');
+                    }
+                } catch (e) {
+                    console.error('❌ Error testing global functions:', e.message);
+                }
+            }, 100);
 
             // Set up message listener for popup communications
             setupMessageListener();
@@ -277,11 +297,51 @@
             return false;
         };
 
+        // Also expose functions globally without window prefix for easier access
+        try {
+            globalThis.testExtensionConnection = window.testExtensionConnection;
+            globalThis.checkExtensionContext = window.checkExtensionContext;
+            globalThis.forceContextRecovery = window.forceContextRecovery;
+            globalThis.testDailyTasks = window.testDailyTasks;
+            
+            console.log('✅ Functions exposed to global scope');
+        } catch (e) {
+            console.warn('⚠️ Could not expose to global scope:', e.message);
+        }
+
+        // Verify functions are properly attached
         console.log('🔧 Global helper functions exposed:');
-        console.log('  - testExtensionConnection()');
-        console.log('  - checkExtensionContext()');
-        console.log('  - forceContextRecovery()');
-        console.log('  - testDailyTasks()');
+        console.log('  - testExtensionConnection():', typeof window.testExtensionConnection);
+        console.log('  - checkExtensionContext():', typeof window.checkExtensionContext);
+        console.log('  - forceContextRecovery():', typeof window.forceContextRecovery);
+        console.log('  - testDailyTasks():', typeof window.testDailyTasks);
+        
+        // Also expose them as properties of window explicitly
+        try {
+            Object.defineProperty(window, 'testExtensionConnection', {
+                value: window.testExtensionConnection,
+                writable: false,
+                configurable: false
+            });
+            Object.defineProperty(window, 'checkExtensionContext', {
+                value: window.checkExtensionContext,
+                writable: false,
+                configurable: false
+            });
+            Object.defineProperty(window, 'forceContextRecovery', {
+                value: window.forceContextRecovery,
+                writable: false,
+                configurable: false
+            });
+            Object.defineProperty(window, 'testDailyTasks', {
+                value: window.testDailyTasks,
+                writable: false,
+                configurable: false
+            });
+            console.log('✅ Global functions secured with defineProperty');
+        } catch (e) {
+            console.warn('⚠️ Could not secure global functions:', e.message);
+        }
     }
 
     // Set up message listener for popup communications
