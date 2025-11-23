@@ -395,6 +395,10 @@
             let displayName;
             
             switch (moduleType) {
+                case 'xanaxViewer':
+                    module = window.SidekickModules?.XanaxViewer;
+                    displayName = 'Xanax Viewer';
+                    break;
                 case 'attackButtonMover':
                     module = window.SidekickModules?.AttackButtonMover;
                     displayName = 'Attack Button Mover';

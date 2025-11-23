@@ -1660,8 +1660,11 @@
                                 transition: all 0.2s;
                                 z-index: 1001;
                                 position: relative;
+                                outline: none;
+                                box-shadow: none;
                             " onmouseover="this.style.background='rgba(255,255,255,0.3)'" 
                                onmouseout="this.style.background='rgba(255,255,255,0.2)'" 
+                               onfocus="this.style.outline='none'" 
                                title="Todo list options">⚙️</button>
                             
                             <div class="todolist-dropdown-content" style="
@@ -1677,6 +1680,15 @@
                                 min-width: 160px;
                                 margin-top: 4px;
                             ">
+                                <div class="todolist-option" data-action="pin" style="
+                                    padding: 8px 12px;
+                                    cursor: pointer;
+                                    color: #fff;
+                                    font-size: 12px;
+                                    border-bottom: 1px solid #444;
+                                " onmouseover="this.style.background='#3a3a3a'" 
+                                   onmouseout="this.style.background='none'">${todoList.pinned ? '🗋 Unpin' : '📌 Pin'}</div>
+                                
                                 <div class="todolist-option" data-action="refresh" style="
                                     padding: 8px 12px;
                                     cursor: pointer;
@@ -1694,15 +1706,6 @@
                                     border-bottom: 1px solid #444;
                                 " onmouseover="this.style.background='#3a3a3a'" 
                                    onmouseout="this.style.background='none'">♻️ Reset Daily Tasks</div>
-                                
-                                <div class="todolist-option" data-action="pin" style="
-                                    padding: 8px 12px;
-                                    cursor: pointer;
-                                    color: #fff;
-                                    font-size: 12px;
-                                    border-bottom: 1px solid #444;
-                                " onmouseover="this.style.background='#3a3a3a'" 
-                                   onmouseout="this.style.background='none'">${todoList.pinned ? '🗋 Unpin' : '📌 Pin'}</div>
                                 
                                 <div class="todolist-option" data-action="add" style="
                                     padding: 8px 12px;

@@ -27,7 +27,7 @@
     // Xanax Viewer Module Implementation
     const XanaxViewerModule = {
         isInitialized: false,
-        isEnabled: true, // Always enabled, no switch needed
+        isEnabled: true, // Default enabled
         apiKey: '',
         autoLimit: 0,
         showRelative: false,
@@ -47,8 +47,12 @@
                 await this.loadSettings();
                 this.isInitialized = true;
                 
-                console.log("💊 Xanax Viewer: Always enabled");
-                this.startXanaxViewer();
+                if (this.isEnabled) {
+                    console.log("💊 Xanax Viewer: Enabled");
+                    this.startXanaxViewer();
+                } else {
+                    console.log("💊 Xanax Viewer: Disabled");
+                }
                 
                 console.log("✅ Xanax Viewer Module initialized successfully");
             } catch (error) {
@@ -66,11 +70,13 @@
                     this.apiKey = saved.apiKey || '';
                     this.autoLimit = saved.autoLimit || 0;
                     this.showRelative = saved.showRelative || false;
+                    this.isEnabled = saved.isEnabled !== false; // Default enabled
                 } else {
                     // Default values
                     this.apiKey = '';
                     this.autoLimit = 0;
                     this.showRelative = false;
+                    this.isEnabled = true; // Default enabled
                 }
 
                 // If no API key in xanax settings, try to get from global settings
@@ -85,7 +91,8 @@
                 console.log('💊 Xanax Viewer settings loaded:', { 
                     hasApiKey: !!this.apiKey, 
                     autoLimit: this.autoLimit, 
-                    showRelative: this.showRelative 
+                    showRelative: this.showRelative,
+                    isEnabled: this.isEnabled
                 });
             } catch (error) {
                 console.error('Failed to load xanax viewer settings:', error);
@@ -98,12 +105,51 @@
                 await window.SidekickModules.Core.ChromeStorage.set('sidekick_xanax_viewer', {
                     apiKey: this.apiKey,
                     autoLimit: this.autoLimit,
-                    showRelative: this.showRelative
+                    showRelative: this.showRelative,
+                    isEnabled: this.isEnabled
                 });
                 console.log('💾 Xanax Viewer settings saved');
             } catch (error) {
                 console.error('Failed to save xanax viewer settings:', error);
             }
+        },
+
+        // Toggle xanax viewer on/off
+        async toggle() {
+            this.isEnabled = !this.isEnabled;
+            await this.saveSettings();
+            
+            if (this.isEnabled) {
+                console.log('💊 Xanax Viewer enabled');
+                this.startXanaxViewer();
+            } else {
+                console.log('💊 Xanax Viewer disabled');
+                this.stopXanaxViewer();
+            }
+            
+            return this.isEnabled;
+        },
+
+        // Stop xanax viewer
+        stopXanaxViewer() {
+            // Remove any existing xanax viewer elements
+            const profileXanax = document.querySelector('.xanaxviewer-profile');
+            if (profileXanax) {
+                profileXanax.remove();
+            }
+            
+            // Remove faction xanax elements
+            const factionXanaxHeaders = document.querySelectorAll('.xanaxviewer_header');
+            factionXanaxHeaders.forEach(el => el.remove());
+            
+            const factionXanaxCells = document.querySelectorAll('[class^="xanaxviewer_"]');
+            factionXanaxCells.forEach(el => {
+                if (el.className.includes('xanaxviewer_')) {
+                    el.remove();
+                }
+            });
+            
+            console.log('💊 Xanax Viewer elements removed');
         },
 
         // Start the Xanax Viewer functionality

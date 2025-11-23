@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Get DOM elements
     const apiKeyInput = document.getElementById('apiKey');
+    const xanaxViewerCheckbox = document.getElementById('xanaxViewer');
     const attackButtonMoverCheckbox = document.getElementById('attackButtonMover');
     const blockTrainingCheckbox = document.getElementById('blockTraining');
     const timeOnTabCheckbox = document.getElementById('timeOnTab');
@@ -25,6 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
     saveButton.addEventListener('click', saveSettings);
     reportIssuesButton.addEventListener('click', reportIssues);
     clearDataButton.addEventListener('click', clearData);
+    xanaxViewerCheckbox.addEventListener('change', handleXanaxViewerToggle);
     attackButtonMoverCheckbox.addEventListener('change', handleAttackButtonMoverToggle);
     blockTrainingCheckbox.addEventListener('change', handleBlockTrainingToggle);
     timeOnTabCheckbox.addEventListener('change', handleTimeOnTabToggle);
@@ -34,6 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function loadSettings() {
         chrome.storage.local.get([
             'sidekick_api_key',
+            'sidekick_xanax_viewer',
             'sidekick_attack_button_mover',
             'sidekick_block_training',
             'sidekick_time_on_tab',
@@ -42,6 +45,13 @@ document.addEventListener('DOMContentLoaded', function() {
         ], function(result) {
             if (result.sidekick_api_key) {
                 apiKeyInput.value = result.sidekick_api_key;
+            }
+            
+            // Load xanax viewer setting
+            if (result.sidekick_xanax_viewer) {
+                xanaxViewerCheckbox.checked = result.sidekick_xanax_viewer.isEnabled !== false;
+            } else {
+                xanaxViewerCheckbox.checked = true; // Default enabled
             }
             
             // Load attack button mover setting
@@ -101,6 +111,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             });
         });
+    }
+    
+    function handleXanaxViewerToggle() {
+        toggleModule('xanaxViewer', xanaxViewerCheckbox.checked, 'Xanax Viewer');
     }
     
     function handleAttackButtonMoverToggle() {
@@ -175,6 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Reset form
                     apiKeyInput.value = '';
+                    xanaxViewerCheckbox.checked = true; // Reset to default enabled
                     attackButtonMoverCheckbox.checked = true; // Reset to default enabled
                     blockTrainingCheckbox.checked = false; // Reset to default disabled
                     timeOnTabCheckbox.checked = false; // Reset to default disabled
