@@ -318,13 +318,22 @@
                 const itemId = el.getAttribute('data-item');
                 if (!itemId) return;
 
-                // Check if value is already appended to prevent duplication
-                const existingValue = el.querySelector('.is-item-value');
-                if (existingValue) {
+                // Check if value is already appended by ANY extension to prevent duplication
+                // Check for our class, TornTools classes, or any element containing price/value text
+                const existingValue = el.querySelector('.is-item-value') || 
+                                     el.querySelector('[class*="price"]') || 
+                                     el.querySelector('[class*="value"]') ||
+                                     el.querySelector('[class*="market"]');
+                
+                // Also check if there's already text content that looks like a price
+                const nameWrap = el.querySelector('.name-wrap');
+                if (nameWrap && nameWrap.textContent.match(/\$[\d,]+/)) {
+                    return; // Already has price displayed, skip
+                }
+                
+                if (existingValue && existingValue.textContent.match(/\$[\d,]+/)) {
                     return; // Already has value appended, skip
                 }
-
-                const nameWrap = el.querySelector('.name-wrap');
                 const itemValue = this.itemValues[itemId]?.value;
                 if (!itemValue) return;
 

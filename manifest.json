@@ -1,10 +1,10 @@
 ﻿{
   "manifest_version": 3,
   "name": "Sidekick",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Enhanced sidebar and tools for Torn.com",
   "permissions": ["storage", "activeTab"],
-  "host_permissions": ["https://www.torn.com/*", "https://*.torn.com/*", "https://api.torn.com/*", "https://api.notion.com/*"],
+  "host_permissions": ["https://www.torn.com/*", "https://*.torn.com/*", "https://api.torn.com/*", "https://api.notion.com/*", "https://torn.synclayer.dev/*"],
   "icons": {
     "16": "assets/icons/swissknife-16.png",
     "32": "assets/icons/swissknife-32.png",
@@ -31,6 +31,7 @@
       "src/modules/npc-attack-timer.module.js", 
       "src/modules/randomtarget.module.js", 
       "src/modules/inventorysorter.module.js", 
+      "src/modules/mugcalculator.module.js", 
       "src/modules/flighttracker.module.js", 
       "src/modules/debt.module.js", 
       "src/modules/notionBugReporter.js", 

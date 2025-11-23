@@ -175,6 +175,15 @@
                 console.warn('⚠️ Inventory Sorter module not available');
             }
 
+            // Initialize Mug Calculator Module
+            console.log('💰 Sidekick: Initializing Mug Calculator...');
+            if (window.SidekickModules.MugCalculator?.initialize) {
+                await window.SidekickModules.MugCalculator.initialize();
+                console.log('✅ Sidekick: Mug Calculator initialized');
+            } else {
+                console.warn('⚠️ Mug Calculator module not available');
+            }
+
             // Initialize Timer Module
             console.log("⏰ Sidekick: Initializing Timer...");
             if (window.SidekickModules.Timer?.init) {

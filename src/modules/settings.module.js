@@ -114,6 +114,11 @@
                                                                                     cursor: pointer; font-weight: 500; transition: all 0.2s;">
                             ⏱️ Chain
                         </button>
+                        <button class="settings-tab-btn" data-tab="notifications" style="flex: 1; padding: 10px; background: transparent; 
+                                                                                    border: none; color: rgba(255,255,255,0.7); border-radius: 6px; 
+                                                                                    cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                            🔔 Notifications
+                        </button>
                     </div>
                     
                     <!-- Tab Content Container -->
@@ -164,6 +169,11 @@
                         <div class="settings-tab-content" id="settings-tab-chain" style="display: none;">
                             ${this.createChainTimerSettingsHTML()}
                         </div>
+                        
+                        <!-- NOTIFICATIONS TAB -->
+                        <div class="settings-tab-content" id="settings-tab-notifications" style="display: none;">
+                            ${this.createNotificationsSettingsHTML()}
+                        </div>
                     </div>
                 </div>
             `;
@@ -183,8 +193,7 @@
                 ${this.createToggle('time-on-tab', '⏰ Time on Tab', 'Shows remaining time for activities in browser tab')}
                 ${this.createToggle('npc-attack-timer', '🎯 NPC Attack Timer', 'Shows NPC attack countdowns in news ticker')}
                 ${this.createToggle('random-target', '🎲 Random Target', 'Adds random target button to attack pages')}
-                ${this.createToggle('xanax-viewer', '💊 Xanax Viewer', 'Shows individual Xanax usage on Faction and Profile pages')}
-                ${this.createToggle('chain-timer', '⏱️ Chain Timer', 'Shows floating chain countdown timer')}
+                ${this.createToggle('mug-calculator', '💰 Mug Calculator', 'Shows mug value calculations on Item Market and Bazaars')}
                 
                 <button id="sidekick-save-module-toggles" style="width: 100%; padding: 12px; background: #4CAF50; 
                                                                   border: none; color: white; border-radius: 6px; 
@@ -248,6 +257,10 @@
             return `
                 <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">💊 Xanax Viewer Settings</h4>
                 
+                ${this.createToggle('xanax-viewer', '💊 Enable Xanax Viewer', 'Shows individual Xanax usage on Faction and Profile pages')}
+                
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
+                
                 <div style="margin-bottom: 20px;">
                     <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Auto Refresh Limit:</label>
                     <div style="display: flex; align-items: center; gap: 15px;">
@@ -295,6 +308,10 @@
             return `
                 <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">⏱️ Chain Timer Settings</h4>
                 
+                ${this.createToggle('chain-timer', '⏱️ Enable Chain Timer', 'Shows floating chain countdown timer')}
+                
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
+                
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Alert Threshold:</label>
                     <div style="display: flex; align-items: center; gap: 15px;">
@@ -341,6 +358,61 @@
             `;
         },
 
+        // Create Notifications settings HTML
+        createNotificationsSettingsHTML() {
+            return `
+                <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">🔔 Notification Settings</h4>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Notification Position:</label>
+                    <select id="sidekick-notif-position" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); 
+                                                                 border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 5px;">
+                        <option value="top-right">Top Right</option>
+                        <option value="top-left">Top Left</option>
+                        <option value="bottom-right">Bottom Right</option>
+                        <option value="bottom-left">Bottom Left</option>
+                    </select>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px; color: #ccc; cursor: pointer;">
+                        <input type="checkbox" id="sidekick-notif-sound" style="accent-color: #2196F3;">
+                        <span>Enable Notification Sounds</span>
+                    </label>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px; color: #ccc; cursor: pointer;">
+                        <input type="checkbox" id="sidekick-notif-auto-dismiss" style="accent-color: #2196F3;" checked>
+                        <span>Auto-dismiss Notifications</span>
+                    </label>
+                    <div style="font-size: 12px; color: #aaa; margin-top: 5px; margin-left: 25px;">
+                        Automatically hide notifications after 5 seconds
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Notification Duration (seconds):</label>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <input type="range" id="sidekick-notif-duration" min="2" max="10" value="5" 
+                               style="flex: 1; accent-color: #2196F3;">
+                        <span id="sidekick-notif-duration-display" style="color: #fff; min-width: 40px; text-align: right; font-weight: bold;">5s</span>
+                    </div>
+                </div>
+                
+                <button id="sidekick-save-notif-settings" style="width: 100%; padding: 10px; background: #2196F3; 
+                                                                 border: none; color: white; border-radius: 5px; 
+                                                                 font-weight: bold; cursor: pointer; margin-bottom: 10px;">
+                    🔔 Save Notification Settings
+                </button>
+                
+                <div id="sidekick-notif-status" style="text-align: center; padding: 10px; border-radius: 5px; 
+                                                     background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;">
+                    Notification settings loaded
+                </div>
+            `;
+        },
+
         // Attach all event listeners
         attachEventListeners(panel) {
             // Tab switching
@@ -380,6 +452,9 @@
             
             // Chain Timer Tab listeners
             this.attachChainTimerTabListeners(panel);
+            
+            // Notifications Tab listeners
+            this.attachNotificationsTabListeners(panel);
         },
 
         // Switch between tabs
@@ -618,6 +693,51 @@
             });
         },
 
+        // Notifications Tab listeners
+        attachNotificationsTabListeners(panel) {
+            const notifPositionSelect = panel.querySelector('#sidekick-notif-position');
+            const notifSoundCheckbox = panel.querySelector('#sidekick-notif-sound');
+            const notifAutoDismissCheckbox = panel.querySelector('#sidekick-notif-auto-dismiss');
+            const notifDurationSlider = panel.querySelector('#sidekick-notif-duration');
+            const notifDurationDisplay = panel.querySelector('#sidekick-notif-duration-display');
+            const saveNotifBtn = panel.querySelector('#sidekick-save-notif-settings');
+            const notifStatusDiv = panel.querySelector('#sidekick-notif-status');
+
+            if (notifDurationSlider) {
+                notifDurationSlider.addEventListener('input', () => {
+                    notifDurationDisplay.textContent = `${notifDurationSlider.value}s`;
+                });
+            }
+
+            if (saveNotifBtn) {
+                saveNotifBtn.addEventListener('click', async () => {
+                    const settings = {
+                        position: notifPositionSelect.value,
+                        soundEnabled: notifSoundCheckbox.checked,
+                        autoDismiss: notifAutoDismissCheckbox.checked,
+                        duration: parseInt(notifDurationSlider.value) * 1000
+                    };
+
+                    try {
+                        await window.SidekickModules.Core.ChromeStorage.set('sidekick_notifications', settings);
+                        this.showStatus(notifStatusDiv, 'Notification settings saved!', 'success');
+                        
+                        if (window.SidekickModules.Core.NotificationSystem) {
+                            window.SidekickModules.Core.NotificationSystem.show(
+                                'Notification Settings',
+                                'Settings saved successfully',
+                                'success',
+                                3000
+                            );
+                        }
+                    } catch (error) {
+                        console.error('Failed to save Notification settings:', error);
+                        this.showStatus(notifStatusDiv, 'Failed to save settings', 'error');
+                    }
+                });
+            }
+        },
+
         // Load all settings from storage
         async loadAllSettings() {
             try {
@@ -668,6 +788,29 @@
                     chainFlashCheckbox.checked = chainSettings.screenFlashEnabled !== false;
                 }
 
+                // Load Notification settings
+                const notifSettings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_notifications') || {};
+                const notifPositionSelect = document.querySelector('#sidekick-notif-position');
+                const notifSoundCheckbox = document.querySelector('#sidekick-notif-sound');
+                const notifAutoDismissCheckbox = document.querySelector('#sidekick-notif-auto-dismiss');
+                const notifDurationSlider = document.querySelector('#sidekick-notif-duration');
+                const notifDurationDisplay = document.querySelector('#sidekick-notif-duration-display');
+                
+                if (notifPositionSelect) {
+                    notifPositionSelect.value = notifSettings.position || 'top-right';
+                }
+                if (notifSoundCheckbox) {
+                    notifSoundCheckbox.checked = notifSettings.soundEnabled || false;
+                }
+                if (notifAutoDismissCheckbox) {
+                    notifAutoDismissCheckbox.checked = notifSettings.autoDismiss !== false;
+                }
+                if (notifDurationSlider) {
+                    const duration = (notifSettings.duration || 5000) / 1000;
+                    notifDurationSlider.value = duration;
+                    notifDurationDisplay.textContent = `${duration}s`;
+                }
+
             } catch (error) {
                 console.error('Failed to load settings:', error);
             }
@@ -682,7 +825,8 @@
                 'npc-attack-timer',
                 'random-target',
                 'xanax-viewer',
-                'chain-timer'
+                'chain-timer',
+                'mug-calculator'
             ];
 
             for (const moduleId of modules) {
