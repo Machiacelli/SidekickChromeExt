@@ -3,7 +3,7 @@
   "name": "Sidekick",
   "version": "1.0",
   "description": "Enhanced sidebar and tools for Torn.com",
-  "permissions": ["storage", "activeTab", "scripting"],
+  "permissions": ["storage", "activeTab"],
   "host_permissions": ["https://www.torn.com/*", "https://*.torn.com/*", "https://api.torn.com/*", "https://api.notion.com/*"],
   "icons": {
     "16": "assets/icons/swissknife-16.png",

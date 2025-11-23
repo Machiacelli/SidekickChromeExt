@@ -38,7 +38,8 @@
                     /used.*?energy.*?(can|drink|refill)/i,
                     /gained.*?energy/i
                 ],
-                completed: false
+                completed: false,
+                resetDaily: true // Ensure this always resets at midnight UTC
             },
             nerveRefill: {
                 name: 'Nerve Refill', 
@@ -59,7 +60,8 @@
                     /used.*?nerve.*?(pill|refill)/i,
                     /gained.*?nerve/i
                 ],
-                completed: false
+                completed: false,
+                resetDaily: true // Ensure this always resets at midnight UTC
             },
             xanaxDose: {
                 name: 'Xanax Dose',
@@ -210,7 +212,11 @@
             
             for (const taskKey in this.dailyTasks) {
                 const task = this.dailyTasks[taskKey];
+                
+                // Force reset for all daily tasks
+                console.log(`🔄 Resetting task: ${task.name} (was completed: ${task.completed})`);
                 task.completed = false;
+                
                 if (task.currentCount !== undefined) {
                     task.currentCount = 0;
                 }
@@ -245,6 +251,7 @@
             }, 100);
             
             console.log('✅ Daily tasks reset complete for:', this.lastResetDate.toISOString());
+            console.log('🔄 All daily tasks reset to incomplete state');
         },
 
         // Start daily reset timer to check for UTC midnight
@@ -587,57 +594,14 @@
             
             let hasAvailabilityChanges = false;
             
-            // Check Energy Refill availability
-            const energyTask = this.dailyTasks.energyRefill;
-            if (energyTask && energyTask.completed) {
-                const canPurchaseEnergyRefill = this.canPurchaseEnergyRefill(barsData);
-                console.log(`⚡ Energy refill check: completed=${energyTask.completed}, canPurchase=${canPurchaseEnergyRefill}`);
-                
-                if (canPurchaseEnergyRefill) {
-                    console.log('⚡ Energy refill is marked completed but can still be purchased - resetting to incomplete');
-                    energyTask.completed = false;
-                    hasAvailabilityChanges = true;
-                    
-                    // Show notification
-                    if (window.SidekickModules?.UI?.showNotification) {
-                        window.SidekickModules.UI.showNotification(
-                            'INFO',
-                            'Energy refill reset - daily purchase still available!'
-                        );
-                    }
-                }
-            }
+            // Removed automatic completion state overrides
+            // Daily tasks should only be marked complete through:
+            // 1. Manual user interaction (checking the box)
+            // 2. Log detection (when the action is actually performed)
+            // 3. Daily reset at midnight UTC (which clears all completed states)
             
-            // Check Nerve Refill availability
-            const nerveTask = this.dailyTasks.nerveRefill;
-            if (nerveTask && nerveTask.completed) {
-                const canPurchaseNerveRefill = this.canPurchaseNerveRefill(barsData);
-                console.log(`🧠 Nerve refill check: completed=${nerveTask.completed}, canPurchase=${canPurchaseNerveRefill}`);
-                
-                if (canPurchaseNerveRefill) {
-                    console.log('🧠 Nerve refill is marked completed but can still be purchased - resetting to incomplete');
-                    nerveTask.completed = false;
-                    hasAvailabilityChanges = true;
-                    
-                    // Show notification
-                    if (window.SidekickModules?.UI?.showNotification) {
-                        window.SidekickModules.UI.showNotification(
-                            'INFO',
-                            'Nerve refill reset - daily purchase still available!'
-                        );
-                    }
-                }
-            }
-            
-            if (hasAvailabilityChanges) {
-                console.log('✅ Refill availability check completed with updates');
-                this.saveDailyTasks();
-                this.renderAllTodoLists();
-                return true;
-            }
-            
-            console.log('✅ Refill availability check completed - no changes needed');
-            return false;
+            console.log('📊 Bars data received - daily tasks rely on manual completion and daily reset');
+            return false; // No automatic changes needed
         },
 
         // Check if energy refill can be purchased (daily 30-point purchase)
@@ -2164,6 +2128,15 @@
         forceResetDailyTasks() {
             console.log('🔄 Force reset daily tasks triggered');
             this.resetDailyTasks();
+            
+            // Show notification to confirm manual reset
+            if (window.SidekickModules?.UI?.showNotification) {
+                window.SidekickModules.UI.showNotification(
+                    'SUCCESS',
+                    'Daily tasks manually reset - all checkboxes should now be unchecked!'
+                );
+            }
+            
             console.log('✅ Daily tasks force reset complete');
         }
     };
