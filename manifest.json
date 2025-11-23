@@ -43,7 +43,7 @@
     "service_worker": "src/background.js"
   },
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "popup/popup.html",
     "default_icon": {
       "16": "assets/icons/swissknife-16.png",
       "32": "assets/icons/swissknife-32.png",
