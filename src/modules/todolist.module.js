@@ -68,22 +68,11 @@
                 icon: '💊',
                 color: '#E74C3C', 
                 description: 'Daily Xanax dose (up to 3)',
-                detectFromLogs: true,
-                logPatterns: [
-                    /xanax.*?(used|took|consumed|taken)/i,
-                    /(used|took|consumed|taken).*?xanax/i,
-                    /you.*?(used|took|consumed).*?xanax/i,
-                    /xanax.*?effect/i,
-                    /took.*?xanax/i,
-                    /used.*?xanax/i,
-                    /consume.*?xanax/i,
-                    /xanax.*?active/i,
-                    /\bxanax\b/i  // Just the word xanax anywhere
-                ],
+                apiField: 'xantaken',  // Use personalstats.xantaken for instant updates
                 maxCount: 3,
                 currentCount: 0,
-                completed: false
-                // NO apiField or baseline - this uses log detection only
+                completed: false,
+                resetDaily: true  // Reset baseline at midnight UTC
             }
         },
 
@@ -253,8 +242,9 @@
                 }
             }
             
-            // Clear API baselines for new day
+            // Clear API baselines for new day (will be re-initialized on next API call)
             this.apiBaselines = {};
+            console.log('🔄 Cleared API baselines - xantaken will be re-baselined on next API call');
             
             // Set last reset date to current UTC date (not time)
             const now = new Date();
@@ -781,6 +771,32 @@
                 cooldownsData: !!cooldownsData,
                 refillsData: !!refillsData
             });
+            
+            // 🆕 PRIORITY: Initialize xantaken baseline if not set
+            if (personalstats && personalstats.xantaken !== undefined) {
+                if (this.apiBaselines.xantaken === undefined) {
+                    this.apiBaselines.xantaken = personalstats.xantaken;
+                    console.log('💊 Initialized Xanax baseline:', this.apiBaselines.xantaken);
+                }
+            }
+            
+            // 🆕 PRIORITY: Update Xanax count from xantaken (instant updates)
+            if (personalstats && personalstats.xantaken !== undefined) {
+                const currentXan = personalstats.xantaken;
+                const baselineXan = this.apiBaselines.xantaken || currentXan;
+                const xanUsedToday = Math.max(0, currentXan - baselineXan);
+                const xanClamped = Math.min(3, xanUsedToday);
+                
+                const xanTask = this.dailyTasks.xanaxDose;
+                if (xanTask.currentCount !== xanClamped) {
+                    xanTask.currentCount = xanClamped;
+                    xanTask.completed = xanClamped >= 3;
+                    hasUpdates = true;
+                    console.log(`💊 Updated Xanax from xantaken: ${xanClamped}/3 (total lifetime: ${currentXan}, baseline: ${baselineXan})`);
+                } else {
+                    console.log(`💊 Xanax status confirmed: ${xanClamped}/3`);
+                }
+            }
             
             // 🆕 PRIORITY: Check refills data first (most reliable method)
             if (refillsData) {

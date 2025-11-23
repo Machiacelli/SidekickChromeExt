@@ -1,7 +1,7 @@
 ﻿{
   "manifest_version": 3,
   "name": "Sidekick",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Enhanced sidebar and tools for Torn.com",
   "permissions": ["storage", "activeTab"],
   "host_permissions": ["https://www.torn.com/*", "https://*.torn.com/*", "https://api.torn.com/*", "https://api.notion.com/*"],
