@@ -435,7 +435,7 @@
                 console.warn('🔗 Stack trace:', new Error().stack);
                 
                 // Immediate notification to user
-                this.showContextLossNotification();
+                SafeMessageSender.showContextLossNotification();
                 
                 // Try recovery once automatically
                 const recovered = await SafeMessageSender.attemptContextRecovery();
@@ -443,7 +443,7 @@
                     this.lastKnownState = true;
                     console.log('✅ Extension context auto-recovered');
                     // Re-expose global functions after recovery
-                    this.reExposeGlobalFunctions();
+                    SafeMessageSender.reExposeGlobalFunctions();
                 } else {
                     this.lastKnownState = false;
                     
