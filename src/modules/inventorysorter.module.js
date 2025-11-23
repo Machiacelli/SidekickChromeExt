@@ -158,27 +158,6 @@
                     font-size: 11px !important;
                     font-weight: bold !important;
                 }
-
-                .is-item-value {
-                    width: 100% !important;
-                    padding: 4px 10px !important;
-                    font-size: 11px !important;
-                    display: block !important;
-                }
-
-                .is-item-value-color {
-                    color: var(--default-green-color) !important;
-                    font-weight: 600 !important;
-                }
-
-                .is-item-qty {
-                    color: rgba(255,255,255,0.7) !important;
-                }
-
-                li:has(.group-arrow) .is-item-value {
-                    width: auto !important;
-                    padding: 0 30px 0 10px !important;
-                }
             `;
             document.head.appendChild(style);
         },
@@ -312,78 +291,13 @@
             this.tabs = { ...this.tabs, ...newTab };
         },
 
-        // Append item values to inventory items
+        // Store item values without adding any visual elements
+        // We only need the values for sorting, not for display
         appendItemValues(defaultElements) {
-            Array.from(defaultElements).forEach((el) => {
-                const itemId = el.getAttribute('data-item');
-                if (!itemId) return;
-
-                // Check if value is already appended by ANY extension to prevent duplication
-                // Check for our class, TornTools classes, or any element containing price/value text
-                const existingValue = el.querySelector('.is-item-value') || 
-                                     el.querySelector('[class*="price"]') || 
-                                     el.querySelector('[class*="value"]') ||
-                                     el.querySelector('[class*="market"]');
-                
-                // Also check if there's already text content that looks like a price
-                const nameWrap = el.querySelector('.name-wrap');
-                if (nameWrap && nameWrap.textContent.match(/\$[\d,]+/)) {
-                    return; // Already has price displayed, skip
-                }
-                
-                if (existingValue && existingValue.textContent.match(/\$[\d,]+/)) {
-                    return; // Already has value appended, skip
-                }
-                const itemValue = this.itemValues[itemId]?.value;
-                if (!itemValue) return;
-
-                // Create value container that won't overlap with existing prices
-                const valueContainer = document.createElement('div');
-                valueContainer.classList.add('is-item-value');
-                valueContainer.style.cssText = 'clear: both; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.1);';
-                
-                const qtyEl = el.querySelector('.item-amount');
-                const itemQty = qtyEl?.textContent?.trim() || '1';
-                
-                // Create value display
-                const valueText = document.createElement('span');
-                valueText.classList.add('is-item-value-color');
-                
-                if (itemQty === '' || itemQty === '1') {
-                    // Single item
-                    valueText.textContent = `Market Value: ${this.getUsdFormat(itemValue)}`;
-                    valueContainer.appendChild(valueText);
-                } else {
-                    // Multiple items - show unit price and total
-                    const unitPrice = document.createElement('span');
-                    unitPrice.classList.add('is-item-value-color');
-                    unitPrice.textContent = `${this.getUsdFormat(itemValue)} each`;
-                    
-                    const multiply = document.createElement('span');
-                    multiply.classList.add('is-item-qty');
-                    multiply.style.cssText = 'margin: 0 5px; opacity: 0.7;';
-                    multiply.textContent = ' × ' + itemQty + ' = ';
-                    
-                    const totalPrice = document.createElement('span');
-                    totalPrice.classList.add('is-item-value-color');
-                    totalPrice.style.fontWeight = 'bold';
-                    totalPrice.textContent = this.getUsdFormat(itemQty * itemValue);
-
-                    valueContainer.appendChild(unitPrice);
-                    valueContainer.appendChild(multiply);
-                    valueContainer.appendChild(totalPrice);
-                }
-                
-                // Append to the item - prefer bonuses-wrap for better positioning
-                const bonusesEl = el.querySelector('.bonuses-wrap');
-                if (bonusesEl) {
-                    const listItem = document.createElement('li');
-                    listItem.appendChild(valueContainer);
-                    bonusesEl.appendChild(listItem);
-                } else if (nameWrap) {
-                    nameWrap.appendChild(valueContainer);
-                }
-            });
+            // This function no longer adds any visual elements to the DOM
+            // It simply ensures the item values are loaded in memory for sorting
+            // The actual values are already displayed by other extensions/scripts
+            console.log('📦 Item values loaded for sorting (no visual elements added)');
         },
 
         // Sort current tab
