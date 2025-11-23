@@ -430,18 +430,15 @@
             const currentState = SafeMessageSender.isExtensionContextValid();
             
             if (this.lastKnownState === true && currentState === false) {
-                console.warn('🚨 Extension context invalidation detected by monitor');
-                console.warn('📍 Context:', window.location.href);
-                console.warn('🔗 Stack trace:', new Error().stack);
+                console.debug('🔄 Extension context invalidation detected by monitor');
+                console.debug('📍 Context:', window.location.href);
+                console.debug('🔗 Stack trace:', new Error().stack);
                 
-                // Immediate notification to user
-                SafeMessageSender.showContextLossNotification();
-                
-                // Try recovery once automatically
+                // Try recovery once automatically (silently)
                 const recovered = await SafeMessageSender.attemptContextRecovery();
                 if (recovered) {
                     this.lastKnownState = true;
-                    console.log('✅ Extension context auto-recovered');
+                    console.debug('✅ Extension context auto-recovered');
                     // Re-expose global functions after recovery
                     SafeMessageSender.reExposeGlobalFunctions();
                 } else {
@@ -600,48 +597,14 @@
             return false;
         },
 
-        // Show immediate context loss notification
+        // Show immediate context loss notification (silent debug mode)
         showContextLossNotification() {
-            console.error('🚨 CRITICAL: Extension context invalidated');
-            console.error('📋 This typically happens when:');
-            console.error('   - Extension was updated/reloaded');
-            console.error('   - Extension permissions changed');
-            console.error('   - Chrome updated the extension');
-            console.error('💡 Solution: Reload the page to restore functionality');
-            
-            // Show prominent notification
-            if (document.body) {
-                const notification = document.createElement('div');
-                notification.id = 'sidekick-context-loss-alert';
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: #ff4444;
-                    color: white;
-                    padding: 15px;
-                    border-radius: 8px;
-                    z-index: 999999;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                    max-width: 300px;
-                    font-family: Arial, sans-serif;
-                    font-size: 14px;
-                `;
-                notification.innerHTML = `
-                    <div style="font-weight: bold; margin-bottom: 8px;">🚨 Extension Connection Lost</div>
-                    <div style="margin-bottom: 10px;">Sidekick extension context has been invalidated. Some features may not work.</div>
-                    <button onclick="window.location.reload()" style="background: white; color: #ff4444; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">Reload Page</button>
-                    <button onclick="this.parentElement.remove()" style="background: transparent; color: white; border: 1px solid white; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-left: 8px;">Dismiss</button>
-                `;
-                document.body.appendChild(notification);
-                
-                // Auto-remove after 30 seconds
-                setTimeout(() => {
-                    if (notification.parentElement) {
-                        notification.remove();
-                    }
-                }, 30000);
-            }
+            console.debug('🔄 Extension context invalidated - using localStorage fallback');
+            console.debug('📋 This typically happens when:');
+            console.debug('   - Extension was updated/reloaded');
+            console.debug('   - Extension permissions changed');
+            console.debug('   - Chrome updated the extension');
+            console.debug('💡 Note: Functionality continues via localStorage fallback');
         },
 
         // Re-expose global functions after context recovery

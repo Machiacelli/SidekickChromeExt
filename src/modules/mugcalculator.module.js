@@ -21,9 +21,16 @@ const MugCalculatorModule = (() => {
         async initialize() {
             console.log('[Sidekick] Initializing Mug Calculator Module...');
             
+            // Check if Core module is available
+            if (!window.SidekickModules?.Core?.ChromeStorage) {
+                console.warn('[Sidekick] Core module not available, Mug Calculator disabled');
+                return;
+            }
+            
             // Check if module is enabled
-            const settings = await ChromeStorage.getModuleSettings('mug-calculator');
-            isEnabled = settings?.enabled ?? false;
+            const storageKey = 'sidekick_mug_calculator';
+            const settings = await window.SidekickModules.Core.ChromeStorage.get(storageKey) || {};
+            isEnabled = settings.isEnabled !== false;
             
             if (!isEnabled) {
                 console.log('[Sidekick] Mug Calculator is disabled');
@@ -246,11 +253,15 @@ const MugCalculatorModule = (() => {
             });
 
             // Load saved settings
-            ChromeStorage.get(['mugMerits', 'mugPlunder', 'mugThreshold']).then(data => {
-                if (data.mugMerits) mugPanel.querySelector('#mugMeritsInput').value = data.mugMerits;
-                if (data.mugPlunder) mugPanel.querySelector('#plunderInput').value = parseFloat(data.mugPlunder).toFixed(2);
-                if (data.mugThreshold) mugPanel.querySelector('#thresholdInput').value = data.mugThreshold;
-            });
+            (async () => {
+                const mugMerits = await window.SidekickModules.Core.ChromeStorage.get('mugMerits');
+                const mugPlunder = await window.SidekickModules.Core.ChromeStorage.get('mugPlunder');
+                const mugThreshold = await window.SidekickModules.Core.ChromeStorage.get('mugThreshold');
+                
+                if (mugMerits) mugPanel.querySelector('#mugMeritsInput').value = mugMerits;
+                if (mugPlunder) mugPanel.querySelector('#plunderInput').value = parseFloat(mugPlunder).toFixed(2);
+                if (mugThreshold) mugPanel.querySelector('#thresholdInput').value = mugThreshold;
+            })();
 
             mugPanel.querySelector('.saveSettings').addEventListener('click', async () => {
                 const mugMeritsVal = parseInt(mugPanel.querySelector('#mugMeritsInput').value.trim(), 10);
@@ -267,11 +278,9 @@ const MugCalculatorModule = (() => {
                     }
                 }
 
-                await ChromeStorage.set({
-                    mugMerits: isNaN(mugMeritsVal) ? 0 : Math.min(Math.max(mugMeritsVal, 0), 10),
-                    mugPlunder: plunderInputVal,
-                    mugThreshold: isNaN(thresholdVal) ? 0 : thresholdVal
-                });
+                await window.SidekickModules.Core.ChromeStorage.set('mugMerits', isNaN(mugMeritsVal) ? 0 : Math.min(Math.max(mugMeritsVal, 0), 10));
+                await window.SidekickModules.Core.ChromeStorage.set('mugPlunder', plunderInputVal);
+                await window.SidekickModules.Core.ChromeStorage.set('mugThreshold', isNaN(thresholdVal) ? 0 : thresholdVal);
 
                 NotificationSystem.show("Mug Calculator settings saved!", 'success');
                 mugPanel.style.display = 'none';
@@ -360,14 +369,16 @@ const MugCalculatorModule = (() => {
         },
 
         async fetchUserData(playerId, mugMerits, plunderPercent, totalMoney, threshold, available) {
-            const apiKey = await ChromeStorage.get('tornApiKey');
-            if (!apiKey.tornApiKey) {
-                NotificationSystem.show("Please set your API key in settings", 'error');
+            const apiKey = await window.SidekickModules.Core.ChromeStorage.get('sidekick_api_key');
+            if (!apiKey) {
+                if (window.SidekickModules?.Core?.NotificationSystem) {
+                    window.SidekickModules.Core.NotificationSystem.show('Mug Calculator', 'Please set your API key in settings', 'error', 3000);
+                }
                 return null;
             }
 
             const requestData = {
-                api_key: apiKey.tornApiKey,
+                api_key: apiKey,
                 player_id: playerId,
                 mug_merits: mugMerits,
                 plunder_percent: plunderPercent,
@@ -376,7 +387,7 @@ const MugCalculatorModule = (() => {
                 available: available,
             };
             
-            const cacheKey = `${apiKey.tornApiKey}_${playerId}_${mugMerits}_${plunderPercent}_${totalMoney}_${threshold}_${available}`;
+            const cacheKey = `${apiKey}_${playerId}_${mugMerits}_${plunderPercent}_${totalMoney}_${threshold}_${available}`;
             const now = Date.now();
             
             if (dataCache[cacheKey] && (now - dataCache[cacheKey].timestamp < CACHE_DURATION)) {
@@ -404,9 +415,8 @@ const MugCalculatorModule = (() => {
         },
 
         async handleMugIconClick(totalMoney, quantity, threshold, sellerLink, icon) {
-            const settings = await ChromeStorage.get(['mugMerits', 'mugPlunder']);
-            const mugMerits = parseInt(settings.mugMerits || 0, 10);
-            const plunderPercent = parseFloat(settings.mugPlunder || 0);
+            const mugMerits = parseInt(await window.SidekickModules.Core.ChromeStorage.get('mugMerits') || 0, 10);
+            const plunderPercent = parseFloat(await window.SidekickModules.Core.ChromeStorage.get('mugPlunder') || 0);
             
             const playerId = this.extractUserId(sellerLink.href);
             const data = await this.fetchUserData(playerId, mugMerits, plunderPercent, totalMoney, threshold, quantity);
@@ -419,7 +429,9 @@ const MugCalculatorModule = (() => {
                 popup.classList.add("visible");
                 currentPopups.push(popup);
             } else {
-                NotificationSystem.show("Failed to fetch user data", 'error');
+                if (window.SidekickModules?.Core?.NotificationSystem) {
+                    window.SidekickModules.Core.NotificationSystem.show('Mug Calculator', 'Failed to fetch user data', 'error', 3000);
+                }
             }
         },
 
@@ -439,8 +451,7 @@ const MugCalculatorModule = (() => {
             const available = parseInt(availableText, 10);
             const totalMoney = price * available;
             
-            const settings = await ChromeStorage.get('mugThreshold');
-            const threshold = parseInt(settings.mugThreshold || 0, 10);
+            const threshold = parseInt(await window.SidekickModules.Core.ChromeStorage.get('mugThreshold') || 0, 10);
             
             if (totalMoney < threshold) return;
             if (row.querySelector(".infoIcon")) {
@@ -477,8 +488,7 @@ const MugCalculatorModule = (() => {
             const quantity = parseInt(quantityText.replace(/,/g, ""), 10);
             const totalMoney = price * quantity;
             
-            const settings = await ChromeStorage.get('mugThreshold');
-            const threshold = parseInt(settings.mugThreshold || 0, 10);
+            const threshold = parseInt(await window.SidekickModules.Core.ChromeStorage.get('mugThreshold') || 0, 10);
             
             if (totalMoney < threshold) return;
             
@@ -584,6 +594,10 @@ const MugCalculatorModule = (() => {
         }
     };
 })();
+
+// Register module
+if (!window.SidekickModules) window.SidekickModules = {};
+window.SidekickModules.MugCalculator = MugCalculatorModule;
 
 // Export for use in main.js
 if (typeof module !== 'undefined' && module.exports) {

@@ -575,7 +575,10 @@
                 });
 
                 try {
-                    await window.SidekickModules.Core.ChromeStorage.setMultiple(settings);
+                    // Save each module setting individually
+                    for (const [key, value] of Object.entries(settings)) {
+                        await window.SidekickModules.Core.ChromeStorage.set(key, value);
+                    }
                     this.showStatus(statusDiv, 'Module settings saved successfully!', 'success');
                     
                     if (window.SidekickModules.Core.NotificationSystem) {
