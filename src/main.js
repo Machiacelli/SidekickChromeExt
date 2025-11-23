@@ -369,6 +369,11 @@
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             console.log('📨 Received message:', request);
             
+            if (request.action === 'openSettings') {
+                handleOpenSettings(sendResponse);
+                return true;
+            }
+            
             if (request.action === 'toggleModule') {
                 handleModuleToggle(request.moduleType, request.enabled, sendResponse);
                 return true; // Keep message channel open for async response
@@ -543,6 +548,22 @@
             }
         } catch (error) {
             console.error('❌ Failed to open bug reporter:', error);
+            sendResponse({ success: false, error: error.message });
+        }
+    }
+
+    // Handle opening settings panel
+    function handleOpenSettings(sendResponse) {
+        try {
+            if (window.SidekickModules?.Settings?.createSettingsPanel) {
+                window.SidekickModules.Settings.createSettingsPanel();
+                sendResponse({ success: true });
+            } else {
+                console.warn('⚠️ Settings module not available');
+                sendResponse({ success: false, error: 'Settings module not available' });
+            }
+        } catch (error) {
+            console.error('❌ Failed to open settings:', error);
             sendResponse({ success: false, error: error.message });
         }
     }

@@ -315,48 +315,52 @@
                 const itemId = el.getAttribute('data-item');
                 if (!itemId) return;
 
-                if (!el.querySelector('.is-item-value')) {
-                    const nameWrap = el.querySelector('.name-wrap');
-                    const itemValue = this.itemValues[itemId]?.value;
-                    if (!itemValue) return;
+                // Check if value is already appended to prevent duplication
+                const existingValue = el.querySelector('.is-item-value');
+                if (existingValue) {
+                    return; // Already has value appended, skip
+                }
 
-                    const valueEl = document.createElement('span');
-                    const totalValueEl = document.createElement('span');
-                    const qtyEl = el.querySelector('.item-amount');
-                    const bonusesEl = el.querySelector('.bonuses-wrap');
+                const nameWrap = el.querySelector('.name-wrap');
+                const itemValue = this.itemValues[itemId]?.value;
+                if (!itemValue) return;
 
-                    valueEl.classList.add('is-item-value-color');
-                    totalValueEl.classList.add('is-item-value-color');
+                const valueEl = document.createElement('span');
+                const totalValueEl = document.createElement('span');
+                const qtyEl = el.querySelector('.item-amount');
+                const bonusesEl = el.querySelector('.bonuses-wrap');
 
-                    let valueContainer;
+                valueEl.classList.add('is-item-value-color');
+                totalValueEl.classList.add('is-item-value-color');
 
-                    if (bonusesEl) {
-                        valueContainer = document.createElement('li');
-                        valueContainer.classList.add('is-item-value');
-                        bonusesEl.appendChild(valueContainer);
-                    } else {
-                        valueContainer = document.createElement('span');
-                        valueContainer.classList.add('is-item-value', 'right');
-                        nameWrap?.appendChild(valueContainer);
-                    }
+                let valueContainer;
 
-                    if (qtyEl?.textContent === '') {
-                        valueEl.textContent = this.getUsdFormat(itemValue);
-                        valueContainer.appendChild(valueEl);
-                    } else {
-                        valueEl.textContent = `${this.getUsdFormat(itemValue)} `;
+                if (bonusesEl) {
+                    valueContainer = document.createElement('li');
+                    valueContainer.classList.add('is-item-value');
+                    bonusesEl.appendChild(valueContainer);
+                } else {
+                    valueContainer = document.createElement('span');
+                    valueContainer.classList.add('is-item-value', 'right');
+                    nameWrap?.appendChild(valueContainer);
+                }
 
-                        const itemQty = qtyEl?.textContent || '1';
-                        const newQtyEl = document.createElement('span');
-                        newQtyEl.classList.add('is-item-qty');
-                        newQtyEl.textContent = `x ${itemQty} = `;
+                if (qtyEl?.textContent === '') {
+                    valueEl.textContent = this.getUsdFormat(itemValue);
+                    valueContainer.appendChild(valueEl);
+                } else {
+                    valueEl.textContent = `${this.getUsdFormat(itemValue)} `;
 
-                        totalValueEl.textContent = this.getUsdFormat(itemQty * itemValue);
+                    const itemQty = qtyEl?.textContent || '1';
+                    const newQtyEl = document.createElement('span');
+                    newQtyEl.classList.add('is-item-qty');
+                    newQtyEl.textContent = `x ${itemQty} = `;
 
-                        valueContainer.appendChild(valueEl);
-                        valueContainer.appendChild(newQtyEl);
-                        valueContainer.appendChild(totalValueEl);
-                    }
+                    totalValueEl.textContent = this.getUsdFormat(itemQty * itemValue);
+
+                    valueContainer.appendChild(valueEl);
+                    valueContainer.appendChild(newQtyEl);
+                    valueContainer.appendChild(totalValueEl);
                 }
             });
         },

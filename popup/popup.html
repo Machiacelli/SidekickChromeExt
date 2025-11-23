@@ -2,75 +2,64 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Sidekick Settings</title>
+    <title>Sidekick Notifications</title>
     <style>
-        .switch-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .notification-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            border-left: 3px solid #4CAF50;
+            transition: all 0.2s ease;
+        }
+        
+        .notification-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .notification-item.info {
+            border-left-color: #2196F3;
+        }
+        
+        .notification-item.warning {
+            border-left-color: #FF9800;
+        }
+        
+        .notification-item.error {
+            border-left-color: #F44336;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .notification-message {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .notification-time {
+            font-size: 11px;
+            opacity: 0.5;
+            margin-top: 5px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            opacity: 0.5;
+        }
+        
+        .empty-state-icon {
+            font-size: 48px;
             margin-bottom: 15px;
         }
         
-        .switch {
-            position: relative;
-            width: 50px;
-            height: 24px;
-        }
-        
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(255,255,255,0.2);
-            transition: .4s;
-            border-radius: 24px;
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-        
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        
-        input:checked + .slider {
-            background-color: rgba(76, 175, 80, 0.8);
-            border-color: rgba(76, 175, 80, 1);
-        }
-        
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
-        
-        .switch-label {
-            flex: 1;
-            margin-right: 15px;
-        }
-        
-        .switch-description {
-            font-size: 12px;
-            opacity: 0.7;
-            margin-top: 4px;
-        }
-        
         body {
-            width: 300px;
-            min-height: 400px;
+            width: 350px;
+            min-height: 450px;
             max-height: 600px;
             padding: 0;
             margin: 0;
@@ -114,6 +103,30 @@
             font-size: 12px;
             opacity: 0.7;
             margin-top: 5px;
+        }
+        
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .quick-action-btn {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .quick-action-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(76, 175, 80, 0.5);
         }
         
         .tabs {
@@ -284,183 +297,53 @@
     <div class="header">
         <img src="../assets/icons/sidekick-logo.png" alt="Sidekick" class="logo">
         <h1>Sidekick</h1>
-        <div class="version">Chrome Extension v1.0.3</div>
-    </div>
-    
-    <div class="tabs">
-        <button class="tab-button active" data-tab="general">General</button>
-        <button class="tab-button" data-tab="xanax">Xanax Viewer</button>
-        <button class="tab-button" data-tab="chain">Chain Timer</button>
+        <div class="version">Chrome Extension v1.0.5</div>
+        <div class="quick-actions">
+            <button class="quick-action-btn" id="openSettingsBtn">⚙️ Settings</button>
+            <button class="quick-action-btn" id="reportIssuesBtn">🐛 Report Bug</button>
+        </div>
     </div>
     
     <div class="content">
-        <!-- General Settings Tab -->
-        <div class="tab-content active" id="general-tab">
-            <div class="setting-group">
-                <label for="apiKey">Torn API Key:</label>
-                <input type="text" id="apiKey" placeholder="Enter your Torn API key...">
+        <div class="tab-content active" id="notifications-tab">
+            <div style="margin-bottom: 15px;">
+                <h2 style="margin: 0; font-size: 16px; opacity: 0.9;">📬 Recent Activity</h2>
+                <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.5;">Coming soon: Real-time notifications and activity feed</p>
             </div>
             
-            <div class="switch-container">
-                <div class="switch-label">
-                    <div>Fast Attack</div>
-                    <div class="switch-description">Moves Start Fight button over weapon for faster attacks</div>
+            <div class="empty-state">
+                <div class="empty-state-icon">🔔</div>
+                <div style="font-size: 14px; margin-bottom: 10px;">No Recent Notifications</div>
+                <div style="font-size: 12px; opacity: 0.7;">
+                    Future updates will display:<br>
+                    • Chain timer alerts<br>
+                    • NPC attack reminders<br>
+                    • API status changes<br>
+                    • Module updates<br>
+                    • And more!
                 </div>
-                <label class="switch">
-                    <input type="checkbox" id="attackButtonMover">
-                    <span class="slider"></span>
-                </label>
             </div>
             
-            <div class="switch-container">
-                <div class="switch-label">
-                    <div>Block Training</div>
-                    <div class="switch-description">Blocks gym access to prevent accidental training</div>
+            <!-- Example notifications (commented out for future use)
+            <div class="notification-item info">
+                <div class="notification-title">✅ Sidekick Loaded</div>
+                <div class="notification-message">All modules initialized successfully</div>
+                <div class="notification-time">Just now</div>
+            </div>
+            
+            <div class="notification-item warning">
+                <div class="notification-title">⚠️ Chain Timer Alert</div>
+                <div class="notification-message">Chain timer below 2 minutes</div>
+                <div class="notification-time">5 minutes ago</div>
+            </div>
+            -->
+            
+            <div style="margin-top: 20px; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; border: 1px solid rgba(76, 175, 80, 0.3);">
+                <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">💡 Quick Tip</div>
+                <div style="font-size: 12px; opacity: 0.8;">
+                    Click the ⚙️ cogwheel button in the Torn sidebar to access all Sidekick settings and module toggles!
                 </div>
-                <label class="switch">
-                    <input type="checkbox" id="blockTraining">
-                    <span class="slider"></span>
-                </label>
             </div>
-            
-            <div class="switch-container">
-                <div class="switch-label">
-                    <div>Time on Tab</div>
-                    <div class="switch-description">Shows remaining time for activities in browser tab</div>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="timeOnTab">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <div class="switch-container">
-                <div class="switch-label">
-                    <div>NPC Attack Timer</div>
-                    <div class="switch-description">Shows NPC attack countdowns in news ticker</div>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="npcAttackTimer">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <div class="switch-container">
-                <div class="switch-label">
-                    <div>Random Target</div>
-                    <div class="switch-description">Adds random target button to attack pages</div>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="randomTarget">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <button class="button" id="saveSettings">Save Settings</button>
-            <button class="button" id="reportIssues">🐛 Report Issues</button>
-            <button class="button danger" id="clearData">Clear All Data</button>
-            
-            <div class="status" id="status"></div>
-        </div>
-        
-        <!-- Xanax Viewer Settings Tab -->
-        <div class="tab-content" id="xanax-tab">
-            <div class="switch-container">
-                <div class="switch-label">
-                    <div>Xanax Viewer Enabled</div>
-                    <div class="switch-description">Shows individual Xanax usage on Faction and Profile pages</div>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="xanaxViewer">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <div class="setting-group">
-                <label for="xanaxApiKey">Torn API Key (Public Only):</label>
-                <input type="text" id="xanaxApiKey" placeholder="Enter your Torn API key..." maxlength="16">
-                <div style="font-size: 12px; opacity: 0.7; margin-top: 5px;">Used for fetching Xanax stats. If empty, uses global API key.</div>
-            </div>
-            
-            <div class="setting-group">
-                <label>Auto-fetch Limit: <span class="range-value" id="autoLimitValue">0</span> users</label>
-                <input type="range" id="autoLimitSlider" min="0" max="100" value="0">
-                <div style="font-size: 12px; opacity: 0.7; margin-top: 5px;">Automatically fetch closest level users when visiting faction page (0 = disabled)</div>
-            </div>
-            
-            <div class="setting-group">
-                <label style="display: flex; align-items: center; cursor: pointer;">
-                    <input type="checkbox" id="showRelativeCheckbox">
-                    <span>Show Relative Value</span>
-                </label>
-                <div style="font-size: 12px; opacity: 0.7; margin-top: 5px;">Display Xanax usage relative to your own usage</div>
-            </div>
-            
-            <div class="cache-info">
-                <div><strong>Cache:</strong> <span id="cacheCounter">0</span> profiles saved</div>
-            </div>
-            
-            <button class="button" id="saveXanaxSettings">Save Xanax Settings</button>
-            <button class="button danger" id="clearCache">Clear Cache</button>
-            
-            <div class="status" id="xanaxStatus"></div>
-        </div>
-        
-        <!-- Chain Timer Settings Tab -->
-        <div class="tab-content" id="chain-tab">
-            <div class="switch-container">
-                <div class="switch-label">
-                    <div>Chain Timer Enabled</div>
-                    <div class="switch-description">Shows floating chain countdown timer</div>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="chainTimerEnabled">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <div class="setting-group">
-                <label>Alert Threshold: <span class="range-value" id="chainThresholdValue">4</span> minutes</label>
-                <input type="range" id="chainThresholdSlider" min="1" max="10" value="4" step="0.5">
-                <div style="font-size: 12px; opacity: 0.7; margin-top: 5px;">Trigger alert when chain timer drops below this threshold</div>
-            </div>
-            
-            <div class="switch-container">
-                <div class="switch-label">
-                    <div>Alerts Enabled</div>
-                    <div class="switch-description">Enable/disable all chain alerts</div>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="chainAlertsEnabled">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <div class="switch-container">
-                <div class="switch-label">
-                    <div>Popup Alerts</div>
-                    <div class="switch-description">Show popup dialog when threshold reached</div>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="chainPopupEnabled">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <div class="switch-container">
-                <div class="switch-label">
-                    <div>Screen Flash</div>
-                    <div class="switch-description">Flash red screen when threshold reached</div>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="chainFlashEnabled">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <button class="button" id="saveChainSettings">Save Chain Timer Settings</button>
-            
-            <div class="status" id="chainStatus"></div>
         </div>
     </div>
     

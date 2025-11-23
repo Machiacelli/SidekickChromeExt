@@ -1,419 +1,73 @@
-/**
- * Sidekick Chrome Extension - Popup Script
- * Handles the extension popup interface
+﻿/**
+ * Sidekick Chrome Extension - Popup Script V2
+ * Handles the extension popup interface (Notification Center)
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🎛️ Sidekick popup loaded');
+    console.log('📬 Sidekick Notification Center loaded');
     
-    // Get DOM elements - General Tab
-    const apiKeyInput = document.getElementById('apiKey');
-    const xanaxViewerCheckbox = document.getElementById('xanaxViewer');
-    const attackButtonMoverCheckbox = document.getElementById('attackButtonMover');
-    const blockTrainingCheckbox = document.getElementById('blockTraining');
-    const timeOnTabCheckbox = document.getElementById('timeOnTab');
-    const npcAttackTimerCheckbox = document.getElementById('npcAttackTimer');
-    const randomTargetCheckbox = document.getElementById('randomTarget');
-    const saveButton = document.getElementById('saveSettings');
-    const reportIssuesButton = document.getElementById('reportIssues');
-    const clearDataButton = document.getElementById('clearData');
-    const statusDiv = document.getElementById('status');
+    // Get DOM elements
+    const openSettingsBtn = document.getElementById('openSettingsBtn');
+    const reportIssuesBtn = document.getElementById('reportIssuesBtn');
     
-    // Get DOM elements - Xanax Tab
-    const xanaxApiKeyInput = document.getElementById('xanaxApiKey');
-    const autoLimitSlider = document.getElementById('autoLimitSlider');
-    const autoLimitValue = document.getElementById('autoLimitValue');
-    const showRelativeCheckbox = document.getElementById('showRelativeCheckbox');
-    const cacheCounter = document.getElementById('cacheCounter');
-    const saveXanaxButton = document.getElementById('saveXanaxSettings');
-    const clearCacheButton = document.getElementById('clearCache');
-    const xanaxStatusDiv = document.getElementById('xanaxStatus');
-    
-    // Get DOM elements - Chain Timer Tab
-    const chainTimerEnabledCheckbox = document.getElementById('chainTimerEnabled');
-    const chainThresholdSlider = document.getElementById('chainThresholdSlider');
-    const chainThresholdValue = document.getElementById('chainThresholdValue');
-    const chainAlertsEnabledCheckbox = document.getElementById('chainAlertsEnabled');
-    const chainPopupEnabledCheckbox = document.getElementById('chainPopupEnabled');
-    const chainFlashEnabledCheckbox = document.getElementById('chainFlashEnabled');
-    const saveChainButton = document.getElementById('saveChainSettings');
-    const chainStatusDiv = document.getElementById('chainStatus');
-    
-    // Get tab buttons
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
-    
-    // Tab switching functionality
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const targetTab = button.getAttribute('data-tab');
-            
-            // Remove active class from all buttons and contents
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            tabContents.forEach(content => content.classList.remove('active'));
-            
-            // Add active class to clicked button and corresponding content
-            button.classList.add('active');
-            document.getElementById(`${targetTab}-tab`).classList.add('active');
-            
-            // Reload cache counter if switching to xanax tab
-            if (targetTab === 'xanax') {
-                loadCacheCounter();
+    // Open Settings (cogwheel panel)
+    openSettingsBtn.addEventListener('click', () => {
+        // Send message to active Torn.com tab to open settings panel
+        chrome.tabs.query({ active: true, currentWindow: true, url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function(tabs) {
+            if (tabs[0]) {
+                chrome.tabs.sendMessage(tabs[0].id, {
+                    action: 'openSettings'
+                }).then(response => {
+                    if (response && response.success) {
+                        showMessage('Settings panel opened!', 'success');
+                        setTimeout(() => window.close(), 500);
+                    } else {
+                        showMessage('Please navigate to Torn.com to access settings', 'warning');
+                    }
+                }).catch(() => {
+                    showMessage('Please navigate to Torn.com to access settings', 'warning');
+                });
+            } else {
+                showMessage('Please navigate to Torn.com to access settings', 'warning');
             }
         });
     });
     
-    // Load saved settings
-    loadSettings();
-    
-    // Event listeners - General Tab
-    saveButton.addEventListener('click', saveSettings);
-    reportIssuesButton.addEventListener('click', reportIssues);
-    clearDataButton.addEventListener('click', clearData);
-    xanaxViewerCheckbox.addEventListener('change', handleXanaxViewerToggle);
-    attackButtonMoverCheckbox.addEventListener('change', handleAttackButtonMoverToggle);
-    blockTrainingCheckbox.addEventListener('change', handleBlockTrainingToggle);
-    timeOnTabCheckbox.addEventListener('change', handleTimeOnTabToggle);
-    npcAttackTimerCheckbox.addEventListener('change', handleNpcAttackTimerToggle);
-    randomTargetCheckbox.addEventListener('change', handleRandomTargetToggle);
-    
-    // Event listeners - Xanax Tab
-    autoLimitSlider.addEventListener('input', updateAutoLimitValue);
-    saveXanaxButton.addEventListener('click', saveXanaxSettings);
-    clearCacheButton.addEventListener('click', clearXanaxCache);
-    
-    // Event listeners - Chain Timer Tab
-    chainThresholdSlider.addEventListener('input', updateChainThresholdValue);
-    chainTimerEnabledCheckbox.addEventListener('change', handleChainTimerToggle);
-    saveChainButton.addEventListener('click', saveChainSettings);
-    
-    function updateChainThresholdValue() {
-        chainThresholdValue.textContent = chainThresholdSlider.value;
-    }
-    
-    function updateAutoLimitValue() {
-        autoLimitValue.textContent = autoLimitSlider.value;
-    }
-    
-    function loadSettings() {
-        chrome.storage.local.get([
-            'sidekick_api_key',
-            'sidekick_xanax_viewer',
-            'sidekick_attack_button_mover',
-            'sidekick_block_training',
-            'sidekick_time_on_tab',
-            'sidekick_npc_attack_timer',
-            'sidekick_random_target',
-            'sidekick_chain_timer'
-        ], function(result) {
-            // Load global API key
-            if (result.sidekick_api_key) {
-                apiKeyInput.value = result.sidekick_api_key;
-            }
-            
-            // Load xanax viewer settings
-            if (result.sidekick_xanax_viewer) {
-                xanaxViewerCheckbox.checked = result.sidekick_xanax_viewer.isEnabled !== false;
-                
-                // Load Xanax-specific settings
-                xanaxApiKeyInput.value = result.sidekick_xanax_viewer.apiKey || '';
-                autoLimitSlider.value = result.sidekick_xanax_viewer.autoLimit || 0;
-                autoLimitValue.textContent = autoLimitSlider.value;
-                showRelativeCheckbox.checked = result.sidekick_xanax_viewer.showRelative || false;
-            } else {
-                xanaxViewerCheckbox.checked = true; // Default enabled
-                autoLimitSlider.value = 0;
-                autoLimitValue.textContent = '0';
-                showRelativeCheckbox.checked = false;
-            }
-            
-            // Load attack button mover setting
-            if (result.sidekick_attack_button_mover) {
-                attackButtonMoverCheckbox.checked = result.sidekick_attack_button_mover.isEnabled !== false;
-            } else {
-                attackButtonMoverCheckbox.checked = true; // Default enabled
-            }
-            
-            // Load block training setting
-            if (result.sidekick_block_training) {
-                blockTrainingCheckbox.checked = result.sidekick_block_training.isBlocked === true;
-            } else {
-                blockTrainingCheckbox.checked = false; // Default disabled
-            }
-            
-            // Load time on tab setting
-            if (result.sidekick_time_on_tab) {
-                timeOnTabCheckbox.checked = result.sidekick_time_on_tab.isEnabled === true;
-            } else {
-                timeOnTabCheckbox.checked = false; // Default disabled
-            }
-            
-            // Load NPC attack timer setting
-            if (result.sidekick_npc_attack_timer) {
-                npcAttackTimerCheckbox.checked = result.sidekick_npc_attack_timer.isEnabled === true;
-            } else {
-                npcAttackTimerCheckbox.checked = false; // Default disabled
-            }
-            
-            // Load random target setting
-            if (result.sidekick_random_target) {
-                randomTargetCheckbox.checked = result.sidekick_random_target.isEnabled === true;
-            } else {
-                randomTargetCheckbox.checked = false; // Default disabled
-            }
-            
-            // Load chain timer settings
-            if (result.sidekick_chain_timer) {
-                chainTimerEnabledCheckbox.checked = result.sidekick_chain_timer.isEnabled === true;
-                chainAlertsEnabledCheckbox.checked = result.sidekick_chain_timer.alertsEnabled !== false;
-                chainPopupEnabledCheckbox.checked = result.sidekick_chain_timer.popupEnabled !== false;
-                chainFlashEnabledCheckbox.checked = result.sidekick_chain_timer.screenFlashEnabled !== false;
-                
-                const thresholdMinutes = (result.sidekick_chain_timer.alertThresholdSeconds || 240) / 60;
-                chainThresholdSlider.value = thresholdMinutes;
-                chainThresholdValue.textContent = thresholdMinutes;
-            } else {
-                chainTimerEnabledCheckbox.checked = false;
-                chainAlertsEnabledCheckbox.checked = true;
-                chainPopupEnabledCheckbox.checked = true;
-                chainFlashEnabledCheckbox.checked = true;
-                chainThresholdSlider.value = 4;
-                chainThresholdValue.textContent = '4';
-            }
-            
-            // Load cache counter
-            loadCacheCounter();
-        });
-    }
-    
-    function loadCacheCounter() {
-        chrome.storage.local.get(['xanaxviewer_cache'], function(result) {
-            const cache = result.xanaxviewer_cache || {};
-            cacheCounter.textContent = Object.keys(cache).length;
-        });
-    }
-    
-    function saveSettings() {
-        const settings = {
-            sidekick_api_key: apiKeyInput.value.trim()
-        };
-        
-        chrome.storage.local.set(settings, function() {
-            showStatus('Settings saved successfully!', 'success');
-            
-            // Send message to all Torn.com tabs to update settings
-            chrome.tabs.query({ url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function(tabs) {
-                tabs.forEach(tab => {
-                    chrome.tabs.sendMessage(tab.id, {
-                        action: 'settingsUpdated',
-                        settings: settings
-                    }).catch(() => {
-                        // Ignore errors for tabs without content script
-                    });
-                });
-            });
-        });
-    }
-    
-    function saveXanaxSettings() {
-        // Get current xanax viewer settings
-        chrome.storage.local.get(['sidekick_xanax_viewer'], function(result) {
-            const currentSettings = result.sidekick_xanax_viewer || {};
-            
-            // Update with new values
-            const updatedSettings = {
-                ...currentSettings,
-                apiKey: xanaxApiKeyInput.value.trim(),
-                autoLimit: parseInt(autoLimitSlider.value),
-                showRelative: showRelativeCheckbox.checked
-            };
-            
-            chrome.storage.local.set({ sidekick_xanax_viewer: updatedSettings }, function() {
-                showXanaxStatus('Xanax Viewer settings saved successfully!', 'success');
-                
-                // Send message to all Torn.com tabs to reload xanax viewer
-                chrome.tabs.query({ url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function(tabs) {
-                    tabs.forEach(tab => {
-                        chrome.tabs.sendMessage(tab.id, {
-                            action: 'reloadXanaxViewer'
-                        }).catch(() => {
-                            // Ignore errors for tabs without content script
-                        });
-                    });
-                });
-            });
-        });
-    }
-    
-    function clearXanaxCache() {
-        if (confirm('Are you sure you want to clear the Xanax Viewer cache?')) {
-            chrome.storage.local.set({ xanaxviewer_cache: {} }, function() {
-                showXanaxStatus('Cache cleared successfully!', 'success');
-                loadCacheCounter();
-            });
-        }
-    }
-    
-    function saveChainSettings() {
-        // Get current chain timer settings
-        chrome.storage.local.get(['sidekick_chain_timer'], function(result) {
-            const currentSettings = result.sidekick_chain_timer || {};
-            
-            // Update with new values
-            const updatedSettings = {
-                ...currentSettings,
-                alertsEnabled: chainAlertsEnabledCheckbox.checked,
-                popupEnabled: chainPopupEnabledCheckbox.checked,
-                screenFlashEnabled: chainFlashEnabledCheckbox.checked,
-                alertThresholdSeconds: parseFloat(chainThresholdSlider.value) * 60
-            };
-            
-            chrome.storage.local.set({ sidekick_chain_timer: updatedSettings }, function() {
-                showChainStatus('Chain Timer settings saved successfully!', 'success');
-                
-                // Send message to all Torn.com tabs to reload chain timer
-                chrome.tabs.query({ url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function(tabs) {
-                    tabs.forEach(tab => {
-                        chrome.tabs.sendMessage(tab.id, {
-                            action: 'reloadChainTimer'
-                        }).catch(() => {
-                            // Ignore errors for tabs without content script
-                        });
-                    });
-                });
-            });
-        });
-    }
-    
-    function handleXanaxViewerToggle() {
-        toggleModule('xanaxViewer', xanaxViewerCheckbox.checked, 'Xanax Viewer');
-    }
-    
-    function handleAttackButtonMoverToggle() {
-        toggleModule('attackButtonMover', attackButtonMoverCheckbox.checked, 'Fast Attack');
-    }
-    
-    function handleBlockTrainingToggle() {
-        toggleModule('blockTraining', blockTrainingCheckbox.checked, 'Block Training');
-    }
-    
-    function handleTimeOnTabToggle() {
-        toggleModule('timeOnTab', timeOnTabCheckbox.checked, 'Time on Tab');
-    }
-    
-    function handleNpcAttackTimerToggle() {
-        toggleModule('npcAttackTimer', npcAttackTimerCheckbox.checked, 'NPC Attack Timer');
-    }
-    
-    function handleRandomTargetToggle() {
-        toggleModule('randomTarget', randomTargetCheckbox.checked, 'Random Target');
-    }
-    
-    function handleChainTimerToggle() {
-        toggleModule('chainTimer', chainTimerEnabledCheckbox.checked, 'Chain Timer');
-    }
-    
-    function toggleModule(moduleType, enabled, displayName) {
-        // Send message to all Torn.com tabs to toggle the module
-        chrome.tabs.query({ url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function(tabs) {
-            tabs.forEach(tab => {
-                chrome.tabs.sendMessage(tab.id, {
-                    action: 'toggleModule',
-                    moduleType: moduleType,
-                    enabled: enabled
-                }).then(response => {
-                    if (response && response.success) {
-                        showStatus(
-                            `${displayName} ${enabled ? 'enabled' : 'disabled'}!`,
-                            'success'
-                        );
-                    }
-                }).catch(() => {
-                    // Ignore errors for tabs without content script
-                });
-            });
-        });
-    }
-    
-    function reportIssues() {
-        // Send message to the active tab to open the bug reporter
-        chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-            if (tabs[0] && tabs[0].url.includes('torn.com')) {
+    // Report Issues (Bug Reporter)
+    reportIssuesBtn.addEventListener('click', () => {
+        chrome.tabs.query({ active: true, currentWindow: true, url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function(tabs) {
+            if (tabs[0]) {
                 chrome.tabs.sendMessage(tabs[0].id, {
                     action: 'openBugReporter'
                 }).then(response => {
                     if (response && response.success) {
-                        showStatus('Bug reporter opened!', 'success');
-                        window.close(); // Close the popup
+                        showMessage('Bug reporter opened!', 'success');
+                        setTimeout(() => window.close(), 500);
                     } else {
-                        showStatus('Please navigate to Torn.com to report issues', 'error');
+                        showMessage('Please navigate to Torn.com to report bugs', 'warning');
                     }
                 }).catch(() => {
-                    showStatus('Please navigate to Torn.com to report issues', 'error');
+                    showMessage('Please navigate to Torn.com to report bugs', 'warning');
                 });
             } else {
-                showStatus('Please navigate to Torn.com to report issues', 'error');
+                showMessage('Please navigate to Torn.com to report bugs', 'warning');
             }
         });
+    });
+    
+    loadExtensionInfo();
+    
+    function showMessage(message, type = 'info') {
+        const messageEl = document.createElement('div');
+        messageEl.style.cssText = position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 12px 20px; background: +(type === 'success' ? 'rgba(76, 175, 80, 0.9)' : type === 'warning' ? 'rgba(255, 152, 0, 0.9)' : 'rgba(33, 150, 243, 0.9)')+; color: white; border-radius: 6px; font-size: 13px; font-weight: 500; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.3);;
+        messageEl.textContent = message;
+        document.body.appendChild(messageEl);
+        setTimeout(() => messageEl.remove(), 3000);
     }
     
-    function clearData() {
-        if (confirm('Are you sure you want to clear all Sidekick data? This cannot be undone.')) {
-            chrome.storage.local.clear(function() {
-                chrome.storage.sync.clear(function() {
-                    showStatus('All data cleared successfully!', 'success');
-                    
-                    // Reset form
-                    apiKeyInput.value = '';
-                    xanaxViewerCheckbox.checked = true; // Reset to default enabled
-                    attackButtonMoverCheckbox.checked = true; // Reset to default enabled
-                    blockTrainingCheckbox.checked = false; // Reset to default disabled
-                    timeOnTabCheckbox.checked = false; // Reset to default disabled
-                    npcAttackTimerCheckbox.checked = false; // Reset to default disabled
-                    randomTargetCheckbox.checked = false; // Reset to default disabled
-                    
-                    // Send message to all Torn.com tabs to refresh
-                    chrome.tabs.query({ url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function(tabs) {
-                        tabs.forEach(tab => {
-                            chrome.tabs.sendMessage(tab.id, {
-                                action: 'dataCleared'
-                            }).catch(() => {
-                                // Ignore errors for tabs without content script
-                            });
-                        });
-                    });
-                });
-            });
-        }
-    }
-    
-    function showStatus(message, type = 'success') {
-        statusDiv.textContent = message;
-        statusDiv.className = `status ${type === 'error' ? 'error' : ''}`;
-        statusDiv.style.display = 'block';
-        
-        setTimeout(() => {
-            statusDiv.style.display = 'none';
-        }, 3000);
-    }
-    
-    function showXanaxStatus(message, type = 'success') {
-        xanaxStatusDiv.textContent = message;
-        xanaxStatusDiv.className = `status ${type === 'error' ? 'error' : ''}`;
-        xanaxStatusDiv.style.display = 'block';
-        
-        setTimeout(() => {
-            xanaxStatusDiv.style.display = 'none';
-        }, 3000);
-    }
-    
-    function showChainStatus(message, type = 'success') {
-        chainStatusDiv.textContent = message;
-        chainStatusDiv.className = `status ${type === 'error' ? 'error' : ''}`;
-        chainStatusDiv.style.display = 'block';
-        
-        setTimeout(() => {
-            chainStatusDiv.style.display = 'none';
-        }, 3000);
+    function loadExtensionInfo() {
+        chrome.storage.local.get(['sidekick_api_key'], function(result) {
+            console.log('📦 API Key configured:', !!(result.sidekick_api_key));
+        });
     }
 });
