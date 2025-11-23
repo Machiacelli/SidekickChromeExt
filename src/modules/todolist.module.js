@@ -2330,6 +2330,29 @@
             console.log(`📋 Created task "${taskName}" with reset: ${resetDuration}`);
         },
 
+        // Add custom task (simple version without reset)
+        addCustomTask(todoListId, taskName) {
+            const todoList = this.todoLists.find(tl => tl.id === todoListId);
+            if (!todoList) {
+                console.error('❌ Todo list not found:', todoListId);
+                return;
+            }
+
+            const task = {
+                id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                name: taskName,
+                completed: false,
+                created: new Date().toISOString()
+            };
+
+            todoList.tasks.push(task);
+            todoList.modified = new Date().toISOString();
+            this.saveTodoLists();
+            this.renderTodoList(todoList);
+            
+            console.log(`📋 Added custom task "${taskName}" to "${todoList.name}"`);
+        },
+
         // Toggle task completion
         toggleTaskCompletion(todoListId, taskId) {
             const todoList = this.todoLists.find(tl => tl.id === todoListId);
