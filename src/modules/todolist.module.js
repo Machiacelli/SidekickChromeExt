@@ -280,7 +280,7 @@
                         const content = element.querySelector('.tasks-container');
                         if (content) {
                             content.innerHTML = this.renderTasksContent(todoList);
-                            this.attachTaskEventListeners(element, todoList);
+                            this.setupTaskEventListeners(element, todoList);
                         }
                     }
                 });
