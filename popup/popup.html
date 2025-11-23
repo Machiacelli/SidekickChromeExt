@@ -151,6 +151,12 @@
             padding: 20px;
             max-height: 450px;
             overflow-y: auto;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+        
+        .tab-content::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
         }
         
         .tab-content.active {
@@ -297,17 +303,6 @@
             
             <div class="switch-container">
                 <div class="switch-label">
-                    <div>Xanax Viewer</div>
-                    <div class="switch-description">Shows individual Xanax usage on Faction and Profile pages</div>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="xanaxViewer">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <div class="switch-container">
-                <div class="switch-label">
                     <div>Fast Attack</div>
                     <div class="switch-description">Moves Start Fight button over weapon for faster attacks</div>
                 </div>
@@ -370,6 +365,17 @@
         
         <!-- Xanax Viewer Settings Tab -->
         <div class="tab-content" id="xanax-tab">
+            <div class="switch-container">
+                <div class="switch-label">
+                    <div>Xanax Viewer Enabled</div>
+                    <div class="switch-description">Shows individual Xanax usage on Faction and Profile pages</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="xanaxViewer">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
             <div class="setting-group">
                 <label for="xanaxApiKey">Torn API Key (Public Only):</label>
                 <input type="text" id="xanaxApiKey" placeholder="Enter your Torn API key..." maxlength="16">

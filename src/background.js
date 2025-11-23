@@ -114,14 +114,14 @@ async function handleTornApiCall(request) {
     try {
         console.log('🔍 Background: Making Torn API call:', request.selections);
         
-        const { apiKey, selections, userId } = request;
+        const { apiKey, selections, userId, endpoint: requestEndpoint } = request;
         
         if (!apiKey) {
             throw new Error('No API key provided');
         }
         
-        // Determine the API endpoint based on whether userId is provided
-        const endpoint = userId ? `user/${userId}` : 'user';
+        // Determine the API endpoint based on request
+        let endpoint = requestEndpoint || (userId ? `user/${userId}` : 'user');
         console.log(`🔍 Background: Using endpoint: ${endpoint}`);
         
         // Prepare results object
@@ -131,7 +131,8 @@ async function handleTornApiCall(request) {
             logs: null,
             bars: null,
             cooldowns: null,
-            refills: null
+            refills: null,
+            items: null
         };
         
         // Fetch personal stats if requested
@@ -289,6 +290,35 @@ async function handleTornApiCall(request) {
             } catch (error) {
                 console.warn('⚠️ Background: Refills fetch failed (non-fatal):', error);
                 // Continue without refills
+            }
+        }
+        
+        // Fetch items from torn endpoint if requested
+        if (selections.includes('items')) {
+            console.log('📦 Background: Fetching items from torn endpoint...');
+            try {
+                const itemsResponse = await fetch(`https://api.torn.com/${endpoint}?selections=items&key=${apiKey}`, {
+                    method: 'GET',
+                    headers: {
+                        'User-Agent': 'Sidekick Chrome Extension Background'
+                    }
+                });
+                
+                if (!itemsResponse.ok) {
+                    console.warn('⚠️ Background: Items fetch failed:', itemsResponse.status);
+                } else {
+                    const itemsData = await itemsResponse.json();
+                    
+                    if (itemsData.error) {
+                        console.warn('⚠️ Background: Items API error:', itemsData.error);
+                    } else {
+                        results.items = itemsData.items;
+                        console.log('✅ Background: Items retrieved successfully');
+                    }
+                }
+                
+            } catch (error) {
+                console.warn('⚠️ Background: Items fetch failed (non-fatal):', error);
             }
         }
         

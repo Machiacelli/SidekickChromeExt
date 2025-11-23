@@ -158,12 +158,21 @@
             }
 
             // Initialize Random Target Module
-            console.log("🎯 Sidekick: Initializing Random Target...");
+            console.log('🎯 Sidekick: Initializing Random Target...');
             if (window.SidekickModules.RandomTarget?.init) {
                 await window.SidekickModules.RandomTarget.init();
-                console.log("✅ Sidekick: Random Target initialized");
+                console.log('✅ Sidekick: Random Target initialized');
             } else {
-                console.warn("⚠️ Random Target module not available");
+                console.warn('⚠️ Random Target module not available');
+            }
+
+            // Initialize Inventory Sorter Module
+            console.log('📦 Sidekick: Initializing Inventory Sorter...');
+            if (window.SidekickModules.InventorySorter?.init) {
+                await window.SidekickModules.InventorySorter.init();
+                console.log('✅ Sidekick: Inventory Sorter initialized');
+            } else {
+                console.warn('⚠️ Inventory Sorter module not available');
             }
 
             // Initialize Timer Module
