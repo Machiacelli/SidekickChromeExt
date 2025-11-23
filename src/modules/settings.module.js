@@ -104,10 +104,15 @@
                                                                                     cursor: pointer; font-weight: 500; transition: all 0.2s;">
                             Modules
                         </button>
-                        <button class="settings-tab-btn" data-tab="advanced" style="flex: 1; padding: 10px; background: transparent; 
-                                                                                      border: none; color: rgba(255,255,255,0.7); border-radius: 6px; 
-                                                                                      cursor: pointer; font-weight: 500; transition: all 0.2s;">
-                            Advanced
+                        <button class="settings-tab-btn" data-tab="xanax" style="flex: 1; padding: 10px; background: transparent; 
+                                                                                    border: none; color: rgba(255,255,255,0.7); border-radius: 6px; 
+                                                                                    cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                            💊 Xanax
+                        </button>
+                        <button class="settings-tab-btn" data-tab="chain" style="flex: 1; padding: 10px; background: transparent; 
+                                                                                    border: none; color: rgba(255,255,255,0.7); border-radius: 6px; 
+                                                                                    cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                            ⏱️ Chain
                         </button>
                     </div>
                     
@@ -150,9 +155,14 @@
                             ${this.createModuleTogglesHTML()}
                         </div>
                         
-                        <!-- ADVANCED TAB -->
-                        <div class="settings-tab-content" id="settings-tab-advanced" style="display: none;">
-                            ${this.createAdvancedSettingsHTML()}
+                        <!-- XANAX VIEWER TAB -->
+                        <div class="settings-tab-content" id="settings-tab-xanax" style="display: none;">
+                            ${this.createXanaxSettingsHTML()}
+                        </div>
+                        
+                        <!-- CHAIN TIMER TAB -->
+                        <div class="settings-tab-content" id="settings-tab-chain" style="display: none;">
+                            ${this.createChainTimerSettingsHTML()}
                         </div>
                     </div>
                 </div>
@@ -233,10 +243,10 @@
             `;
         },
 
-        // Create advanced settings HTML
-        createAdvancedSettingsHTML() {
+        // Create Xanax Viewer settings HTML
+        createXanaxSettingsHTML() {
             return `
-                <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">💊 Xanax Viewer</h4>
+                <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">💊 Xanax Viewer Settings</h4>
                 
                 <div style="margin-bottom: 20px;">
                     <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Auto Refresh Limit:</label>
@@ -274,11 +284,16 @@
                 </div>
                 
                 <div id="sidekick-xanax-status" style="text-align: center; padding: 10px; border-radius: 5px; 
-                                                     background: rgba(255,255,255,0.1); color: #ccc; margin-bottom: 30px; font-size: 13px;">
+                                                     background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;">
                     Xanax Viewer settings loaded
                 </div>
-                
-                <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">⏱️ Chain Timer</h4>
+            `;
+        },
+
+        // Create Chain Timer settings HTML
+        createChainTimerSettingsHTML() {
+            return `
+                <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">⏱️ Chain Timer Settings</h4>
                 
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Alert Threshold:</label>
@@ -360,8 +375,11 @@
             // Modules Tab listeners
             this.attachModulesTabListeners(panel);
             
-            // Advanced Tab listeners
-            this.attachAdvancedTabListeners(panel);
+            // Xanax Viewer Tab listeners
+            this.attachXanaxTabListeners(panel);
+            
+            // Chain Timer Tab listeners
+            this.attachChainTimerTabListeners(panel);
         },
 
         // Switch between tabs
@@ -500,9 +518,8 @@
             });
         },
 
-        // Advanced Tab listeners
-        attachAdvancedTabListeners(panel) {
-            // Xanax Viewer
+        // Xanax Viewer Tab listeners
+        attachXanaxTabListeners(panel) {
             const xanaxAutoLimitSlider = panel.querySelector('#sidekick-xanax-autolimit');
             const xanaxAutoLimitDisplay = panel.querySelector('#sidekick-xanax-autolimit-display');
             const xanaxRelativeCheckbox = panel.querySelector('#sidekick-xanax-relative');
@@ -557,8 +574,10 @@
                     this.showStatus(xanaxStatusDiv, 'Failed to clear cache', 'error');
                 }
             });
+        },
 
-            // Chain Timer
+        // Chain Timer Tab listeners
+        attachChainTimerTabListeners(panel) {
             const chainThresholdSlider = panel.querySelector('#sidekick-chain-threshold');
             const chainThresholdDisplay = panel.querySelector('#sidekick-chain-threshold-display');
             const chainAlertsCheckbox = panel.querySelector('#sidekick-chain-alerts');

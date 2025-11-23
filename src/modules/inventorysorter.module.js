@@ -160,16 +160,19 @@
                 }
 
                 .is-item-value {
-                    width: auto !important;
-                    padding: 0 10px 0 10px !important;
+                    width: 100% !important;
+                    padding: 4px 10px !important;
+                    font-size: 11px !important;
+                    display: block !important;
                 }
 
                 .is-item-value-color {
-                    color: var(--default-green-color);
+                    color: var(--default-green-color) !important;
+                    font-weight: 600 !important;
                 }
 
                 .is-item-qty {
-                    font-weight: bold;
+                    color: rgba(255,255,255,0.7) !important;
                 }
 
                 li:has(.group-arrow) .is-item-value {
@@ -325,42 +328,51 @@
                 const itemValue = this.itemValues[itemId]?.value;
                 if (!itemValue) return;
 
-                const valueEl = document.createElement('span');
-                const totalValueEl = document.createElement('span');
+                // Create value container that won't overlap with existing prices
+                const valueContainer = document.createElement('div');
+                valueContainer.classList.add('is-item-value');
+                valueContainer.style.cssText = 'clear: both; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.1);';
+                
                 const qtyEl = el.querySelector('.item-amount');
-                const bonusesEl = el.querySelector('.bonuses-wrap');
-
-                valueEl.classList.add('is-item-value-color');
-                totalValueEl.classList.add('is-item-value-color');
-
-                let valueContainer;
-
-                if (bonusesEl) {
-                    valueContainer = document.createElement('li');
-                    valueContainer.classList.add('is-item-value');
-                    bonusesEl.appendChild(valueContainer);
+                const itemQty = qtyEl?.textContent?.trim() || '1';
+                
+                // Create value display
+                const valueText = document.createElement('span');
+                valueText.classList.add('is-item-value-color');
+                
+                if (itemQty === '' || itemQty === '1') {
+                    // Single item
+                    valueText.textContent = `Market Value: ${this.getUsdFormat(itemValue)}`;
+                    valueContainer.appendChild(valueText);
                 } else {
-                    valueContainer = document.createElement('span');
-                    valueContainer.classList.add('is-item-value', 'right');
-                    nameWrap?.appendChild(valueContainer);
+                    // Multiple items - show unit price and total
+                    const unitPrice = document.createElement('span');
+                    unitPrice.classList.add('is-item-value-color');
+                    unitPrice.textContent = `${this.getUsdFormat(itemValue)} each`;
+                    
+                    const multiply = document.createElement('span');
+                    multiply.classList.add('is-item-qty');
+                    multiply.style.cssText = 'margin: 0 5px; opacity: 0.7;';
+                    multiply.textContent = ' × ' + itemQty + ' = ';
+                    
+                    const totalPrice = document.createElement('span');
+                    totalPrice.classList.add('is-item-value-color');
+                    totalPrice.style.fontWeight = 'bold';
+                    totalPrice.textContent = this.getUsdFormat(itemQty * itemValue);
+
+                    valueContainer.appendChild(unitPrice);
+                    valueContainer.appendChild(multiply);
+                    valueContainer.appendChild(totalPrice);
                 }
-
-                if (qtyEl?.textContent === '') {
-                    valueEl.textContent = this.getUsdFormat(itemValue);
-                    valueContainer.appendChild(valueEl);
-                } else {
-                    valueEl.textContent = `${this.getUsdFormat(itemValue)} `;
-
-                    const itemQty = qtyEl?.textContent || '1';
-                    const newQtyEl = document.createElement('span');
-                    newQtyEl.classList.add('is-item-qty');
-                    newQtyEl.textContent = `x ${itemQty} = `;
-
-                    totalValueEl.textContent = this.getUsdFormat(itemQty * itemValue);
-
-                    valueContainer.appendChild(valueEl);
-                    valueContainer.appendChild(newQtyEl);
-                    valueContainer.appendChild(totalValueEl);
+                
+                // Append to the item - prefer bonuses-wrap for better positioning
+                const bonusesEl = el.querySelector('.bonuses-wrap');
+                if (bonusesEl) {
+                    const listItem = document.createElement('li');
+                    listItem.appendChild(valueContainer);
+                    bonusesEl.appendChild(listItem);
+                } else if (nameWrap) {
+                    nameWrap.appendChild(valueContainer);
                 }
             });
         },
