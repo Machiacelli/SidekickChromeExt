@@ -1967,10 +1967,7 @@
                                 window.SidekickModules.TodoList.renderAllTodoLists();
                                 break;
                             case 'add':
-                                const taskName = prompt('Enter task name:');
-                                if (taskName) {
-                                    window.SidekickModules.TodoList.addCustomTask(todoList.id, taskName.trim());
-                                }
+                                window.SidekickModules.TodoList.showAddTaskDialog(todoList);
                                 break;
                             case 'delete':
                                 if (confirm(`Delete "${todoList.name}" todo list?`)) {
