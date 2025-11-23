@@ -573,9 +573,16 @@
             try {
                 // Check if extension context is valid first
                 if (!window.SidekickModules?.Core?.SafeMessageSender?.isExtensionContextValid()) {
-                    console.warn('💰 Extension context invalidated, cannot make API call');
-                    window.SidekickModules?.Core?.SafeMessageSender?.showExtensionReloadNotification();
-                    throw new Error('Extension context invalidated - please refresh page');
+                    console.warn('💰 Extension context invalidated, attempting recovery...');
+                    
+                    // Try to recover the connection
+                    const recovered = await window.SidekickModules.Core.SafeMessageSender.attemptContextRecovery();
+                    if (!recovered) {
+                        window.SidekickModules?.Core?.SafeMessageSender?.showExtensionReloadNotification();
+                        throw new Error('Extension context invalidated - please refresh page');
+                    }
+                    
+                    console.log('✅ Extension context recovered, proceeding with API call');
                 }
 
                 console.log('💰 Sending message to background script:', { action: 'fetchTornApi', selections });
@@ -591,10 +598,26 @@
                 
             } catch (error) {
                 if (error.message.includes('Extension context invalidated')) {
-                    console.warn('💰 Extension context lost, showing user notification');
+                    console.warn('💰 Extension context lost during API call');
                     window.SidekickModules?.Core?.SafeMessageSender?.showExtensionReloadNotification();
+                    
+                    // Show user a helpful message in the debt tracker
+                    if (window.SidekickModules?.UI?.showNotification) {
+                        window.SidekickModules.UI.showNotification(
+                            'EXTENSION_ERROR',
+                            '💰 Debt tracker lost connection to extension. Please refresh the page to restore auto-payment detection.'
+                        );
+                    }
                 } else {
                     console.error('💰 Error sending message to background script:', error);
+                    
+                    // Show generic error to user
+                    if (window.SidekickModules?.UI?.showNotification) {
+                        window.SidekickModules.UI.showNotification(
+                            'ERROR',
+                            `💰 Failed to check payment logs: ${error.message}`
+                        );
+                    }
                 }
                 throw error;
             }

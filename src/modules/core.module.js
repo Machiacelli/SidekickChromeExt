@@ -397,6 +397,76 @@
         }
     };
 
+    // === EXTENSION CONTEXT MONITOR ===
+    const ExtensionContextMonitor = {
+        isMonitoring: false,
+        monitorInterval: null,
+        lastKnownState: null,
+
+        // Start monitoring extension context
+        startMonitoring() {
+            if (this.isMonitoring) return;
+            
+            console.log('🔍 Starting extension context monitoring...');
+            this.isMonitoring = true;
+            this.lastKnownState = SafeMessageSender.isExtensionContextValid();
+            
+            this.monitorInterval = setInterval(() => {
+                this.checkContextState();
+            }, 5000); // Check every 5 seconds
+        },
+
+        // Stop monitoring
+        stopMonitoring() {
+            if (this.monitorInterval) {
+                clearInterval(this.monitorInterval);
+                this.monitorInterval = null;
+            }
+            this.isMonitoring = false;
+        },
+
+        // Check current context state
+        async checkContextState() {
+            const currentState = SafeMessageSender.isExtensionContextValid();
+            
+            if (this.lastKnownState === true && currentState === false) {
+                console.warn('🚨 Extension context invalidation detected by monitor');
+                
+                // Try recovery once automatically
+                const recovered = await SafeMessageSender.attemptContextRecovery();
+                if (recovered) {
+                    this.lastKnownState = true;
+                    console.log('✅ Extension context auto-recovered');
+                } else {
+                    this.lastKnownState = false;
+                    
+                    // Notify user about context loss
+                    if (window.SidekickModules?.Core?.NotificationSystem) {
+                        window.SidekickModules.Core.NotificationSystem.show(
+                            'Extension Connection Lost',
+                            'Some features may not work. Click to refresh page.',
+                            'warning',
+                            0,
+                            () => { window.location.reload(); }
+                        );
+                    }
+                }
+            } else if (this.lastKnownState === false && currentState === true) {
+                console.log('✅ Extension context restored');
+                this.lastKnownState = true;
+                
+                if (window.SidekickModules?.Core?.NotificationSystem) {
+                    window.SidekickModules.Core.NotificationSystem.show(
+                        'Extension Reconnected',
+                        'Extension connection has been restored.',
+                        'success',
+                        3000
+                    );
+                }
+            }
+        }
+    };
+
     // === SAFE MESSAGE SENDER ===
     const SafeMessageSender = {
         // Safely send message to background script with extension context handling
@@ -479,12 +549,59 @@
 
         // Show user-friendly notification about extension reload
         showExtensionReloadNotification() {
+            // Try to recover connection first
+            this.attemptContextRecovery()
+                .then((recovered) => {
+                    if (!recovered) {
+                        this.showReloadPrompt();
+                    } else {
+                        console.log('✅ Extension context recovered successfully');
+                        if (window.SidekickModules?.Core?.NotificationSystem) {
+                            window.SidekickModules.Core.NotificationSystem.show(
+                                'Connection Restored',
+                                'Extension connection has been restored.',
+                                'success',
+                                3000
+                            );
+                        }
+                    }
+                })
+                .catch(() => {
+                    this.showReloadPrompt();
+                });
+        },
+
+        // Attempt to recover extension context
+        async attemptContextRecovery() {
+            console.log('🔄 Attempting to recover extension context...');
+            
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+                
+                try {
+                    // Test if extension context is working
+                    const testResponse = await chrome.runtime.sendMessage({ action: 'ping' });
+                    if (testResponse?.success) {
+                        console.log(`✅ Extension context recovered on attempt ${attempt}`);
+                        return true;
+                    }
+                } catch (error) {
+                    console.log(`❌ Recovery attempt ${attempt} failed:`, error.message);
+                }
+            }
+            
+            return false;
+        },
+
+        // Show reload prompt
+        showReloadPrompt() {
             if (window.SidekickModules?.Core?.NotificationSystem) {
                 window.SidekickModules.Core.NotificationSystem.show(
                     'Extension Connection Lost',
-                    'Please refresh the page or reload the extension to restore functionality.',
-                    'warning',
-                    10000
+                    'Extension needs to reconnect. Click here to refresh the page.',
+                    'error',
+                    0, // No auto-dismiss
+                    () => { window.location.reload(); }
                 );
             } else {
                 // Fallback notification if NotificationSystem isn't available
@@ -492,6 +609,32 @@
                 if (confirm('Extension connection lost. Refresh the page to restore functionality?')) {
                     window.location.reload();
                 }
+            }
+        },
+
+        // Test extension connectivity (debug function)
+        async testExtensionConnection() {
+            console.log('🔍 Testing extension connection...');
+            
+            try {
+                const isValid = this.isExtensionContextValid();
+                console.log(`Context valid: ${isValid}`);
+                
+                if (!isValid) {
+                    console.log('⚠️ Context invalid, attempting recovery...');
+                    const recovered = await this.attemptContextRecovery();
+                    console.log(`Recovery result: ${recovered}`);
+                    return recovered;
+                }
+                
+                // Test actual message sending
+                const testResponse = await chrome.runtime.sendMessage({ action: 'ping' });
+                console.log('✅ Extension connection test successful:', testResponse);
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Extension connection test failed:', error);
+                return false;
             }
         }
     };
@@ -502,10 +645,15 @@
         NotificationSystem,
         ChromeStorage,
         SafeMessageSender,
+        ExtensionContextMonitor,
         
         // Initialize core functionality
         async init() {
             console.log("🔧 Initializing Core Module...");
+            
+            // Start extension context monitoring
+            ExtensionContextMonitor.startMonitoring();
+            
             console.log("✅ Core Module initialized successfully");
             return true;
         }
