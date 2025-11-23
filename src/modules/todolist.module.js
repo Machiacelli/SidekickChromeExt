@@ -767,19 +767,9 @@
             });
             
             // Add debug function to global console for easy access
+            // Debug functions are now handled by injection method above
             if (typeof window !== 'undefined') {
-                window.debugXanaxLogs = () => this.debugXanaxLogs();
-                window.debugNerveRefillLogs = () => this.debugNerveRefillLogs();
-                window.debugEnergyRefillLogs = () => this.debugEnergyRefillLogs();
-                console.log('💊 Debug functions available: debugXanaxLogs(), debugNerveRefillLogs(), debugEnergyRefillLogs()');
-                
-                // Also expose it immediately for testing
-                setTimeout(() => {
-                    window.debugXanaxLogs = () => this.debugXanaxLogs();
-                    window.debugNerveRefillLogs = () => this.debugNerveRefillLogs();
-                    window.debugEnergyRefillLogs = () => this.debugEnergyRefillLogs();
-                    console.log('💊 Debug functions re-exposed after timeout');
-                }, 1000);
+                console.log('💊 Debug functions available via injection: debugXanaxLogs(), debugNerveRefillLogs(), debugEnergyRefillLogs()');
             }
             
             // First, check for actual refill availability to override completed state if needed
@@ -2489,38 +2479,57 @@
         }
     };
     
-    // Global debug function for nerve refill troubleshooting
-    window.debugNerveRefillLogs = function() {
-        if (window.SidekickModules?.TodoList) {
-            const todoModule = window.SidekickModules.TodoList;
-            console.log('🔍 Calling debugNerveRefillLogs...');
-            todoModule.debugNerveRefillLogs();
-        } else {
-            console.error("❌ Todo List module not available for debugNerveRefillLogs");
-        }
+    // Inject debug functions into main page context for Chrome extension
+    const injectDebugFunctions = () => {
+        const script = document.createElement('script');
+        script.textContent = `
+            // Debug functions for TodoList module
+            window.debugNerveRefillLogs = function() {
+                console.log('🧠 Debug Nerve Refill Detection:');
+                console.log('This function will trigger the nerve refill detection debug from the extension.');
+                // Send message to content script to trigger debug
+                window.dispatchEvent(new CustomEvent('sidekick-debug-nerve', { detail: 'nerve' }));
+            };
+            
+            window.debugEnergyRefillLogs = function() {
+                console.log('⚡ Debug Energy Refill Detection:');
+                console.log('This function will trigger the energy refill detection debug from the extension.');
+                // Send message to content script to trigger debug
+                window.dispatchEvent(new CustomEvent('sidekick-debug-energy', { detail: 'energy' }));
+            };
+            
+            window.debugXanaxLogs = function() {
+                console.log('💊 Debug Xanax Detection:');
+                console.log('This function will trigger the xanax detection debug from the extension.');
+                // Send message to content script to trigger debug
+                window.dispatchEvent(new CustomEvent('sidekick-debug-xanax', { detail: 'xanax' }));
+            };
+            
+            console.log('🔧 TodoList debug functions injected into main page context');
+            console.log('📋 Available functions: debugNerveRefillLogs(), debugEnergyRefillLogs(), debugXanaxLogs()');
+        `;
+        document.head.appendChild(script);
+        script.remove();
     };
 
-    // Global debug function for energy refill troubleshooting
-    window.debugEnergyRefillLogs = function() {
-        if (window.SidekickModules?.TodoList) {
-            const todoModule = window.SidekickModules.TodoList;
-            console.log('🔍 Calling debugEnergyRefillLogs...');
-            todoModule.debugEnergyRefillLogs();
-        } else {
-            console.error("❌ Todo List module not available for debugEnergyRefillLogs");
-        }
-    };
+    // Listen for debug events from main page context
+    window.addEventListener('sidekick-debug-nerve', () => {
+        console.log('🧠 Received debug nerve event from main page');
+        TodoListModule.debugNerveRefillLogs();
+    });
+    
+    window.addEventListener('sidekick-debug-energy', () => {
+        console.log('⚡ Received debug energy event from main page');
+        TodoListModule.debugEnergyRefillLogs();
+    });
+    
+    window.addEventListener('sidekick-debug-xanax', () => {
+        console.log('💊 Received debug xanax event from main page');
+        TodoListModule.debugXanaxLogs();
+    });
 
-    // Global debug function for xanax tracking troubleshooting
-    window.debugXanaxLogs = function() {
-        if (window.SidekickModules?.TodoList) {
-            const todoModule = window.SidekickModules.TodoList;
-            console.log('🔍 Calling debugXanaxLogs...');
-            todoModule.debugXanaxLogs();
-        } else {
-            console.error("❌ Todo List module not available for debugXanaxLogs");
-        }
-    };
+    // Inject functions after a short delay to ensure page is ready
+    setTimeout(injectDebugFunctions, 1000);
 
     console.log("✅ Todo List Module loaded and ready");
     console.log("🔧 Debug functions available: debugTodoList(), refreshTodoList(), forceResetTodoList(), checkRefillAvailability(), forceResetRefills(), debugNerveRefillLogs(), debugEnergyRefillLogs(), debugXanaxLogs()");
