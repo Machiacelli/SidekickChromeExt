@@ -1213,6 +1213,18 @@
                                     font-size: 11px;
                                     transition: background 0.2s;
                                 ">Booster</button>
+                                <div style="border-top: 1px solid #555; margin: 4px 0;"></div>
+                                <button class="timer-pin-option" style="
+                                    background: none;
+                                    border: none;
+                                    color: #fff;
+                                    padding: 6px 12px;
+                                    width: 100%;
+                                    text-align: left;
+                                    cursor: pointer;
+                                    font-size: 11px;
+                                    transition: background 0.2s;
+                                ">${timer.pinned ? '📌 Unpin' : '📌 Pin'}</button>
                             </div>
                         </div>
                         
@@ -1353,6 +1365,12 @@
             const verifyElement = document.getElementById(`sidekick-timer-${timer.id}`);
             if (verifyElement) {
                 console.log(`✅ Timer ${timer.id} successfully rendered and verified`);
+                
+                // Apply pinned styling if timer is pinned
+                if (timer.pinned) {
+                    verifyElement.style.border = '2px solid #ffd700';
+                    verifyElement.style.boxShadow = '0 0 10px rgba(255, 215, 0, 0.3)';
+                }
             } else {
                 console.error(`� Timer ${timer.id} failed to render properly`);
                 return;
@@ -1443,6 +1461,46 @@
                         }
                     });
                 });
+
+                // Handle timer pin option click
+                const pinOption = element.querySelector('.timer-pin-option');
+                if (pinOption) {
+                    pinOption.addEventListener('mouseenter', function() {
+                        pinOption.style.background = 'rgba(255,255,255,0.1)';
+                    });
+                    pinOption.addEventListener('mouseleave', function() {
+                        pinOption.style.background = 'none';
+                    });
+                    pinOption.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        console.log(`🔍 Timer pin clicked for timer: ${timer.id}`);
+                        
+                        // Toggle pinned state
+                        timer.pinned = !timer.pinned;
+                        
+                        // Update button text
+                        pinOption.textContent = timer.pinned ? '📌 Unpin' : '📌 Pin';
+                        
+                        // Update visual indication
+                        if (timer.pinned) {
+                            element.style.border = '2px solid #ffd700';
+                            element.style.boxShadow = '0 0 10px rgba(255, 215, 0, 0.3)';
+                        } else {
+                            element.style.border = '1px solid #68, 68, 68';
+                            element.style.boxShadow = 'rgba(0, 0, 0, 0.4) 0px 2px 8px';
+                        }
+                        
+                        // Close dropdown
+                        dropdownContent.style.display = 'none';
+                        
+                        // Save timer state
+                        self.saveTimersWithRetry();
+                        
+                        console.log(`⏰ Timer ${timer.pinned ? 'pinned' : 'unpinned'}`);
+                    });
+                }
             } else {
                 console.warn('❌ Dropdown elements not found:', {
                     dropdownBtn: !!dropdownBtn,

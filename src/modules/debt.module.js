@@ -1196,6 +1196,9 @@
                 return; // Toggle behavior
             }
 
+            // Load current state to get pin status
+            const state = await this.loadWindowState();
+
             // Remove placeholder if it exists
             const placeholder = contentArea.querySelector('.sidekick-placeholder');
             if (placeholder) {
@@ -1287,6 +1290,16 @@
                                 z-index: 10002;
                                 min-width: 120px;
                             ">
+                                <div class="debt-menu-option" data-action="pin" style="
+                                    padding: 8px 12px;
+                                    color: #fff;
+                                    cursor: pointer;
+                                    font-size: 12px;
+                                    border-bottom: 1px solid #444;
+                                " onmouseover="this.style.background='rgba(255,255,255,0.1)'" 
+                                   onmouseout="this.style.background='none'">
+                                    ${state.pinned ? '📌 Unpin' : '📌 Pin'}
+                                </div>
                                 <div class="debt-menu-option" data-action="debt" style="
                                     padding: 8px 12px;
                                     color: #fff;
@@ -1407,6 +1420,8 @@
                         this.showAddDebtDialog();
                     } else if (action === 'loan') {
                         this.showAddLoanDialog();
+                    } else if (action === 'pin') {
+                        this.toggleDebtTrackerPin();
                     }
                     cogwheelMenu.style.display = 'none';
                 });
@@ -1750,6 +1765,33 @@
                 }
                 isDragging = false;
             });
+        },
+
+        // Toggle debt tracker pin state
+        async toggleDebtTrackerPin() {
+            const state = await this.loadWindowState();
+            state.pinned = !state.pinned;
+            
+            const trackerElement = document.querySelector('.sidekick-debt-tracker');
+            if (trackerElement) {
+                // Update pin button text
+                const pinButton = trackerElement.querySelector('[data-action="pin"]');
+                if (pinButton) {
+                    pinButton.textContent = state.pinned ? '📌 Unpin' : '📌 Pin';
+                }
+                
+                // Update visual indication (optional - add a pinned style)
+                if (state.pinned) {
+                    trackerElement.style.border = '2px solid #ffd700';
+                    trackerElement.style.boxShadow = '0 0 10px rgba(255, 215, 0, 0.3)';
+                } else {
+                    trackerElement.style.border = '1px solid #444';
+                    trackerElement.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
+                }
+                
+                await this.saveWindowState(true, trackerElement);
+                console.log(`💰 Debt tracker ${state.pinned ? 'pinned' : 'unpinned'}`);
+            }
         },
 
         // Show Add Debt Dialog
@@ -2201,12 +2243,12 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
                 if (window.SidekickModules?.Core?.ChromeStorage?.get) {
                     const state = await window.SidekickModules.Core.ChromeStorage.get('debt_tracker_window_state');
                     console.log("💰 Loaded window state:", state);
-                    return state || { isOpen: false };
+                    return state || { isOpen: false, pinned: false };
                 }
             } catch (error) {
                 console.error('Failed to load window state:', error);
             }
-            return { isOpen: false };
+            return { isOpen: false, pinned: false };
         },
 
         // Restore window state on page load
