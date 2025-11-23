@@ -130,7 +130,8 @@ async function handleTornApiCall(request) {
             personalstats: null,
             logs: null,
             bars: null,
-            cooldowns: null
+            cooldowns: null,
+            refills: null
         };
         
         // Fetch personal stats if requested
@@ -256,6 +257,38 @@ async function handleTornApiCall(request) {
             } catch (error) {
                 console.warn('⚠️ Background: Log fetch failed (non-fatal):', error);
                 // Continue without logs
+            }
+        }
+        
+        // 🆕 Fetch refills if requested (MOST IMPORTANT for daily task detection!)
+        if (selections.includes('refills')) {
+            console.log('💊 Background: Fetching refills...');
+            try {
+                const refillsResponse = await fetch(`https://api.torn.com/${endpoint}?selections=refills&key=${apiKey}`, {
+                    method: 'GET',
+                    headers: {
+                        'User-Agent': 'Sidekick Chrome Extension Background'
+                    }
+                });
+                
+                if (!refillsResponse.ok) {
+                    console.warn('⚠️ Background: Refills fetch failed:', refillsResponse.status);
+                    // Don't throw here, refills are optional
+                } else {
+                    const refillsData = await refillsResponse.json();
+                    
+                    if (refillsData.error) {
+                        console.warn('⚠️ Background: Refills API error:', refillsData.error);
+                        // Don't throw here, refills are optional
+                    } else {
+                        results.refills = refillsData.refills;
+                        console.log('✅ Background: Refills retrieved successfully:', refillsData.refills);
+                    }
+                }
+                
+            } catch (error) {
+                console.warn('⚠️ Background: Refills fetch failed (non-fatal):', error);
+                // Continue without refills
             }
         }
         

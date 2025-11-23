@@ -465,7 +465,8 @@
                                 backgroundResult.personalstats, 
                                 backgroundResult.logs,
                                 backgroundResult.bars,
-                                backgroundResult.cooldowns
+                                backgroundResult.cooldowns,
+                                backgroundResult.refills  // Pass refills data from background
                             );
                             this.apiCheckFailureCount = 0;
                             return;
@@ -501,7 +502,7 @@
                 const response = await window.SidekickModules.Core.SafeMessageSender.sendToBackground({
                     action: 'fetchTornApi',
                     apiKey: apiKey,
-                    selections: ['personalstats', 'logs', 'bars', 'cooldowns']
+                    selections: ['personalstats', 'logs', 'bars', 'cooldowns', 'refills']
                 });
                 
                 return response;
@@ -585,7 +586,19 @@
                 console.log('✅ Log data received');
             } catch (error) {
                 console.error('❌ Failed to fetch log data:', error.message);
-                // Don't throw here, continue with just personal stats
+                // Don't throw here, continue with other data
+            }
+            
+            // NEW: Fetch refills data (most important for daily tasks!)
+            let refillsData = null;
+            try {
+                console.log('💊 Fetching refills data...');
+                const refillsResponse = await fetchWithTimeout(`https://api.torn.com/user?selections=refills&key=${apiKey}`);
+                refillsData = await refillsResponse.json();
+                console.log('✅ Refills data received:', refillsData);
+            } catch (error) {
+                console.error('❌ Failed to fetch refills data:', error.message);
+                // Don't throw here, continue with other data
             }
             
             // Process data if we got anything
@@ -595,7 +608,8 @@
                     personalStatsData.personalstats, 
                     logData?.log, 
                     barsData?.bars, 
-                    cooldownsData?.cooldowns
+                    cooldownsData?.cooldowns,
+                    refillsData?.refills  // Pass refills data
                 );
                 
                 // Reset failure count on successful API call
@@ -747,7 +761,7 @@
         },
 
         // Update daily task completion based on API data
-        updateTasksFromApi(personalstats, logData = null, barsData = null, cooldownsData = null) {
+        updateTasksFromApi(personalstats, logData = null, barsData = null, cooldownsData = null, refillsData = null) {
             let hasUpdates = false;
             
             // Store API data for debugging
@@ -755,7 +769,8 @@
                 personalstats,
                 logs: logData,
                 bars: barsData,
-                cooldowns: cooldownsData
+                cooldowns: cooldownsData,
+                refills: refillsData
             };
             
             console.log('📋 Updating tasks from API data...');
@@ -763,8 +778,46 @@
                 personalstats: !!personalstats,
                 logData: !!logData,
                 barsData: !!barsData,
-                cooldownsData: !!cooldownsData
+                cooldownsData: !!cooldownsData,
+                refillsData: !!refillsData
             });
+            
+            // 🆕 PRIORITY: Check refills data first (most reliable method)
+            if (refillsData) {
+                console.log('💊 Processing refills data from API:', refillsData);
+                
+                // Energy Refill - Direct from API
+                if (typeof refillsData.energy_refill_used === 'boolean') {
+                    const energyTask = this.dailyTasks.energyRefill;
+                    const wasCompleted = energyTask.completed;
+                    energyTask.completed = refillsData.energy_refill_used;
+                    
+                    if (wasCompleted !== energyTask.completed) {
+                        hasUpdates = true;
+                        console.log(`⚡ Updated Energy Refill from API: ${energyTask.completed ? '✅ USED' : '❌ NOT USED'}`);
+                    } else {
+                        console.log(`⚡ Energy Refill status confirmed: ${energyTask.completed ? '✅ USED' : '❌ NOT USED'}`);
+                    }
+                }
+                
+                // Nerve Refill - Direct from API
+                if (typeof refillsData.nerve_refill_used === 'boolean') {
+                    const nerveTask = this.dailyTasks.nerveRefill;
+                    const wasCompleted = nerveTask.completed;
+                    nerveTask.completed = refillsData.nerve_refill_used;
+                    
+                    if (wasCompleted !== nerveTask.completed) {
+                        hasUpdates = true;
+                        console.log(`🧠 Updated Nerve Refill from API: ${nerveTask.completed ? '✅ USED' : '❌ NOT USED'}`);
+                    } else {
+                        console.log(`🧠 Nerve Refill status confirmed: ${nerveTask.completed ? '✅ USED' : '❌ NOT USED'}`);
+                    }
+                }
+                
+                console.log('✅ Refills data processed successfully from dedicated API endpoint');
+            } else {
+                console.log('⚠️ No refills data available - falling back to log detection');
+            }
             
             // Add debug function to global console for easy access
             // Debug functions are now handled by injection method above
@@ -794,6 +847,12 @@
             
             for (const taskKey in this.dailyTasks) {
                 const task = this.dailyTasks[taskKey];
+                
+                // Skip Energy and Nerve refills if we already processed them from refills API
+                if (refillsData && (taskKey === 'energyRefill' || taskKey === 'nerveRefill')) {
+                    console.log(`✅ Skipping ${task.name} - already processed from refills API endpoint`);
+                    continue;
+                }
                 
                 // Check if this task should be detected from logs
                 if (task.detectFromLogs && task.logPatterns) {
