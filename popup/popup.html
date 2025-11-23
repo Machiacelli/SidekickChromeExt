@@ -284,6 +284,7 @@
     <div class="tabs">
         <button class="tab-button active" data-tab="general">General</button>
         <button class="tab-button" data-tab="xanax">Xanax Viewer</button>
+        <button class="tab-button" data-tab="chain">Chain Timer</button>
     </div>
     
     <div class="content">
@@ -397,6 +398,63 @@
             <button class="button danger" id="clearCache">Clear Cache</button>
             
             <div class="status" id="xanaxStatus"></div>
+        </div>
+        
+        <!-- Chain Timer Settings Tab -->
+        <div class="tab-content" id="chain-tab">
+            <div class="switch-container">
+                <div class="switch-label">
+                    <div>Chain Timer Enabled</div>
+                    <div class="switch-description">Shows floating chain countdown timer</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="chainTimerEnabled">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="setting-group">
+                <label>Alert Threshold: <span class="range-value" id="chainThresholdValue">4</span> minutes</label>
+                <input type="range" id="chainThresholdSlider" min="1" max="10" value="4" step="0.5">
+                <div style="font-size: 12px; opacity: 0.7; margin-top: 5px;">Trigger alert when chain timer drops below this threshold</div>
+            </div>
+            
+            <div class="switch-container">
+                <div class="switch-label">
+                    <div>Alerts Enabled</div>
+                    <div class="switch-description">Enable/disable all chain alerts</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="chainAlertsEnabled">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="switch-container">
+                <div class="switch-label">
+                    <div>Popup Alerts</div>
+                    <div class="switch-description">Show popup dialog when threshold reached</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="chainPopupEnabled">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="switch-container">
+                <div class="switch-label">
+                    <div>Screen Flash</div>
+                    <div class="switch-description">Flash red screen when threshold reached</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="chainFlashEnabled">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <button class="button" id="saveChainSettings">Save Chain Timer Settings</button>
+            
+            <div class="status" id="chainStatus"></div>
         </div>
     </div>
     

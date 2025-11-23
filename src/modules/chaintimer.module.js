@@ -27,11 +27,16 @@
     // Chain Timer Module Implementation
     const ChainTimerModule = {
         isInitialized: false,
-        isActive: false,
+        isEnabled: false,
+        alertsEnabled: true,
+        popupEnabled: true,
+        screenFlashEnabled: true,
         floatingDisplay: null,
         monitorInterval: null,
         alertThresholdSeconds: 240, // 4 minutes
         hasAlerted: false,
+        flashIntervalId: null,
+        flashDiv: null,
 
         // Initialize the module
         async init() {
@@ -47,11 +52,11 @@
                 await this.loadSettings();
                 this.isInitialized = true;
                 
-                if (this.isActive) {
-                    console.log('✅ Chain Timer: Active - starting monitoring');
+                if (this.isEnabled) {
+                    console.log('✅ Chain Timer: Enabled - starting monitoring');
                     this.startMonitoring();
                 } else {
-                    console.log('⏸️ Chain Timer: Inactive');
+                    console.log('⏸️ Chain Timer: Disabled');
                 }
                 
                 console.log("✅ Chain Timer Module initialized successfully");
@@ -65,16 +70,28 @@
             try {
                 const saved = await window.SidekickModules.Core.ChromeStorage.get('sidekick_chain_timer');
                 if (saved) {
-                    this.isActive = saved.isActive === true;
+                    this.isEnabled = saved.isEnabled !== false;
+                    this.alertsEnabled = saved.alertsEnabled !== false;
+                    this.popupEnabled = saved.popupEnabled !== false;
+                    this.screenFlashEnabled = saved.screenFlashEnabled !== false;
                     this.alertThresholdSeconds = saved.alertThresholdSeconds || 240;
                 } else {
-                    this.isActive = false;
+                    this.isEnabled = false;
+                    this.alertsEnabled = true;
+                    this.popupEnabled = true;
+                    this.screenFlashEnabled = true;
                     this.alertThresholdSeconds = 240;
                 }
-                console.log('⏱️ Chain Timer settings loaded:', { active: this.isActive, threshold: this.alertThresholdSeconds });
+                console.log('⏱️ Chain Timer settings loaded:', { 
+                    enabled: this.isEnabled, 
+                    threshold: this.alertThresholdSeconds,
+                    alerts: this.alertsEnabled,
+                    popup: this.popupEnabled,
+                    flash: this.screenFlashEnabled
+                });
             } catch (error) {
                 console.error('Failed to load chain timer settings:', error);
-                this.isActive = false;
+                this.isEnabled = false;
             }
         },
 
@@ -82,7 +99,10 @@
         async saveSettings() {
             try {
                 await window.SidekickModules.Core.ChromeStorage.set('sidekick_chain_timer', {
-                    isActive: this.isActive,
+                    isEnabled: this.isEnabled,
+                    alertsEnabled: this.alertsEnabled,
+                    popupEnabled: this.popupEnabled,
+                    screenFlashEnabled: this.screenFlashEnabled,
                     alertThresholdSeconds: this.alertThresholdSeconds
                 });
                 console.log('💾 Chain Timer settings saved');
@@ -91,22 +111,22 @@
             }
         },
 
-        // Toggle active state
+        // Toggle enabled state
         async toggle() {
-            this.isActive = !this.isActive;
+            this.isEnabled = !this.isEnabled;
             await this.saveSettings();
             
-            if (this.isActive) {
-                console.log('✅ Chain Timer: Activated');
+            if (this.isEnabled) {
+                console.log('✅ Chain Timer: Enabled');
                 this.startMonitoring();
-                this.showNotification('Chain Timer activated!', 'success');
+                this.showNotification('Chain Timer enabled!', 'success');
             } else {
-                console.log('⏸️ Chain Timer: Deactivated');
+                console.log('⏸️ Chain Timer: Disabled');
                 this.stopMonitoring();
-                this.showNotification('Chain Timer deactivated!', 'info');
+                this.showNotification('Chain Timer disabled!', 'info');
             }
             
-            return this.isActive;
+            return this.isEnabled;
         },
 
         // Start monitoring chain status
@@ -130,6 +150,7 @@
             }
             
             this.removeFloatingDisplay();
+            this.stopFlashing();
             this.hasAlerted = false;
         },
 
@@ -308,9 +329,21 @@
 
         // Trigger alert when threshold reached
         triggerAlert(secondsLeft) {
+            if (!this.alertsEnabled) return;
+            
             const minutes = Math.floor(secondsLeft / 60);
             const seconds = secondsLeft % 60;
             const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Popup alert
+            if (this.popupEnabled) {
+                alert(`Chain timer is below ${this.alertThresholdSeconds / 60} minutes!`);
+            }
+            
+            // Screen flash
+            if (this.screenFlashEnabled) {
+                this.startFlashing();
+            }
             
             // Visual alert - flash the display
             this.flashDisplay();
@@ -352,12 +385,55 @@
             }
         },
 
+        // Start flashing screen
+        startFlashing() {
+            if (this.flashIntervalId) return;
+
+            this.flashDiv = document.createElement('div');
+            this.flashDiv.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background-color: red;
+                opacity: 0;
+                z-index: 9999;
+                pointer-events: none;
+                transition: opacity 0.5s ease-in-out;
+            `;
+
+            document.body.appendChild(this.flashDiv);
+
+            let visible = false;
+
+            this.flashIntervalId = setInterval(() => {
+                visible = !visible;
+                this.flashDiv.style.opacity = visible ? '0.5' : '0';
+            }, 1000);
+        },
+
+        // Stop flashing screen
+        stopFlashing() {
+            if (this.flashIntervalId) {
+                clearInterval(this.flashIntervalId);
+                this.flashIntervalId = null;
+            }
+            if (this.flashDiv) {
+                this.flashDiv.remove();
+                this.flashDiv = null;
+            }
+        },
+
         // Get current status
         getStatus() {
             const chainData = this.getChainData();
             return {
-                isActive: this.isActive,
+                isEnabled: this.isEnabled,
                 isInitialized: this.isInitialized,
+                alertsEnabled: this.alertsEnabled,
+                popupEnabled: this.popupEnabled,
+                screenFlashEnabled: this.screenFlashEnabled,
                 timeLeft: chainData.timeLeft,
                 chainLength: chainData.length,
                 alertThreshold: this.alertThresholdSeconds,

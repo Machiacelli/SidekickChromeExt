@@ -381,6 +381,11 @@
                 return true;
             }
             
+            if (request.action === 'reloadChainTimer') {
+                handleReloadChainTimer(sendResponse);
+                return true;
+            }
+            
             if (request.action === 'dataCleared') {
                 handleDataCleared();
                 sendResponse({ success: true });
@@ -423,6 +428,10 @@
                 case 'randomTarget':
                     module = window.SidekickModules?.RandomTarget;
                     displayName = 'Random Target';
+                    break;
+                case 'chainTimer':
+                    module = window.SidekickModules?.ChainTimer;
+                    displayName = 'Chain Timer';
                     break;
                 default:
                     console.warn('⚠️ Unknown module type:', moduleType);
@@ -474,6 +483,34 @@
             }
         } catch (error) {
             console.error('❌ Failed to reload Xanax Viewer:', error);
+            sendResponse({ success: false, error: error.message });
+        }
+    }
+    
+    // Handle Chain Timer reload from popup
+    async function handleReloadChainTimer(sendResponse) {
+        try {
+            const module = window.SidekickModules?.ChainTimer;
+            if (module) {
+                console.log('⏱️ Reloading Chain Timer settings...');
+                
+                // Reload settings
+                await module.loadSettings();
+                
+                // If enabled, restart the timer
+                if (module.isEnabled) {
+                    module.stopMonitoring();
+                    module.startMonitoring();
+                }
+                
+                console.log('✅ Chain Timer reloaded successfully');
+                sendResponse({ success: true });
+            } else {
+                console.warn('⚠️ Chain Timer module not available');
+                sendResponse({ success: false, error: 'Module not available' });
+            }
+        } catch (error) {
+            console.error('❌ Failed to reload Chain Timer:', error);
             sendResponse({ success: false, error: error.message });
         }
     }

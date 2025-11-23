@@ -29,6 +29,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const clearCacheButton = document.getElementById('clearCache');
     const xanaxStatusDiv = document.getElementById('xanaxStatus');
     
+    // Get DOM elements - Chain Timer Tab
+    const chainTimerEnabledCheckbox = document.getElementById('chainTimerEnabled');
+    const chainThresholdSlider = document.getElementById('chainThresholdSlider');
+    const chainThresholdValue = document.getElementById('chainThresholdValue');
+    const chainAlertsEnabledCheckbox = document.getElementById('chainAlertsEnabled');
+    const chainPopupEnabledCheckbox = document.getElementById('chainPopupEnabled');
+    const chainFlashEnabledCheckbox = document.getElementById('chainFlashEnabled');
+    const saveChainButton = document.getElementById('saveChainSettings');
+    const chainStatusDiv = document.getElementById('chainStatus');
+    
     // Get tab buttons
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -72,6 +82,15 @@ document.addEventListener('DOMContentLoaded', function() {
     saveXanaxButton.addEventListener('click', saveXanaxSettings);
     clearCacheButton.addEventListener('click', clearXanaxCache);
     
+    // Event listeners - Chain Timer Tab
+    chainThresholdSlider.addEventListener('input', updateChainThresholdValue);
+    chainTimerEnabledCheckbox.addEventListener('change', handleChainTimerToggle);
+    saveChainButton.addEventListener('click', saveChainSettings);
+    
+    function updateChainThresholdValue() {
+        chainThresholdValue.textContent = chainThresholdSlider.value;
+    }
+    
     function updateAutoLimitValue() {
         autoLimitValue.textContent = autoLimitSlider.value;
     }
@@ -84,7 +103,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'sidekick_block_training',
             'sidekick_time_on_tab',
             'sidekick_npc_attack_timer',
-            'sidekick_random_target'
+            'sidekick_random_target',
+            'sidekick_chain_timer'
         ], function(result) {
             // Load global API key
             if (result.sidekick_api_key) {
@@ -140,6 +160,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 randomTargetCheckbox.checked = result.sidekick_random_target.isEnabled === true;
             } else {
                 randomTargetCheckbox.checked = false; // Default disabled
+            }
+            
+            // Load chain timer settings
+            if (result.sidekick_chain_timer) {
+                chainTimerEnabledCheckbox.checked = result.sidekick_chain_timer.isEnabled === true;
+                chainAlertsEnabledCheckbox.checked = result.sidekick_chain_timer.alertsEnabled !== false;
+                chainPopupEnabledCheckbox.checked = result.sidekick_chain_timer.popupEnabled !== false;
+                chainFlashEnabledCheckbox.checked = result.sidekick_chain_timer.screenFlashEnabled !== false;
+                
+                const thresholdMinutes = (result.sidekick_chain_timer.alertThresholdSeconds || 240) / 60;
+                chainThresholdSlider.value = thresholdMinutes;
+                chainThresholdValue.textContent = thresholdMinutes;
+            } else {
+                chainTimerEnabledCheckbox.checked = false;
+                chainAlertsEnabledCheckbox.checked = true;
+                chainPopupEnabledCheckbox.checked = true;
+                chainFlashEnabledCheckbox.checked = true;
+                chainThresholdSlider.value = 4;
+                chainThresholdValue.textContent = '4';
             }
             
             // Load cache counter
@@ -215,6 +254,37 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    function saveChainSettings() {
+        // Get current chain timer settings
+        chrome.storage.local.get(['sidekick_chain_timer'], function(result) {
+            const currentSettings = result.sidekick_chain_timer || {};
+            
+            // Update with new values
+            const updatedSettings = {
+                ...currentSettings,
+                alertsEnabled: chainAlertsEnabledCheckbox.checked,
+                popupEnabled: chainPopupEnabledCheckbox.checked,
+                screenFlashEnabled: chainFlashEnabledCheckbox.checked,
+                alertThresholdSeconds: parseFloat(chainThresholdSlider.value) * 60
+            };
+            
+            chrome.storage.local.set({ sidekick_chain_timer: updatedSettings }, function() {
+                showChainStatus('Chain Timer settings saved successfully!', 'success');
+                
+                // Send message to all Torn.com tabs to reload chain timer
+                chrome.tabs.query({ url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function(tabs) {
+                    tabs.forEach(tab => {
+                        chrome.tabs.sendMessage(tab.id, {
+                            action: 'reloadChainTimer'
+                        }).catch(() => {
+                            // Ignore errors for tabs without content script
+                        });
+                    });
+                });
+            });
+        });
+    }
+    
     function handleXanaxViewerToggle() {
         toggleModule('xanaxViewer', xanaxViewerCheckbox.checked, 'Xanax Viewer');
     }
@@ -237,6 +307,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function handleRandomTargetToggle() {
         toggleModule('randomTarget', randomTargetCheckbox.checked, 'Random Target');
+    }
+    
+    function handleChainTimerToggle() {
+        toggleModule('chainTimer', chainTimerEnabledCheckbox.checked, 'Chain Timer');
     }
     
     function toggleModule(moduleType, enabled, displayName) {
@@ -330,6 +404,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         setTimeout(() => {
             xanaxStatusDiv.style.display = 'none';
+        }, 3000);
+    }
+    
+    function showChainStatus(message, type = 'success') {
+        chainStatusDiv.textContent = message;
+        chainStatusDiv.className = `status ${type === 'error' ? 'error' : ''}`;
+        chainStatusDiv.style.display = 'block';
+        
+        setTimeout(() => {
+            chainStatusDiv.style.display = 'none';
         }, 3000);
     }
 });
