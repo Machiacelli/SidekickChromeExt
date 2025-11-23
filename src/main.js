@@ -42,6 +42,15 @@
 
             console.log("📦 Sidekick: Available modules:", Object.keys(window.SidekickModules || {}));
 
+            // Initialize Core Module (for extension context monitoring)
+            console.log("🔧 Sidekick: Initializing Core Module...");
+            if (window.SidekickModules.Core?.init) {
+                await window.SidekickModules.Core.init();
+                console.log("✅ Sidekick: Core Module initialized");
+            } else {
+                console.warn("⚠️ Core module init not available");
+            }
+
             // Initialize Settings Module
             console.log("⚙️ Sidekick: Initializing Settings...");
             if (window.SidekickModules.Settings?.init) {
@@ -205,6 +214,9 @@
             // UI and modules initialized successfully
             console.log("🎉 Sidekick Chrome Extension initialization complete!");
 
+            // Expose global helper functions for testing
+            exposeGlobalHelpers();
+
             // Set up message listener for popup communications
             setupMessageListener();
 
@@ -213,6 +225,63 @@
             // Fallback: create simple hamburger button
             createFallbackButton();
         }
+    }
+
+    // Expose global helper functions for debugging and testing
+    function exposeGlobalHelpers() {
+        // Extension connectivity tests
+        window.testExtensionConnection = function() {
+            if (window.SidekickModules?.Core?.SafeMessageSender?.testExtensionConnection) {
+                return window.SidekickModules.Core.SafeMessageSender.testExtensionConnection();
+            } else {
+                console.error('❌ SafeMessageSender not available');
+                return false;
+            }
+        };
+
+        window.checkExtensionContext = function() {
+            if (window.SidekickModules?.Core?.SafeMessageSender?.isExtensionContextValid) {
+                const isValid = window.SidekickModules.Core.SafeMessageSender.isExtensionContextValid();
+                console.log(`🔍 Extension context valid: ${isValid}`);
+                return isValid;
+            } else {
+                console.error('❌ SafeMessageSender not available');
+                return false;
+            }
+        };
+
+        window.forceContextRecovery = function() {
+            if (window.SidekickModules?.Core?.SafeMessageSender?.attemptContextRecovery) {
+                return window.SidekickModules.Core.SafeMessageSender.attemptContextRecovery();
+            } else {
+                console.error('❌ SafeMessageSender not available');
+                return false;
+            }
+        };
+
+        // Debug shortcut for daily tasks
+        window.testDailyTasks = function() {
+            if (window.SidekickModules?.TodoList) {
+                console.log('📋 Available TodoList debug functions:', {
+                    debugTodoList: typeof window.debugTodoList,
+                    debugNerveRefillLogs: typeof window.debugNerveRefillLogs,
+                    debugEnergyRefillLogs: typeof window.debugEnergyRefillLogs,
+                    debugXanaxLogs: typeof window.debugXanaxLogs
+                });
+                
+                if (typeof window.debugTodoList === 'function') {
+                    return window.debugTodoList();
+                }
+            }
+            console.error('❌ TodoList module or debug functions not available');
+            return false;
+        };
+
+        console.log('🔧 Global helper functions exposed:');
+        console.log('  - testExtensionConnection()');
+        console.log('  - checkExtensionContext()');
+        console.log('  - forceContextRecovery()');
+        console.log('  - testDailyTasks()');
     }
 
     // Set up message listener for popup communications
