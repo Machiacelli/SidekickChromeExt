@@ -227,8 +227,22 @@
             this.lastResetDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
             this.saveDailyTasks();
             
-            // Refresh any open todo lists
-            this.renderAllTodoLists();
+            // Force immediate UI refresh for all open todo lists
+            console.log('🔄 Refreshing todo list UI after reset');
+            setTimeout(() => {
+                this.renderAllTodoLists();
+                // Force refresh of all todo list windows
+                this.todoLists.forEach(todoList => {
+                    const element = document.getElementById(`sidekick-todolist-${todoList.id}`);
+                    if (element) {
+                        const content = element.querySelector('.tasks-container');
+                        if (content) {
+                            content.innerHTML = this.renderTasksContent(todoList);
+                            this.attachTaskEventListeners(element, todoList);
+                        }
+                    }
+                });
+            }, 100);
             
             console.log('✅ Daily tasks reset complete for:', this.lastResetDate.toISOString());
         },

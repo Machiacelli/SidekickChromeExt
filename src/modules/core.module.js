@@ -30,8 +30,18 @@
     const NotificationSystem = {
         notifications: [], // Track active notifications
         baseTop: 20, // Fixed top position for new notifications
+        minSpacing: 15, // Minimum spacing between notifications
         
         show(title, message, type = 'info', duration = 4000) {
+            // Prevent duplicate notifications with same message
+            const existingNotification = this.notifications.find(n => 
+                n.element && n.element.textContent.includes(message)
+            );
+            if (existingNotification) {
+                console.log('🔔 Duplicate notification prevented:', message);
+                return;
+            }
+            
             const notification = document.createElement('div');
             notification.className = `sidekick-notification ${type}`;
             
@@ -44,20 +54,35 @@
                 <div style="font-size: 13px; opacity: 0.9;">${message}</div>
             `;
             
-            // Add notification styles based on type
+            // Enhanced notification styles with better positioning
+            const baseStyle = `
+                position: fixed;
+                right: 20px;
+                width: 320px;
+                max-width: 90vw;
+                border-radius: 6px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                font-family: Arial, sans-serif;
+                font-size: 14px;
+                line-height: 1.4;
+                cursor: pointer;
+                transform: translateX(100%);
+                transition: all 0.3s ease;
+                backdrop-filter: blur(5px);
+            `;
+            
             const typeStyles = {
-                'info': 'background: #2196F3; color: white; padding: 16px; animation: slideInRight 0.3s ease;',
-                'success': 'background: #4CAF50; color: white; padding: 16px; animation: slideInRight 0.3s ease;',
-                'warning': 'background: #FF9800; color: white; padding: 16px; animation: slideInRight 0.3s ease;',
-                'error': 'background: #F44336; color: white; padding: 16px; animation: slideInRight 0.3s ease;'
+                'info': baseStyle + 'background: rgba(33, 150, 243, 0.95); color: white; padding: 16px;',
+                'success': baseStyle + 'background: rgba(76, 175, 80, 0.95); color: white; padding: 16px;',
+                'warning': baseStyle + 'background: rgba(255, 152, 0, 0.95); color: white; padding: 16px;',
+                'error': baseStyle + 'background: rgba(244, 67, 54, 0.95); color: white; padding: 16px;'
             };
             
-            notification.style.cssText += typeStyles[type] || typeStyles['info'];
+            notification.style.cssText = typeStyles[type] || typeStyles['info'];
             
-            // New notifications always appear at the top position
-            notification.style.top = this.baseTop + 'px';
-            
-            // Set z-index to be higher than existing notifications (newest on top)
+            // Calculate position for new notification
+            const newPosition = this.calculateNewNotificationPosition();
+            notification.style.top = newPosition + 'px';
             notification.style.zIndex = 999999 + this.notifications.length;
             
             // Add click to dismiss functionality
@@ -65,17 +90,19 @@
                 this.removeNotification(notificationId);
             });
             
-            // Add to DOM first to get proper dimensions
+            // Add to DOM and trigger slide-in animation
             document.body.appendChild(notification);
             
-            // Push down existing notifications BEFORE adding new one to array
-            this.pushDownExistingNotifications(notification.offsetHeight + 10);
+            // Trigger slide-in animation
+            requestAnimationFrame(() => {
+                notification.style.transform = 'translateX(0)';
+            });
             
-            // Add new notification to the beginning of array (top position)
-            this.notifications.unshift({
+            // Add new notification to array
+            this.notifications.push({
                 id: notificationId,
                 element: notification,
-                position: this.baseTop
+                position: newPosition
             });
             
             // Auto remove with repositioning
@@ -84,18 +111,22 @@
             }, duration);
         },
         
-        pushDownExistingNotifications(newNotificationSpace) {
-            // Move all existing notifications down by the new notification's space
+        calculateNewNotificationPosition() {
+            if (this.notifications.length === 0) {
+                return this.baseTop;
+            }
+            
+            // Find the bottom-most notification and add spacing
+            let maxBottom = this.baseTop;
             this.notifications.forEach(notification => {
                 if (notification.element && notification.element.parentNode) {
-                    const currentTop = parseInt(notification.element.style.top) || notification.position;
-                    const newTop = currentTop + newNotificationSpace;
-                    
-                    notification.position = newTop;
-                    notification.element.style.transition = 'top 0.3s ease';
-                    notification.element.style.top = newTop + 'px';
+                    const rect = notification.element.getBoundingClientRect();
+                    const currentBottom = notification.position + rect.height;
+                    maxBottom = Math.max(maxBottom, currentBottom);
                 }
             });
+            
+            return maxBottom + this.minSpacing;
         },
         
         removeNotification(notificationId) {
@@ -106,7 +137,9 @@
             
             // Animate out
             if (notification.element && notification.element.parentNode) {
-                notification.element.style.animation = 'slideOutRight 0.3s ease';
+                notification.element.style.transform = 'translateX(100%)';
+                notification.element.style.opacity = '0';
+                
                 setTimeout(() => {
                     if (notification.element && notification.element.parentNode) {
                         notification.element.parentNode.removeChild(notification.element);
@@ -115,7 +148,7 @@
                     // Remove from array
                     this.notifications.splice(notificationIndex, 1);
                     
-                    // Reposition remaining notifications to fill the gap
+                    // Reposition remaining notifications to fill gaps
                     this.repositionNotifications();
                 }, 300);
             } else {
@@ -125,15 +158,28 @@
         },
         
         repositionNotifications() {
+            // Clean up dead notifications first
+            this.notifications = this.notifications.filter(n => 
+                n.element && n.element.parentNode
+            );
+            
             // Reposition all notifications from top to bottom with proper spacing
             let currentTop = this.baseTop;
             
             this.notifications.forEach((notification, index) => {
                 if (notification.element && notification.element.parentNode) {
-                    notification.position = currentTop;
-                    notification.element.style.transition = 'top 0.3s ease';
-                    notification.element.style.top = currentTop + 'px';
-                    currentTop += notification.element.offsetHeight + 10;
+                    const targetTop = currentTop;
+                    
+                    // Only animate if position actually changed
+                    if (notification.position !== targetTop) {
+                        notification.position = targetTop;
+                        notification.element.style.transition = 'top 0.3s ease';
+                        notification.element.style.top = targetTop + 'px';
+                    }
+                    
+                    // Calculate next position
+                    const rect = notification.element.getBoundingClientRect();
+                    currentTop += rect.height + this.minSpacing;
                 }
             });
         },
