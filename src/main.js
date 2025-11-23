@@ -217,25 +217,107 @@
             // Expose global helper functions for testing
             exposeGlobalHelpers();
             
-            // Test that functions are immediately accessible
+            // Test multiple exposure methods for Chrome extension content script environment
+            console.log('🧪 Testing multiple global function exposure methods:');
+            
+            // Method 1: Standard window assignment (already done above)
+            console.log('🔧 Method 1: Standard window assignment complete');
+            
+            // Method 2: Direct global scope injection
+            try {
+                const funcs = {
+                    testExtensionConnection: window.testExtensionConnection,
+                    checkExtensionContext: window.checkExtensionContext,
+                    forceContextRecovery: window.forceContextRecovery,
+                    testDailyTasks: window.testDailyTasks
+                };
+                
+                // Inject into page context via script tag
+                const script = document.createElement('script');
+                script.textContent = `
+                    // Debug functions for Sidekick Chrome Extension
+                    window.testExtensionConnection = function() {
+                        console.log('🔗 Extension Connection Test');
+                        console.log('✅ Extension is loaded and running');
+                        console.log('📦 Available modules:', Object.keys(window.SidekickModules || {}));
+                        console.log('🔍 Extension context:', !!window.SidekickModules);
+                        return { status: 'connected', modules: Object.keys(window.SidekickModules || {}) };
+                    };
+                    
+                    window.checkExtensionContext = function() {
+                        console.log('🔍 Extension Context Check');
+                        console.log('📍 Current URL:', window.location.href);
+                        console.log('🌐 Domain:', window.location.hostname);
+                        console.log('📦 Modules loaded:', !!window.SidekickModules);
+                        console.log('🔧 Core available:', !!window.SidekickModules?.Core);
+                        console.log('📋 TodoList available:', !!window.SidekickModules?.TodoList);
+                        return {
+                            url: window.location.href,
+                            domain: window.location.hostname,
+                            modulesLoaded: !!window.SidekickModules,
+                            moduleCount: Object.keys(window.SidekickModules || {}).length,
+                            modules: window.SidekickModules || null
+                        };
+                    };
+                    
+                    window.forceContextRecovery = function() {
+                        console.log('🔄 Force Context Recovery');
+                        console.log('⚠️ This will reload the page to recover extension context');
+                        console.log('💡 Use this if extension seems unresponsive');
+                        setTimeout(() => window.location.reload(), 1000);
+                        return 'Reloading in 1 second...';
+                    };
+                    
+                    window.testDailyTasks = function() {
+                        console.log('📋 Daily Tasks Test');
+                        console.log('🔍 Testing daily task detection system');
+                        if (window.SidekickModules?.TodoList) {
+                            console.log('✅ TodoList module found');
+                            console.log('🔧 Available debug functions:', {
+                                debugTodoList: typeof window.debugTodoList,
+                                debugXanaxLogs: typeof window.debugXanaxLogs,
+                                debugNerveRefillLogs: typeof window.debugNerveRefillLogs,
+                                debugEnergyRefillLogs: typeof window.debugEnergyRefillLogs
+                            });
+                            return window.SidekickModules.TodoList;
+                        } else {
+                            console.log('❌ TodoList module not found');
+                            console.log('📦 Available modules:', Object.keys(window.SidekickModules || {}));
+                            return null;
+                        }
+                    };
+                    
+                    console.log('✅ Sidekick debug functions injected into page context');
+                    console.log('🔧 Available functions: testExtensionConnection(), checkExtensionContext(), forceContextRecovery(), testDailyTasks()');
+                `;
+                
+                (document.head || document.documentElement).appendChild(script);
+                setTimeout(() => script.remove(), 100);
+                console.log('✅ Functions injected via script tag into page context');
+            } catch (e) {
+                console.warn('⚠️ Script injection failed:', e.message);
+            }
+            
+            // Method 3: Verify accessibility
             setTimeout(() => {
-                console.log('🧪 Testing global function accessibility:');
+                console.log('🧪 Testing function accessibility after injection:');
                 try {
                     if (typeof window.testExtensionConnection === 'function') {
-                        console.log('✅ testExtensionConnection is accessible via window');
+                        console.log('✅ testExtensionConnection is accessible');
+                        // Test the function
+                        try {
+                            const result = window.testExtensionConnection();
+                            console.log('✅ Function call successful:', result);
+                        } catch (e) {
+                            console.warn('⚠️ Function call failed:', e.message);
+                        }
                     } else {
-                        console.error('❌ testExtensionConnection is not accessible via window:', typeof window.testExtensionConnection);
-                    }
-                    
-                    if (typeof testExtensionConnection === 'function') {
-                        console.log('✅ testExtensionConnection is globally accessible (no window prefix)');
-                    } else {
-                        console.error('❌ testExtensionConnection is not globally accessible (no window prefix)');
+                        console.error('❌ testExtensionConnection still not accessible');
                     }
                 } catch (e) {
-                    console.error('❌ Error testing global functions:', e.message);
+                    console.error('❌ Error during accessibility test:', e.message);
                 }
-            }, 100);
+            }, 200);
 
             // Set up message listener for popup communications
             setupMessageListener();
