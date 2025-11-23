@@ -431,12 +431,19 @@
             
             if (this.lastKnownState === true && currentState === false) {
                 console.warn('🚨 Extension context invalidation detected by monitor');
+                console.warn('📍 Context:', window.location.href);
+                console.warn('🔗 Stack trace:', new Error().stack);
+                
+                // Immediate notification to user
+                this.showContextLossNotification();
                 
                 // Try recovery once automatically
                 const recovered = await SafeMessageSender.attemptContextRecovery();
                 if (recovered) {
                     this.lastKnownState = true;
                     console.log('✅ Extension context auto-recovered');
+                    // Re-expose global functions after recovery
+                    this.reExposeGlobalFunctions();
                 } else {
                     this.lastKnownState = false;
                     
@@ -591,6 +598,93 @@
             }
             
             return false;
+        },
+
+        // Show immediate context loss notification
+        showContextLossNotification() {
+            console.error('🚨 CRITICAL: Extension context invalidated');
+            console.error('📋 This typically happens when:');
+            console.error('   - Extension was updated/reloaded');
+            console.error('   - Extension permissions changed');
+            console.error('   - Chrome updated the extension');
+            console.error('💡 Solution: Reload the page to restore functionality');
+            
+            // Show prominent notification
+            if (document.body) {
+                const notification = document.createElement('div');
+                notification.id = 'sidekick-context-loss-alert';
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #ff4444;
+                    color: white;
+                    padding: 15px;
+                    border-radius: 8px;
+                    z-index: 999999;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    max-width: 300px;
+                    font-family: Arial, sans-serif;
+                    font-size: 14px;
+                `;
+                notification.innerHTML = `
+                    <div style="font-weight: bold; margin-bottom: 8px;">🚨 Extension Connection Lost</div>
+                    <div style="margin-bottom: 10px;">Sidekick extension context has been invalidated. Some features may not work.</div>
+                    <button onclick="window.location.reload()" style="background: white; color: #ff4444; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">Reload Page</button>
+                    <button onclick="this.parentElement.remove()" style="background: transparent; color: white; border: 1px solid white; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-left: 8px;">Dismiss</button>
+                `;
+                document.body.appendChild(notification);
+                
+                // Auto-remove after 30 seconds
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 30000);
+            }
+        },
+
+        // Re-expose global functions after context recovery
+        reExposeGlobalFunctions() {
+            try {
+                console.log('🔧 Re-exposing global functions after context recovery...');
+                
+                // Re-inject debug functions into page context
+                const script = document.createElement('script');
+                script.textContent = `
+                    // Re-expose Sidekick debug functions after context recovery
+                    window.testExtensionConnection = function() {
+                        console.log('🔗 Extension Connection Test (Post-Recovery)');
+                        console.log('✅ Extension context recovered');
+                        console.log('📦 Available modules:', Object.keys(window.SidekickModules || {}));
+                        return { status: 'recovered', modules: Object.keys(window.SidekickModules || {}) };
+                    };
+                    
+                    window.checkExtensionContext = function() {
+                        console.log('🔍 Extension Context Check (Post-Recovery)');
+                        return {
+                            status: 'recovered',
+                            url: window.location.href,
+                            modulesLoaded: !!window.SidekickModules,
+                            moduleCount: Object.keys(window.SidekickModules || {}).length
+                        };
+                    };
+                    
+                    window.forceContextRecovery = function() {
+                        console.log('🔄 Force Context Recovery (Manual)');
+                        window.location.reload();
+                        return 'Reloading page...';
+                    };
+                    
+                    console.log('✅ Global functions re-exposed after context recovery');
+                `;
+                
+                (document.head || document.documentElement).appendChild(script);
+                setTimeout(() => script.remove(), 100);
+                
+            } catch (e) {
+                console.error('❌ Failed to re-expose global functions:', e.message);
+            }
         },
 
         // Show reload prompt

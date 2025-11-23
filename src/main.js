@@ -261,11 +261,43 @@
                     };
                     
                     window.forceContextRecovery = function() {
-                        console.log('🔄 Force Context Recovery');
-                        console.log('⚠️ This will reload the page to recover extension context');
-                        console.log('💡 Use this if extension seems unresponsive');
-                        setTimeout(() => window.location.reload(), 1000);
-                        return 'Reloading in 1 second...';
+                        console.log('🔄 Force Context Recovery (Enhanced)');
+                        console.log('⚠️ Extension context invalidation detected');
+                        console.log('🔧 Attempting immediate recovery...');
+                        
+                        // Remove any existing context loss notifications
+                        const existingAlert = document.getElementById('sidekick-context-loss-alert');
+                        if (existingAlert) {
+                            existingAlert.remove();
+                        }
+                        
+                        // Show recovery notification
+                        if (document.body) {
+                            const recoveryNotification = document.createElement('div');
+                            recoveryNotification.style.cssText = \`
+                                position: fixed;
+                                top: 50%;
+                                left: 50%;
+                                transform: translate(-50%, -50%);
+                                background: #2196F3;
+                                color: white;
+                                padding: 20px;
+                                border-radius: 8px;
+                                z-index: 1000000;
+                                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                                text-align: center;
+                                font-family: Arial, sans-serif;
+                            \`;
+                            recoveryNotification.innerHTML = \`
+                                <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px;">🔄 Recovering Extension Context</div>
+                                <div>Reloading page to restore Sidekick functionality...</div>
+                            \`;
+                            document.body.appendChild(recoveryNotification);
+                        }
+                        
+                        console.log('💡 Reloading page in 2 seconds to restore full functionality');
+                        setTimeout(() => window.location.reload(), 2000);
+                        return 'Context recovery initiated - page will reload in 2 seconds';
                     };
                     
                     window.testDailyTasks = function() {
