@@ -1210,9 +1210,33 @@
                     }
                 }
                 
-                // Also check for "nerve" keyword
-                if (entry.log.toLowerCase().includes('nerve')) {
+                // Check for specific nerve refill log IDs
+                if (!isNaN(numericCode) && nerveRefillLogIds.includes(numericCode)) {
+                    nerveRelated.push({
+                        time: new Date(entry.timestamp * 1000).toISOString(),
+                        log: entry.log,
+                        numericCode: numericCode,
+                        pattern: 'Log ID match',
+                        isToday: entry.timestamp >= todayTimestamp
+                    });
+                    console.log(`🧠 Found nerve refill by log ID ${numericCode}: ${new Date(entry.timestamp * 1000).toISOString()}`);
+                }
+                
+                // Also check for "nerve" keyword in any form
+                if (entry.log.toString().toLowerCase().includes('nerve')) {
                     console.log(`🧠 Found "nerve" keyword: ${new Date(entry.timestamp * 1000).toISOString()} - "${entry.log}"`);
+                }
+                
+                // Check if this might be a Torn log with title field
+                if (entry.title && entry.title.toLowerCase().includes('nerve')) {
+                    console.log(`🧠 Found "nerve" in title: ${new Date(entry.timestamp * 1000).toISOString()} - "${entry.title}"`);
+                    nerveRelated.push({
+                        time: new Date(entry.timestamp * 1000).toISOString(),
+                        log: entry.title,
+                        numericCode: numericCode,
+                        pattern: 'Title match',
+                        isToday: entry.timestamp >= todayTimestamp
+                    });
                 }
             }
             
@@ -2465,6 +2489,28 @@
         }
     };
     
+    // Global debug function for nerve refill troubleshooting
+    window.debugNerveRefillLogs = function() {
+        if (window.SidekickModules?.TodoList) {
+            const todoModule = window.SidekickModules.TodoList;
+            console.log('🔍 Calling debugNerveRefillLogs...');
+            todoModule.debugNerveRefillLogs();
+        } else {
+            console.error("❌ Todo List module not available for debugNerveRefillLogs");
+        }
+    };
+
+    // Global debug function for energy refill troubleshooting
+    window.debugEnergyRefillLogs = function() {
+        if (window.SidekickModules?.TodoList) {
+            const todoModule = window.SidekickModules.TodoList;
+            console.log('🔍 Calling debugEnergyRefillLogs...');
+            todoModule.debugEnergyRefillLogs();
+        } else {
+            console.error("❌ Todo List module not available for debugEnergyRefillLogs");
+        }
+    };
+
     // Global debug function for xanax tracking troubleshooting
     window.debugXanaxLogs = function() {
         if (window.SidekickModules?.TodoList) {
@@ -2477,6 +2523,6 @@
     };
 
     console.log("✅ Todo List Module loaded and ready");
-    console.log("🔧 Debug functions available: debugTodoList(), refreshTodoList(), forceResetTodoList(), checkRefillAvailability(), forceResetRefills(), debugXanaxLogs()");
+    console.log("🔧 Debug functions available: debugTodoList(), refreshTodoList(), forceResetTodoList(), checkRefillAvailability(), forceResetRefills(), debugNerveRefillLogs(), debugEnergyRefillLogs(), debugXanaxLogs()");
 
 })();
