@@ -769,12 +769,16 @@
             // Add debug function to global console for easy access
             if (typeof window !== 'undefined') {
                 window.debugXanaxLogs = () => this.debugXanaxLogs();
-                console.log('💊 Debug function available: debugXanaxLogs()');
+                window.debugNerveRefillLogs = () => this.debugNerveRefillLogs();
+                window.debugEnergyRefillLogs = () => this.debugEnergyRefillLogs();
+                console.log('💊 Debug functions available: debugXanaxLogs(), debugNerveRefillLogs(), debugEnergyRefillLogs()');
                 
                 // Also expose it immediately for testing
                 setTimeout(() => {
                     window.debugXanaxLogs = () => this.debugXanaxLogs();
-                    console.log('💊 Debug function re-exposed after timeout');
+                    window.debugNerveRefillLogs = () => this.debugNerveRefillLogs();
+                    window.debugEnergyRefillLogs = () => this.debugEnergyRefillLogs();
+                    console.log('💊 Debug functions re-exposed after timeout');
                 }, 1000);
             }
             
@@ -897,8 +901,24 @@
                 this.saveDailyTasks();
                 this.renderAllTodoLists();
                 console.log('✅ Daily tasks updated and saved');
+                
+                // Log current completion status for debugging
+                console.log('📋 Current Daily Task Status:');
+                for (const [taskKey, task] of Object.entries(this.dailyTasks)) {
+                    const status = task.completed ? '✅ COMPLETED' : '❌ PENDING';
+                    const count = task.maxCount ? ` (${task.currentCount || 0}/${task.maxCount})` : '';
+                    console.log(`  ${task.icon} ${task.name}: ${status}${count}`);
+                }
             } else {
                 console.log('ℹ️ No updates needed for daily tasks');
+                
+                // Still log current status for debugging
+                console.log('📋 Current Daily Task Status (no changes):');
+                for (const [taskKey, task] of Object.entries(this.dailyTasks)) {
+                    const status = task.completed ? '✅ COMPLETED' : '❌ PENDING';
+                    const count = task.maxCount ? ` (${task.currentCount || 0}/${task.maxCount})` : '';
+                    console.log(`  ${task.icon} ${task.name}: ${status}${count}`);
+                }
             }
         },
 
@@ -1113,6 +1133,196 @@
             });
             
             console.log('🔍 === END XANAX DEBUG ===');
+        },
+
+        // Debug function to analyze recent logs for nerve refill detection
+        debugNerveRefillLogs() {
+            console.log('🧠 === NERVE REFILL DEBUG ANALYSIS ===');
+            
+            if (!this.lastApiData || !this.lastApiData.logs) {
+                console.log('❌ No log data available for debugging');
+                return;
+            }
+            
+            const logData = this.lastApiData.logs;
+            console.log('🧠 Raw log data:', logData);
+            
+            // Get today's timestamp
+            const todayUTC = new Date();
+            todayUTC.setUTCHours(0, 0, 0, 0);
+            const todayTimestamp = Math.floor(todayUTC.getTime() / 1000);
+            
+            // Handle different log formats
+            let logsArray = [];
+            if (Array.isArray(logData)) {
+                logsArray = logData;
+            } else if (logData.log && Array.isArray(logData.log)) {
+                logsArray = logData.log;
+            } else if (typeof logData === 'object') {
+                logsArray = Object.values(logData);
+            }
+            
+            console.log(`🧠 Total logs: ${logsArray.length}`);
+            console.log(`🧠 Looking for entries since: ${new Date(todayTimestamp * 1000).toISOString()}`);
+            
+            // Recent logs
+            const recentLogs = [];
+            const nerveRelated = [];
+            
+            // Nerve refill patterns from dailyTasks
+            const nervePatterns = [
+                /nerve.*?(refill|pill)/i,
+                /(refill|pill).*?nerve/i,
+                /you.*?(used|consumed|took).*?nerve/i,
+                /nerve.*?(used|consumed|active)/i,
+                /\bnerve\s*(refill|pill)\b/i,
+                /\bnerve\s*pill\b/i,
+                /\brefill\s*nerve\b/i,
+                /consumed.*?nerve/i,
+                /took.*?nerve/i,
+                /used.*?nerve.*?(pill|refill)/i,
+                /gained.*?nerve/i
+            ];
+            
+            for (const entry of logsArray) {
+                if (!entry || !entry.timestamp || !entry.log) continue;
+                
+                const numericCode = parseInt(entry.log.trim());
+                
+                recentLogs.push({
+                    time: new Date(entry.timestamp * 1000).toISOString(),
+                    log: entry.log,
+                    numericCode: !isNaN(numericCode) ? numericCode : null,
+                    isToday: entry.timestamp >= todayTimestamp
+                });
+                
+                // Check for nerve-related patterns
+                for (const pattern of nervePatterns) {
+                    if (pattern.test(entry.log)) {
+                        nerveRelated.push({
+                            time: new Date(entry.timestamp * 1000).toISOString(),
+                            log: entry.log,
+                            numericCode: !isNaN(numericCode) ? numericCode : null,
+                            pattern: pattern.toString(),
+                            isToday: entry.timestamp >= todayTimestamp
+                        });
+                        break;
+                    }
+                }
+                
+                // Also check for "nerve" keyword
+                if (entry.log.toLowerCase().includes('nerve')) {
+                    console.log(`🧠 Found "nerve" keyword: ${new Date(entry.timestamp * 1000).toISOString()} - "${entry.log}"`);
+                }
+            }
+            
+            console.log(`🧠 Recent logs since today (${recentLogs.length}):`);
+            recentLogs.slice(0, 10).forEach((log, i) => {
+                console.log(`  ${i + 1}. ${log.time} - Code:${log.numericCode || 'text'} - "${log.log}"`);
+            });
+            
+            console.log(`🧠 Nerve-related logs found (${nerveRelated.length}):`);
+            nerveRelated.forEach((log, i) => {
+                console.log(`  ${i + 1}. ${log.time} - ${log.isToday ? 'TODAY' : 'OLD'} - Code:${log.numericCode || 'text'} - "${log.log}"`);
+                console.log(`      Pattern: ${log.pattern}`);
+            });
+            
+            console.log('🧠 === END NERVE REFILL DEBUG ===');
+        },
+
+        // Debug function to analyze recent logs for energy refill detection
+        debugEnergyRefillLogs() {
+            console.log('⚡ === ENERGY REFILL DEBUG ANALYSIS ===');
+            
+            if (!this.lastApiData || !this.lastApiData.logs) {
+                console.log('❌ No log data available for debugging');
+                return;
+            }
+            
+            const logData = this.lastApiData.logs;
+            console.log('⚡ Raw log data:', logData);
+            
+            // Get today's timestamp
+            const todayUTC = new Date();
+            todayUTC.setUTCHours(0, 0, 0, 0);
+            const todayTimestamp = Math.floor(todayUTC.getTime() / 1000);
+            
+            // Handle different log formats
+            let logsArray = [];
+            if (Array.isArray(logData)) {
+                logsArray = logData;
+            } else if (logData.log && Array.isArray(logData.log)) {
+                logsArray = logData.log;
+            } else if (typeof logData === 'object') {
+                logsArray = Object.values(logData);
+            }
+            
+            console.log(`⚡ Total logs: ${logsArray.length}`);
+            console.log(`⚡ Looking for entries since: ${new Date(todayTimestamp * 1000).toISOString()}`);
+            
+            // Recent logs
+            const recentLogs = [];
+            const energyRelated = [];
+            
+            // Energy refill patterns from dailyTasks
+            const energyPatterns = [
+                /energy.*?(refill|drink|can)/i,
+                /(refill|drink|can).*?energy/i,
+                /you.*?(used|consumed|drank).*?energy/i,
+                /energy.*?(used|consumed|active)/i,
+                /\benergy\s*(drink|refill|can)\b/i,
+                /\benergy\s*drink\b/i,
+                /\brefill\s*energy\b/i,
+                /consumed.*?energy/i,
+                /drank.*?energy/i,
+                /used.*?energy.*?(can|drink|refill)/i,
+                /gained.*?energy/i
+            ];
+            
+            for (const entry of logsArray) {
+                if (!entry || !entry.timestamp || !entry.log) continue;
+                
+                const numericCode = parseInt(entry.log.trim());
+                
+                recentLogs.push({
+                    time: new Date(entry.timestamp * 1000).toISOString(),
+                    log: entry.log,
+                    numericCode: !isNaN(numericCode) ? numericCode : null,
+                    isToday: entry.timestamp >= todayTimestamp
+                });
+                
+                // Check for energy-related patterns
+                for (const pattern of energyPatterns) {
+                    if (pattern.test(entry.log)) {
+                        energyRelated.push({
+                            time: new Date(entry.timestamp * 1000).toISOString(),
+                            log: entry.log,
+                            numericCode: !isNaN(numericCode) ? numericCode : null,
+                            pattern: pattern.toString(),
+                            isToday: entry.timestamp >= todayTimestamp
+                        });
+                        break;
+                    }
+                }
+                
+                // Also check for "energy" keyword
+                if (entry.log.toLowerCase().includes('energy')) {
+                    console.log(`⚡ Found "energy" keyword: ${new Date(entry.timestamp * 1000).toISOString()} - "${entry.log}"`);
+                }
+            }
+            
+            console.log(`⚡ Recent logs since today (${recentLogs.length}):`);
+            recentLogs.slice(0, 10).forEach((log, i) => {
+                console.log(`  ${i + 1}. ${log.time} - Code:${log.numericCode || 'text'} - "${log.log}"`);
+            });
+            
+            console.log(`⚡ Energy-related logs found (${energyRelated.length}):`);
+            energyRelated.forEach((log, i) => {
+                console.log(`  ${i + 1}. ${log.time} - ${log.isToday ? 'TODAY' : 'OLD'} - Code:${log.numericCode || 'text'} - "${log.log}"`);
+                console.log(`      Pattern: ${log.pattern}`);
+            });
+            
+            console.log('⚡ === END ENERGY REFILL DEBUG ===');
         },
 
         // Count xanax usage from logs since 00:00 UTC (legacy - now uses generic function)
