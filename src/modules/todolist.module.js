@@ -2479,102 +2479,51 @@
         }
     };
     
-    // Simplified Chrome Extension Debug Function Exposure
+    // Direct Debug Function Exposure - Simple Chrome Extension Compatible
     const exposeDebugFunctions = () => {
-        console.log('🔧 Attempting to expose debug functions...');
+        console.log('🔧 Exposing debug functions directly...');
         
-        // Get the module instance from window.SidekickModules
-        const getModule = () => {
-            if (window.SidekickModules && window.SidekickModules.TodoList) {
-                return window.SidekickModules.TodoList;
-            }
-            return null;
-        };
+        // Direct reference to this TodoList module instance
+        const todoListModule = TodoListModule;
         
-        // Method 1: Direct window assignment
         try {
+            // Method 1: Direct window assignment using module reference
             window.debugNerveRefillLogs = function() {
-                console.log('🧠 Debug Nerve Refill Detection:');
-                const module = getModule();
-                if (module && typeof module.debugNerveRefillLogs === 'function') {
-                    module.debugNerveRefillLogs();
+                if (todoListModule && typeof todoListModule.debugNerveRefillLogs === 'function') {
+                    todoListModule.debugNerveRefillLogs();
                 } else {
-                    console.error('❌ TodoList module or debugNerveRefillLogs function not found');
+                    console.error('❌ TodoList debugNerveRefillLogs function not found');
                 }
             };
             
             window.debugEnergyRefillLogs = function() {
-                console.log('⚡ Debug Energy Refill Detection:');
-                const module = getModule();
-                if (module && typeof module.debugEnergyRefillLogs === 'function') {
-                    module.debugEnergyRefillLogs();
+                if (todoListModule && typeof todoListModule.debugEnergyRefillLogs === 'function') {
+                    todoListModule.debugEnergyRefillLogs();
                 } else {
-                    console.error('❌ TodoList module or debugEnergyRefillLogs function not found');
+                    console.error('❌ TodoList debugEnergyRefillLogs function not found');
                 }
             };
             
             window.debugXanaxLogs = function() {
-                console.log('💊 Debug Xanax Detection:');
-                const module = getModule();
-                if (module && typeof module.debugXanaxLogs === 'function') {
-                    module.debugXanaxLogs();
+                if (todoListModule && typeof todoListModule.debugXanaxLogs === 'function') {
+                    todoListModule.debugXanaxLogs();
                 } else {
-                    console.error('❌ TodoList module or debugXanaxLogs function not found');
-                }
-            };
-            console.log('✅ Method 1: Direct window assignment successful');
-        } catch (e) {
-            console.log('❌ Method 1 failed:', e.message);
-        }
-
-        // Method 2: Document property fallback
-        try {
-            const debugObj = {
-                debugNerveRefillLogs: function() {
-                    console.log('🧠 Debug Nerve Refill Detection (document method):');
-                    const module = getModule();
-                    if (module && typeof module.debugNerveRefillLogs === 'function') {
-                        module.debugNerveRefillLogs();
-                    } else {
-                        console.error('❌ TodoList module or debugNerveRefillLogs function not found');
-                    }
-                },
-                debugEnergyRefillLogs: function() {
-                    console.log('⚡ Debug Energy Refill Detection (document method):');
-                    const module = getModule();
-                    if (module && typeof module.debugEnergyRefillLogs === 'function') {
-                        module.debugEnergyRefillLogs();
-                    } else {
-                        console.error('❌ TodoList module or debugEnergyRefillLogs function not found');
-                    }
-                },
-                debugXanaxLogs: function() {
-                    console.log('💊 Debug Xanax Detection (document method):');
-                    const module = getModule();
-                    if (module && typeof module.debugXanaxLogs === 'function') {
-                        module.debugXanaxLogs();
-                    } else {
-                        console.error('❌ TodoList module or debugXanaxLogs function not found');
-                    }
+                    console.error('❌ TodoList debugXanaxLogs function not found');
                 }
             };
             
-            document._sidekickDebug = debugObj;
-            console.log('✅ Method 2: document._sidekickDebug created');
+            console.log('✅ Debug functions exposed successfully');
+            console.log('🔍 Test with: debugNerveRefillLogs(), debugEnergyRefillLogs(), debugXanaxLogs()');
         } catch (e) {
-            console.log('❌ Method 2 failed:', e.message);
+            console.error('❌ Failed to expose debug functions:', e.message);
         }
-        
-        console.log('📋 Debug functions exposed. Try: debugNerveRefillLogs() or document._sidekickDebug.debugNerveRefillLogs()');
     };
 
-    // Expose functions after module is fully ready
-    setTimeout(() => {
-        exposeDebugFunctions();
-    }, 1000);
+    // Expose immediately since we have direct module reference
+    exposeDebugFunctions();
 
     console.log("✅ Todo List Module loaded and ready");
     console.log("🔧 Debug functions available: debugTodoList(), refreshTodoList(), forceResetTodoList(), checkRefillAvailability(), forceResetRefills()");
-    console.log("💊 Debug functions will be available via injection in 1 second: debugXanaxLogs(), debugNerveRefillLogs(), debugEnergyRefillLogs()");
+    console.log("💊 Debug functions ready: debugXanaxLogs(), debugNerveRefillLogs(), debugEnergyRefillLogs()");
 
 })();
