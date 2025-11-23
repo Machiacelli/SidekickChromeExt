@@ -2479,77 +2479,102 @@
         }
     };
     
-    // Chrome Extension Debug Function Exposure Strategy
+    // Simplified Chrome Extension Debug Function Exposure
     const exposeDebugFunctions = () => {
-        // Method 1: Direct assignment to window (works in some cases)
+        console.log('🔧 Attempting to expose debug functions...');
+        
+        // Get the module instance from window.SidekickModules
+        const getModule = () => {
+            if (window.SidekickModules && window.SidekickModules.TodoList) {
+                return window.SidekickModules.TodoList;
+            }
+            return null;
+        };
+        
+        // Method 1: Direct window assignment
         try {
             window.debugNerveRefillLogs = function() {
-                console.log('🧠 Debug Nerve Refill Detection (Method 1):');
-                TodoListModule.debugNerveRefillLogs();
+                console.log('🧠 Debug Nerve Refill Detection:');
+                const module = getModule();
+                if (module && typeof module.debugNerveRefillLogs === 'function') {
+                    module.debugNerveRefillLogs();
+                } else {
+                    console.error('❌ TodoList module or debugNerveRefillLogs function not found');
+                }
             };
             
             window.debugEnergyRefillLogs = function() {
-                console.log('⚡ Debug Energy Refill Detection (Method 1):');
-                TodoListModule.debugEnergyRefillLogs();
+                console.log('⚡ Debug Energy Refill Detection:');
+                const module = getModule();
+                if (module && typeof module.debugEnergyRefillLogs === 'function') {
+                    module.debugEnergyRefillLogs();
+                } else {
+                    console.error('❌ TodoList module or debugEnergyRefillLogs function not found');
+                }
             };
             
             window.debugXanaxLogs = function() {
-                console.log('💊 Debug Xanax Detection (Method 1):');
-                TodoListModule.debugXanaxLogs();
+                console.log('💊 Debug Xanax Detection:');
+                const module = getModule();
+                if (module && typeof module.debugXanaxLogs === 'function') {
+                    module.debugXanaxLogs();
+                } else {
+                    console.error('❌ TodoList module or debugXanaxLogs function not found');
+                }
             };
-            console.log('🔧 Method 1: Direct window assignment successful');
+            console.log('✅ Method 1: Direct window assignment successful');
         } catch (e) {
-            console.log('⚠️ Method 1 failed:', e.message);
+            console.log('❌ Method 1 failed:', e.message);
         }
 
-        // Method 2: Try unsafeWindow (Tampermonkey/Greasemonkey compatibility)
-        try {
-            if (typeof unsafeWindow !== 'undefined') {
-                unsafeWindow.debugNerveRefillLogs = function() {
-                    console.log('🧠 Debug Nerve Refill Detection (Method 2):');
-                    TodoListModule.debugNerveRefillLogs();
-                };
-                
-                unsafeWindow.debugEnergyRefillLogs = function() {
-                    console.log('⚡ Debug Energy Refill Detection (Method 2):');
-                    TodoListModule.debugEnergyRefillLogs();
-                };
-                
-                unsafeWindow.debugXanaxLogs = function() {
-                    console.log('💊 Debug Xanax Detection (Method 2):');
-                    TodoListModule.debugXanaxLogs();
-                };
-                console.log('🔧 Method 2: unsafeWindow assignment successful');
-            }
-        } catch (e) {
-            console.log('⚠️ Method 2 failed:', e.message);
-        }
-
-        // Method 3: Create global object on document for access
+        // Method 2: Document property fallback
         try {
             const debugObj = {
-                debugNerveRefillLogs: () => TodoListModule.debugNerveRefillLogs(),
-                debugEnergyRefillLogs: () => TodoListModule.debugEnergyRefillLogs(),
-                debugXanaxLogs: () => TodoListModule.debugXanaxLogs()
+                debugNerveRefillLogs: function() {
+                    console.log('🧠 Debug Nerve Refill Detection (document method):');
+                    const module = getModule();
+                    if (module && typeof module.debugNerveRefillLogs === 'function') {
+                        module.debugNerveRefillLogs();
+                    } else {
+                        console.error('❌ TodoList module or debugNerveRefillLogs function not found');
+                    }
+                },
+                debugEnergyRefillLogs: function() {
+                    console.log('⚡ Debug Energy Refill Detection (document method):');
+                    const module = getModule();
+                    if (module && typeof module.debugEnergyRefillLogs === 'function') {
+                        module.debugEnergyRefillLogs();
+                    } else {
+                        console.error('❌ TodoList module or debugEnergyRefillLogs function not found');
+                    }
+                },
+                debugXanaxLogs: function() {
+                    console.log('💊 Debug Xanax Detection (document method):');
+                    const module = getModule();
+                    if (module && typeof module.debugXanaxLogs === 'function') {
+                        module.debugXanaxLogs();
+                    } else {
+                        console.error('❌ TodoList module or debugXanaxLogs function not found');
+                    }
+                }
             };
             
-            // Store in document properties
             document._sidekickDebug = debugObj;
-            
-            console.log('🔧 Method 3: document._sidekickDebug created');
-            console.log('📋 Usage: document._sidekickDebug.debugNerveRefillLogs()');
+            console.log('✅ Method 2: document._sidekickDebug created');
         } catch (e) {
-            console.log('⚠️ Method 3 failed:', e.message);
+            console.log('❌ Method 2 failed:', e.message);
         }
         
-        console.log('📋 Debug function exposure attempts complete');
+        console.log('📋 Debug functions exposed. Try: debugNerveRefillLogs() or document._sidekickDebug.debugNerveRefillLogs()');
     };
 
-    // Expose functions immediately
-    exposeDebugFunctions();
+    // Expose functions after module is fully ready
+    setTimeout(() => {
+        exposeDebugFunctions();
+    }, 1000);
 
     console.log("✅ Todo List Module loaded and ready");
     console.log("🔧 Debug functions available: debugTodoList(), refreshTodoList(), forceResetTodoList(), checkRefillAvailability(), forceResetRefills()");
-    console.log("💊 Debug functions available via injection: debugXanaxLogs(), debugNerveRefillLogs(), debugEnergyRefillLogs()");
+    console.log("💊 Debug functions will be available via injection in 1 second: debugXanaxLogs(), debugNerveRefillLogs(), debugEnergyRefillLogs()");
 
 })();
