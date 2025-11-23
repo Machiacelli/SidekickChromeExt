@@ -163,18 +163,26 @@
                         console.log("🔄 Daily reset needed - clearing daily tasks (different day detected)");
                         console.log("🔄 Time difference:", (todayUTC.getTime() - lastResetUTC.getTime()) / (1000 * 60 * 60), "hours");
                         
-                        // Don't call resetDailyTasks() here, just initialize defaults
-                        // The actual reset will happen in checkForDailyReset()
-                        this.lastResetDate = lastResetUTC; // Keep the old date for comparison
+                        // Force reset immediately and save the reset state
+                        this.resetDailyTasksData();
+                        await this.saveDailyTasks();
                         
-                        // Load saved data but mark that reset is needed
-                        Object.assign(this.dailyTasks, saved);
-                        console.log("📋 Loaded daily tasks (reset pending):", this.dailyTasks);
+                        console.log("📋 Reset applied and saved - all tasks are now incomplete");
                     } else {
-                        // Same day - load saved data
-                        Object.assign(this.dailyTasks, saved);
+                        // Same day - load saved data and preserve state
+                        for (const taskKey in this.dailyTasks) {
+                            if (saved[taskKey]) {
+                                // Preserve the saved state while keeping the task structure
+                                Object.assign(this.dailyTasks[taskKey], saved[taskKey]);
+                            }
+                        }
                         this.lastResetDate = lastResetDate;
                         console.log("✅ Loaded daily tasks from Chrome storage (same day):", this.dailyTasks);
+                        
+                        // Log the current completion state for debugging
+                        for (const [taskKey, task] of Object.entries(this.dailyTasks)) {
+                            console.log(`📋 ${task.name}: completed=${task.completed}`);
+                        }
                     }
                 } else {
                     console.log("📭 No saved daily tasks found, using defaults");
@@ -198,17 +206,37 @@
         // Save daily tasks state
         async saveDailyTasks() {
             try {
-                await window.SidekickModules.Core.ChromeStorage.set('sidekick_dailytasks', this.dailyTasks);
-                await window.SidekickModules.Core.ChromeStorage.set('sidekick_dailytasks_reset', new Date().toISOString());
+                // Create a clean copy of daily tasks to save
+                const dataToSave = {};
+                for (const [taskKey, task] of Object.entries(this.dailyTasks)) {
+                    dataToSave[taskKey] = {
+                        ...task,
+                        // Ensure boolean values are properly saved
+                        completed: Boolean(task.completed),
+                        currentCount: task.currentCount || 0
+                    };
+                }
+                
+                await window.SidekickModules.Core.ChromeStorage.set('sidekick_dailytasks', dataToSave);
+                await window.SidekickModules.Core.ChromeStorage.set('sidekick_dailytasks_reset', this.lastResetDate?.toISOString() || new Date().toISOString());
+                
                 console.log('💾 Daily tasks saved successfully to Chrome storage');
+                console.log('💾 Saved data:', dataToSave);
+                
+                // Verify the save worked by reading it back
+                setTimeout(async () => {
+                    const verification = await window.SidekickModules.Core.ChromeStorage.get('sidekick_dailytasks');
+                    console.log('🔍 Verification - saved daily tasks:', verification);
+                }, 100);
+                
             } catch (error) {
                 console.error('Failed to save daily tasks to Chrome storage:', error);
             }
         },
 
-        // Reset daily tasks at UTC midnight
-        resetDailyTasks() {
-            console.log('🔄 Resetting daily tasks for new day');
+        // Reset daily tasks data only (no UI refresh)
+        resetDailyTasksData() {
+            console.log("🔄 Resetting daily tasks data only");
             
             for (const taskKey in this.dailyTasks) {
                 const task = this.dailyTasks[taskKey];
@@ -231,6 +259,14 @@
             // Set last reset date to current UTC date (not time)
             const now = new Date();
             this.lastResetDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+            
+            console.log("✅ Daily tasks data reset complete for:", this.lastResetDate.toISOString());
+            console.log("🔄 All daily tasks reset to incomplete state");
+        },
+
+        // Reset daily tasks at UTC midnight
+        resetDailyTasks() {
+            this.resetDailyTasksData();
             this.saveDailyTasks();
             
             // Force immediate UI refresh for all open todo lists

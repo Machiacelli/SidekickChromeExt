@@ -1089,7 +1089,7 @@
             }
         },
 
-        // Make debt panel draggable
+        // Make debt panel draggable with debounced saving
         makeDebtPanelDraggable(panel, entry) {
             const header = panel.querySelector('.debt-panel-header');
             let isDragging = false;
@@ -1097,6 +1097,16 @@
             let currentY = 0;
             let initialX = 0;
             let initialY = 0;
+            
+            // Debounced save to prevent excessive storage writes
+            let saveTimeout;
+            const debouncedSave = () => {
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(() => {
+                    this.saveDebtsAndLoans();
+                    console.log('💰 Debt panel position saved:', { x: entry.x, y: entry.y });
+                }, 250);
+            };
             
             header.addEventListener('mousedown', (e) => {
                 if (e.target.tagName === 'BUTTON') return;
@@ -1114,16 +1124,59 @@
                 
                 panel.style.left = currentX + 'px';
                 panel.style.top = currentY + 'px';
+                
+                // Update entry position in real-time
+                entry.x = currentX;
+                entry.y = currentY;
             });
             
             document.addEventListener('mouseup', () => {
                 if (isDragging) {
+                    // Final position update and save
                     entry.x = currentX;
                     entry.y = currentY;
-                    this.saveDebtsAndLoans();
+                    debouncedSave();
                 }
                 isDragging = false;
             });
+            
+            // Handle resize events to save size changes
+            const resizeObserver = new ResizeObserver(this.debounceResize(() => {
+                const rect = panel.getBoundingClientRect();
+                const newWidth = Math.max(250, rect.width);
+                const newHeight = Math.max(150, rect.height);
+                
+                // Only save if size actually changed
+                if (entry.width !== newWidth || entry.height !== newHeight) {
+                    entry.width = newWidth;
+                    entry.height = newHeight;
+                    this.saveDebtsAndLoans();
+                    console.log('💰 Debt panel size saved:', { width: entry.width, height: entry.height });
+                }
+            }, 300));
+            
+            resizeObserver.observe(panel);
+            
+            // Clean up observer when panel is removed
+            const originalRemove = panel.remove;
+            panel.remove = function() {
+                resizeObserver.disconnect();
+                clearTimeout(saveTimeout);
+                originalRemove.call(this);
+            };
+        },
+        
+        // Debounce helper for resize events
+        debounceResize(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
         },
 
         // Show unified debt tracker in sidebar
