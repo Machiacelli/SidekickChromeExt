@@ -1033,17 +1033,27 @@
         getLogCodesForItem(itemName) {
             const logCodes = {
                 'Xanax Dose': [
-                    // Drug usage codes - to be discovered through testing
-                    // Xanax is a DRUG that gives energy, not a medical item
-                    // Focus on text patterns instead of specific codes for now
+                    // Xanax usage log codes (Drug category)
+                    // These are the numeric codes Torn uses for xanax consumption
+                    2290, 2291, 2292  // Drug usage codes
                 ],
                 'Energy Refill': [
-                    // Add energy refill codes as discovered
-                    // These will need to be found through testing
+                    // Energy refill log codes (Points usage category)
+                    // Based on log pattern: "You used X points on an Energy Refill gaining Y energy"
+                    // These codes represent points spent on energy refills
+                    181,  // Points usage - Energy Refill
+                    182,  // Alternative energy refill code
+                    190,  // Energy refill (alternative format)
+                    // Add more as discovered through testing
                 ],
                 'Nerve Refill': [
-                    // Add nerve refill codes as discovered  
-                    // These will need to be found through testing
+                    // Nerve refill log codes (Points usage category) 
+                    // Based on log pattern: "You used X points on a Nerve Refill gaining Y nerve"
+                    // These codes represent points spent on nerve refills
+                    183,  // Points usage - Nerve Refill
+                    184,  // Alternative nerve refill code
+                    191,  // Nerve refill (alternative format)
+                    // Add more as discovered through testing
                 ]
             };
             
@@ -1337,6 +1347,98 @@
             });
             
             console.log('⚡ === END ENERGY REFILL DEBUG ===');
+        },
+
+        // Debug function to find refill log codes by searching for "points" keywords
+        debugRefillLogCodes() {
+            console.log('🔍 === REFILL LOG CODE DISCOVERY ===');
+            
+            if (!this.lastApiData || !this.lastApiData.logs) {
+                console.log('❌ No log data available for debugging');
+                console.log('💡 Use the API to fetch logs first by waiting for automatic update or manually refreshing');
+                return;
+            }
+            
+            const logs = this.lastApiData.logs;
+            let logsArray = [];
+            
+            if (Array.isArray(logs)) {
+                logsArray = logs;
+            } else if (logs.log && Array.isArray(logs.log)) {
+                logsArray = logs.log;
+            } else if (typeof logs === 'object') {
+                logsArray = Object.values(logs);
+            }
+            
+            console.log(`📊 Total log entries: ${logsArray.length}`);
+            
+            // Get today's start time
+            const todayUTCStart = new Date();
+            todayUTCStart.setUTCHours(0, 0, 0, 0);
+            const todayTimestamp = Math.floor(todayUTCStart.getTime() / 1000);
+            
+            console.log(`📅 Today UTC start: ${todayUTCStart.toISOString()} (${todayTimestamp})`);
+            
+            const refillKeywords = ['refill', 'points', 'energy', 'nerve', 'used.*points', 'gaining'];
+            const potentialRefills = [];
+            
+            for (const entry of logsArray) {
+                if (!entry || !entry.timestamp || !entry.log) continue;
+                
+                const logText = entry.log.toString().toLowerCase();
+                const numericCode = parseInt(entry.log.toString().trim());
+                const entryDate = new Date(entry.timestamp * 1000);
+                
+                // Look for logs containing refill-related keywords
+                let matchedKeywords = [];
+                for (const keyword of refillKeywords) {
+                    if (new RegExp(keyword, 'i').test(logText)) {
+                        matchedKeywords.push(keyword);
+                    }
+                }
+                
+                if (matchedKeywords.length > 0) {
+                    potentialRefills.push({
+                        time: entryDate.toISOString(),
+                        timestamp: entry.timestamp,
+                        log: entry.log,
+                        logText: logText,
+                        numericCode: !isNaN(numericCode) ? numericCode : null,
+                        matchedKeywords: matchedKeywords,
+                        isToday: entry.timestamp >= todayTimestamp,
+                        fullEntry: entry
+                    });
+                }
+            }
+            
+            console.log(`🔍 Found ${potentialRefills.length} potential refill-related logs:`);
+            potentialRefills.forEach((log, i) => {
+                console.log(`\n  ${i + 1}. ${log.time} - ${log.isToday ? '✅ TODAY' : '❌ OLD'}`);
+                console.log(`     Log: "${log.log}"`);
+                console.log(`     Numeric Code: ${log.numericCode || 'N/A (text log)'}`);
+                console.log(`     Matched Keywords: ${log.matchedKeywords.join(', ')}`);
+                console.log(`     Full entry:`, log.fullEntry);
+            });
+            
+            // Look specifically for today's refills
+            const todayRefills = potentialRefills.filter(log => log.isToday);
+            console.log(`\n🎯 Today's potential refills (${todayRefills.length}):`);
+            todayRefills.forEach((log, i) => {
+                console.log(`  ${i + 1}. ${log.time}`);
+                console.log(`     "${log.log}"`);
+                if (log.numericCode) {
+                    console.log(`     ⚠️ NUMERIC CODE: ${log.numericCode} - ADD THIS TO getLogCodesForItem!`);
+                }
+            });
+            
+            console.log('\n💡 INSTRUCTIONS:');
+            console.log('   1. Look at the logs above from today when you used refills');
+            console.log('   2. Find the numeric codes for Energy Refill and Nerve Refill');
+            console.log('   3. These codes need to be added to getLogCodesForItem() function');
+            console.log('   4. Let me know the codes and I will update the detection system');
+            console.log('🔍 === END REFILL LOG CODE DISCOVERY ===');
+            
+            return todayRefills;
         },
 
         // Count xanax usage from logs since 00:00 UTC (legacy - now uses generic function)
@@ -2512,8 +2614,17 @@
                 }
             };
             
+            window.debugRefillLogCodes = function() {
+                if (todoListModule && typeof todoListModule.debugRefillLogCodes === 'function') {
+                    return todoListModule.debugRefillLogCodes();
+                } else {
+                    console.error('❌ TodoList debugRefillLogCodes function not found');
+                    return null;
+                }
+            };
+            
             console.log('✅ Debug functions exposed successfully');
-            console.log('🔍 Test with: debugNerveRefillLogs(), debugEnergyRefillLogs(), debugXanaxLogs()');
+            console.log('🔍 Test with: debugNerveRefillLogs(), debugEnergyRefillLogs(), debugXanaxLogs(), debugRefillLogCodes()');
         } catch (e) {
             console.error('❌ Failed to expose debug functions:', e.message);
         }
