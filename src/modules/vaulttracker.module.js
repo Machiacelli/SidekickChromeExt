@@ -121,6 +121,7 @@
         initDone: false,
         _wsHooked: false,
         _panel: null,
+        _windowState: null,
 
         async settings(data){
             if (!data){
@@ -137,6 +138,7 @@
             if (this.initDone) return;
             console.log('[Sidekick] VaultTracker: Initializing...');
             await Ledger.load();
+            await this.loadWindowState();
             this.setupUI();
             this.hookWebSocket();
             this.attachVaultPageSync();
@@ -144,6 +146,38 @@
             // initial render
             await this.renderPanel();
             console.log('[Sidekick] VaultTracker: Started');
+        },
+
+        async loadWindowState() {
+            try {
+                const raw = await window.SidekickModules.Core.ChromeStorage.get('sidekick_vault_window_state');
+                if (raw) {
+                    this._windowState = JSON.parse(raw);
+                } else {
+                    // Default window state
+                    this._windowState = {
+                        x: 10,
+                        y: 10,
+                        width: 320,
+                        height: 280,
+                        pinned: false
+                    };
+                }
+            } catch (e) {
+                console.warn('[Sidekick] VaultTracker: Failed to load window state', e);
+                this._windowState = { x: 10, y: 10, width: 320, height: 280, pinned: false };
+            }
+        },
+
+        async saveWindowState() {
+            try {
+                await window.SidekickModules.Core.ChromeStorage.set(
+                    'sidekick_vault_window_state',
+                    JSON.stringify(this._windowState)
+                );
+            } catch (e) {
+                console.warn('[Sidekick] VaultTracker: Failed to save window state', e);
+            }
         },
 
         // UI: simple modern panel in the sidekick content area
@@ -155,26 +189,193 @@
                     return;
                 }
                 
-                // wrapper
+                const contentWidth = root.clientWidth || 400;
+                const contentHeight = root.clientHeight || 500;
+                
+                // Clamp window dimensions and position
+                const width = Math.min(Math.max(this._windowState.width, 280), contentWidth - 20);
+                const height = Math.min(Math.max(this._windowState.height, 240), contentHeight - 40);
+                const x = Math.min(Math.max(this._windowState.x, 0), contentWidth - width);
+                const y = Math.min(Math.max(this._windowState.y, 0), contentHeight - height);
+                
+                // Update state with clamped values
+                this._windowState = { ...this._windowState, x, y, width, height };
+                
+                // Create movable window container
                 const container = document.createElement('div');
                 container.id = 'sidekick-vault-tracker';
-                container.style.cssText = 'padding:10px;margin-bottom:8px;background:linear-gradient(145deg,#2b2b2b,#222);border-radius:8px;color:#fff;font-family:Arial,Helvetica,sans-serif;';
-
-                container.innerHTML = `
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                        <div style="font-weight:700;font-size:13px;">💰 Vault (Shared)</div>
-                        <div style="font-size:11px;opacity:0.8;">v${this.version}</div>
-                    </div>
-                    <div id="sidekick-vault-values" style="display:flex;flex-direction:column;gap:6px;"></div>
+                container.className = 'movable-notepad'; // Use same class for consistency
+                container.style.cssText = `
+                    position: absolute;
+                    left: ${x}px;
+                    top: ${y}px;
+                    width: ${width}px;
+                    height: ${height}px;
+                    background: #2a2a2a;
+                    border: 1px solid #444;
+                    border-radius: 6px;
+                    display: flex;
+                    flex-direction: column;
+                    min-width: 280px;
+                    min-height: 240px;
+                    z-index: 1000;
+                    resize: ${this._windowState.pinned ? 'none' : 'both'};
+                    overflow: hidden;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
                 `;
 
-                // Insert at top of sidekick content
-                root.prepend(container);
+                container.innerHTML = `
+                    <div class="vault-header" style="
+                        background: linear-gradient(135deg, #4a6fa5, #364f7a);
+                        border-bottom: 1px solid #555;
+                        padding: 4px 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        cursor: ${this._windowState.pinned ? 'default' : 'move'};
+                        height: 24px;
+                        flex-shrink: 0;
+                        border-radius: 5px 5px 0 0;
+                        user-select: none;
+                    ">
+                        <div style="display: flex; align-items: center; gap: 6px; flex: 1;">
+                            <span style="font-size: 11px; font-weight: 600; color: #fff;">🏦 Vault Tracker</span>
+                            <span style="font-size: 9px; opacity: 0.7; color: #fff;">v${this.version}</span>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 3px;">
+                            <button class="pin-btn" style="
+                                background: none;
+                                border: none;
+                                color: rgba(255,255,255,0.8);
+                                cursor: pointer;
+                                font-size: 10px;
+                                padding: 1px 3px;
+                                border-radius: 2px;
+                                transition: background 0.2s;
+                            " title="${this._windowState.pinned ? 'Unpin' : 'Pin'}">${this._windowState.pinned ? '📌' : '📍'}</button>
+                            <button class="close-btn" style="
+                                background: none;
+                                border: none;
+                                color: rgba(255,255,255,0.8);
+                                cursor: pointer;
+                                font-size: 12px;
+                                padding: 0 3px;
+                                border-radius: 2px;
+                                line-height: 1;
+                                transition: background 0.2s;
+                            " title="Close">×</button>
+                        </div>
+                    </div>
+                    <div id="sidekick-vault-values" style="
+                        flex: 1;
+                        overflow-y: auto;
+                        padding: 10px;
+                        color: #fff;
+                        font-family: Arial, Helvetica, sans-serif;
+                    "></div>
+                `;
+
+                // Insert into content area
+                root.appendChild(container);
 
                 // Save reference
                 this._panel = container;
+                
+                // Make window draggable (only if not pinned)
+                this.makeDraggable(container);
+                
+                // Add resize observer
+                this.addResizeObserver(container);
+                
+                // Add button handlers
+                this.attachWindowControls(container);
+                
                 console.log('[Sidekick] VaultTracker: UI created');
             }catch(err){ console.error('[Sidekick] VaultTracker.setupUI failed', err); }
+        },
+
+        makeDraggable(element) {
+            const header = element.querySelector('.vault-header');
+            let isDragging = false;
+            let currentX, currentY, initialX, initialY;
+
+            const dragStart = (e) => {
+                if (this._windowState.pinned) return;
+                if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+                
+                isDragging = true;
+                initialX = e.clientX - this._windowState.x;
+                initialY = e.clientY - this._windowState.y;
+                
+                element.style.zIndex = '10000';
+            };
+
+            const drag = (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+
+                const contentArea = document.getElementById('sidekick-content');
+                const contentWidth = contentArea ? contentArea.clientWidth : 400;
+                const contentHeight = contentArea ? contentArea.clientHeight : 500;
+                
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+
+                // Clamp to content area bounds
+                const maxX = contentWidth - element.offsetWidth;
+                const maxY = contentHeight - element.offsetHeight;
+                
+                currentX = Math.max(0, Math.min(currentX, maxX));
+                currentY = Math.max(0, Math.min(currentY, maxY));
+
+                element.style.left = currentX + 'px';
+                element.style.top = currentY + 'px';
+                
+                this._windowState.x = currentX;
+                this._windowState.y = currentY;
+            };
+
+            const dragEnd = () => {
+                if (isDragging) {
+                    isDragging = false;
+                    element.style.zIndex = '1000';
+                    this.saveWindowState();
+                }
+            };
+
+            header.addEventListener('mousedown', dragStart);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
+        },
+
+        addResizeObserver(element) {
+            const resizeObserver = new ResizeObserver(() => {
+                if (!this._windowState.pinned) {
+                    this._windowState.width = element.offsetWidth;
+                    this._windowState.height = element.offsetHeight;
+                    this.saveWindowState();
+                }
+            });
+            resizeObserver.observe(element);
+        },
+
+        attachWindowControls(element) {
+            const pinBtn = element.querySelector('.pin-btn');
+            const closeBtn = element.querySelector('.close-btn');
+
+            pinBtn.addEventListener('click', () => {
+                this._windowState.pinned = !this._windowState.pinned;
+                pinBtn.textContent = this._windowState.pinned ? '📌' : '📍';
+                pinBtn.title = this._windowState.pinned ? 'Unpin' : 'Pin';
+                element.style.resize = this._windowState.pinned ? 'none' : 'both';
+                element.querySelector('.vault-header').style.cursor = this._windowState.pinned ? 'default' : 'move';
+                this.saveWindowState();
+            });
+
+            closeBtn.addEventListener('click', () => {
+                this.cleanup();
+            });
         },
 
         async renderPanel(){
@@ -190,38 +391,73 @@
             const lastWho = last ? last.who : '';
 
             values.innerHTML = `
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <div style="font-size:12px;opacity:0.9;">You</div>
-                    <div style="font-weight:700;font-size:14px;">${formatMoney(bal.you)}</div>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <div style="font-size:12px;opacity:0.9;">Spouse</div>
-                    <div style="font-weight:700;font-size:14px;">${formatMoney(bal.spouse)}</div>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid rgba(255,255,255,0.04);">
-                    <div style="font-size:12px;opacity:0.7;">Total</div>
-                    <div style="font-weight:700;font-size:13px;">${formatMoney(bal.total)}</div>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-                    <div style="font-size:11px;color:#ccc;">Last change</div>
-                    <div style="font-weight:700;font-size:12px;color:${deltaColor};">${delta!==0?deltaSign+formatMoney(Math.abs(delta)): '—'} <span style="font-weight:400;color:#bbb;font-size:11px;margin-left:6px;">${lastWho?lastWho:''}</span></div>
-                </div>
-                <div style="margin-top:8px;display:flex;gap:8px;">
-                    <button id="sidekick-vault-sync-btn" style="flex:1;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.04);background:#1f1f1f;color:#fff;cursor:pointer;font-size:11px;">Sync from Vault Page</button>
-                    <button id="sidekick-vault-clear-btn" style="padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.04);background:#3a3a3a;color:#fff;cursor:pointer;font-size:11px;">Clear</button>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:rgba(0,0,0,0.2);border-radius:4px;">
+                        <div style="font-size:12px;opacity:0.9;">You</div>
+                        <div style="font-weight:700;font-size:14px;">${formatMoney(bal.you)}</div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:rgba(0,0,0,0.2);border-radius:4px;">
+                        <div style="font-size:12px;opacity:0.9;">Spouse</div>
+                        <div style="font-weight:700;font-size:14px;">${formatMoney(bal.spouse)}</div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:rgba(74,111,165,0.2);border-radius:4px;border:1px solid rgba(74,111,165,0.3);">
+                        <div style="font-size:12px;font-weight:600;">Total</div>
+                        <div style="font-weight:700;font-size:14px;">${formatMoney(bal.total)}</div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;padding:6px;background:rgba(0,0,0,0.15);border-radius:4px;">
+                        <div style="font-size:11px;color:#ccc;">Last change</div>
+                        <div style="font-weight:700;font-size:12px;color:${deltaColor};">
+                            ${delta!==0?deltaSign+formatMoney(Math.abs(delta)): '—'} 
+                            <span style="font-weight:400;color:#bbb;font-size:10px;margin-left:4px;">${lastWho?lastWho:''}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top:8px;display:flex;gap:6px;">
+                        <button id="sidekick-vault-sync-btn" style="
+                            flex:1;
+                            padding:8px;
+                            border-radius:4px;
+                            border:1px solid rgba(255,255,255,0.1);
+                            background:rgba(74,111,165,0.3);
+                            color:#fff;
+                            cursor:pointer;
+                            font-size:11px;
+                            font-weight:500;
+                            transition: all 0.2s;
+                        ">Sync from Vault</button>
+                        <button id="sidekick-vault-clear-btn" style="
+                            padding:8px 12px;
+                            border-radius:4px;
+                            border:1px solid rgba(255,255,255,0.1);
+                            background:rgba(255,255,255,0.05);
+                            color:#fff;
+                            cursor:pointer;
+                            font-size:11px;
+                            transition: all 0.2s;
+                        ">Clear</button>
+                    </div>
                 </div>
             `;
 
             // attach handlers
             const syncBtn = this._panel.querySelector('#sidekick-vault-sync-btn');
             const clearBtn = this._panel.querySelector('#sidekick-vault-clear-btn');
-            if (syncBtn) syncBtn.onclick = ()=> this.syncFromVaultPage(true);
-            if (clearBtn) clearBtn.onclick = async ()=> { 
-                if (confirm('Clear local vault ledger?')) { 
-                    await Ledger.clear(); 
-                    await this.renderPanel(); 
-                } 
-            };
+            
+            if (syncBtn) {
+                syncBtn.onmouseenter = () => syncBtn.style.background = 'rgba(74,111,165,0.5)';
+                syncBtn.onmouseleave = () => syncBtn.style.background = 'rgba(74,111,165,0.3)';
+                syncBtn.onclick = ()=> this.syncFromVaultPage(true);
+            }
+            
+            if (clearBtn) {
+                clearBtn.onmouseenter = () => clearBtn.style.background = 'rgba(255,255,255,0.1)';
+                clearBtn.onmouseleave = () => clearBtn.style.background = 'rgba(255,255,255,0.05)';
+                clearBtn.onclick = async ()=> { 
+                    if (confirm('Clear local vault ledger?')) { 
+                        await Ledger.clear(); 
+                        await this.renderPanel(); 
+                    } 
+                };
+            }
         },
 
         // Hook into WebSocket messages to capture live vault events

@@ -8,6 +8,24 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.2.8 (2025-12-01) - Vault Tracker: Movable Window UI 🪟✨
+- **Vault Tracker Enhancement**: Converted to movable/resizable window
+  - Now matches UI pattern of other modules (notepad, timer, etc.)
+  - Draggable window with header controls
+  - Pin/unpin functionality to lock window in place
+  - Resizable when unpinned (min 280x240px)
+  - Position and size persist across sessions
+  - Close button to hide window
+  - Modern blue gradient header (🏦 icon)
+- **Technical Improvements**:
+  - Added window state management (x, y, width, height, pinned)
+  - Chrome storage persistence for window settings
+  - Drag constraints to keep window within content area
+  - ResizeObserver for automatic state updates
+  - Z-index management during drag operations
+- **UI Consistency**: Vault tracker now feels native to Sidekick ecosystem
+- **Status**: Fully functional movable window matching other module patterns
+
 ### v1.2.7 (2025-12-01) - Vault Tracker + Mug Calculator Debug 💰🐛
 - **New Module: Vault Tracker**:
   - Track shared vault transactions with spouse/partner
