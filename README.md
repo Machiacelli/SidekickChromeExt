@@ -8,6 +8,39 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.2.14 (2025-12-01) - Vault Tracker: UI Polish + Setup Guidance 🎨✨
+- **UI Consistency - Now Matches Other Modules**:
+  - ✅ Removed emoji (🏦) from title - now just "Vault Tracker"
+  - ✅ Removed version number from header (was showing "v0.1.0")
+  - ✅ Added red circular X button (matches notepad, timer, todo list)
+  - ✅ Added cogwheel (⚙️) dropdown menu with all options:
+    - 🔄 Sync from Vault
+    - ⚙️ Configure Names
+    - 🗑️ Clear Ledger
+    - 📌 Pin/Unpin
+  - ✅ Removed old pin button from header
+  - ✅ Consistent styling with dropdown hover effects
+- **New Feature - Helpful Setup Messages**:
+  - Shows vault icon (🏦) with guidance when unconfigured
+  - If names not configured: "Configure player names to track balances. Click ⚙️ → Configure Names"
+  - If no transactions: "No vault transactions yet. Visit the vault page and click ⚙️ → Sync from Vault"
+  - Replaces confusing "all zeros" display with clear next steps
+- **Enhanced Configure Option**:
+  - Added "Configure Names" option to dropdown menu
+  - Calls `configureVaultTracker()` directly from UI
+  - No need to remember console commands
+- **Technical Improvements**:
+  - Added `settings` parameter to `renderPanel()` to check configuration status
+  - Added validation logic: `hasTransactions` and `namesConfigured`
+  - Shows appropriate message based on setup state
+  - Cleaner dropdown event handlers with hover effects
+- **Bug Fixes**:
+  - Fixed dropdown menu structure to match notepad module exactly
+  - Added all missing event handlers for dropdown options
+  - Improved console logging to show settings during render
+- **Commit**: 42f8a9e2ea7ee843bf0eb93787c76aaab9e461e0
+- **Status**: Vault tracker UI now perfectly matches other modules, provides clear setup guidance
+
 ### v1.2.13 (2025-12-01) - Vault Tracker: THE ACTUAL FIX 🚨🔧
 - **ROOT CAUSE FOUND**:
   - VaultTracker module was LOADING but NEVER INITIALIZING
