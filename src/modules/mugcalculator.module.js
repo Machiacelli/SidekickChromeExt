@@ -198,8 +198,10 @@ const MugCalculatorModule = (() => {
         },
 
         async fetchUserData(playerId, mugMerits, plunderPercent, totalMoney, threshold, available) {
+            // Get API key from Chrome storage
             const apiKey = await window.SidekickModules.Core.ChromeStorage.get('sidekick_api_key');
             if (!apiKey) {
+                console.error('[Sidekick] Mug Calculator: No API key found');
                 if (window.SidekickModules?.Core?.NotificationSystem) {
                     window.SidekickModules.Core.NotificationSystem.show('Mug Calculator', 'Please set your API key in settings', 'error', 3000);
                 }
@@ -235,31 +237,57 @@ const MugCalculatorModule = (() => {
                     dataCache[cacheKey] = { data: data, timestamp: now };
                     return data;
                 } else {
+                    const errorText = await response.text();
+                    console.error('[Sidekick] Mug Calculator backend error:', response.status, errorText);
                     throw new Error(`Backend error: ${response.status}`);
                 }
             } catch (error) {
-                console.error("Error fetching user data:", error);
+                console.error("[Sidekick] Mug Calculator: Error fetching user data:", error);
+                if (window.SidekickModules?.Core?.NotificationSystem) {
+                    window.SidekickModules.Core.NotificationSystem.show('Mug Calculator', `Failed to fetch data: ${error.message}`, 'error', 3000);
+                }
                 return null;
             }
         },
 
         async handleMugIconClick(totalMoney, quantity, threshold, sellerLink, icon) {
-            const mugMerits = parseInt(await window.SidekickModules.Core.ChromeStorage.get('mugMerits') || 0, 10);
-            const plunderPercent = parseFloat(await window.SidekickModules.Core.ChromeStorage.get('mugPlunder') || 0);
-            
-            const playerId = this.extractUserId(sellerLink.href);
-            const data = await this.fetchUserData(playerId, mugMerits, plunderPercent, totalMoney, threshold, quantity);
-            
-            if (data) {
-                const newCostPerItem = Math.floor((totalMoney - data.potential_mug) / quantity);
-                const popup = this.createInfoPopup(data, newCostPerItem);
-                document.body.appendChild(popup);
-                this.positionPopup(icon, popup);
-                popup.classList.add("visible");
-                currentPopups.push(popup);
-            } else {
+            try {
+                // Get settings from Chrome storage
+                const mugMerits = parseInt(await window.SidekickModules.Core.ChromeStorage.get('mugMerits') || 0, 10);
+                const plunderPercent = parseFloat(await window.SidekickModules.Core.ChromeStorage.get('mugPlunder') || 0);
+                
+                console.log('[Sidekick] Mug Calculator: Settings loaded:', { mugMerits, plunderPercent, threshold });
+                
+                const playerId = this.extractUserId(sellerLink.href);
+                if (!playerId) {
+                    console.error('[Sidekick] Mug Calculator: Could not extract player ID from link');
+                    if (window.SidekickModules?.Core?.NotificationSystem) {
+                        window.SidekickModules.Core.NotificationSystem.show('Mug Calculator', 'Could not find player ID', 'error', 3000);
+                    }
+                    return;
+                }
+                
+                console.log('[Sidekick] Mug Calculator: Fetching data for player:', playerId);
+                const data = await this.fetchUserData(playerId, mugMerits, plunderPercent, totalMoney, threshold, quantity);
+                
+                if (data) {
+                    const newCostPerItem = Math.floor((totalMoney - data.potential_mug) / quantity);
+                    const popup = this.createInfoPopup(data, newCostPerItem);
+                    document.body.appendChild(popup);
+                    this.positionPopup(icon, popup);
+                    popup.classList.add("visible");
+                    currentPopups.push(popup);
+                    console.log('[Sidekick] Mug Calculator: Popup displayed successfully');
+                } else {
+                    console.error('[Sidekick] Mug Calculator: No data returned from fetchUserData');
+                    if (window.SidekickModules?.Core?.NotificationSystem) {
+                        window.SidekickModules.Core.NotificationSystem.show('Mug Calculator', 'Failed to fetch user data', 'error', 3000);
+                    }
+                }
+            } catch (error) {
+                console.error('[Sidekick] Mug Calculator: Error in handleMugIconClick:', error);
                 if (window.SidekickModules?.Core?.NotificationSystem) {
-                    window.SidekickModules.Core.NotificationSystem.show('Mug Calculator', 'Failed to fetch user data', 'error', 3000);
+                    window.SidekickModules.Core.NotificationSystem.show('Mug Calculator', `Error: ${error.message}`, 'error', 3000);
                 }
             }
         },

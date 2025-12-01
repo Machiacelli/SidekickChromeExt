@@ -8,6 +8,20 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.2.3 (2025-12-01) - Mug Calculator Tab & Bug Fixes 💰🐛
+- **Mug Calculator**: Created dedicated tab in settings panel
+  - Moved all mug calculator settings to separate "💰 Mug Calc" tab
+  - Decluttered Modules tab by removing embedded config section
+  - Improved UI organization and user experience
+- **Critical Bug Fix**: Fixed info button "i" not working on Item Market
+  - Corrected API key retrieval (now properly fetches `sidekick_api_key`)
+  - Fixed storage key access for mugMerits, mugPlunder, mugThreshold
+  - Enhanced error logging for better debugging
+  - Added detailed error notifications showing actual failure reasons
+- **Debugging**: Added comprehensive console logging for mug calculator operations
+- **User Experience**: Mug calculator now fully functional with clear error messages
+- **Status**: Info icons on Item Market/Bazaars now properly fetch and display mug data
+
 ### v1.2.2 (2025-12-01) - Mug Calculator Settings Integration 🔧⚙️
 - **Mug Calculator**: Moved settings to main settings cogwheel
 - **UI Cleanup**: Removed standalone mug calculator icon from header

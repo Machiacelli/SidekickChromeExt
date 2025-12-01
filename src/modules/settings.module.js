@@ -119,6 +119,11 @@
                                                                                     cursor: pointer; font-weight: 500; transition: all 0.2s;">
                             🔔 Notifications
                         </button>
+                        <button class="settings-tab-btn" data-tab="mugcalc" style="flex: 1; padding: 10px; background: transparent; 
+                                                                                    border: none; color: rgba(255,255,255,0.7); border-radius: 6px; 
+                                                                                    cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                            💰 Mug Calc
+                        </button>
                     </div>
                     
                     <!-- Tab Content Container -->
@@ -174,6 +179,11 @@
                         <div class="settings-tab-content" id="settings-tab-notifications" style="display: none;">
                             ${this.createNotificationsSettingsHTML()}
                         </div>
+                        
+                        <!-- MUG CALCULATOR TAB -->
+                        <div class="settings-tab-content" id="settings-tab-mugcalc" style="display: none;">
+                            ${this.createMugCalculatorSettingsHTML()}
+                        </div>
                     </div>
                 </div>
             `;
@@ -193,42 +203,6 @@
                 ${this.createToggle('npc-attack-timer', '🎯 NPC Attack Timer', 'Shows NPC attack countdowns in news ticker')}
                 ${this.createToggle('random-target', '🎲 Random Target', 'Adds random target button to attack pages')}
                 ${this.createToggle('mug-calculator', '💰 Mug Calculator', 'Shows mug value calculations on Item Market and Bazaars')}
-                
-                <!-- Mug Calculator Configuration -->
-                <div id="mug-calculator-config" style="margin: 15px 0; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 3px solid #4CAF50;">
-                    <div style="font-weight: 600; color: #4CAF50; margin-bottom: 12px; font-size: 14px;">💰 Mug Calculator Settings</div>
-                    
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; color: #ccc; font-size: 13px;">
-                            Mug Merits (0-10):
-                        </label>
-                        <input type="number" id="mugMeritsInput" min="0" max="10" placeholder="0 to 10"
-                               style="width: 100%; padding: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); 
-                                      border-radius: 5px; color: white; font-size: 13px;">
-                    </div>
-                    
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; color: #ccc; font-size: 13px;">
-                            Plunder % (20% to 49%):
-                        </label>
-                        <input type="number" id="plunderInput" min="20" max="49" step="0.01" placeholder="Plunder %"
-                               style="width: 100%; padding: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); 
-                                      border-radius: 5px; color: white; font-size: 13px;">
-                    </div>
-                    
-                    <div style="margin-bottom: 10px;">
-                        <label style="display: block; margin-bottom: 5px; color: #ccc; font-size: 13px;">
-                            Minimum Threshold ($):
-                        </label>
-                        <input type="number" id="thresholdInput" min="0" placeholder="Minimum Threshold"
-                               style="width: 100%; padding: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); 
-                                      border-radius: 5px; color: white; font-size: 13px;">
-                    </div>
-                    
-                    <div style="font-size: 11px; color: #888; margin-top: 8px; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px;">
-                        ℹ️ These settings control how mug values are calculated on the Item Market and Bazaars
-                    </div>
-                </div>
                 <button id="sidekick-save-module-toggles" style="width: 100%; padding: 12px; background: #4CAF50; 
                                                                   border: none; color: white; border-radius: 6px; 
                                                                   font-weight: bold; cursor: pointer; margin-top: 20px;">
@@ -447,6 +421,61 @@
             `;
         },
 
+        // Create Mug Calculator settings HTML
+        createMugCalculatorSettingsHTML() {
+            return `
+                <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">💰 Mug Calculator Settings</h4>
+                
+                <div style="background: rgba(76, 175, 80, 0.1); border-left: 3px solid #4CAF50; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
+                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                        ℹ️ Configure the mug calculator to show potential mug values when browsing the Item Market and Bazaars.
+                        The calculator uses your API key to fetch target information and calculate potential earnings.
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Mug Merits (0-10):</label>
+                    <input type="number" id="mugMeritsInput" min="0" max="10" placeholder="0 to 10"
+                           style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
+                                  border-radius: 5px; color: white; font-size: 14px;">
+                    <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
+                        Enter your total mug merits from 0 to 10
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Plunder % (20% to 49%):</label>
+                    <input type="number" id="plunderInput" min="20" max="49" step="0.01" placeholder="Plunder %"
+                           style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
+                                  border-radius: 5px; color: white; font-size: 14px;">
+                    <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
+                        Enter your plunder percentage (based on your stats and bonuses)
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Minimum Threshold ($):</label>
+                    <input type="number" id="thresholdInput" min="0" placeholder="Minimum Threshold"
+                           style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
+                                  border-radius: 5px; color: white; font-size: 14px;">
+                    <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
+                        Only show info icon when total listing value exceeds this amount
+                    </div>
+                </div>
+                
+                <button id="sidekick-save-mugcalc-settings" style="width: 100%; padding: 12px; background: #4CAF50; 
+                                                                   border: none; color: white; border-radius: 6px; 
+                                                                   font-weight: bold; cursor: pointer; margin-bottom: 10px;">
+                    💾 Save Mug Calculator Settings
+                </button>
+                
+                <div id="sidekick-mugcalc-status" style="text-align: center; padding: 10px; border-radius: 5px; 
+                                                        background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;">
+                    Mug calculator settings loaded
+                </div>
+            `;
+        },
+
         // Attach all event listeners
         attachEventListeners(panel) {
             // Tab switching
@@ -489,6 +518,9 @@
             
             // Notifications Tab listeners
             this.attachNotificationsTabListeners(panel);
+            
+            // Mug Calculator Tab listeners
+            this.attachMugCalculatorTabListeners(panel);
         },
 
         // Switch between tabs
@@ -612,35 +644,6 @@
                     // Save each module setting individually
                     for (const [key, value] of Object.entries(settings)) {
                         await window.SidekickModules.Core.ChromeStorage.set(key, value);
-                    }
-                    
-                    // Save mug calculator settings
-                    const mugMeritsInput = panel.querySelector('#mugMeritsInput');
-                    const plunderInput = panel.querySelector('#plunderInput');
-                    const thresholdInput = panel.querySelector('#thresholdInput');
-                    
-                    if (mugMeritsInput) {
-                        const mugMeritsVal = parseInt(mugMeritsInput.value.trim(), 10);
-                        await window.SidekickModules.Core.ChromeStorage.set('mugMerits', isNaN(mugMeritsVal) ? 0 : Math.min(Math.max(mugMeritsVal, 0), 10));
-                    }
-                    
-                    if (plunderInput) {
-                        let plunderInputVal = parseFloat(plunderInput.value.trim());
-                        if (plunderInputVal === '' || parseFloat(plunderInputVal) === 0) {
-                            plunderInputVal = 0;
-                        } else {
-                            plunderInputVal = parseFloat(plunderInputVal);
-                            if (plunderInputVal < 20 || plunderInputVal > 50) {
-                                this.showStatus(statusDiv, 'Plunder percentage must be between 20% and 49%', 'error');
-                                return;
-                            }
-                        }
-                        await window.SidekickModules.Core.ChromeStorage.set('mugPlunder', plunderInputVal);
-                    }
-                    
-                    if (thresholdInput) {
-                        const thresholdVal = parseInt(thresholdInput.value.trim(), 10);
-                        await window.SidekickModules.Core.ChromeStorage.set('mugThreshold', isNaN(thresholdVal) ? 0 : thresholdVal);
                     }
                     
                     this.showStatus(statusDiv, 'Module settings saved successfully!', 'success');
@@ -800,6 +803,62 @@
                     } catch (error) {
                         console.error('Failed to save Notification settings:', error);
                         this.showStatus(notifStatusDiv, 'Failed to save settings', 'error');
+                    }
+                });
+            }
+        },
+
+        // Mug Calculator Tab listeners
+        attachMugCalculatorTabListeners(panel) {
+            const mugMeritsInput = panel.querySelector('#mugMeritsInput');
+            const plunderInput = panel.querySelector('#plunderInput');
+            const thresholdInput = panel.querySelector('#thresholdInput');
+            const saveMugCalcBtn = panel.querySelector('#sidekick-save-mugcalc-settings');
+            const mugCalcStatusDiv = panel.querySelector('#sidekick-mugcalc-status');
+
+            if (saveMugCalcBtn) {
+                saveMugCalcBtn.addEventListener('click', async () => {
+                    try {
+                        // Save mug merits
+                        if (mugMeritsInput) {
+                            const mugMeritsVal = parseInt(mugMeritsInput.value.trim(), 10);
+                            await window.SidekickModules.Core.ChromeStorage.set('mugMerits', isNaN(mugMeritsVal) ? 0 : Math.min(Math.max(mugMeritsVal, 0), 10));
+                        }
+                        
+                        // Save plunder percentage
+                        if (plunderInput) {
+                            let plunderInputVal = parseFloat(plunderInput.value.trim());
+                            if (plunderInputVal === '' || parseFloat(plunderInputVal) === 0) {
+                                plunderInputVal = 0;
+                            } else {
+                                plunderInputVal = parseFloat(plunderInputVal);
+                                if (plunderInputVal < 20 || plunderInputVal > 50) {
+                                    this.showStatus(mugCalcStatusDiv, 'Plunder percentage must be between 20% and 49%', 'error');
+                                    return;
+                                }
+                            }
+                            await window.SidekickModules.Core.ChromeStorage.set('mugPlunder', plunderInputVal);
+                        }
+                        
+                        // Save threshold
+                        if (thresholdInput) {
+                            const thresholdVal = parseInt(thresholdInput.value.trim(), 10);
+                            await window.SidekickModules.Core.ChromeStorage.set('mugThreshold', isNaN(thresholdVal) ? 0 : thresholdVal);
+                        }
+                        
+                        this.showStatus(mugCalcStatusDiv, 'Mug calculator settings saved!', 'success');
+                        
+                        if (window.SidekickModules.Core.NotificationSystem) {
+                            window.SidekickModules.Core.NotificationSystem.show(
+                                'Mug Calculator',
+                                'Settings saved successfully',
+                                'success',
+                                3000
+                            );
+                        }
+                    } catch (error) {
+                        console.error('Failed to save mug calculator settings:', error);
+                        this.showStatus(mugCalcStatusDiv, 'Failed to save settings', 'error');
                     }
                 });
             }
