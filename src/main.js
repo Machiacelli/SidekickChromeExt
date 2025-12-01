@@ -418,6 +418,11 @@
                 handleOpenBugReporter(sendResponse);
                 return true; // Keep message channel open for async response
             }
+            
+            if (request.action === 'toggleTrainingBlocker') {
+                handleToggleTrainingBlocker(request.enabled, sendResponse);
+                return true; // Keep message channel open for async response
+            }
         });
     }
 

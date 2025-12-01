@@ -8,6 +8,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.1.4 (2025-12-01)
+- **Training Blocker**: FINAL FIX - Added missing message handler in main.js
+- **Technical Fix**: Added `toggleTrainingBlocker` message handler that was missing from v1.1.3
+- **Status**: Training blocker now fully functional - toggle works from popup
+- **Bug Reporter**: Working (requires manual Notion API setup in background.js if desired)
+
 ### v1.1.3 (2025-12-01)
 - **CRITICAL FIXES** (Apology for v1.1.2 issues):
   - **Training Blocker**: Restored proper functionality - can now toggle from any Torn.com page
