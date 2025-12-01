@@ -8,6 +8,49 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.3.0 (2025-12-01) - Vault Tracker: COMPLETE REWRITE 🔥🚀
+- **MAJOR CHANGE - Simplified Architecture**:
+  - ❌ REMOVED complex transaction history tracking
+  - ✅ NOW reads actual balances directly from vault page DOM
+  - ✅ Displays EXACT numbers shown on Torn's vault page
+  - No more incorrect calculations or attribution issues!
+- **Automatic Player Detection**:
+  - ✅ Fetches player name and ID from Torn API automatically
+  - ✅ Correctly identifies YOU vs SPOUSE automatically
+  - ❌ NO MANUAL CONFIGURATION REQUIRED
+  - Automatically swaps if it initially guesses wrong
+- **How It Works Now**:
+  1. Open vault tracker from sidebar + menu
+  2. Go to Properties → Vault page
+  3. Click ⚙️ → Sync from Vault
+  4. Done! Shows YOUR balance, SPOUSE balance, TOTAL vault
+- **What Changed**:
+  - Removed `Ledger` transaction tracking system entirely
+  - Removed `recomputeBalances()` (was causing incorrect calculations)
+  - Removed `addTransaction()` and transaction history
+  - Removed manual name configuration prompts
+  - Added `VaultData.updateFromVaultPage()` - reads DOM directly
+  - Added `VaultData.fetchPlayerInfo()` - gets player from API
+  - Simplified storage key to `sidekick_vault_data_v2`
+- **UI Updates**:
+  - Shows player names under each balance
+  - Shows "Last sync: X min ago" timestamp
+  - Removed "last change" tracking (was inaccurate)
+  - Cleaner layout with actual numbers
+- **Bug Fixes**:
+  - ✅ Fixed showing incorrect balances (was computing from transactions)
+  - ✅ Fixed attribution issues (no more guessing who made deposits)
+  - ✅ Fixed "way off" numbers by reading actual page data
+  - ✅ No more manual configuration headaches
+- **Technical Details**:
+  - Version bumped to 0.2.0
+  - Reads `.vault-wrap .user-info-list-wrap li` for balances
+  - Reads `.vault-wrap .cont-gray .desc .bold` for total
+  - Uses API `/profile` endpoint for player identification
+  - Stores: playerName, playerId, spouseName, spouseId, yourBalance, spouseBalance, totalVault, lastSync
+- **Commit**: c53914155eccd0f02e4db7fd29e828a4e64f0ed3
+- **Status**: Vault tracker NOW SHOWS CORRECT NUMBERS - reads directly from page!
+
 ### v1.2.14 (2025-12-01) - Vault Tracker: UI Polish + Setup Guidance 🎨✨
 - **UI Consistency - Now Matches Other Modules**:
   - ✅ Removed emoji (🏦) from title - now just "Vault Tracker"
