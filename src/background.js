@@ -113,6 +113,8 @@ const NOTION_DATABASE_ID = 'YOUR_NOTION_DATABASE_ID_HERE'; // Replace with your 
 function isNotionConfigured() {
     return NOTION_API_KEY !== 'YOUR_NOTION_API_KEY_HERE' && 
            NOTION_DATABASE_ID !== 'YOUR_NOTION_DATABASE_ID_HERE' &&
+           NOTION_API_KEY && 
+           NOTION_DATABASE_ID &&
            NOTION_API_KEY.length > 10 && 
            NOTION_DATABASE_ID.length > 10;
 }
@@ -351,7 +353,7 @@ async function handleBugReport(bugData) {
             return {
                 success: false,
                 error: 'NOTION_NOT_CONFIGURED',
-                message: 'Notion API keys are not configured. Please add your Notion API key and database ID in background.js to enable bug reporting.'
+                message: 'Bug Reporter Setup Required:\n\n1. Open src/background.js\n2. Replace lines with your Notion credentials:\n   const NOTION_API_KEY = "your_actual_key_here";\n   const NOTION_DATABASE_ID = "your_actual_db_id_here";\n3. Save and reload extension\n\nOr report issues via GitHub instead.'
             };
         }
         

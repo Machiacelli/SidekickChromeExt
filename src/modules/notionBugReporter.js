@@ -311,12 +311,15 @@
                     data: bugData
                 });
                 
-                if (response.success) {
+                if (response && response.success) {
                     console.log('✅ Bug reported successfully to Notion');
                     return { success: true, data: response.data };
-                } else {
+                } else if (response) {
                     console.error('❌ Failed to report bug:', response.error);
-                    return { success: false, error: response.error };
+                    return { success: false, error: response.error, message: response.message };
+                } else {
+                    console.error('❌ No response from background script - extension context may be invalidated');
+                    return { success: false, error: 'EXTENSION_CONTEXT_INVALIDATED', message: 'Extension context invalidated. Please reload the extension and try again.' };
                 }
                 
             } catch (error) {
