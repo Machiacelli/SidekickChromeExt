@@ -8,6 +8,25 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.2.0 (2025-12-01) - SECURITY FIX: API Keys Removed 🔒✅
+- **Security**: Removed all Notion API keys from codebase
+- **Architecture**: Implemented secure Cloudflare Worker proxy
+  - Bug reports now route through `https://notionbugreport.akaffebtd.workers.dev/`
+  - Worker handles Notion API authentication server-side
+  - Zero secrets stored in extension code
+- **Technical Changes**:
+  - Removed direct Notion API integration from background.js
+  - Simplified payload structure (Worker handles Notion formatting)
+  - Added Cloudflare Worker URL to manifest host_permissions
+  - Deleted config files containing credentials
+- **Benefits**:
+  - Extension code can be safely published on GitHub
+  - No risk of API key exposure to users
+  - Centralized API key management through Worker
+  - Professional security pattern for production extensions
+- **Status**: Bug reporter fully functional with secure architecture
+- **Latest Commit**: `2990489`
+
 ### v1.1.9 (2025-12-01) - Bug Reporter ACTUALLY FIXED! 🐛✅
 - **Bug Reporter**: PROPERLY FIXED - Notion API fully integrated and configured
 - **Technical Implementation**:
