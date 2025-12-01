@@ -174,7 +174,7 @@
                 background-size: cover !important;
                 background-position: center !important;
                 background-repeat: no-repeat !important;
-                z-index: 999999 !important;
+                z-index: 1000 !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;

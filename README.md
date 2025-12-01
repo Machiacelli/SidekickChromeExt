@@ -8,6 +8,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.1.6 (2025-12-01)
+- **Training Blocker**: Fixed z-index issue - modals now appear above gym blocker image
+- **Technical Fixes**:
+  - Lowered training blocker z-index from 999999 to 1000
+  - Bug reporter modal (z-index 99999) now properly appears above training blocker
+- **Status**: Training blocker works correctly, modals appear above it
+- **Note**: Bug reporter requires manual API setup in background.js (see previous instructions)
+
 ### v1.1.5 (2025-12-01)
 - **Training Blocker**: PROPERLY FIXED - Now only blocks gym section instead of entire page
 - **Technical Fixes**:
