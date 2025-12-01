@@ -8,6 +8,22 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.2.9 (2025-12-01) - Vault Tracker: Fix Window Persistence 💾
+- **Critical Fix**: Vault tracker window now persists across page refreshes
+  - Added `isVisible` flag to window state
+  - Window automatically reopens on refresh if it was open before
+  - Close button properly saves hidden state
+  - Fixed initialization logic to respect saved visibility state
+- **Technical Changes**:
+  - Enhanced window state structure with visibility tracking
+  - Improved `init()` to conditionally create UI based on saved state
+  - Updated `setupUI()` to prevent duplicate window creation
+  - Modified `cleanup()` to save visibility state as false
+  - Fixed `createNewVaultTracker()` to properly show/create window
+- **User Experience**: Window position, size, pin state, AND visibility now all persist
+- **Known Limitation**: Notification position setting in UI (if present) does not currently affect notification placement - all notifications appear in top-right. This will be addressed in a future update.
+- **Status**: Vault tracker fully functional with complete state persistence
+
 ### v1.2.8 (2025-12-01) - Vault Tracker: Movable Window UI 🪟✨
 - **Vault Tracker Enhancement**: Converted to movable/resizable window
   - Now matches UI pattern of other modules (notepad, timer, etc.)

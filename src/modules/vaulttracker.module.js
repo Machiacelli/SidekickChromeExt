@@ -139,12 +139,19 @@
             console.log('[Sidekick] VaultTracker: Initializing...');
             await Ledger.load();
             await this.loadWindowState();
-            this.setupUI();
+            
+            // Only create UI if it was previously visible
+            if (this._windowState.isVisible) {
+                this.setupUI();
+                await this.renderPanel();
+                console.log('[Sidekick] VaultTracker: Window restored from previous session');
+            } else {
+                console.log('[Sidekick] VaultTracker: Window hidden (not visible in previous session)');
+            }
+            
             this.hookWebSocket();
             this.attachVaultPageSync();
             this.initDone = true;
-            // initial render
-            await this.renderPanel();
             console.log('[Sidekick] VaultTracker: Started');
         },
 
@@ -160,12 +167,13 @@
                         y: 10,
                         width: 320,
                         height: 280,
-                        pinned: false
+                        pinned: false,
+                        isVisible: false
                     };
                 }
             } catch (e) {
                 console.warn('[Sidekick] VaultTracker: Failed to load window state', e);
-                this._windowState = { x: 10, y: 10, width: 320, height: 280, pinned: false };
+                this._windowState = { x: 10, y: 10, width: 320, height: 280, pinned: false, isVisible: false };
             }
         },
 
@@ -183,6 +191,12 @@
         // UI: simple modern panel in the sidekick content area
         setupUI(){
             try{
+                // If window already exists, don't recreate
+                if (this._panel) {
+                    console.log('[Sidekick] VaultTracker: Window already exists');
+                    return;
+                }
+                
                 const root = document.querySelector('#sidekick-content');
                 if (!root) {
                     console.warn('[Sidekick] VaultTracker: Could not find #sidekick-content');
@@ -290,6 +304,10 @@
                 
                 // Add button handlers
                 this.attachWindowControls(container);
+                
+                // Mark as visible and save state
+                this._windowState.isVisible = true;
+                this.saveWindowState();
                 
                 console.log('[Sidekick] VaultTracker: UI created');
             }catch(err){ console.error('[Sidekick] VaultTracker.setupUI failed', err); }
@@ -673,12 +691,15 @@
         },
 
         // Cleanup
-        cleanup(){
+        async cleanup(){
             if (this._panel) {
                 this._panel.remove();
                 this._panel = null;
             }
-            this.initDone = false;
+            // Mark as not visible and save state
+            this._windowState.isVisible = false;
+            await this.saveWindowState();
+            console.log('[Sidekick] VaultTracker: Window closed and state saved');
         }
     };
 

@@ -821,15 +821,16 @@
                 // Initialize if not already done
                 if (!window.SidekickModules.VaultTracker.initDone) {
                     await window.SidekickModules.VaultTracker.init();
-                } else {
-                    // Already initialized, just refresh the panel
-                    await window.SidekickModules.VaultTracker.renderPanel();
                 }
                 
-                this.showNotification('Vault Tracker', 'Vault tracker initialized', 'success');
+                // Create/show the window (setupUI will check if it already exists)
+                window.SidekickModules.VaultTracker.setupUI();
+                await window.SidekickModules.VaultTracker.renderPanel();
+                
+                this.showNotification('Vault Tracker', 'Vault tracker window opened', 'success');
             } catch (error) {
                 console.error('Failed to create vault tracker:', error);
-                this.showNotification('Vault Tracker Error', 'Failed to initialize vault tracker', 'error');
+                this.showNotification('Vault Tracker Error', 'Failed to open vault tracker', 'error');
             }
         },
 
