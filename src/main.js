@@ -220,6 +220,15 @@
                 console.warn("⚠️ Debt Module not available");
             }
 
+            // Initialize Vault Tracker Module
+            console.log("🏦 Sidekick: Initializing Vault Tracker...");
+            if (window.SidekickModules.VaultTracker?.init) {
+                await window.SidekickModules.VaultTracker.init();
+                console.log("✅ Sidekick: Vault Tracker initialized");
+            } else {
+                console.warn("⚠️ Vault Tracker module not available");
+            }
+
             // Initialize Notion Bug Reporter Module
             console.log("🐛 Sidekick: Initializing Notion Bug Reporter...");
             if (window.SidekickModules.NotionBugReporter?.init) {
