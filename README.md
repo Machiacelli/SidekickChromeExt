@@ -8,6 +8,52 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.2.10 (2025-12-01) - Vault Tracker: UI Consistency + Debug Tools 🎨🔧
+- **UI Consistency**:
+  - Updated vault tracker to match other modules' UI design
+  - Added red circular X button (consistent with notepad, timer, todo list)
+  - Implemented dropdown menu (⋯ button) for all actions:
+    - 🔄 Sync from Vault
+    - ⚙️ Configure Names
+    - 🗑️ Clear Ledger
+    - 📌 Pin/Unpin
+  - Removed inline action buttons for cleaner interface
+  - Removed scrollbar from content area (overflow: hidden)
+  - Reduced minimum window size to 200x180px (from 280x240px)
+- **New Features - Configuration Tools**:
+  - Added `configureVaultTracker()` console function:
+    - Prompts for player name and spouse name
+    - Saves settings to Chrome storage
+    - Automatically recomputes balances with new names
+    - Updates display immediately
+  - Added `debugVaultTracker()` console function:
+    - Shows current settings (player/spouse names)
+    - Displays transaction count and balances
+    - Lists recent transactions
+    - Returns full debug object
+- **Enhanced Logging**:
+  - Added comprehensive logging to `recomputeBalances()`
+  - Added logging to `syncFromVaultPage()` with transaction parsing
+  - Added logging to `renderPanel()` with balance display
+  - Added logging to `settings()` with load/save operations
+  - Added logging to dropdown menu interactions
+- **Bug Fixes**:
+  - Fixed "all zeros" display issue - was caused by missing player/spouse name configuration
+  - Fixed sync button not responding - event handlers now properly attached
+  - Added dropdown click handlers with proper event propagation
+  - Enhanced transaction attribution logic with detailed logging
+- **User Experience**:
+  - Console message on module load: "To configure player names, run: configureVaultTracker()"
+  - Console message: "To debug data, run: debugVaultTracker()"
+  - Clear feedback when settings are saved
+  - Alert confirmation after successful configuration
+- **Technical Implementation**:
+  - Exposed helper functions globally for easy access
+  - Enhanced error handling for settings load/save
+  - Added transaction processing logs to identify attribution issues
+  - Improved dropdown menu structure matching timer module pattern
+- **Status**: Vault tracker UI now consistent with other modules, easy to configure via console
+
 ### v1.2.9 (2025-12-01) - Vault Tracker: Fix Window Persistence 💾
 - **Critical Fix**: Vault tracker window now persists across page refreshes
   - Added `isVisible` flag to window state

@@ -83,19 +83,40 @@
             const settings = await VaultTracker.settings();
             const myName = settings.playerName || null;
             const spouseName = settings.spouseName || null;
+            
+            console.log('[Sidekick] VaultTracker: Recomputing balances...');
+            console.log('[Sidekick] VaultTracker: Player name:', myName);
+            console.log('[Sidekick] VaultTracker: Spouse name:', spouseName);
+            console.log('[Sidekick] VaultTracker: Total transactions:', this.data.order.length);
 
             for (const id of this.data.order){
                 const t = this.data.transactions[id];
                 const signed = (t.type==='Deposit')? t.amount : -t.amount;
+                console.log('[Sidekick] VaultTracker: Processing tx:', {
+                    id: t.id,
+                    name: t.name,
+                    type: t.type,
+                    amount: t.amount,
+                    signed: signed
+                });
                 // Decide who this applies to
-                if (t.name && myName && t.name === myName) you += signed;
-                else if (t.name && spouseName && t.name === spouseName) spouse += signed;
-                else {
+                if (t.name && myName && t.name === myName) {
+                    you += signed;
+                    console.log('[Sidekick] VaultTracker: Attributed to YOU:', signed);
+                } else if (t.name && spouseName && t.name === spouseName) {
+                    spouse += signed;
+                    console.log('[Sidekick] VaultTracker: Attributed to SPOUSE:', signed);
+                } else {
                     // If unknown, attribute by userId if possible (settings may include spouseId)
-                    if (t.userId && settings.spouseId && Number(t.userId) === Number(settings.spouseId)) spouse += signed;
-                    else if (t.userId && settings.playerId && Number(t.userId) === Number(settings.playerId)) you += signed;
-                    else {
+                    if (t.userId && settings.spouseId && Number(t.userId) === Number(settings.spouseId)) {
+                        spouse += signed;
+                        console.log('[Sidekick] VaultTracker: Attributed to SPOUSE by ID:', signed);
+                    } else if (t.userId && settings.playerId && Number(t.userId) === Number(settings.playerId)) {
+                        you += signed;
+                        console.log('[Sidekick] VaultTracker: Attributed to YOU by ID:', signed);
+                    } else {
                         // Fallback: treat as "other" contribution to total only (we'll add to total later)
+                        console.log('[Sidekick] VaultTracker: Could not attribute transaction:', t);
                     }
                 }
             }
@@ -127,9 +148,22 @@
             if (!data){
                 // read
                 const raw = await window.SidekickModules.Core.ChromeStorage.get(SETTINGS_KEY);
-                if (!raw) return { playerName: null, playerId: null, spouseName: null, spouseId: null };
-                try{ return JSON.parse(raw); } catch(e){ return { playerName:null, playerId:null, spouseName:null, spouseId:null }; }
+                console.log('[Sidekick] VaultTracker: Settings loaded (raw):', raw);
+                if (!raw) {
+                    const defaults = { playerName: null, playerId: null, spouseName: null, spouseId: null };
+                    console.log('[Sidekick] VaultTracker: Using default settings:', defaults);
+                    return defaults;
+                }
+                try{ 
+                    const parsed = JSON.parse(raw);
+                    console.log('[Sidekick] VaultTracker: Parsed settings:', parsed);
+                    return parsed;
+                } catch(e){ 
+                    console.error('[Sidekick] VaultTracker: Failed to parse settings', e);
+                    return { playerName:null, playerId:null, spouseName:null, spouseId:null }; 
+                }
             }
+            console.log('[Sidekick] VaultTracker: Saving settings:', data);
             await window.SidekickModules.Core.ChromeStorage.set(SETTINGS_KEY, JSON.stringify(data));
             return data;
         },
@@ -158,8 +192,10 @@
         async loadWindowState() {
             try {
                 const raw = await window.SidekickModules.Core.ChromeStorage.get('sidekick_vault_window_state');
+                console.log('[Sidekick] VaultTracker: Loaded raw state:', raw);
                 if (raw) {
                     this._windowState = JSON.parse(raw);
+                    console.log('[Sidekick] VaultTracker: Parsed window state:', this._windowState);
                 } else {
                     // Default window state
                     this._windowState = {
@@ -170,21 +206,24 @@
                         pinned: false,
                         isVisible: false
                     };
+                    console.log('[Sidekick] VaultTracker: Using default window state');
                 }
             } catch (e) {
-                console.warn('[Sidekick] VaultTracker: Failed to load window state', e);
+                console.error('[Sidekick] VaultTracker: Failed to load window state', e);
                 this._windowState = { x: 10, y: 10, width: 320, height: 280, pinned: false, isVisible: false };
             }
         },
 
         async saveWindowState() {
             try {
+                const stateJson = JSON.stringify(this._windowState);
                 await window.SidekickModules.Core.ChromeStorage.set(
                     'sidekick_vault_window_state',
-                    JSON.stringify(this._windowState)
+                    stateJson
                 );
+                console.log('[Sidekick] VaultTracker: State saved successfully:', stateJson);
             } catch (e) {
-                console.warn('[Sidekick] VaultTracker: Failed to save window state', e);
+                console.error('[Sidekick] VaultTracker: Failed to save window state', e);
             }
         },
 
@@ -206,9 +245,9 @@
                 const contentWidth = root.clientWidth || 400;
                 const contentHeight = root.clientHeight || 500;
                 
-                // Clamp window dimensions and position
-                const width = Math.min(Math.max(this._windowState.width, 280), contentWidth - 20);
-                const height = Math.min(Math.max(this._windowState.height, 240), contentHeight - 40);
+                // Clamp window dimensions and position (smaller minimum sizes)
+                const width = Math.min(Math.max(this._windowState.width, 200), contentWidth - 20);
+                const height = Math.min(Math.max(this._windowState.height, 180), contentHeight - 40);
                 const x = Math.min(Math.max(this._windowState.x, 0), contentWidth - width);
                 const y = Math.min(Math.max(this._windowState.y, 0), contentHeight - height);
                 
@@ -230,8 +269,8 @@
                     border-radius: 6px;
                     display: flex;
                     flex-direction: column;
-                    min-width: 280px;
-                    min-height: 240px;
+                    min-width: 200px;
+                    min-height: 180px;
                     z-index: 1000;
                     resize: ${this._windowState.pinned ? 'none' : 'both'};
                     overflow: hidden;
@@ -283,7 +322,7 @@
                     </div>
                     <div id="sidekick-vault-values" style="
                         flex: 1;
-                        overflow-y: auto;
+                        overflow: hidden;
                         padding: 10px;
                         color: #fff;
                         font-family: Arial, Helvetica, sans-serif;
@@ -368,32 +407,125 @@
         },
 
         addResizeObserver(element) {
+            let resizeTimeout;
             const resizeObserver = new ResizeObserver(() => {
                 if (!this._windowState.pinned) {
                     this._windowState.width = element.offsetWidth;
                     this._windowState.height = element.offsetHeight;
-                    this.saveWindowState();
+                    
+                    // Debounce save to avoid excessive writes
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        this.saveWindowState();
+                        console.log('[Sidekick] VaultTracker: Window resized and saved:', this._windowState.width, 'x', this._windowState.height);
+                    }, 500);
                 }
             });
             resizeObserver.observe(element);
         },
 
         attachWindowControls(element) {
-            const pinBtn = element.querySelector('.pin-btn');
+            const dropdownBtn = element.querySelector('.dropdown-btn');
+            const dropdownContent = element.querySelector('.dropdown-content');
+            const pinOption = element.querySelector('.vault-pin-option');
+            const syncOption = element.querySelector('.vault-sync-option');
+            const clearOption = element.querySelector('.vault-clear-option');
             const closeBtn = element.querySelector('.close-btn');
+            
+            console.log('[Sidekick] VaultTracker: Attaching window controls');
 
-            pinBtn.addEventListener('click', () => {
-                this._windowState.pinned = !this._windowState.pinned;
-                pinBtn.textContent = this._windowState.pinned ? '📌' : '📍';
-                pinBtn.title = this._windowState.pinned ? 'Unpin' : 'Pin';
-                element.style.resize = this._windowState.pinned ? 'none' : 'both';
-                element.querySelector('.vault-header').style.cursor = this._windowState.pinned ? 'default' : 'move';
-                this.saveWindowState();
-            });
+            // Dropdown toggle
+            if (dropdownBtn && dropdownContent) {
+                dropdownBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    console.log('[Sidekick] VaultTracker: Dropdown clicked');
+                    
+                    // Close all other dropdowns
+                    document.querySelectorAll('.vault-dropdown .dropdown-content').forEach(dropdown => {
+                        if (dropdown !== dropdownContent) {
+                            dropdown.style.display = 'none';
+                        }
+                    });
+                    
+                    // Toggle this dropdown
+                    const isVisible = dropdownContent.style.display === 'block';
+                    dropdownContent.style.display = isVisible ? 'none' : 'block';
+                });
 
-            closeBtn.addEventListener('click', () => {
-                this.cleanup();
-            });
+                // Close dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!element.contains(e.target)) {
+                        dropdownContent.style.display = 'none';
+                    }
+                });
+            }
+
+            // Sync option
+            if (syncOption) {
+                syncOption.addEventListener('mouseenter', () => {
+                    syncOption.style.background = 'rgba(255,255,255,0.1)';
+                });
+                syncOption.addEventListener('mouseleave', () => {
+                    syncOption.style.background = 'none';
+                });
+                syncOption.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[Sidekick] VaultTracker: Sync clicked');
+                    dropdownContent.style.display = 'none';
+                    await this.syncFromVaultPage(true);
+                });
+            }
+
+            // Clear option
+            if (clearOption) {
+                clearOption.addEventListener('mouseenter', () => {
+                    clearOption.style.background = 'rgba(255,255,255,0.1)';
+                });
+                clearOption.addEventListener('mouseleave', () => {
+                    clearOption.style.background = 'none';
+                });
+                clearOption.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[Sidekick] VaultTracker: Clear clicked');
+                    dropdownContent.style.display = 'none';
+                    if (confirm('Clear local vault ledger?')) { 
+                        await Ledger.clear(); 
+                        await this.renderPanel(); 
+                    }
+                });
+            }
+
+            // Pin option
+            if (pinOption) {
+                pinOption.addEventListener('mouseenter', () => {
+                    pinOption.style.background = 'rgba(255,255,255,0.1)';
+                });
+                pinOption.addEventListener('mouseleave', () => {
+                    pinOption.style.background = 'none';
+                });
+                pinOption.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[Sidekick] VaultTracker: Pin toggled');
+                    dropdownContent.style.display = 'none';
+                    
+                    this._windowState.pinned = !this._windowState.pinned;
+                    pinOption.textContent = this._windowState.pinned ? '📌 Unpin' : '📌 Pin';
+                    element.style.resize = this._windowState.pinned ? 'none' : 'both';
+                    element.querySelector('.vault-header').style.cursor = this._windowState.pinned ? 'default' : 'move';
+                    this.saveWindowState();
+                });
+            }
+
+            // Close button
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    console.log('[Sidekick] VaultTracker: Close clicked');
+                    this.cleanup();
+                });
+            }
         },
 
         async renderPanel(){
@@ -403,11 +535,20 @@
 
             const bal = Ledger.getBalances();
             const last = Ledger.getLastChange();
+            
+            console.log('[Sidekick] VaultTracker: Rendering panel');
+            console.log('[Sidekick] VaultTracker: Balances:', bal);
+            console.log('[Sidekick] VaultTracker: Last change:', last);
+            console.log('[Sidekick] VaultTracker: Total transactions:', Ledger.data.order.length);
+            
             const delta = last ? last.amount : 0;
             const deltaSign = delta>0 ? '+' : (delta<0 ? '-' : '');
             const deltaColor = delta>0 ? '#7ED321' : (delta<0 ? '#FF5C5C' : '#999');
             const lastWho = last ? last.who : '';
 
+            console.log('[Sidekick] VaultTracker: Rendering panel with balances:', bal);
+            console.log('[Sidekick] VaultTracker: Last change:', last);
+            
             values.innerHTML = `
                 <div style="display:flex;flex-direction:column;gap:8px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:rgba(0,0,0,0.2);border-radius:4px;">
@@ -429,53 +570,8 @@
                             <span style="font-weight:400;color:#bbb;font-size:10px;margin-left:4px;">${lastWho?lastWho:''}</span>
                         </div>
                     </div>
-                    <div style="margin-top:8px;display:flex;gap:6px;">
-                        <button id="sidekick-vault-sync-btn" style="
-                            flex:1;
-                            padding:8px;
-                            border-radius:4px;
-                            border:1px solid rgba(255,255,255,0.1);
-                            background:rgba(74,111,165,0.3);
-                            color:#fff;
-                            cursor:pointer;
-                            font-size:11px;
-                            font-weight:500;
-                            transition: all 0.2s;
-                        ">Sync from Vault</button>
-                        <button id="sidekick-vault-clear-btn" style="
-                            padding:8px 12px;
-                            border-radius:4px;
-                            border:1px solid rgba(255,255,255,0.1);
-                            background:rgba(255,255,255,0.05);
-                            color:#fff;
-                            cursor:pointer;
-                            font-size:11px;
-                            transition: all 0.2s;
-                        ">Clear</button>
-                    </div>
                 </div>
             `;
-
-            // attach handlers
-            const syncBtn = this._panel.querySelector('#sidekick-vault-sync-btn');
-            const clearBtn = this._panel.querySelector('#sidekick-vault-clear-btn');
-            
-            if (syncBtn) {
-                syncBtn.onmouseenter = () => syncBtn.style.background = 'rgba(74,111,165,0.5)';
-                syncBtn.onmouseleave = () => syncBtn.style.background = 'rgba(74,111,165,0.3)';
-                syncBtn.onclick = ()=> this.syncFromVaultPage(true);
-            }
-            
-            if (clearBtn) {
-                clearBtn.onmouseenter = () => clearBtn.style.background = 'rgba(255,255,255,0.1)';
-                clearBtn.onmouseleave = () => clearBtn.style.background = 'rgba(255,255,255,0.05)';
-                clearBtn.onclick = async ()=> { 
-                    if (confirm('Clear local vault ledger?')) { 
-                        await Ledger.clear(); 
-                        await this.renderPanel(); 
-                    } 
-                };
-            }
         },
 
         // Hook into WebSocket messages to capture live vault events
@@ -593,9 +689,15 @@
 
         // Parse vault page DOM to extract transactions (one-time full scan). This will only run when user visits vault page.
         async syncFromVaultPage(userTriggered){
+            console.log('[Sidekick] VaultTracker: syncFromVaultPage called, userTriggered:', userTriggered);
+            console.log('[Sidekick] VaultTracker: Current URL:', window.location.href);
+            
             try{
                 const wrap = document.querySelector('.vault-trans-wrap');
+                console.log('[Sidekick] VaultTracker: vault-trans-wrap element found:', !!wrap);
+                
                 if (!wrap){ 
+                    console.log('[Sidekick] VaultTracker: Vault page not detected');
                     if (userTriggered) {
                         if (window.SidekickModules?.Core?.NotificationSystem) {
                             window.SidekickModules.Core.NotificationSystem.show(
@@ -612,7 +714,10 @@
                 }
 
                 const listItems = wrap.querySelectorAll('ul li[transaction_id]');
+                console.log('[Sidekick] VaultTracker: Found', listItems.length, 'transaction items');
+                
                 if (!listItems || !listItems.length){ 
+                    console.log('[Sidekick] VaultTracker: No transactions found');
                     if (userTriggered) {
                         if (window.SidekickModules?.Core?.NotificationSystem) {
                             window.SidekickModules.Core.NotificationSystem.show(
@@ -632,9 +737,13 @@
                 for (const li of listItems){
                     try{
                         const tx = this.parseVaultListItem(li);
+                        console.log('[Sidekick] VaultTracker: Parsed transaction:', tx);
                         if (!tx) continue;
                         const addedNow = await Ledger.addTransaction(tx);
-                        if (addedNow) added++;
+                        if (addedNow) {
+                            added++;
+                            console.log('[Sidekick] VaultTracker: Transaction added:', tx.id);
+                        }
                     }catch(e){ console.error('[Sidekick] VaultTracker syncFromVaultPage parse error', e, li); }
                 }
                 if (added>0) await this.renderPanel();
@@ -697,9 +806,11 @@
                 this._panel = null;
             }
             // Mark as not visible and save state
-            this._windowState.isVisible = false;
-            await this.saveWindowState();
-            console.log('[Sidekick] VaultTracker: Window closed and state saved');
+            if (this._windowState) {
+                this._windowState.isVisible = false;
+                await this.saveWindowState();
+                console.log('[Sidekick] VaultTracker: Window closed and state saved:', JSON.stringify(this._windowState));
+            }
         }
     };
 
@@ -707,6 +818,54 @@
     window.SidekickModules.VaultTracker = VaultTracker;
     window.SidekickModules.VaultTracker.Ledger = Ledger;
 
+    // Helper functions for debugging and configuration
+    window.configureVaultTracker = async function() {
+        const playerName = prompt('Enter your Torn username (case-sensitive):', '');
+        const spouseName = prompt('Enter your spouse/partner username (case-sensitive):', '');
+        
+        if (playerName || spouseName) {
+            const settings = {
+                playerName: playerName || null,
+                playerId: null, // Will be set when we have API access
+                spouseName: spouseName || null,
+                spouseId: null // Will be set when we have API access
+            };
+            
+            await VaultTracker.settings(settings);
+            console.log('[Sidekick] VaultTracker: Settings saved!', settings);
+            console.log('[Sidekick] VaultTracker: Recomputing balances with new names...');
+            
+            await Ledger.recomputeBalances();
+            await VaultTracker.renderPanel();
+            
+            console.log('[Sidekick] VaultTracker: Configuration complete! Balances updated.');
+            alert('Vault Tracker configured successfully! Your balances should now display correctly.');
+        }
+    };
+    
+    window.debugVaultTracker = async function() {
+        const ledgerData = Ledger.data;
+        const settings = await VaultTracker.settings();
+        const balances = Ledger.getBalances();
+        
+        console.log('=== VAULT TRACKER DEBUG ===');
+        console.log('Settings:', settings);
+        console.log('Total Transactions:', ledgerData.order.length);
+        console.log('Balances:', balances);
+        console.log('Last Change:', ledgerData.lastChange);
+        console.log('Recent Transactions:', ledgerData.order.slice(-5).map(id => ledgerData.transactions[id]));
+        console.log('===========================');
+        
+        return {
+            settings,
+            transactions: ledgerData.order.length,
+            balances,
+            lastChange: ledgerData.lastChange
+        };
+    };
+
     console.log('[Sidekick] VaultTracker module loaded');
+    console.log('[Sidekick] VaultTracker: To configure player names, run: configureVaultTracker()');
+    console.log('[Sidekick] VaultTracker: To debug data, run: debugVaultTracker()');
 
 })();
