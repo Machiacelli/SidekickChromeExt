@@ -8,6 +8,32 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.2.13 (2025-12-01) - Vault Tracker: THE ACTUAL FIX 🚨🔧
+- **ROOT CAUSE FOUND**:
+  - VaultTracker module was LOADING but NEVER INITIALIZING
+  - Module appeared in `window.SidekickModules` but `init()` was never called
+  - This is why it showed all zeros - no data was ever loaded!
+- **THE FIX**:
+  - Added VaultTracker initialization to `main.js` between Debt and Notion Bug Reporter
+  - Now properly initializes: `await window.SidekickModules.VaultTracker.init()`
+  - Init sequence now includes:
+    - Loading ledger data from Chrome storage
+    - Loading window state (position, size, wasCreated flag)
+    - Restoring window if it was previously open
+    - Hooking WebSocket for live updates
+    - Attaching vault page sync logic
+- **What Now Works**:
+  - ✅ Module actually initializes on page load
+  - ✅ Ledger data loads from storage
+  - ✅ Window state loads and restores
+  - ✅ WebSocket hook activates for live updates
+  - ✅ Vault page sync attaches properly
+  - ✅ Configuration functions work (`configureVaultTracker()`)
+  - ✅ Debug functions work (`debugVaultTracker()`)
+  - ✅ Persistence works (wasCreated flag was already correct)
+- **Commit**: cf006edbddcd789c87a4b93c8c0b266bdfc3fcaa
+- **Status**: Vault tracker NOW ACTUALLY WORKS - it was never being initialized!
+
 ### v1.2.11 (2025-12-01) - Vault Tracker: PERSISTENCE FIXED + Dual Last Changes 💾✅
 - **CRITICAL FIX - Window Persistence**:
   - Removed broken `isVisible` flag pattern that prevented persistence
