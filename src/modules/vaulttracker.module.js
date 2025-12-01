@@ -186,6 +186,15 @@
             await Ledger.load();
             await this.loadWindowState();
             
+            // If window was previously created, restore it (like notepad does)
+            if (this._windowState && this._windowState.wasCreated) {
+                console.log('[Sidekick] VaultTracker: Restoring window from previous session');
+                this.setupUI();
+                await this.renderPanel();
+            } else {
+                console.log('[Sidekick] VaultTracker: No window to restore');
+            }
+            
             this.hookWebSocket();
             this.attachVaultPageSync();
             this.initDone = true;
@@ -206,7 +215,8 @@
                         y: 10,
                         width: 320,
                         height: 280,
-                        pinned: false
+                        pinned: false,
+                        wasCreated: false
                     };
                     console.log('[Sidekick] VaultTracker: Using default window state');
                 }
@@ -346,7 +356,8 @@
                 // Add button handlers
                 this.attachWindowControls(container);
                 
-                // Save initial state
+                // Mark as created and save state
+                this._windowState.wasCreated = true;
                 this.saveWindowState();
                 
                 console.log('[Sidekick] VaultTracker: UI created');
@@ -811,6 +822,11 @@
             if (this._panel) {
                 this._panel.remove();
                 this._panel = null;
+            }
+            // Mark as not created so it doesn't restore
+            if (this._windowState) {
+                this._windowState.wasCreated = false;
+                await this.saveWindowState();
             }
             console.log('[Sidekick] VaultTracker: Window closed');
         }
