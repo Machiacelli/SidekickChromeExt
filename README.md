@@ -8,6 +8,26 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.2.6 (2025-12-01) - Mug Calculator: Fixed Data + Clothing Store Protection 🏢✔️
+- **Mug Calculator**: Fixed broken data extraction and added Clothing Store protection
+- **Critical Bug Fixes**:
+  - Fixed API response parsing (level/status/money now display correctly)
+  - Added `profile` selection support in background.js
+  - Corrected data extraction from Torn API response structure
+- **New Feature - Clothing Store Protection**:
+  - Detects if target works at a Clothing Store company with 7+ stars
+  - Automatically applies 75% mug protection reduction
+  - Visual warning in popup showing protection status
+  - Company type 5 (Clothing Store) with 7+ stars = 75% reduction
+- **Technical Implementation**:
+  - Added company endpoint support in background.js
+  - Fetch company data to check type and star rating
+  - Updated `calculateMugAmount()` to accept protection flag
+  - Enhanced popup display with protection warning badge
+- **Formula**: `mugAmount = totalMoney × (plunderPercent / 100) × (1 + mugMerits × 0.25) × (hasProtection ? 0.25 : 1)`
+- **Status**: Mug calculator fully functional with accurate data and protection detection
+- **User Experience**: Popup now shows accurate player info with clear protection warnings
+
 ### v1.2.5 (2025-12-01) - REMOVED Third-Party Dependency 🔒🎯
 - **Security & Privacy**: Completely removed torn.synclayer.dev dependency
 - **100% Local Implementation**: All calculations now done client-side

@@ -146,15 +146,21 @@ const MugCalculatorModule = (() => {
         },
 
         // Calculate mug amount based on merits and plunder percentage
-        calculateMugAmount(totalMoney, mugMerits, plunderPercent) {
+        calculateMugAmount(totalMoney, mugMerits, plunderPercent, hasClothingStoreProtection = false) {
             // Base plunder percentage
             const basePlunder = plunderPercent / 100;
             
             // Each mug merit adds 25% to the plunder
             const meritBonus = 1 + (mugMerits * 0.25);
             
-            // Final mug amount
-            const mugAmount = Math.floor(totalMoney * basePlunder * meritBonus);
+            // Calculate base mug amount
+            let mugAmount = Math.floor(totalMoney * basePlunder * meritBonus);
+            
+            // Apply Clothing Store 7+ stars protection (75% reduction)
+            if (hasClothingStoreProtection) {
+                mugAmount = Math.floor(mugAmount * 0.25);
+                console.log('[Sidekick] Mug Calculator: Applied 75% Clothing Store protection');
+            }
             
             return mugAmount;
         },
@@ -202,6 +208,14 @@ const MugCalculatorModule = (() => {
             const backgroundColor = this.getStatusColor(status);
             const mugPercentage = totalMoney > 0 ? (mugAmount / totalMoney * 100) : 0;
             
+            // Add protection warning if applicable
+            const protectionWarning = playerData.hasClothingStoreProtection 
+                ? `<div style="background: #fff3cd; padding: 5px; margin-top: 5px; border-radius: 3px; border: 1px solid #ffc107;">
+                    ⚠️ <strong>75% Mug Protection Active</strong><br>
+                    <small>Clothing Store (7+ stars)</small>
+                   </div>` 
+                : '';
+            
             popup.innerHTML = `
                 <button class="popupCloseButton">×</button>
                 <strong>Level:</strong> ${playerData.level || 'Unknown'}<br>
@@ -209,6 +223,7 @@ const MugCalculatorModule = (() => {
                 <strong>Total Money:</strong> $${totalMoney.toLocaleString()}<br>
                 <strong>Potential Mug:</strong> ~${mugPercentage.toFixed(2)}% ≈ $${mugAmount.toLocaleString()}<br>
                 <strong>New Cost Per Item:</strong> $${newCostPerItem.toLocaleString()}
+                ${protectionWarning}
             `;
             popup.style.backgroundColor = backgroundColor;
             
@@ -274,7 +289,7 @@ const MugCalculatorModule = (() => {
             try {
                 console.log('[Sidekick] Mug Calculator: Fetching player data from Torn API...', playerId);
                 
-                // Use background script to fetch from Torn API (avoids CORS)
+                // Fetch directly from Torn API using background script
                 const response = await new Promise((resolve, reject) => {
                     chrome.runtime.sendMessage({
                         action: 'fetchTornApi',
@@ -290,19 +305,72 @@ const MugCalculatorModule = (() => {
                     });
                 });
 
-                console.log('[Sidekick] Mug Calculator: Torn API response:', response);
+                console.log('[Sidekick] Mug Calculator: Raw API response:', response);
 
                 if (!response.success) {
                     throw new Error(response.error || 'Failed to fetch player data');
                 }
 
-                // Extract relevant data from Torn API response
+                // Extract profile data from the response
+                const profile = response.profile;
+                if (!profile) {
+                    throw new Error('No profile data in response');
+                }
+                
+                // Check for Clothing Store company with 7+ stars (75% mug protection)
+                let hasClothingStoreProtection = false;
+                if (profile.job && profile.job.company_id) {
+                    console.log('[Sidekick] Mug Calculator: Player has job:', profile.job);
+                    
+                    // Fetch company details to check if it's a Clothing Store with 7+ stars
+                    try {
+                        const companyId = profile.job.company_id;
+                        const companyResponse = await new Promise((resolve, reject) => {
+                            chrome.runtime.sendMessage({
+                                action: 'fetchTornApi',
+                                apiKey: apiKey,
+                                selections: [],
+                                endpoint: `company/${companyId}`
+                            }, (response) => {
+                                if (chrome.runtime.lastError) {
+                                    reject(new Error(chrome.runtime.lastError.message));
+                                } else {
+                                    resolve(response);
+                                }
+                            });
+                        });
+                        
+                        if (companyResponse.success && companyResponse.company) {
+                            const company = companyResponse.company;
+                            const companyType = company.company_type || 0;
+                            const stars = company.stars || 0;
+                            
+                            console.log(`[Sidekick] Mug Calculator: Company type: ${companyType}, stars: ${stars}`);
+                            
+                            // Company type 5 is Clothing Store
+                            // 7+ stars provides 75% mug protection
+                            if (companyType === 5 && stars >= 7) {
+                                hasClothingStoreProtection = true;
+                                console.log('[Sidekick] Mug Calculator: ⚠️ Player has 75% Clothing Store protection!');
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('[Sidekick] Mug Calculator: Failed to fetch company data:', error);
+                    }
+                }
+
+                // Extract relevant data from profile
                 const playerData = {
-                    level: response.level,
-                    status: response.status,
-                    name: response.name,
-                    player_id: response.player_id
+                    level: profile.level || 0,
+                    status: profile.status || { state: 'Unknown', description: 'Unknown' },
+                    name: profile.name || 'Unknown',
+                    player_id: profile.player_id || playerId,
+                    faction: profile.faction || null,
+                    job: profile.job || null,
+                    hasClothingStoreProtection: hasClothingStoreProtection
                 };
+                
+                console.log('[Sidekick] Mug Calculator: Processed player data:', playerData);
                 
                 // Cache the result
                 dataCache[cacheKey] = { data: playerData, timestamp: now };
@@ -341,8 +409,13 @@ const MugCalculatorModule = (() => {
                 const playerData = await this.fetchPlayerData(playerId);
                 
                 if (playerData) {
-                    // Calculate mug amount client-side
-                    const mugAmount = this.calculateMugAmount(totalMoney, mugMerits, plunderPercent);
+                    // Calculate mug amount client-side (with protection check)
+                    const mugAmount = this.calculateMugAmount(
+                        totalMoney, 
+                        mugMerits, 
+                        plunderPercent, 
+                        playerData.hasClothingStoreProtection
+                    );
                     const newCostPerItem = Math.floor((totalMoney - mugAmount) / quantity);
                     
                     // Create and display popup

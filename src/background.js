@@ -131,7 +131,9 @@ async function handleTornApiCall(request) {
             bars: null,
             cooldowns: null,
             refills: null,
-            items: null
+            items: null,
+            profile: null,
+            company: null
         };
         
         // Fetch personal stats if requested
@@ -318,6 +320,68 @@ async function handleTornApiCall(request) {
                 
             } catch (error) {
                 console.warn('⚠️ Background: Items fetch failed (non-fatal):', error);
+            }
+        }
+        
+        // Fetch profile if requested (for mug calculator)
+        if (selections.includes('profile')) {
+            console.log('👤 Background: Fetching profile...');
+            try {
+                const profileResponse = await fetch(`https://api.torn.com/${endpoint}?selections=profile&key=${apiKey}`, {
+                    method: 'GET',
+                    headers: {
+                        'User-Agent': 'Sidekick Chrome Extension Background'
+                    }
+                });
+                
+                if (!profileResponse.ok) {
+                    throw new Error(`Profile fetch failed: ${profileResponse.status}`);
+                }
+                
+                const profileData = await profileResponse.json();
+                
+                if (profileData.error) {
+                    throw new Error(`API Error: ${profileData.error.error} (${profileData.error.code})`);
+                }
+                
+                // Store the complete profile data
+                results.profile = profileData;
+                console.log('✅ Background: Profile retrieved successfully');
+                
+            } catch (error) {
+                console.error('❌ Background: Profile fetch failed:', error);
+                throw error;
+            }
+        }
+        
+        // Fetch company data if endpoint is company/* (for mug calculator clothing store check)
+        if (endpoint.startsWith('company/')) {
+            console.log('🏢 Background: Fetching company data...');
+            try {
+                const companyResponse = await fetch(`https://api.torn.com/${endpoint}?key=${apiKey}`, {
+                    method: 'GET',
+                    headers: {
+                        'User-Agent': 'Sidekick Chrome Extension Background'
+                    }
+                });
+                
+                if (!companyResponse.ok) {
+                    throw new Error(`Company fetch failed: ${companyResponse.status}`);
+                }
+                
+                const companyData = await companyResponse.json();
+                
+                if (companyData.error) {
+                    throw new Error(`API Error: ${companyData.error.error} (${companyData.error.code})`);
+                }
+                
+                // Store company data
+                results.company = companyData;
+                console.log('✅ Background: Company data retrieved successfully');
+                
+            } catch (error) {
+                console.error('❌ Background: Company fetch failed:', error);
+                throw error;
             }
         }
         
