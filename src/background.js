@@ -113,8 +113,8 @@ const NOTION_DATABASE_ID = 'YOUR_NOTION_DATABASE_ID_HERE'; // Replace with your 
 function isNotionConfigured() {
     return NOTION_API_KEY !== 'YOUR_NOTION_API_KEY_HERE' && 
            NOTION_DATABASE_ID !== 'YOUR_NOTION_DATABASE_ID_HERE' &&
-           NOTION_API_KEY.length > 0 && 
-           NOTION_DATABASE_ID.length > 0;
+           NOTION_API_KEY.length > 10 && 
+           NOTION_DATABASE_ID.length > 10;
 }
 
 // Handle Torn API calls from content scripts (avoids CORS issues)

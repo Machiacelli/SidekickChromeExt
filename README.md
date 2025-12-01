@@ -8,6 +8,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.1.5 (2025-12-01)
+- **Training Blocker**: PROPERLY FIXED - Now only blocks gym section instead of entire page
+- **Technical Fixes**:
+  - Changed from `position: fixed` to `position: absolute` for training blocker overlay
+  - Overlay now appends to gym container instead of document body
+  - Added `position: relative` to gym container for proper positioning
+- **Status**: Training blocker correctly blocks only gym area
+
 ### v1.1.4 (2025-12-01)
 - **Training Blocker**: FINAL FIX - Added missing message handler in main.js
 - **Technical Fix**: Added `toggleTrainingBlocker` message handler that was missing from v1.1.3
