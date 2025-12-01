@@ -303,32 +303,99 @@
                         border-radius: 5px 5px 0 0;
                         user-select: none;
                     ">
-                        <div style="display: flex; align-items: center; gap: 6px; flex: 1;">
-                            <span style="font-size: 11px; font-weight: 600; color: #fff;">🏦 Vault Tracker</span>
-                            <span style="font-size: 9px; opacity: 0.7; color: #fff;">v${this.version}</span>
+                        <div style="display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0;">
+                            <span style="font-size: 11px; font-weight: 600; color: #fff;">Vault Tracker</span>
                         </div>
                         
-                        <div style="display: flex; align-items: center; gap: 3px;">
-                            <button class="pin-btn" style="
-                                background: none;
-                                border: none;
-                                color: rgba(255,255,255,0.8);
-                                cursor: pointer;
-                                font-size: 10px;
-                                padding: 1px 3px;
-                                border-radius: 2px;
-                                transition: background 0.2s;
-                            " title="${this._windowState.pinned ? 'Unpin' : 'Pin'}">${this._windowState.pinned ? '📌' : '📍'}</button>
+                        <div style="display: flex; align-items: center; gap: 3px; min-width: 32px; flex-shrink: 0;">
+                            <div class="vault-dropdown" style="position: relative;">
+                                <button class="dropdown-btn" style="
+                                    background: none;
+                                    border: none;
+                                    color: rgba(255,255,255,0.8);
+                                    cursor: pointer;
+                                    font-size: 10px;
+                                    padding: 1px 3px;
+                                    border-radius: 2px;
+                                    transition: background 0.2s;
+                                    min-width: 12px;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                " title="Options">⚙️</button>
+                                <div class="dropdown-content" style="
+                                    display: none;
+                                    position: absolute;
+                                    background: #333;
+                                    min-width: 140px;
+                                    box-shadow: 0px 8px 16px rgba(0,0,0,0.3);
+                                    z-index: 1001;
+                                    border-radius: 4px;
+                                    border: 1px solid #555;
+                                    top: 100%;
+                                    right: 0;
+                                ">
+                                    <button class="vault-sync-option" style="
+                                        background: none;
+                                        border: none;
+                                        color: #fff;
+                                        padding: 8px 12px;
+                                        width: 100%;
+                                        text-align: left;
+                                        cursor: pointer;
+                                        font-size: 12px;
+                                        transition: background 0.2s;
+                                    ">🔄 Sync from Vault</button>
+                                    <button class="vault-configure-option" style="
+                                        background: none;
+                                        border: none;
+                                        color: #fff;
+                                        padding: 8px 12px;
+                                        width: 100%;
+                                        text-align: left;
+                                        cursor: pointer;
+                                        font-size: 12px;
+                                        transition: background 0.2s;
+                                    ">⚙️ Configure Names</button>
+                                    <button class="vault-clear-option" style="
+                                        background: none;
+                                        border: none;
+                                        color: #fff;
+                                        padding: 8px 12px;
+                                        width: 100%;
+                                        text-align: left;
+                                        cursor: pointer;
+                                        font-size: 12px;
+                                        transition: background 0.2s;
+                                    ">🗑️ Clear Ledger</button>
+                                    <button class="vault-pin-option" style="
+                                        background: none;
+                                        border: none;
+                                        color: #fff;
+                                        padding: 8px 12px;
+                                        width: 100%;
+                                        text-align: left;
+                                        cursor: pointer;
+                                        font-size: 12px;
+                                        transition: background 0.2s;
+                                    ">${this._windowState.pinned ? '📌 Unpin' : '📌 Pin'}</button>
+                                </div>
+                            </div>
                             <button class="close-btn" style="
-                                background: none;
+                                background: #dc3545;
                                 border: none;
-                                color: rgba(255,255,255,0.8);
+                                color: #fff;
                                 cursor: pointer;
-                                font-size: 12px;
-                                padding: 0 3px;
-                                border-radius: 2px;
+                                font-size: 14px;
+                                width: 16px;
+                                height: 16px;
+                                border-radius: 50%;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
                                 line-height: 1;
                                 transition: background 0.2s;
+                                padding: 0;
                             " title="Close">×</button>
                         </div>
                     </div>
@@ -442,6 +509,7 @@
             const pinOption = element.querySelector('.vault-pin-option');
             const syncOption = element.querySelector('.vault-sync-option');
             const clearOption = element.querySelector('.vault-clear-option');
+            const configureOption = element.querySelector('.vault-configure-option');
             const closeBtn = element.querySelector('.close-btn');
             
             console.log('[Sidekick] VaultTracker: Attaching window controls');
@@ -486,6 +554,25 @@
                     console.log('[Sidekick] VaultTracker: Sync clicked');
                     dropdownContent.style.display = 'none';
                     await this.syncFromVaultPage(true);
+                });
+            }
+
+            // Configure option
+            if (configureOption) {
+                configureOption.addEventListener('mouseenter', () => {
+                    configureOption.style.background = 'rgba(255,255,255,0.1)';
+                });
+                configureOption.addEventListener('mouseleave', () => {
+                    configureOption.style.background = 'none';
+                });
+                configureOption.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[Sidekick] VaultTracker: Configure clicked');
+                    dropdownContent.style.display = 'none';
+                    if (typeof window.configureVaultTracker === 'function') {
+                        await window.configureVaultTracker();
+                    }
                 });
             }
 
@@ -547,11 +634,13 @@
 
             const bal = Ledger.getBalances();
             const lastChanges = Ledger.getLastChange();
+            const settings = await this.settings();
             
             console.log('[Sidekick] VaultTracker: Rendering panel');
             console.log('[Sidekick] VaultTracker: Balances:', bal);
             console.log('[Sidekick] VaultTracker: Last changes:', lastChanges);
             console.log('[Sidekick] VaultTracker: Total transactions:', Ledger.data.order.length);
+            console.log('[Sidekick] VaultTracker: Settings:', settings);
             
             // Format last changes for both users
             const formatLastChange = (change) => {
@@ -567,6 +656,24 @@
             
             const youChange = formatLastChange(lastChanges.you);
             const spouseChange = formatLastChange(lastChanges.spouse);
+            
+            // Check if we need to show setup message
+            const hasTransactions = Ledger.data.order.length > 0;
+            const namesConfigured = settings.playerName || settings.spouseName;
+            
+            if (!hasTransactions || !namesConfigured) {
+                values.innerHTML = `
+                    <div style="display:flex;flex-direction:column;gap:12px;padding:8px;align-items:center;justify-content:center;height:100%;text-align:center;">
+                        <div style="font-size:32px;opacity:0.3;">🏦</div>
+                        <div style="font-size:12px;opacity:0.7;line-height:1.5;">
+                            ${!namesConfigured ? 
+                                'Configure player names to track balances.<br><br>Click ⚙️ → Configure Names' : 
+                                'No vault transactions yet.<br><br>Visit the vault page and click ⚙️ → Sync from Vault'}
+                        </div>
+                    </div>
+                `;
+                return;
+            }
             
             values.innerHTML = `
                 <div style="display:flex;flex-direction:column;gap:8px;">
