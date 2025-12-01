@@ -8,6 +8,28 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.2.5 (2025-12-01) - REMOVED Third-Party Dependency 🔒🎯
+- **Security & Privacy**: Completely removed torn.synclayer.dev dependency
+- **100% Local Implementation**: All calculations now done client-side
+  - No more sending API keys to third-party servers
+  - No external data logging or tracking
+  - Complete control over your data
+- **Technical Changes**:
+  - Mug calculations performed locally using documented formula
+  - Direct Torn API calls via background script (official API only)
+  - Removed `handleMugCalculatorRequest()` from background.js
+  - Rewrote `fetchPlayerData()` to use Torn's user profile endpoint
+  - Added `calculateMugAmount()` for client-side calculations
+  - Enhanced status formatting and color coding
+- **Benefits**:
+  - ✅ More secure (no third-party API key exposure)
+  - ✅ More private (no external logging)
+  - ✅ More reliable (no dependency on external services)
+  - ✅ Faster (one less network hop)
+  - ✅ Self-contained (works even if third-party goes down)
+- **Formula**: `mugAmount = totalMoney × (plunderPercent / 100) × (1 + mugMerits × 0.25)`
+- **Status**: Fully functional with zero external dependencies
+
 ### v1.2.4 (2025-12-01) - CRITICAL FIX: Mug Calculator CORS Issue 🐛✔️
 - **Critical Bug Fix**: Fixed CORS policy error blocking mug calculator
   - Root cause: Content scripts cannot make direct cross-origin fetch requests

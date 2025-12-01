@@ -1,12 +1,12 @@
 /**
  * Mug Calculator Module
  * Calculates potential mug value from Item Market and Bazaar listings
- * Based on the Torn Item Market Helper userscript
+ * 100% client-side - uses only Torn's official API, no third-party backends
+ * Version: 2.0.0 - Fully Local Implementation
  */
 
 const MugCalculatorModule = (() => {
-    const BACKEND_BASE_URL = "https://torn.synclayer.dev";
-    const CACHE_DURATION = 5000;
+    const CACHE_DURATION = 5000; // Cache player data for 5 seconds
     const dataCache = {};
     let currentPopups = [];
     const processedRows = new Set();
@@ -145,20 +145,73 @@ const MugCalculatorModule = (() => {
             return match ? match[1] : null;
         },
 
-        createInfoPopup(data, newCostPerItem) {
+        // Calculate mug amount based on merits and plunder percentage
+        calculateMugAmount(totalMoney, mugMerits, plunderPercent) {
+            // Base plunder percentage
+            const basePlunder = plunderPercent / 100;
+            
+            // Each mug merit adds 25% to the plunder
+            const meritBonus = 1 + (mugMerits * 0.25);
+            
+            // Final mug amount
+            const mugAmount = Math.floor(totalMoney * basePlunder * meritBonus);
+            
+            return mugAmount;
+        },
+
+        // Determine background color based on status
+        getStatusColor(status) {
+            const statusLower = status.toLowerCase();
+            if (statusLower.includes('hospital')) return '#ffcccc'; // Light red
+            if (statusLower.includes('jail')) return '#ffe6cc'; // Light orange
+            if (statusLower.includes('okay') || statusLower.includes('idle')) return '#ccffcc'; // Light green
+            if (statusLower.includes('traveling') || statusLower.includes('abroad')) return '#cce6ff'; // Light blue
+            return '#f0f0f0'; // Light gray default
+        },
+
+        // Format status text
+        formatStatus(statusObj) {
+            if (!statusObj) return 'Unknown';
+            
+            const { state, description, until } = statusObj;
+            
+            if (state === 'Okay' || state === 'Idle') {
+                return 'Online';
+            }
+            
+            if (state === 'Hospital') {
+                const timeLeft = until ? Math.max(0, until - Date.now() / 1000) : 0;
+                const hours = Math.floor(timeLeft / 3600);
+                const minutes = Math.floor((timeLeft % 3600) / 60);
+                if (hours > 0) {
+                    return `Hospital (${hours}h ${minutes}m)`;
+                } else if (minutes > 0) {
+                    return `Hospital (${minutes}m)`;
+                }
+                return 'Hospital';
+            }
+            
+            return description || state || 'Unknown';
+        },
+
+        createInfoPopup(playerData, mugAmount, newCostPerItem, totalMoney) {
             const popup = document.createElement("div");
             popup.className = "infoPopup";
+            
+            const status = this.formatStatus(playerData.status);
+            const backgroundColor = this.getStatusColor(status);
+            const mugPercentage = totalMoney > 0 ? (mugAmount / totalMoney * 100) : 0;
+            
             popup.innerHTML = `
                 <button class="popupCloseButton">×</button>
-                <strong>Level:</strong> ${data.level}<br>
-                <strong>Status:</strong> ${data.status}<br>
-                <strong>Hospital:</strong> ${data.hospital_time}<br>
-                <strong>Total Money:</strong> $${data.total_money.toLocaleString()}<br>
-                ${data.clothing_note ? `<strong>${data.clothing_note}</strong><br>` : ""}
-                <strong>Potential Mug:</strong> ~${data.mug_percentage.toFixed(2)}% ≈ $${data.potential_mug.toLocaleString()}<br>
+                <strong>Level:</strong> ${playerData.level || 'Unknown'}<br>
+                <strong>Status:</strong> ${status}<br>
+                <strong>Total Money:</strong> $${totalMoney.toLocaleString()}<br>
+                <strong>Potential Mug:</strong> ~${mugPercentage.toFixed(2)}% ≈ $${mugAmount.toLocaleString()}<br>
                 <strong>New Cost Per Item:</strong> $${newCostPerItem.toLocaleString()}
             `;
-            popup.style.backgroundColor = data.background_color;
+            popup.style.backgroundColor = backgroundColor;
+            
             const closeButton = popup.querySelector(".popupCloseButton");
             closeButton.addEventListener("click", () => {
                 popup.remove();
@@ -197,7 +250,8 @@ const MugCalculatorModule = (() => {
             currentPopups = [];
         },
 
-        async fetchUserData(playerId, mugMerits, plunderPercent, totalMoney, threshold, available) {
+        // Fetch player data from Torn API (client-side, no third-party backend)
+        async fetchPlayerData(playerId) {
             // Get API key from Chrome storage
             const apiKey = await window.SidekickModules.Core.ChromeStorage.get('sidekick_api_key');
             if (!apiKey) {
@@ -208,31 +262,25 @@ const MugCalculatorModule = (() => {
                 return null;
             }
 
-            const requestData = {
-                api_key: apiKey,
-                player_id: playerId,
-                mug_merits: mugMerits,
-                plunder_percent: plunderPercent,
-                total_money: totalMoney,
-                threshold: threshold,
-                available: available,
-            };
-            
-            const cacheKey = `${apiKey}_${playerId}_${mugMerits}_${plunderPercent}_${totalMoney}_${threshold}_${available}`;
+            // Check cache first
+            const cacheKey = `player_${playerId}`;
             const now = Date.now();
             
             if (dataCache[cacheKey] && (now - dataCache[cacheKey].timestamp < CACHE_DURATION)) {
+                console.log('[Sidekick] Mug Calculator: Using cached data for player', playerId);
                 return dataCache[cacheKey].data;
             }
 
             try {
-                console.log('[Sidekick] Mug Calculator: Sending request through background script...');
+                console.log('[Sidekick] Mug Calculator: Fetching player data from Torn API...', playerId);
                 
-                // Send request through background script to avoid CORS
+                // Use background script to fetch from Torn API (avoids CORS)
                 const response = await new Promise((resolve, reject) => {
                     chrome.runtime.sendMessage({
-                        action: 'fetchMugCalculatorData',
-                        data: requestData
+                        action: 'fetchTornApi',
+                        apiKey: apiKey,
+                        selections: ['profile'],
+                        userId: playerId
                     }, (response) => {
                         if (chrome.runtime.lastError) {
                             reject(new Error(chrome.runtime.lastError.message));
@@ -242,17 +290,27 @@ const MugCalculatorModule = (() => {
                     });
                 });
 
-                console.log('[Sidekick] Mug Calculator: Background response:', response);
+                console.log('[Sidekick] Mug Calculator: Torn API response:', response);
 
-                if (response.success) {
-                    const data = response.data;
-                    dataCache[cacheKey] = { data: data, timestamp: now };
-                    return data;
-                } else {
-                    throw new Error(response.error || 'Unknown error from background script');
+                if (!response.success) {
+                    throw new Error(response.error || 'Failed to fetch player data');
                 }
+
+                // Extract relevant data from Torn API response
+                const playerData = {
+                    level: response.level,
+                    status: response.status,
+                    name: response.name,
+                    player_id: response.player_id
+                };
+                
+                // Cache the result
+                dataCache[cacheKey] = { data: playerData, timestamp: now };
+                
+                return playerData;
+                
             } catch (error) {
-                console.error("[Sidekick] Mug Calculator: Error fetching user data:", error);
+                console.error("[Sidekick] Mug Calculator: Error fetching player data:", error);
                 if (window.SidekickModules?.Core?.NotificationSystem) {
                     window.SidekickModules.Core.NotificationSystem.show('Mug Calculator', `Failed to fetch data: ${error.message}`, 'error', 3000);
                 }
@@ -278,11 +336,17 @@ const MugCalculatorModule = (() => {
                 }
                 
                 console.log('[Sidekick] Mug Calculator: Fetching data for player:', playerId);
-                const data = await this.fetchUserData(playerId, mugMerits, plunderPercent, totalMoney, threshold, quantity);
                 
-                if (data) {
-                    const newCostPerItem = Math.floor((totalMoney - data.potential_mug) / quantity);
-                    const popup = this.createInfoPopup(data, newCostPerItem);
+                // Fetch player data from Torn API
+                const playerData = await this.fetchPlayerData(playerId);
+                
+                if (playerData) {
+                    // Calculate mug amount client-side
+                    const mugAmount = this.calculateMugAmount(totalMoney, mugMerits, plunderPercent);
+                    const newCostPerItem = Math.floor((totalMoney - mugAmount) / quantity);
+                    
+                    // Create and display popup
+                    const popup = this.createInfoPopup(playerData, mugAmount, newCostPerItem, totalMoney);
                     document.body.appendChild(popup);
                     this.positionPopup(icon, popup);
                     popup.classList.add("visible");

@@ -61,13 +61,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true; // Keep message channel open for async response
             
-        case 'fetchMugCalculatorData':
-            // Handle mug calculator backend requests (avoids CORS)
-            handleMugCalculatorRequest(request.data)
-                .then(result => sendResponse(result))
-                .catch(error => sendResponse({ success: false, error: error.message }));
-            return true; // Keep message channel open for async response
-            
         case 'getStorageData':
             // Helper for content scripts to access storage
             chrome.storage.local.get(request.keys, (result) => {
@@ -415,63 +408,6 @@ async function handleBugReport(bugData) {
             };
         }
         
-        return {
-            success: false,
-            error: error.message
-        };
-    }
-}
-
-// Handle Mug Calculator backend requests (avoids CORS issues)
-async function handleMugCalculatorRequest(requestData) {
-    try {
-        console.log('💰 Background: Making mug calculator backend request:', requestData);
-        
-        const { api_key, player_id, mug_merits, plunder_percent, total_money, threshold, available } = requestData;
-        
-        if (!api_key) {
-            throw new Error('No API key provided');
-        }
-        
-        if (!player_id) {
-            throw new Error('No player ID provided');
-        }
-        
-        // Make request to mug calculator backend
-        const response = await fetch('https://torn.synclayer.dev/api/torn-data', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                api_key,
-                player_id,
-                mug_merits,
-                plunder_percent,
-                total_money,
-                threshold,
-                available
-            })
-        });
-        
-        console.log('📡 Mug calculator backend response status:', response.status);
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('❌ Mug calculator backend error:', errorText);
-            throw new Error(`Backend error: ${response.status} - ${errorText}`);
-        }
-        
-        const data = await response.json();
-        console.log('✅ Mug calculator data received:', data);
-        
-        return {
-            success: true,
-            data: data
-        };
-        
-    } catch (error) {
-        console.error('❌ Mug calculator request failed:', error);
         return {
             success: false,
             error: error.message
