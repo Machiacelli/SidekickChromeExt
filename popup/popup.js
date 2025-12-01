@@ -63,20 +63,41 @@ document.addEventListener('DOMContentLoaded', function() {
     if (trainingBlockerToggle) {
         trainingBlockerToggle.addEventListener('change', () => {
             const isEnabled = trainingBlockerToggle.checked;
-            chrome.tabs.query({ active: true, currentWindow: true, url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function(tabs) {
-                if (tabs[0]) {
-                    chrome.tabs.sendMessage(tabs[0].id, {
-                        action: 'toggleTrainingBlocker',
-                        enabled: isEnabled
-                    }).then(response => {
-                        if (response && response.success) {
-                            showMessage(isEnabled ? 'Training blocked!' : 'Training unblocked!', 'success');
-                        }
-                    }).catch(err => {
-                        console.error('Failed to toggle training blocker:', err);
-                    });
+            
+            // Check if user is on gym page specifically
+            chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+                if (tabs[0] && tabs[0].url) {
+                    const isOnGym = tabs[0].url.includes('torn.com/gym.php');
+                    
+                    if (!isOnGym && isEnabled) {
+                        showMessage('Please navigate to gym.php to enable training blocker', 'warning');
+                        trainingBlockerToggle.checked = false;
+                        return;
+                    }
+                    
+                    if (tabs[0].url.includes('torn.com')) {
+                        chrome.tabs.sendMessage(tabs[0].id, {
+                            action: 'toggleTrainingBlocker',
+                            enabled: isEnabled
+                        }).then(response => {
+                            if (response && response.success) {
+                                showMessage(isEnabled ? 'Training blocked! Refresh gym page to see blocker.' : 'Training unblocked!', 'success');
+                            } else {
+                                showMessage('Failed to toggle. Try refreshing the page.', 'warning');
+                                trainingBlockerToggle.checked = !isEnabled;
+                            }
+                        }).catch(err => {
+                            console.error('Failed to toggle training blocker:', err);
+                            showMessage('Error toggling blocker. Try refreshing the page.', 'warning');
+                            trainingBlockerToggle.checked = !isEnabled;
+                        });
+                    } else {
+                        showMessage('Please navigate to Torn.com', 'warning');
+                        trainingBlockerToggle.checked = false;
+                    }
                 } else {
                     showMessage('Please navigate to Torn.com', 'warning');
+                    trainingBlockerToggle.checked = false;
                 }
             });
         });

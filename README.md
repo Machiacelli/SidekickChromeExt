@@ -8,6 +8,22 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.1.2 (2025-12-01)
+- **Training Blocker Fixes**:
+  - Removed training blocker toggle from settings page (now only in popup)
+  - Fixed training blocker to only work on gym.php page specifically
+  - Added URL validation - toggle only activates when on gym.php
+  - Improved error messages with clear instructions
+  - Added page refresh suggestion after enabling blocker
+- **Bug Reporter Updates**:
+  - Disabled Notion bug reporter (requires API configuration)
+  - Added helpful message directing users to GitHub Issues
+  - Clear notification that setup is required for Notion integration
+- **UX Improvements**:
+  - Popup toggle now validates current page URL before activating
+  - Better feedback messages when not on correct page
+  - Training blocker only monitors and blocks on actual gym page
+
 ### v1.1.1 (2025-12-01)
 - **Training Blocker Improvements**:
   - Moved training blocker toggle to extension popup for easier access

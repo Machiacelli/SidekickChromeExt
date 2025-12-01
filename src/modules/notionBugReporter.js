@@ -30,12 +30,33 @@
         
         // Open the bug reporter modal
         openReporter() {
+            // Show setup required message instead of opening reporter
+            this.showSetupMessage();
+            return;
+            
+            // Original code disabled - requires Notion API setup
+            /*
             // Check if modal already exists
             if (document.getElementById('sidekick-bug-reporter')) {
                 return;
             }
             
             this.createModal();
+            */
+        },
+        
+        // Show message that Notion setup is required
+        showSetupMessage() {
+            if (window.SidekickModules?.UI?.showNotification) {
+                window.SidekickModules.UI.showNotification(
+                    'Bug Reporter Setup Required',
+                    'The Notion bug reporter requires API configuration. Please report bugs via GitHub Issues instead.',
+                    'info',
+                    5000
+                );
+            } else {
+                alert('Bug Reporter Setup Required\n\nThe Notion bug reporter requires API configuration.\nPlease report bugs via GitHub Issues at:\nhttps://github.com/Machiacelli/SidekickChromeExt/issues');
+            }
         },
         
         // Create the bug reporter modal

@@ -138,6 +138,12 @@
         createTrainingBlock() {
             console.log('🔨 Creating training block...');
             
+            // Only work on gym.php page
+            if (!window.location.href.includes('/gym.php')) {
+                console.log('⚠️ Not on gym.php - skipping block creation');
+                return;
+            }
+            
             // Remove existing block if any
             this.removeTrainingBlock();
 
@@ -147,7 +153,7 @@
                            document.querySelector('[class*="gym"]');
             
             if (!gymRoot) {
-                console.log('⚠️ Gym not found on this page - no overlay created');
+                console.log('⚠️ Gym element not found yet, will retry...');
                 return;
             }
 
@@ -221,6 +227,11 @@
             if (this.observer) return;
 
             this.observer = new MutationObserver((mutations) => {
+                // Only work on gym.php
+                if (!window.location.href.includes('/gym.php')) {
+                    return;
+                }
+                
                 mutations.forEach((mutation) => {
                     if (mutation.type === 'childList') {
                         // Check if gym content was added and we're still blocking
