@@ -8,6 +8,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.0.9 (2025-12-01)
+- **Bug Fixes**:
+  - Removed yellow outline/border when cooldown timer windows are pinned
+  - Fixed training blocker overlay not displaying properly - now shows full-screen image
+  - Inventory sorter no longer adds duplicate price text, provides pure sorting functionality
+- **Improvements**:
+  - Pinned timers now have cleaner appearance without visual indicators
+  - Training blocker overlay properly covers entire screen with DOMS image
+  - Inventory sorter works seamlessly with existing Torn/TornTools market values
+
 ### v1.1.0 (2025-11-10)
 - **UI Improvements**: 
   - Increased sidebar width from 320px to 400px for better content display

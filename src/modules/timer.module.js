@@ -1366,11 +1366,8 @@
             if (verifyElement) {
                 console.log(`✅ Timer ${timer.id} successfully rendered and verified`);
                 
-                // Apply pinned styling if timer is pinned
-                if (timer.pinned) {
-                    verifyElement.style.border = '2px solid #ffd700';
-                    verifyElement.style.boxShadow = '0 0 10px rgba(255, 215, 0, 0.3)';
-                }
+                // Pinned timers have no special visual styling
+                // They simply cannot be moved or resized
             } else {
                 console.error(`� Timer ${timer.id} failed to render properly`);
                 return;
@@ -1483,14 +1480,8 @@
                         // Update button text
                         pinOption.textContent = timer.pinned ? '📌 Unpin' : '📌 Pin';
                         
-                        // Update visual indication
-                        if (timer.pinned) {
-                            element.style.border = '2px solid #ffd700';
-                            element.style.boxShadow = '0 0 10px rgba(255, 215, 0, 0.3)';
-                        } else {
-                            element.style.border = '1px solid #68, 68, 68';
-                            element.style.boxShadow = 'rgba(0, 0, 0, 0.4) 0px 2px 8px';
-                        }
+                        // No visual changes - pinned timers look the same
+                        // They simply cannot be moved or resized
                         
                         // Close dropdown
                         dropdownContent.style.display = 'none';

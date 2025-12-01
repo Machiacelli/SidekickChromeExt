@@ -139,21 +139,22 @@
             this.blockingOverlay = document.createElement('div');
             this.blockingOverlay.id = 'sidekick-training-block';
             this.blockingOverlay.style.cssText = `
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background-image: url('https://i.imgur.com/DExI6Og.png');
-                background-size: cover;
-                background-position: center;
-                background-repeat: no-repeat;
-                z-index: 10000;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 8px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                background-image: url('https://i.imgur.com/DExI6Og.png') !important;
+                background-size: cover !important;
+                background-position: center !important;
+                background-repeat: no-repeat !important;
+                z-index: 999999 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                pointer-events: all !important;
             `;
 
             // Add minimal overlay text (optional - can be removed entirely)
@@ -174,12 +175,8 @@
                 </div>
             `;
 
-            // Position overlay correctly
-            if (getComputedStyle(gymRoot).position === 'static') {
-                gymRoot.style.position = 'relative';
-            }
-
-            gymRoot.appendChild(this.blockingOverlay);
+            // Append to body for full screen coverage instead of just gym root
+            document.body.appendChild(this.blockingOverlay);
 
             console.log('🚫 Training block overlay created with custom image');
         },
