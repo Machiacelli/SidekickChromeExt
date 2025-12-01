@@ -1487,7 +1487,7 @@
                         dropdownContent.style.display = 'none';
                         
                         // Save timer state
-                        self.saveTimersWithRetry();
+                        self.saveTimers();
                         
                         console.log(`⏰ Timer ${timer.pinned ? 'pinned' : 'unpinned'}`);
                     });

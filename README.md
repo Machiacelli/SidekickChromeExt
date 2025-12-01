@@ -8,6 +8,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.1.7 (2025-12-01)
+- **Timer Module**: FIXED - Corrected missing function `saveTimersWithRetry` → `saveTimers`
+- **Bug Reporter**: Enhanced error handling for invalid API tokens
+- **Technical Fixes**:
+  - Fixed `Uncaught TypeError: self.saveTimersWithRetry is not a function`
+  - Added better Notion API validation and error messages
+  - Improved error handling for 401 unauthorized responses
+- **Status**: Chrome console errors resolved, timer functions working properly
+- **Note**: If getting Notion 401 errors, verify API credentials in background.js
+
 ### v1.1.6 (2025-12-01)
 - **Training Blocker**: Fixed z-index issue - modals now appear above gym blocker image
 - **Technical Fixes**:

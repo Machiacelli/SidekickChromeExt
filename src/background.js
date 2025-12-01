@@ -355,9 +355,19 @@ async function handleBugReport(bugData) {
             };
         }
         
+        // Additional API key validation
+        if (NOTION_API_KEY === 'YOUR_NOTION_API_KEY_HERE' || NOTION_DATABASE_ID === 'YOUR_NOTION_DATABASE_ID_HERE') {
+            console.warn('⚠️ Notion API still using placeholder values');
+            return {
+                success: false,
+                error: 'NOTION_NOT_CONFIGURED',
+                message: 'Please replace the placeholder API values in background.js with your actual Notion credentials.'
+            };
+        }
+        
         console.log('🐛 Sending bug report to Notion:', bugData);
-        console.log('🔑 Using API key:', NOTION_API_KEY ? 'API key present' : 'API key missing');
-        console.log('🗂️ Using database ID:', NOTION_DATABASE_ID);
+        console.log('🔑 Using API key length:', NOTION_API_KEY.length);
+        console.log('🗂️ Using database ID length:', NOTION_DATABASE_ID.length);
         
         // Prepare Notion API payload
         const notionPayload = {
