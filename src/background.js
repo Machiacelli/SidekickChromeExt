@@ -105,10 +105,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-// Notion API Configuration - Encoded to avoid GitHub secret scanning
-// These are decoded at runtime for the extension to work
-const NOTION_API_KEY = atob('bnRuXzQzMTY1MTc5MDUzOXh3UE5hZ3pOOWtaWlFlbTJSc3hvNThqb3pWTFY3SWQyWUE=');
-const NOTION_DATABASE_ID = atob('MmFmYTBjZDg1Y2FkODBmN2JhNGNmZTQ4OTA1MGFhNGQ=');
+// Bug reporting is handled securely through Cloudflare Worker
+// No API keys stored in the extension code
 
 // Handle Torn API calls from content scripts (avoids CORS issues)
 async function handleTornApiCall(request) {
@@ -335,83 +333,47 @@ async function handleTornApiCall(request) {
     }
 }
 
-// Handle bug reports to Notion
+// Handle bug reports via secure Cloudflare Worker (no API keys in extension)
 async function handleBugReport(bugData) {
     try {
-        console.log('🐛 Sending bug report to Notion:', bugData);
+        console.log('🐛 Sending bug report via secure worker:', bugData);
         
-        // Prepare Notion API payload matching the exact database structure
-        const notionPayload = {
-            parent: {
-                database_id: NOTION_DATABASE_ID
-            },
-            properties: {
-                Name: {
-                    title: [
-                        {
-                            text: {
-                                content: bugData.title || 'Bug Report'
-                            }
-                        }
-                    ]
-                },
-                Description: {
-                    rich_text: [
-                        {
-                            text: {
-                                content: bugData.description || 'No description provided'
-                            }
-                        }
-                    ]
-                },
-                Priority: {
-                    select: {
-                        name: bugData.priority || 'Medium'
-                    }
-                },
-                Metadata: {
-                    rich_text: [
-                        {
-                            text: {
-                                content: JSON.stringify(bugData.metadata || {
-                                    timestamp: new Date().toISOString(),
-                                    url: window.location?.href || 'unknown',
-                                    extensionVersion: chrome.runtime.getManifest().version
-                                })
-                            }
-                        }
-                    ]
-                }
+        // Prepare payload for Cloudflare Worker
+        const payload = {
+            title: bugData.title || 'Bug Report',
+            description: bugData.description || 'No description provided',
+            priority: bugData.priority || 'Medium',
+            metadata: bugData.metadata || {
+                timestamp: new Date().toISOString(),
+                extensionVersion: chrome.runtime.getManifest().version
             }
         };
         
-        console.log('📦 Notion payload:', JSON.stringify(notionPayload, null, 2));
+        console.log('📦 Sending payload to worker:', JSON.stringify(payload, null, 2));
         
-        // Send request to Notion API
-        const response = await fetch('https://api.notion.com/v1/pages', {
+        // Send to Cloudflare Worker (handles Notion API securely)
+        const response = await fetch('https://notionbugreport.akaffebtd.workers.dev/', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${NOTION_API_KEY}`,
-                'Content-Type': 'application/json',
-                'Notion-Version': '2022-06-28'
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify(notionPayload)
+            body: JSON.stringify(payload)
         });
         
-        console.log('📡 Notion API response status:', response.status);
+        console.log('📡 Worker response status:', response.status);
         
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('❌ Notion API error:', errorText);
+            console.error('❌ Bug report failed:', errorText);
             return {
                 success: false,
-                error: `Notion API error: ${response.status}`,
+                error: `Worker error: ${response.status}`,
                 message: `Failed to submit bug report: ${errorText}`
             };
         }
         
         const result = await response.json();
-        console.log('✅ Bug report sent to Notion successfully:', result.id);
+        console.log('✅ Bug report sent successfully:', result);
         
         return {
             success: true,

@@ -1,10 +1,10 @@
 ﻿{
   "manifest_version": 3,
   "name": "Sidekick",
-  "version": "1.1.9",
+  "version": "1.2.0",
   "description": "Enhanced sidebar and tools for Torn.com",
   "permissions": ["storage", "activeTab"],
-  "host_permissions": ["https://www.torn.com/*", "https://*.torn.com/*", "https://api.torn.com/*", "https://api.notion.com/*", "https://torn.synclayer.dev/*"],
+  "host_permissions": ["https://www.torn.com/*", "https://*.torn.com/*", "https://api.torn.com/*", "https://notionbugreport.akaffebtd.workers.dev/*", "https://torn.synclayer.dev/*"],
   "icons": {
     "16": "assets/icons/swissknife-16.png",
     "32": "assets/icons/swissknife-32.png",
