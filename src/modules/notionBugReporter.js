@@ -30,33 +30,12 @@
         
         // Open the bug reporter modal
         openReporter() {
-            // Show setup required message instead of opening reporter
-            this.showSetupMessage();
-            return;
-            
-            // Original code disabled - requires Notion API setup
-            /*
             // Check if modal already exists
             if (document.getElementById('sidekick-bug-reporter')) {
                 return;
             }
             
             this.createModal();
-            */
-        },
-        
-        // Show message that Notion setup is required
-        showSetupMessage() {
-            if (window.SidekickModules?.UI?.showNotification) {
-                window.SidekickModules.UI.showNotification(
-                    'Bug Reporter Setup Required',
-                    'The Notion bug reporter requires API configuration. Please report bugs via GitHub Issues instead.',
-                    'info',
-                    5000
-                );
-            } else {
-                alert('Bug Reporter Setup Required\n\nThe Notion bug reporter requires API configuration.\nPlease report bugs via GitHub Issues at:\nhttps://github.com/Machiacelli/SidekickChromeExt/issues');
-            }
         },
         
         // Create the bug reporter modal
@@ -280,8 +259,10 @@
                     console.error('🐛 Bug report failed:', result.error);
                     let errorMessage = 'Failed to submit bug report: ' + result.error;
                     
-                    // Provide more helpful error messages
-                    if (result.error.includes('Network error') || result.error.includes('fetch')) {
+                    // Check for Notion not configured error
+                    if (result.error === 'NOTION_NOT_CONFIGURED') {
+                        errorMessage = result.message || 'Notion API not configured. Please add your Notion API key and database ID in background.js to enable bug reporting.';
+                    } else if (result.error.includes('Network error') || result.error.includes('fetch')) {
                         errorMessage = 'Network error: Please check your internet connection. You may also need to reload the extension after updating permissions.';
                     } else if (result.error.includes('401') || result.error.includes('authorization')) {
                         errorMessage = 'Authorization error: The Notion API key may be invalid.';

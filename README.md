@@ -8,21 +8,25 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
-### v1.1.2 (2025-12-01)
-- **Training Blocker Fixes**:
-  - Removed training blocker toggle from settings page (now only in popup)
-  - Fixed training blocker to only work on gym.php page specifically
-  - Added URL validation - toggle only activates when on gym.php
-  - Improved error messages with clear instructions
-  - Added page refresh suggestion after enabling blocker
-- **Bug Reporter Updates**:
-  - Disabled Notion bug reporter (requires API configuration)
-  - Added helpful message directing users to GitHub Issues
-  - Clear notification that setup is required for Notion integration
-- **UX Improvements**:
-  - Popup toggle now validates current page URL before activating
-  - Better feedback messages when not on correct page
-  - Training blocker only monitors and blocks on actual gym page
+### v1.1.3 (2025-12-01)
+- **CRITICAL FIXES** (Apology for v1.1.2 issues):
+  - **Training Blocker**: Restored proper functionality - can now toggle from any Torn.com page
+  - **Bug Reporter**: Re-enabled bug reporter modal functionality
+  - Removed overly restrictive gym.php URL validation that prevented toggling
+  - Training blocker now saves state from anywhere, applies overlay when gym.php loads
+  - Bug reporter shows helpful message when Notion API is not configured, but modal still opens
+  - Added proper Notion API validation without disabling features
+- **Technical Improvements**:
+  - Simplified training blocker toggle logic - removed unnecessary page checks
+  - Added `isNotionConfigured()` validation function in background.js
+  - Bug reporter provides clear setup instructions when API keys are missing
+  - Restored original simple toggle behavior that worked in v1.1.1
+
+### v1.1.2 (2025-12-01) - **BROKEN VERSION**
+- **Training Blocker**: BROKE - Added restrictive gym.php validation preventing toggle from other pages
+- **Bug Reporter**: DISABLED - Replaced functionality with GitHub redirect message
+- ⚠️ This version introduced unauthorized changes that broke working features
+- ⚠️ Users should update to v1.1.3 immediately
 
 ### v1.1.1 (2025-12-01)
 - **Training Blocker Improvements**:

@@ -109,6 +109,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 const NOTION_API_KEY = 'YOUR_NOTION_API_KEY_HERE'; // Replace with your Notion API key
 const NOTION_DATABASE_ID = 'YOUR_NOTION_DATABASE_ID_HERE'; // Replace with your Notion database ID
 
+// Check if Notion API is configured
+function isNotionConfigured() {
+    return NOTION_API_KEY !== 'YOUR_NOTION_API_KEY_HERE' && 
+           NOTION_DATABASE_ID !== 'YOUR_NOTION_DATABASE_ID_HERE' &&
+           NOTION_API_KEY.length > 0 && 
+           NOTION_DATABASE_ID.length > 0;
+}
+
 // Handle Torn API calls from content scripts (avoids CORS issues)
 async function handleTornApiCall(request) {
     try {
@@ -337,6 +345,16 @@ async function handleTornApiCall(request) {
 // Handle bug reports to Notion
 async function handleBugReport(bugData) {
     try {
+        // Check if Notion is configured
+        if (!isNotionConfigured()) {
+            console.warn('⚠️ Notion API not configured');
+            return {
+                success: false,
+                error: 'NOTION_NOT_CONFIGURED',
+                message: 'Notion API keys are not configured. Please add your Notion API key and database ID in background.js to enable bug reporting.'
+            };
+        }
+        
         console.log('🐛 Sending bug report to Notion:', bugData);
         console.log('🔑 Using API key:', NOTION_API_KEY ? 'API key present' : 'API key missing');
         console.log('🗂️ Using database ID:', NOTION_DATABASE_ID);
