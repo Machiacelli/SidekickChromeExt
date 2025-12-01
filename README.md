@@ -8,6 +8,19 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.2.4 (2025-12-01) - CRITICAL FIX: Mug Calculator CORS Issue 🐛✔️
+- **Critical Bug Fix**: Fixed CORS policy error blocking mug calculator
+  - Root cause: Content scripts cannot make direct cross-origin fetch requests
+  - Solution: Route all backend requests through background service worker
+  - Added `fetchMugCalculatorData` handler in background.js
+  - Updated mug calculator to use `chrome.runtime.sendMessage` instead of direct fetch
+- **Technical Details**:
+  - Background worker now handles https://torn.synclayer.dev API calls
+  - Properly bypasses CORS restrictions using Chrome extension permissions
+  - Enhanced error handling and logging for debugging
+- **Status**: Mug calculator now properly fetches user data without CORS errors
+- **Testing**: Info buttons on Item Market/Bazaar now fully functional
+
 ### v1.2.3 (2025-12-01) - Mug Calculator Tab & Bug Fixes 💰🐛
 - **Mug Calculator**: Created dedicated tab in settings panel
   - Moved all mug calculator settings to separate "💰 Mug Calc" tab

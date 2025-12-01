@@ -226,20 +226,30 @@ const MugCalculatorModule = (() => {
             }
 
             try {
-                const response = await fetch(`${BACKEND_BASE_URL}/api/torn-data`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(requestData)
+                console.log('[Sidekick] Mug Calculator: Sending request through background script...');
+                
+                // Send request through background script to avoid CORS
+                const response = await new Promise((resolve, reject) => {
+                    chrome.runtime.sendMessage({
+                        action: 'fetchMugCalculatorData',
+                        data: requestData
+                    }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            reject(new Error(chrome.runtime.lastError.message));
+                        } else {
+                            resolve(response);
+                        }
+                    });
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
+                console.log('[Sidekick] Mug Calculator: Background response:', response);
+
+                if (response.success) {
+                    const data = response.data;
                     dataCache[cacheKey] = { data: data, timestamp: now };
                     return data;
                 } else {
-                    const errorText = await response.text();
-                    console.error('[Sidekick] Mug Calculator backend error:', response.status, errorText);
-                    throw new Error(`Backend error: ${response.status}`);
+                    throw new Error(response.error || 'Unknown error from background script');
                 }
             } catch (error) {
                 console.error("[Sidekick] Mug Calculator: Error fetching user data:", error);
