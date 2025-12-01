@@ -188,7 +188,7 @@
             // Restore window if it was open
             if (this._windowState && this._windowState.wasCreated) {
                 console.log('[VaultTracker] Restoring window');
-                this.setupUI();
+                await this.setupUI();
                 await this.renderPanel();
             }
             
@@ -226,7 +226,7 @@
             }
         },
 
-        setupUI(){
+        async setupUI(){
             if (this._panel) return;
             
             const root = document.querySelector('#sidekick-content');
