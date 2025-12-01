@@ -147,6 +147,13 @@ const MugCalculatorModule = (() => {
 
         // Calculate mug amount based on merits and plunder percentage
         calculateMugAmount(totalMoney, mugMerits, plunderPercent, hasClothingStoreProtection = false) {
+            console.log('[Sidekick] Mug Calculator: calculateMugAmount inputs:', {
+                totalMoney,
+                mugMerits,
+                plunderPercent,
+                hasClothingStoreProtection
+            });
+            
             // Base plunder percentage
             const basePlunder = plunderPercent / 100;
             
@@ -155,6 +162,12 @@ const MugCalculatorModule = (() => {
             
             // Calculate base mug amount
             let mugAmount = Math.floor(totalMoney * basePlunder * meritBonus);
+            
+            console.log('[Sidekick] Mug Calculator: Base calculation:', {
+                basePlunder,
+                meritBonus,
+                mugAmount
+            });
             
             // Apply Clothing Store 7+ stars protection (75% reduction)
             if (hasClothingStoreProtection) {

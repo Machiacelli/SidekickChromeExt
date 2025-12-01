@@ -1,7 +1,7 @@
 ﻿{
   "manifest_version": 3,
   "name": "Sidekick",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "Enhanced sidebar and tools for Torn.com",
   "permissions": ["storage", "activeTab"],
   "host_permissions": ["https://www.torn.com/*", "https://*.torn.com/*", "https://api.torn.com/*", "https://notionbugreport.akaffebtd.workers.dev/*", "https://torn.synclayer.dev/*"],
@@ -32,6 +32,7 @@
       "src/modules/randomtarget.module.js", 
       "src/modules/inventorysorter.module.js", 
       "src/modules/mugcalculator.module.js", 
+      "src/modules/vaulttracker.module.js", 
       "src/modules/flighttracker.module.js", 
       "src/modules/debt.module.js", 
       "src/modules/notionBugReporter.js", 

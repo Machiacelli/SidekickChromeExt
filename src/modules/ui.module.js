@@ -584,6 +584,24 @@
                     ">
                         <span style="font-size: 13px; filter: grayscale(0.2);">💰</span> Debt Tracker
                     </button>
+                    <button class="module-option" data-module="vaulttracker" style="
+                        background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+                        border: 1px solid rgba(255,255,255,0.06);
+                        color: rgba(255,255,255,0.92);
+                        padding: 10px 12px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        text-align: left;
+                        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                        font-size: 11px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-weight: 500;
+                        letter-spacing: 0.3px;
+                    ">
+                        <span style="font-size: 13px; filter: grayscale(0.2);">🏦</span> Vault Tracker
+                    </button>
                 </div>
             `;
 
@@ -656,6 +674,9 @@
                     break;
                 case 'debttracker':
                     this.createNewDebtTracker();
+                    break;
+                case 'vaulttracker':
+                    this.createNewVaultTracker();
                     break;
                 default:
                     this.showNotification('Unknown Module', 'Module type not recognized', 'error');
@@ -787,6 +808,28 @@
             } catch (error) {
                 console.error('Failed to create debt tracker:', error);
                 this.showNotification('Debt Tracker Error', 'Failed to open debt tracker', 'error');
+            }
+        },
+
+        async createNewVaultTracker() {
+            try {
+                if (!window.SidekickModules?.VaultTracker) {
+                    this.showNotification('Vault Tracker Error', 'Vault Tracker module not loaded', 'error');
+                    return;
+                }
+
+                // Initialize if not already done
+                if (!window.SidekickModules.VaultTracker.initDone) {
+                    await window.SidekickModules.VaultTracker.init();
+                } else {
+                    // Already initialized, just refresh the panel
+                    await window.SidekickModules.VaultTracker.renderPanel();
+                }
+                
+                this.showNotification('Vault Tracker', 'Vault tracker initialized', 'success');
+            } catch (error) {
+                console.error('Failed to create vault tracker:', error);
+                this.showNotification('Vault Tracker Error', 'Failed to initialize vault tracker', 'error');
             }
         },
 

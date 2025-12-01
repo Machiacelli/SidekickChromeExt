@@ -8,6 +8,35 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.2.7 (2025-12-01) - Vault Tracker + Mug Calculator Debug 💰🐛
+- **New Module: Vault Tracker**:
+  - Track shared vault transactions with spouse/partner
+  - Persistent local ledger stored in Chrome storage
+  - Live WebSocket monitoring for real-time vault events
+  - Manual sync from vault page DOM (fallback method)
+  - Shows You / Spouse / Total balances with visual indicators
+  - Color-coded last change indicator (green deposit / red withdrawal)
+  - One-click sync and clear buttons
+  - Fully integrated into Add Module menu (🏦 icon)
+- **Technical Implementation**:
+  - Heuristic WebSocket parser for vault transaction detection
+  - Chrome storage API for persistent data
+  - Async/await pattern throughout
+  - Notification system integration
+  - MutationObserver for vault page detection
+- **Mug Calculator Debug**:
+  - Added comprehensive console logging to calculateMugAmount()
+  - Logs input values (totalMoney, mugMerits, plunderPercent, protection)
+  - Logs calculation steps (basePlunder, meritBonus, mugAmount)
+  - Helps diagnose why potential mug shows $0
+  - **Root Cause**: Users need to set Mug Plunder % in settings (defaults to 0)
+- **User Experience**:
+  - Vault tracker accessible via + button in sidebar
+  - Clean, modern UI matching Sidekick design language
+  - No external dependencies or notifications
+  - Spouse name/ID configurable through settings
+- **Status**: Vault tracker fully functional, mug calculator debugging enhanced
+
 ### v1.2.6 (2025-12-01) - Mug Calculator: Fixed Data + Clothing Store Protection 🏢✔️
 - **Mug Calculator**: Fixed broken data extraction and added Clothing Store protection
 - **Critical Bug Fixes**:
