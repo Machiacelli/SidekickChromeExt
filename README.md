@@ -8,6 +8,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.2.2 (2025-12-01) - Mug Calculator Settings Integration 🔧⚙️
+- **Mug Calculator**: Moved settings to main settings cogwheel
+- **UI Cleanup**: Removed standalone mug calculator icon from header
+- **Settings Panel**: Added dedicated Mug Calculator configuration section
+  - Mug Merits (0-10)
+  - Plunder % (20%-49%)
+  - Minimum Threshold ($)
+- **User Experience**: Centralized all settings in one location
+- **Status**: Mug calculator settings now accessible via main settings panel
+
 ### v1.2.1 (2025-12-01) - Bug Reporter Error Diagnostics 🔧
 - **Bug Reporter**: Enhanced error reporting to show detailed Notion API responses
 - **Debugging**: Added JSON parsing for Worker error responses

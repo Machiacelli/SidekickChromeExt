@@ -194,6 +194,41 @@
                 ${this.createToggle('random-target', '🎲 Random Target', 'Adds random target button to attack pages')}
                 ${this.createToggle('mug-calculator', '💰 Mug Calculator', 'Shows mug value calculations on Item Market and Bazaars')}
                 
+                <!-- Mug Calculator Configuration -->
+                <div id="mug-calculator-config" style="margin: 15px 0; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 3px solid #4CAF50;">
+                    <div style="font-weight: 600; color: #4CAF50; margin-bottom: 12px; font-size: 14px;">💰 Mug Calculator Settings</div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; color: #ccc; font-size: 13px;">
+                            Mug Merits (0-10):
+                        </label>
+                        <input type="number" id="mugMeritsInput" min="0" max="10" placeholder="0 to 10"
+                               style="width: 100%; padding: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); 
+                                      border-radius: 5px; color: white; font-size: 13px;">
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; color: #ccc; font-size: 13px;">
+                            Plunder % (20% to 49%):
+                        </label>
+                        <input type="number" id="plunderInput" min="20" max="49" step="0.01" placeholder="Plunder %"
+                               style="width: 100%; padding: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); 
+                                      border-radius: 5px; color: white; font-size: 13px;">
+                    </div>
+                    
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px; color: #ccc; font-size: 13px;">
+                            Minimum Threshold ($):
+                        </label>
+                        <input type="number" id="thresholdInput" min="0" placeholder="Minimum Threshold"
+                               style="width: 100%; padding: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); 
+                                      border-radius: 5px; color: white; font-size: 13px;">
+                    </div>
+                    
+                    <div style="font-size: 11px; color: #888; margin-top: 8px; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px;">
+                        ℹ️ These settings control how mug values are calculated on the Item Market and Bazaars
+                    </div>
+                </div>
                 <button id="sidekick-save-module-toggles" style="width: 100%; padding: 12px; background: #4CAF50; 
                                                                   border: none; color: white; border-radius: 6px; 
                                                                   font-weight: bold; cursor: pointer; margin-top: 20px;">
@@ -578,6 +613,36 @@
                     for (const [key, value] of Object.entries(settings)) {
                         await window.SidekickModules.Core.ChromeStorage.set(key, value);
                     }
+                    
+                    // Save mug calculator settings
+                    const mugMeritsInput = panel.querySelector('#mugMeritsInput');
+                    const plunderInput = panel.querySelector('#plunderInput');
+                    const thresholdInput = panel.querySelector('#thresholdInput');
+                    
+                    if (mugMeritsInput) {
+                        const mugMeritsVal = parseInt(mugMeritsInput.value.trim(), 10);
+                        await window.SidekickModules.Core.ChromeStorage.set('mugMerits', isNaN(mugMeritsVal) ? 0 : Math.min(Math.max(mugMeritsVal, 0), 10));
+                    }
+                    
+                    if (plunderInput) {
+                        let plunderInputVal = parseFloat(plunderInput.value.trim());
+                        if (plunderInputVal === '' || parseFloat(plunderInputVal) === 0) {
+                            plunderInputVal = 0;
+                        } else {
+                            plunderInputVal = parseFloat(plunderInputVal);
+                            if (plunderInputVal < 20 || plunderInputVal > 50) {
+                                this.showStatus(statusDiv, 'Plunder percentage must be between 20% and 49%', 'error');
+                                return;
+                            }
+                        }
+                        await window.SidekickModules.Core.ChromeStorage.set('mugPlunder', plunderInputVal);
+                    }
+                    
+                    if (thresholdInput) {
+                        const thresholdVal = parseInt(thresholdInput.value.trim(), 10);
+                        await window.SidekickModules.Core.ChromeStorage.set('mugThreshold', isNaN(thresholdVal) ? 0 : thresholdVal);
+                    }
+                    
                     this.showStatus(statusDiv, 'Module settings saved successfully!', 'success');
                     
                     if (window.SidekickModules.Core.NotificationSystem) {
@@ -843,6 +908,19 @@
                     this.updateToggleVisual(track, thumb, isEnabled);
                 }
             }
+            
+            // Load mug calculator settings
+            const mugMerits = await window.SidekickModules.Core.ChromeStorage.get('mugMerits') || 0;
+            const mugPlunder = await window.SidekickModules.Core.ChromeStorage.get('mugPlunder') || 0;
+            const mugThreshold = await window.SidekickModules.Core.ChromeStorage.get('mugThreshold') || 0;
+            
+            const mugMeritsInput = document.querySelector('#mugMeritsInput');
+            const plunderInput = document.querySelector('#plunderInput');
+            const thresholdInput = document.querySelector('#thresholdInput');
+            
+            if (mugMeritsInput) mugMeritsInput.value = mugMerits;
+            if (plunderInput) plunderInput.value = parseFloat(mugPlunder).toFixed(2);
+            if (thresholdInput) thresholdInput.value = mugThreshold;
         },
 
         // Update toggle visual state
