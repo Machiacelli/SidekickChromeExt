@@ -365,10 +365,21 @@ async function handleBugReport(bugData) {
         if (!response.ok) {
             const errorText = await response.text();
             console.error('❌ Bug report failed:', errorText);
+            
+            // Try to parse error details if JSON
+            let errorDetails = errorText;
+            try {
+                const errorJson = JSON.parse(errorText);
+                errorDetails = JSON.stringify(errorJson, null, 2);
+                console.error('❌ Detailed error:', errorJson);
+            } catch (e) {
+                // Not JSON, use raw text
+            }
+            
             return {
                 success: false,
                 error: `Worker error: ${response.status}`,
-                message: `Failed to submit bug report: ${errorText}`
+                message: `Failed to submit bug report (${response.status}):\n\n${errorDetails}\n\nPlease check that your Cloudflare Worker has the correct Notion API credentials configured.`
             };
         }
         

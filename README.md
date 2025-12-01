@@ -8,6 +8,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.2.1 (2025-12-01) - Bug Reporter Error Diagnostics 🔧
+- **Bug Reporter**: Enhanced error reporting to show detailed Notion API responses
+- **Debugging**: Added JSON parsing for Worker error responses
+- **User Experience**: More informative error messages showing actual failure reasons
+- **Purpose**: Help diagnose why Worker is getting 401 from Notion API
+- **Status**: Diagnostic version to identify Worker configuration issues
+
 ### v1.2.0 (2025-12-01) - SECURITY FIX: API Keys Removed 🔒✅
 - **Security**: Removed all Notion API keys from codebase
 - **Architecture**: Implemented secure Cloudflare Worker proxy
