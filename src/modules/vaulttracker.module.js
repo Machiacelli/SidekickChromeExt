@@ -25,7 +25,8 @@
             transactions: {}, // id -> transaction object
             order: [], // list of ids in chronological order (oldest -> newest)
             balances: { you: 0, spouse: 0, total: 0 },
-            lastChange: null // {id, amount, who, timestamp}
+            lastChangeYou: null, // {id, amount, who, timestamp}
+            lastChangeSpouse: null // {id, amount, who, timestamp}
         },
 
         async load(){
@@ -72,7 +73,18 @@
 
             // Recompute balances
             await this.recomputeBalances();
-            this.data.lastChange = { id: id, amount: (t.type==='Deposit'?t.amount:-t.amount), who: t.name, timestamp: t.timestamp };
+            
+            // Track last change per user
+            const changeAmount = (t.type==='Deposit'?t.amount:-t.amount);
+            const changeData = { id: id, amount: changeAmount, who: t.name, timestamp: t.timestamp };
+            
+            const settings = await VaultTracker.settings();
+            if (t.name === settings.playerName) {
+                this.data.lastChangeYou = changeData;
+            } else if (t.name === settings.spouseName) {
+                this.data.lastChangeSpouse = changeData;
+            }
+            
             await this.save();
             return true;
         },
@@ -127,9 +139,9 @@
         },
 
         getBalances(){ return this.data.balances; },
-        getLastChange(){ return this.data.lastChange; },
+        getLastChange(){ return { you: this.data.lastChangeYou, spouse: this.data.lastChangeSpouse }; },
         async clear(){ 
-            this.data = { transactions: {}, order: [], balances: { you:0, spouse:0, total:0 }, lastChange: null }; 
+            this.data = { transactions: {}, order: [], balances: { you:0, spouse:0, total:0 }, lastChangeYou: null, lastChangeSpouse: null }; 
             await this.save(); 
         }
     };
@@ -174,15 +186,6 @@
             await Ledger.load();
             await this.loadWindowState();
             
-            // Only create UI if it was previously visible
-            if (this._windowState.isVisible) {
-                this.setupUI();
-                await this.renderPanel();
-                console.log('[Sidekick] VaultTracker: Window restored from previous session');
-            } else {
-                console.log('[Sidekick] VaultTracker: Window hidden (not visible in previous session)');
-            }
-            
             this.hookWebSocket();
             this.attachVaultPageSync();
             this.initDone = true;
@@ -203,8 +206,7 @@
                         y: 10,
                         width: 320,
                         height: 280,
-                        pinned: false,
-                        isVisible: false
+                        pinned: false
                     };
                     console.log('[Sidekick] VaultTracker: Using default window state');
                 }
@@ -344,8 +346,7 @@
                 // Add button handlers
                 this.attachWindowControls(container);
                 
-                // Mark as visible and save state
-                this._windowState.isVisible = true;
+                // Save initial state
                 this.saveWindowState();
                 
                 console.log('[Sidekick] VaultTracker: UI created');
@@ -534,41 +535,47 @@
             if (!values) return;
 
             const bal = Ledger.getBalances();
-            const last = Ledger.getLastChange();
+            const lastChanges = Ledger.getLastChange();
             
             console.log('[Sidekick] VaultTracker: Rendering panel');
             console.log('[Sidekick] VaultTracker: Balances:', bal);
-            console.log('[Sidekick] VaultTracker: Last change:', last);
+            console.log('[Sidekick] VaultTracker: Last changes:', lastChanges);
             console.log('[Sidekick] VaultTracker: Total transactions:', Ledger.data.order.length);
             
-            const delta = last ? last.amount : 0;
-            const deltaSign = delta>0 ? '+' : (delta<0 ? '-' : '');
-            const deltaColor = delta>0 ? '#7ED321' : (delta<0 ? '#FF5C5C' : '#999');
-            const lastWho = last ? last.who : '';
-
-            console.log('[Sidekick] VaultTracker: Rendering panel with balances:', bal);
-            console.log('[Sidekick] VaultTracker: Last change:', last);
+            // Format last changes for both users
+            const formatLastChange = (change) => {
+                if (!change) return { text: '—', color: '#999' };
+                const delta = change.amount;
+                const deltaSign = delta>0 ? '+' : (delta<0 ? '-' : '');
+                const deltaColor = delta>0 ? '#7ED321' : (delta<0 ? '#FF5C5C' : '#999');
+                return {
+                    text: delta!==0 ? deltaSign+formatMoney(Math.abs(delta)) : '—',
+                    color: deltaColor
+                };
+            };
+            
+            const youChange = formatLastChange(lastChanges.you);
+            const spouseChange = formatLastChange(lastChanges.spouse);
             
             values.innerHTML = `
                 <div style="display:flex;flex-direction:column;gap:8px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:rgba(0,0,0,0.2);border-radius:4px;">
                         <div style="font-size:12px;opacity:0.9;">You</div>
-                        <div style="font-weight:700;font-size:14px;">${formatMoney(bal.you)}</div>
+                        <div style="display:flex;flex-direction:column;align-items:flex-end;">
+                            <div style="font-weight:700;font-size:14px;">${formatMoney(bal.you)}</div>
+                            <div style="font-size:10px;color:${youChange.color};">${youChange.text}</div>
+                        </div>
                     </div>
                     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:rgba(0,0,0,0.2);border-radius:4px;">
                         <div style="font-size:12px;opacity:0.9;">Spouse</div>
-                        <div style="font-weight:700;font-size:14px;">${formatMoney(bal.spouse)}</div>
+                        <div style="display:flex;flex-direction:column;align-items:flex-end;">
+                            <div style="font-weight:700;font-size:14px;">${formatMoney(bal.spouse)}</div>
+                            <div style="font-size:10px;color:${spouseChange.color};">${spouseChange.text}</div>
+                        </div>
                     </div>
                     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:rgba(74,111,165,0.2);border-radius:4px;border:1px solid rgba(74,111,165,0.3);">
                         <div style="font-size:12px;font-weight:600;">Total</div>
                         <div style="font-weight:700;font-size:14px;">${formatMoney(bal.total)}</div>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;padding:6px;background:rgba(0,0,0,0.15);border-radius:4px;">
-                        <div style="font-size:11px;color:#ccc;">Last change</div>
-                        <div style="font-weight:700;font-size:12px;color:${deltaColor};">
-                            ${delta!==0?deltaSign+formatMoney(Math.abs(delta)): '—'} 
-                            <span style="font-weight:400;color:#bbb;font-size:10px;margin-left:4px;">${lastWho?lastWho:''}</span>
-                        </div>
                     </div>
                 </div>
             `;
@@ -805,12 +812,7 @@
                 this._panel.remove();
                 this._panel = null;
             }
-            // Mark as not visible and save state
-            if (this._windowState) {
-                this._windowState.isVisible = false;
-                await this.saveWindowState();
-                console.log('[Sidekick] VaultTracker: Window closed and state saved:', JSON.stringify(this._windowState));
-            }
+            console.log('[Sidekick] VaultTracker: Window closed');
         }
     };
 

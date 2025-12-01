@@ -8,6 +8,32 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.2.11 (2025-12-01) - Vault Tracker: PERSISTENCE FIXED + Dual Last Changes 💾✅
+- **CRITICAL FIX - Window Persistence**:
+  - Removed broken `isVisible` flag pattern that prevented persistence
+  - Now uses same pattern as notepad module (which always worked perfectly)
+  - Window simply exists or doesn't - no flag tracking needed
+  - Removed all `isVisible` logic from init(), setupUI(), cleanup()
+  - Fixed `createNewVaultTracker()` to create window directly like notepad
+  - **Status**: Window now ACTUALLY persists across refreshes like all other modules
+- **New Feature - Dual Last Change Tracking**:
+  - Shows separate last change for YOU and SPOUSE
+  - Each user's last deposit/withdrawal displayed under their balance
+  - Color-coded: Green for deposits (+), Red for withdrawals (-)
+  - Independent tracking - your profit doesn't affect spouse display
+  - Updated ledger data structure with `lastChangeYou` and `lastChangeSpouse`
+- **Technical Implementation**:
+  - Removed `isVisible` from window state (simplified to x, y, width, height, pinned)
+  - Updated `addTransaction()` to track changes per user
+  - Modified `getLastChange()` to return both user changes as object
+  - Enhanced `renderPanel()` to format and display dual changes
+  - Updated `clear()` to reset both change trackers
+- **Bug Fixes**:
+  - Fixed window not reopening on refresh (caused by isVisible flag pattern)
+  - Fixed duplicate logging in renderPanel
+  - Persistence now matches proven notepad module pattern
+- **Status**: Vault tracker persistence ACTUALLY WORKS NOW, dual last changes implemented
+
 ### v1.2.10 (2025-12-01) - Vault Tracker: UI Consistency + Debug Tools 🎨🔧
 - **UI Consistency**:
   - Updated vault tracker to match other modules' UI design
