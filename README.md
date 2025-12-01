@@ -8,6 +8,21 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.1.8 (2025-12-01) - Bug Reporter Fixed! 🐛✅
+- **Bug Reporter**: CRITICAL FIX - Restored full functionality
+- **Technical Fixes**:
+  - Added missing `isNotionConfigured()` function that was causing errors
+  - Fixed "function not defined" errors preventing bug submission
+  - Improved error handling for extension context invalidation issues
+  - Enhanced error messages with step-by-step setup instructions
+- **User Experience**:
+  - Modal opens correctly (z-index previously fixed)
+  - Clear setup instructions when Notion API not configured
+  - Better error detection and user guidance
+- **Status**: Bug reporter fully functional - modal opens, validation works, submissions work when API configured
+- **Next Step**: Users may manually configure Notion API credentials if needed (instructions provided in error message)
+- **Latest Commit**: `dbd0340`
+
 ### v1.1.7 (2025-12-01)
 - **Timer Module**: FIXED - Corrected missing function `saveTimersWithRetry` → `saveTimers`
 - **Bug Reporter**: Enhanced error handling for invalid API tokens
