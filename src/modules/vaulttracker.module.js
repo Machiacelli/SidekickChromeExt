@@ -196,6 +196,16 @@
             console.log('[VaultTracker] Ready');
         },
 
+        async syncNow() {
+            console.log('[VaultTracker] Manual sync requested');
+            await VaultData.fetchPlayerInfo();
+            const success = await VaultData.updateFromVaultPage();
+            if (success && this._panel) {
+                await this.renderPanel();
+            }
+            return success;
+        },
+
         async loadWindowState() {
             try {
                 const raw = await window.SidekickModules.Core.ChromeStorage.get('sidekick_vault_window_state');

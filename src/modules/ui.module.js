@@ -823,11 +823,20 @@
                     await window.SidekickModules.VaultTracker.init();
                 }
                 
-                // Create/show the window (setupUI will check if it already exists)
-                window.SidekickModules.VaultTracker.setupUI();
-                await window.SidekickModules.VaultTracker.renderPanel();
+                // Create/show the window
+                await window.SidekickModules.VaultTracker.setupUI();
                 
-                this.showNotification('Vault Tracker', 'Vault tracker window opened', 'success');
+                // Auto-sync if on vault page
+                const isVaultPage = window.location.href.includes('properties.php') && window.location.href.includes('vault');
+                if (isVaultPage) {
+                    console.log('[VaultTracker] On vault page - auto-syncing...');
+                    const success = await window.SidekickModules.VaultTracker.syncNow();
+                    if (success) {
+                        this.showNotification('Vault Tracker', 'Vault data synced successfully', 'success');
+                    }
+                }
+                
+                await window.SidekickModules.VaultTracker.renderPanel();
             } catch (error) {
                 console.error('Failed to create vault tracker:', error);
                 this.showNotification('Vault Tracker Error', 'Failed to open vault tracker', 'error');
