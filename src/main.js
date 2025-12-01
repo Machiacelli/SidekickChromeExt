@@ -560,6 +560,29 @@
             sendResponse({ success: false, error: error.message });
         }
     }
+    
+    async function handleToggleTrainingBlocker(enabled, sendResponse) {
+        try {
+            if (window.SidekickModules?.BlockTraining) {
+                window.SidekickModules.BlockTraining.isBlocked = enabled;
+                await window.SidekickModules.BlockTraining.saveSettings();
+                
+                if (enabled) {
+                    window.SidekickModules.BlockTraining.startBlocking();
+                } else {
+                    window.SidekickModules.BlockTraining.stopBlocking();
+                }
+                
+                sendResponse({ success: true });
+            } else {
+                console.warn('⚠️ Block Training module not available');
+                sendResponse({ success: false, error: 'Block Training module not available' });
+            }
+        } catch (error) {
+            console.error('❌ Failed to toggle training blocker:', error);
+            sendResponse({ success: false, error: error.message });
+        }
+    }
 
     // Handle opening settings panel
     function handleOpenSettings(sendResponse) {

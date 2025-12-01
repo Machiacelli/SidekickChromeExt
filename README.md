@@ -8,6 +8,23 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.1.1 (2025-12-01)
+- **Training Blocker Improvements**:
+  - Moved training blocker toggle to extension popup for easier access
+  - Added continuous gym detection with 1-second interval checks
+  - Fixed overlay not appearing by adding periodic checks for gym element
+  - Enhanced overlay click-blocking to prevent any interaction with gym
+  - Improved visual feedback with clearer message
+- **Bug Fixes**:
+  - Fixed syntax error in popup.js showMessage function
+  - Fixed report bugs button not working in popup
+  - Training blocker now properly detects gym on all Torn.com pages
+  - Added interval cleanup when blocker is disabled
+- **UX Enhancements**:
+  - Added toggle switch UI in popup for training blocker
+  - Better status persistence for training blocker setting
+  - More informative overlay message directing users to toggle
+
 ### v1.0.9 (2025-12-01)
 - **Bug Fixes**:
   - Removed yellow outline/border when cooldown timer windows are pinned

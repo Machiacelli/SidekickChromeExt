@@ -106,14 +106,32 @@
 
         // Start blocking gym access
         startBlocking() {
+            console.log('🚫 Starting training blocker...');
+            // Try to create block immediately
             this.createTrainingBlock();
+            // Set up observer to catch gym appearing
             this.setupObserver();
+            // Also check periodically in case gym loads after page navigation
+            this.checkInterval = setInterval(() => {
+                if (this.isBlocked && !document.getElementById('sidekick-training-block')) {
+                    const gymRoot = document.querySelector('#gymroot');
+                    if (gymRoot) {
+                        console.log('🔄 Gym detected in periodic check, applying block');
+                        this.createTrainingBlock();
+                    }
+                }
+            }, 1000);
         },
 
         // Stop blocking gym access
         stopBlocking() {
+            console.log('✅ Stopping training blocker...');
             this.removeTrainingBlock();
             this.disconnectObserver();
+            if (this.checkInterval) {
+                clearInterval(this.checkInterval);
+                this.checkInterval = null;
+            }
         },
 
         // Create gym blocking overlay
@@ -157,21 +175,29 @@
                 pointer-events: all !important;
             `;
 
-            // Add minimal overlay text (optional - can be removed entirely)
+            // Add click event to prevent any interaction
+            this.blockingOverlay.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }, true);
+            
+            // Add minimal overlay text
             this.blockingOverlay.innerHTML = `
                 <div style="
                     position: absolute;
                     bottom: 20px;
                     right: 20px;
                     color: white;
-                    background: rgba(0,0,0,0.7);
-                    padding: 8px 12px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    backdrop-filter: blur(5px);
-                    opacity: 0.8;
+                    background: rgba(0,0,0,0.8);
+                    padding: 12px 18px;
+                    border-radius: 6px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    backdrop-filter: blur(10px);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
                 ">
-                    Training blocked
+                    🚫 Training Blocked - Toggle off in extension popup
                 </div>
             `;
 
