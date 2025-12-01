@@ -56,6 +56,7 @@ temp/
 # API keys and secrets (even though they're in Chrome storage)
 api-keys.json
 secrets.json
+config.js
 
 # Backup files
 *.bak
