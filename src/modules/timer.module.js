@@ -372,7 +372,10 @@
                     try {
                         const backgroundResult = await this.makeCooldownApiCallViaBackground(this.apiKey);
                         if (backgroundResult.success) {
-                            data = { cooldowns: backgroundResult.cooldowns };
+                            data = { 
+                                cooldowns: backgroundResult.cooldowns,
+                                money: backgroundResult.money
+                            };
                             console.log('✅ Background checkSpecificCooldown successful');
                         }
                     } catch (bgError) {
@@ -382,7 +385,7 @@
                 
                 // Fallback to direct fetch
                 if (!data) {
-                    const response = await fetch(`https://api.torn.com/user/?selections=cooldowns&key=${this.apiKey}`);
+                    const response = await fetch(`https://api.torn.com/user/?selections=cooldowns,money&key=${this.apiKey}`);
                     data = await response.json();
                 }
 
@@ -401,13 +404,25 @@
                 }
 
                 console.log(`🔍 Available cooldowns:`, data.cooldowns);
+                console.log(`🔍 Money data:`, data.money);
                 console.log(`🔍 Looking for cooldown type: ${cooldownType}`);
-                console.log(`🔍 Specific cooldown value:`, data.cooldowns ? data.cooldowns[cooldownType] : 'No cooldowns object');
+                
+                // Special handling for bank investment
+                let remainingTimeSeconds = null;
+                if (cooldownType === 'Bank') {
+                    if (data.money && data.money.city_bank && data.money.city_bank.time_left > 0) {
+                        remainingTimeSeconds = data.money.city_bank.time_left;
+                        console.log(`💰 Bank investment found: ${remainingTimeSeconds}s remaining (amount: $${data.money.city_bank.amount.toLocaleString()})`);
+                    } else {
+                        console.log(`💰 No active bank investment found`);
+                    }
+                } else {
+                    // Regular cooldown
+                    remainingTimeSeconds = data.cooldowns ? data.cooldowns[cooldownType] : null;
+                    console.log(`🔍 Specific cooldown value:`, remainingTimeSeconds);
+                }
 
-                if (data.cooldowns && typeof data.cooldowns[cooldownType] !== 'undefined') {
-                    // API returns seconds remaining, not timestamp
-                    const remainingTimeSeconds = data.cooldowns[cooldownType];
-                    
+                if (remainingTimeSeconds !== null && remainingTimeSeconds !== undefined && remainingTimeSeconds > 0) {
                     console.log(`🔍 Cooldown found: ${remainingTimeSeconds} seconds remaining`);
                     
                     if (remainingTimeSeconds > 0) {
@@ -415,7 +430,8 @@
                         const cooldownNames = {
                             'drug': 'Drug Cooldown',
                             'medical': 'Medical Cooldown', 
-                            'booster': 'Booster Cooldown'
+                            'booster': 'Booster Cooldown',
+                            'Bank': 'Bank Investment'
                         };
                         
                         // Find existing cooldown timer or use current timer
@@ -480,12 +496,19 @@
                         }
                     }
                 } else {
-                    console.log(`🔍 No ${cooldownType} cooldown found in response or cooldown is 0`);
-                    console.log(`🔍 Cooldown value was:`, data.cooldowns ? data.cooldowns[cooldownType] : 'undefined');
+                    const cooldownTypeNames = {
+                        'drug': 'drug cooldown',
+                        'medical': 'medical cooldown',
+                        'booster': 'booster cooldown',
+                        'Bank': 'bank investment'
+                    };
+                    const typeName = cooldownTypeNames[cooldownType] || cooldownType;
+                    console.log(`🔍 No ${typeName} found in response or value is 0`);
+                    console.log(`🔍 Cooldown value was:`, remainingTimeSeconds);
                     if (window.SidekickModules?.Core?.NotificationSystem) {
                         window.SidekickModules.Core.NotificationSystem.show(
                             'No Active Cooldown', 
-                            `You don't currently have a ${cooldownType} cooldown`, 
+                            `You don't currently have an active ${typeName}`, 
                             'info'
                         );
                     }
@@ -905,6 +928,7 @@
                 'drug': { name: 'Drug Cooldown', color: '#9C27B0', duration: 75 },
                 'medical': { name: 'Medical Cooldown', color: '#4CAF50', duration: 15 },
                 'booster': { name: 'Booster Cooldown', color: '#FF9800', duration: 60 },
+                'Bank': { name: 'Bank Investment', color: '#FFD700', duration: 3600 },
                 'crime': { name: 'Crime Cooldown', color: '#f44336', duration: 300 },
                 'oc': { name: 'Organized Crime', color: '#607D8B', duration: 480 },
                 'travel': { name: 'Travel', color: '#2196F3', duration: 30 }
@@ -1213,6 +1237,17 @@
                                     font-size: 11px;
                                     transition: background 0.2s;
                                 ">Booster</button>
+                                <button class="cooldown-option" data-type="Bank" style="
+                                    background: none;
+                                    border: none;
+                                    color: #fff;
+                                    padding: 6px 12px;
+                                    width: 100%;
+                                    text-align: left;
+                                    cursor: pointer;
+                                    font-size: 11px;
+                                    transition: background 0.2s;
+                                ">Bank Investment</button>
                                 <div style="border-top: 1px solid #555; margin: 4px 0;"></div>
                                 <button class="timer-pin-option" style="
                                     background: none;
@@ -1290,7 +1325,7 @@
                                 ">
                                     <span style="
                                         color: #ccc;
-                                        font-size: 14px;
+                                        font-size: 11px;
                                         font-weight: 600;
                                     ">${cooldownNames[type] || type}</span>
                                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -1298,7 +1333,7 @@
                                             color: ${this.getCooldownColor(type)};
                                             font-family: 'Courier New', monospace;
                                             font-weight: 700;
-                                            font-size: 16px;
+                                            font-size: 12px;
                                         ">${this.formatTime(time)}</span>
                                         <button class="remove-cooldown-btn" data-cooldown-type="${type}" style="
                                             background: #e74c3c;
@@ -1324,7 +1359,7 @@
                             return `
                                 <div class="timer-display" style="
                                     text-align: center;
-                                    font-size: 24px;
+                                    font-size: 18px;
                                     font-weight: 700;
                                     color: ${timer.color || '#666'};
                                     font-family: 'Courier New', monospace;
@@ -2148,14 +2183,15 @@
                 chrome.runtime.sendMessage({
                     action: 'fetchTornApi',
                     apiKey: apiKey,
-                    selections: ['cooldowns']
+                    selections: ['cooldowns', 'money']
                 }, (response) => {
                     if (chrome.runtime.lastError) {
                         reject(new Error(chrome.runtime.lastError.message));
                     } else if (response && response.success) {
                         resolve({
                             success: response.success,
-                            cooldowns: response.cooldowns
+                            cooldowns: response.cooldowns,
+                            money: response.money
                         });
                     } else {
                         reject(new Error('Background script returned unsuccessful response'));
@@ -2191,7 +2227,7 @@
             };
 
             console.log('📊 Making direct cooldown API call...');
-            const response = await fetchWithTimeout(`https://api.torn.com/user/?selections=cooldowns&key=${apiKey}`);
+            const response = await fetchWithTimeout(`https://api.torn.com/user/?selections=cooldowns,money&key=${apiKey}`);
             const data = await response.json();
             
             if (data.error) {
@@ -2207,9 +2243,17 @@
                 throw new Error(`API Error ${data.error.code}: ${data.error.error}`);
             }
             
-            if (data.cooldowns) {
+            if (data.cooldowns || data.money) {
                 console.log('✅ Direct cooldown API call successful');
-                this.updateTimersFromApiCooldowns(data.cooldowns);
+                const cooldowns = data.cooldowns || {};
+                
+                // Add bank investment if active
+                if (data.money && data.money.city_bank && data.money.city_bank.time_left > 0) {
+                    cooldowns.Bank = data.money.city_bank.time_left;
+                    console.log(`💰 Bank investment active: ${data.money.city_bank.time_left}s remaining (amount: $${data.money.city_bank.amount.toLocaleString()})`);
+                }
+                
+                this.updateTimersFromApiCooldowns(cooldowns);
             }
         },
 
@@ -2309,6 +2353,11 @@
             for (const timer of this.timers) {
                 if (timer.isApiTimer && timer.cooldowns) {
                     for (const cooldownType in timer.cooldowns) {
+                        // Skip Bank investment - it persists until completed
+                        if (cooldownType === 'Bank') {
+                            continue;
+                        }
+                        
                         if (!apiCooldowns[cooldownType] || apiCooldowns[cooldownType] <= 0) {
                             console.log(`🗑️ Removing expired ${cooldownType} from timer ${timer.id}`);
                             delete timer.cooldowns[cooldownType];
@@ -2406,10 +2455,19 @@
 
         formatTime(seconds) {
             if (seconds < 0) return '00:00:00';
-            const hours = Math.floor(seconds / 3600);
+            
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
             const mins = Math.floor((seconds % 3600) / 60);
             const secs = seconds % 60;
-            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            
+            if (days > 0) {
+                return `${days}d ${hours.toString().padStart(2, '0')}h ${mins.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`;
+            } else if (hours > 0) {
+                return `${hours.toString().padStart(2, '0')}h ${mins.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`;
+            } else {
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
         }
     };
 

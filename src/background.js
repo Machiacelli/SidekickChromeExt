@@ -133,7 +133,8 @@ async function handleTornApiCall(request) {
             refills: null,
             items: null,
             profile: null,
-            company: null
+            company: null,
+            money: null
         };
         
         // Fetch personal stats if requested
@@ -195,6 +196,38 @@ async function handleTornApiCall(request) {
             } catch (error) {
                 console.warn('⚠️ Background: Cooldown fetch failed (non-fatal):', error);
                 // Continue without cooldowns
+            }
+        }
+
+        // Fetch bank investment data if requested
+        if (selections.includes('money')) {
+            console.log('💰 Background: Fetching money data (includes bank investment)...');
+            try {
+                const moneyResponse = await fetch(`https://api.torn.com/${endpoint}?selections=money&key=${apiKey}`, {
+                    method: 'GET',
+                    headers: {
+                        'User-Agent': 'Sidekick Chrome Extension Background'
+                    }
+                });
+                
+                if (!moneyResponse.ok) {
+                    console.warn('⚠️ Background: Money fetch failed:', moneyResponse.status);
+                    // Don't throw here, money is optional
+                } else {
+                    const moneyData = await moneyResponse.json();
+                    
+                    if (moneyData.error) {
+                        console.warn('⚠️ Background: Money API error:', moneyData.error);
+                        // Don't throw here, money is optional
+                    } else {
+                        results.money = moneyData;
+                        console.log('✅ Background: Money data retrieved successfully:', moneyData);
+                    }
+                }
+                
+            } catch (error) {
+                console.warn('⚠️ Background: Money fetch failed (non-fatal):', error);
+                // Continue without money data
             }
         }
 
