@@ -5,7 +5,7 @@
  * Author: Machiacelli
  */
 
-(function() {
+(function () {
     'use strict';
 
     console.log("⏰ Loading Sidekick Timer Module...");
@@ -18,7 +18,7 @@
                 console.log("🔍 SidekickModules exists:", !!window.SidekickModules);
                 console.log("🔍 Core exists:", !!window.SidekickModules?.Core);
                 console.log("🔍 ChromeStorage exists:", !!window.SidekickModules?.Core?.ChromeStorage);
-                
+
                 if (window.SidekickModules?.Core?.ChromeStorage) {
                     console.log("⏰ Core module with ChromeStorage ready for Timer");
                     resolve();
@@ -55,7 +55,7 @@
                     console.error("❌ Emergency save failed:", error);
                 }
             });
-            
+
             // Auto-save timers every 30 seconds for better persistence
             setInterval(() => {
                 if (this.timers.length > 0) {
@@ -63,7 +63,7 @@
                     this.saveTimers();
                 }
             }, 30000);
-            
+
             // Save immediately when timers change
             this.originalPushTimers = this.timers.push.bind(this.timers);
             this.timers.push = (...items) => {
@@ -71,7 +71,7 @@
                 this.saveTimers();
                 return result;
             };
-            
+
             // Also save on visibility change (tab switching)
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState === 'hidden') {
@@ -79,7 +79,7 @@
                     this.saveTimers();
                 }
             });
-            
+
             // Save timers every 10 seconds as a backup (more frequent)
             setInterval(() => {
                 if (this.timers.length > 0) {
@@ -100,21 +100,21 @@
 
             try {
                 await waitForCore();
-                
+
                 console.log("⏰ Timer Module: Starting initialization...");
-                
+
                 // Load saved state first (lightweight operation)
                 await this.loadTimers();
                 console.log(`⏰ Timer Module: Loaded ${this.timers.length} timers from storage`);
-                
+
                 await this.loadApiKey();
                 this.setupNavigationHandler();
                 this.startPeriodicSynchronization();
-                
+
                 // Restore timer panels immediately (no delay needed)
                 console.log(`⏰ Timer Module: Attempting to restore ${this.timers.length} timer panels`);
                 this.restoreTimerPanels();
-                
+
                 // Double-check after restoration
                 setTimeout(() => {
                     console.log(`⏰ Timer Module: Final check - ${this.timers.length} timers in memory`);
@@ -122,12 +122,12 @@
                         console.log(`⏰ Timer ${index + 1}: ${timer.name} (${timer.type}) - Running: ${timer.isRunning}`);
                     });
                 }, 100); // Reduced to just 100ms for verification
-                
+
                 console.log("⏰ Timer Module initialized with", this.timers.length, "saved timers");
-                
+
                 // Immediately trigger lazy initialization to render timers without delay
                 this.lazyInit();
-                
+
                 // Add manual test functions to window for debugging (always available)
                 window.debugTimerSave = () => {
                     console.log("🔍 Current timers in memory:", this.timers.length);
@@ -136,7 +136,7 @@
                     const saved = localStorage.getItem('sidekick_timer_state');
                     console.log("🔍 Saved to localStorage:", saved);
                 };
-                
+
                 window.debugTimerLoad = () => {
                     const saved = localStorage.getItem('sidekick_timer_state');
                     console.log("🔍 Raw localStorage data:", saved);
@@ -146,7 +146,7 @@
                         console.log("🔍 Number of timers in saved data:", parsed.timers?.length || 0);
                     }
                 };
-                
+
                 // Add comprehensive diagnostic
                 window.debugTimerDiagnose = () => {
                     console.log("🩺 TIMER DIAGNOSTIC START");
@@ -158,7 +158,7 @@
                     console.log("🔍 Lazy initialized:", this.isLazyInitialized);
                     console.log("🩺 DIAGNOSTIC END");
                 };
-                
+
                 this.isInitialized = true;
                 console.log("✅ Timer Module initialized successfully");
             } catch (error) {
@@ -172,15 +172,15 @@
                 console.log("⏰ Lazy initialization already completed");
                 return;
             }
-            
+
             console.log('⏰ Performing lazy initialization...');
-            
+
             // Clear any existing timer elements first to prevent duplication
             this.clearExistingTimerElements();
-            
+
             // Render timers immediately with current data (no delay!)
             this.renderAllTimers();
-            
+
             this.isLazyInitialized = true;
             console.log('✅ Lazy initialization completed');
         },
@@ -195,18 +195,18 @@
         // Render all timers 
         renderAllTimers() {
             console.log('🔄 Rendering all timers:', this.timers.length, 'timers');
-            
+
             if (this.timers.length === 0) {
                 console.log('📭 No timers to render');
                 return;
             }
-            
+
             // Render each timer
             this.timers.forEach(timer => {
                 console.log(`🔄 Rendering timer: ${timer.name} (ID: ${timer.id})`);
                 this.renderTimer(timer);
             });
-            
+
             console.log('✅ All timers rendered successfully');
         },
 
@@ -250,7 +250,7 @@
 
             try {
                 console.log('🔄 Fetching cooldown data for restore...');
-                
+
                 // Try background script first
                 let cooldownData = null;
                 if (chrome?.runtime?.sendMessage) {
@@ -264,7 +264,7 @@
                         console.log('⚠️ Background fetch failed, trying direct...');
                     }
                 }
-                
+
                 // Fallback to direct fetch
                 if (!cooldownData) {
                     const response = await fetch(`https://api.torn.com/user/?selections=cooldowns&key=${this.apiKey}`);
@@ -298,7 +298,7 @@
 
             try {
                 console.log('🔍 Checking API cooldowns via enhanced method...');
-                
+
                 // Try background script first
                 if (chrome?.runtime?.sendMessage) {
                     try {
@@ -311,7 +311,7 @@
                         console.log('⚠️ Background checkApiCooldowns failed, trying direct...');
                     }
                 }
-                
+
                 // Fallback to direct fetch
                 const response = await fetch(`https://api.torn.com/user/?selections=cooldowns&key=${this.apiKey}`);
                 const data = await response.json();
@@ -365,14 +365,14 @@
 
             try {
                 console.log(`🔍 Checking ${cooldownType} cooldown with API key...`);
-                
+
                 // Try background script first
                 let data = null;
                 if (chrome?.runtime?.sendMessage) {
                     try {
                         const backgroundResult = await this.makeCooldownApiCallViaBackground(this.apiKey);
                         if (backgroundResult.success) {
-                            data = { 
+                            data = {
                                 cooldowns: backgroundResult.cooldowns,
                                 money: backgroundResult.money
                             };
@@ -382,7 +382,7 @@
                         console.log('⚠️ Background checkSpecificCooldown failed, trying direct...');
                     }
                 }
-                
+
                 // Fallback to direct fetch
                 if (!data) {
                     const response = await fetch(`https://api.torn.com/user/?selections=cooldowns,money&key=${this.apiKey}`);
@@ -395,8 +395,8 @@
                     console.warn("⚠️ API Error:", data.error.error);
                     if (window.SidekickModules?.Core?.NotificationSystem) {
                         window.SidekickModules.Core.NotificationSystem.show(
-                            'API Error', 
-                            data.error.error, 
+                            'API Error',
+                            data.error.error,
                             'error'
                         );
                     }
@@ -406,7 +406,7 @@
                 console.log(`🔍 Available cooldowns:`, data.cooldowns);
                 console.log(`🔍 Money data:`, data.money);
                 console.log(`🔍 Looking for cooldown type: ${cooldownType}`);
-                
+
                 // Special handling for bank investment
                 let remainingTimeSeconds = null;
                 if (cooldownType === 'Bank') {
@@ -424,36 +424,36 @@
 
                 if (remainingTimeSeconds !== null && remainingTimeSeconds !== undefined && remainingTimeSeconds > 0) {
                     console.log(`🔍 Cooldown found: ${remainingTimeSeconds} seconds remaining`);
-                    
+
                     if (remainingTimeSeconds > 0) {
                         // Cooldown names mapping
                         const cooldownNames = {
                             'drug': 'Drug Cooldown',
-                            'medical': 'Medical Cooldown', 
+                            'medical': 'Medical Cooldown',
                             'booster': 'Booster Cooldown',
                             'Bank': 'Bank Investment'
                         };
-                        
+
                         // Find existing cooldown timer or use current timer
                         let existingTimer = this.findOrCreateCooldownTimer(timer, cooldownType);
-                        
+
                         console.log(`🔍 Original timer clicked:`, timer.id);
                         console.log(`🔍 Timer selected for cooldown:`, existingTimer.id);
                         console.log(`🔍 Adding ${cooldownType} to timer:`, existingTimer.id);
                         console.log(`🔍 Existing cooldowns before:`, existingTimer.cooldowns);
-                        
+
                         // Add this cooldown to the timer's cooldown collection
                         if (!existingTimer.cooldowns) {
                             existingTimer.cooldowns = {};
                         }
                         existingTimer.cooldowns[cooldownType] = remainingTimeSeconds;
-                        
+
                         console.log(`🔍 Cooldowns after adding ${cooldownType}:`, existingTimer.cooldowns);
-                        
+
                         // Update timer properties based on number of cooldowns
                         const cooldownCount = Object.keys(existingTimer.cooldowns).length;
                         console.log(`🔍 Total cooldown count: ${cooldownCount}`);
-                        
+
                         if (cooldownCount === 1) {
                             // Single cooldown - show specific name
                             existingTimer.name = cooldownNames[cooldownType] || 'Cooldown';
@@ -463,17 +463,17 @@
                             existingTimer.name = 'Cooldowns';
                             existingTimer.color = '#9b59b6'; // Purple for multi-cooldown
                         }
-                        
+
                         existingTimer.duration = Math.max(...Object.values(existingTimer.cooldowns));
                         existingTimer.remainingTime = Math.max(...Object.values(existingTimer.cooldowns));
                         existingTimer.isApiTimer = true;
                         existingTimer.isRunning = true;
 
                         this.saveTimers();
-                        
+
                         // Start the timer
                         this.startTimer(existingTimer.id);
-                        
+
                         // Force a complete display update without removing the element
                         console.log('🔍 Updating timer display after cooldown selection');
                         this.updateTimerDisplay(existingTimer.id);
@@ -481,7 +481,7 @@
                         // Show success notification
                         if (window.SidekickModules?.UI?.showNotification) {
                             window.SidekickModules.UI.showNotification(
-                                'SUCCESS', 
+                                'SUCCESS',
                                 `${cooldownNames[cooldownType]} Timer Started - ${this.formatTime(remainingTimeSeconds)} remaining`
                             );
                         }
@@ -489,8 +489,8 @@
                         console.log(`🔍 ${cooldownType} cooldown has expired (remaining time: ${remainingTimeSeconds} seconds)`);
                         if (window.SidekickModules?.Core?.NotificationSystem) {
                             window.SidekickModules.Core.NotificationSystem.show(
-                                'Cooldown Expired', 
-                                `Your ${cooldownType} cooldown has already finished`, 
+                                'Cooldown Expired',
+                                `Your ${cooldownType} cooldown has already finished`,
                                 'info'
                             );
                         }
@@ -507,8 +507,8 @@
                     console.log(`🔍 Cooldown value was:`, remainingTimeSeconds);
                     if (window.SidekickModules?.Core?.NotificationSystem) {
                         window.SidekickModules.Core.NotificationSystem.show(
-                            'No Active Cooldown', 
-                            `You don't currently have an active ${typeName}`, 
+                            'No Active Cooldown',
+                            `You don't currently have an active ${typeName}`,
                             'info'
                         );
                     }
@@ -517,8 +517,8 @@
                 console.warn("⚠️ Failed to fetch cooldown from API:", error);
                 if (window.SidekickModules?.Core?.NotificationSystem) {
                     window.SidekickModules.Core.NotificationSystem.show(
-                        'Connection Error', 
-                        'Failed to connect to Torn API', 
+                        'Connection Error',
+                        'Failed to connect to Torn API',
                         'error'
                     );
                 }
@@ -527,7 +527,7 @@
 
         findOrCreateCooldownTimer(currentTimer, cooldownType) {
             console.log(`🔍 findOrCreateCooldownTimer for ${cooldownType}, currentTimer:`, currentTimer.id);
-            
+
             // ALWAYS use the current timer that was clicked - no searching for old timers
             console.log(`🔍 Using clicked timer:`, currentTimer.id);
             return currentTimer;
@@ -536,12 +536,12 @@
         // Start periodic time synchronization and API checks
         startPeriodicSynchronization() {
             console.log('🔄 Starting periodic timer synchronization...');
-            
+
             // Synchronize timers every 30 seconds to prevent drift
             setInterval(() => {
                 this.synchronizeTimers();
             }, 30000);
-            
+
             // Check for page visibility changes and sync immediately
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState === 'visible') {
@@ -551,7 +551,7 @@
                     }, 1000); // Small delay to ensure page is fully loaded
                 }
             });
-            
+
             // Start API monitoring if we have any API timers
             const hasApiTimers = this.timers.some(timer => timer.isApiTimer);
             if (hasApiTimers) {
@@ -562,17 +562,17 @@
         // Synchronize timers with actual elapsed time (fix drift from navigation)
         async synchronizeTimers() {
             console.log("🔄 Synchronizing timers with actual elapsed time...");
-            
+
             const now = Date.now();
             let hasChanges = false;
-            
+
             for (const timer of this.timers) {
                 if (timer.lastUpdated && timer.isRunning && timer.type === 'countdown') {
                     const elapsed = Math.floor((now - new Date(timer.lastUpdated).getTime()) / 1000);
-                    
+
                     if (elapsed > 2) { // Only sync if more than 2 seconds elapsed
                         console.log(`⏰ Timer ${timer.name}: correcting ${elapsed} seconds of drift`);
-                        
+
                         if (timer.cooldowns) {
                             // Update multiple cooldowns
                             for (let cooldownType in timer.cooldowns) {
@@ -583,21 +583,21 @@
                             // Single timer
                             timer.remainingTime = Math.max(0, timer.remainingTime - elapsed);
                         }
-                        
+
                         // Check if timer expired while away
                         if (timer.remainingTime <= 0) {
                             timer.isRunning = false;
                             console.log(`⏰ Timer ${timer.name} expired while away`);
                         }
-                        
+
                         hasChanges = true;
                     }
                 }
-                
+
                 // Update last updated time
                 timer.lastUpdated = new Date().toISOString();
             }
-            
+
             if (hasChanges) {
                 this.saveTimers();
                 console.log("✅ Timer synchronization complete");
@@ -608,10 +608,10 @@
         async loadTimers() {
             try {
                 console.log("� loadTimers - Starting load...");
-                
+
                 let state = null;
                 let loaded = false;
-                
+
                 // Method 1: Try Chrome storage wrapper (now handles extension context internally)
                 try {
                     if (window.SidekickModules?.Core?.ChromeStorage?.get) {
@@ -626,7 +626,7 @@
                 } catch (error) {
                     console.warn("⚠️ ChromeStorage wrapper load failed:", error.message);
                 }
-                
+
                 // Method 2: Try localStorage if wrapper failed
                 if (!loaded) {
                     try {
@@ -641,7 +641,7 @@
                         console.warn("⚠️ localStorage fallback load failed:", error);
                     }
                 }
-                
+
                 // Method 3: Try old format for backward compatibility
                 if (!loaded) {
                     try {
@@ -660,7 +660,7 @@
                         console.warn("⚠️ Old format load failed:", error);
                     }
                 }
-                
+
                 // Method 4: Try old format via localStorage
                 if (!loaded) {
                     try {
@@ -677,29 +677,29 @@
                         console.warn("⚠️ Old format localStorage load failed:", error);
                     }
                 }
-                
+
                 if (!loaded) {
                     this.timers = [];
                     console.log("⚠️ No storage method succeeded, initialized empty timers array");
                 }
-                
+
                 // Synchronize timer times after loading (fix time drift from being away)
                 await this.synchronizeTimers();
-                
+
                 // Log each timer for debugging (like original script)
                 this.timers.forEach((timer, index) => {
                     console.log(`📂 Timer ${index + 1}:`, timer.name, 'type:', timer.cooldownType, 'isApiTimer:', timer.isApiTimer);
                 });
-                
+
             } catch (error) {
                 console.error('Failed to load timers:', error);
                 this.timers = [];
-                
+
                 // Show user-friendly error
                 if (window.SidekickModules?.Core?.NotificationSystem) {
                     window.SidekickModules.Core.NotificationSystem.show(
-                        'Timer Error', 
-                        'Failed to load saved timers: ' + error.message, 
+                        'Timer Error',
+                        'Failed to load saved timers: ' + error.message,
                         'error'
                     );
                 }
@@ -710,15 +710,15 @@
         async restoreTimerDisplays() {
             try {
                 console.log("🔄 Restoring timer displays...");
-                
+
                 // Clear any existing timer elements first to prevent duplication
                 const existingTimers = document.querySelectorAll('[id^="sidekick-timer-"]');
                 console.log(`🔄 Clearing ${existingTimers.length} existing timer elements`);
                 existingTimers.forEach(element => element.remove());
-                
+
                 // Wait a bit for the UI to be ready
                 await new Promise(resolve => setTimeout(resolve, 100));
-                
+
                 // Refresh cooldown data from API before restoring (only if API key exists)
                 if (this.apiKey) {
                     try {
@@ -730,7 +730,7 @@
                 } else {
                     console.log("⚠️ No API key available, skipping cooldown refresh");
                 }
-                
+
                 // Restore each timer
                 for (const timer of this.timers) {
                     if (timer.isRunning) {
@@ -743,15 +743,15 @@
                                 }
                             }
                         }
-                        
+
                         // Render the timer display
                         this.renderTimer(timer);
-                        
+
                         // Start the countdown if it's running
                         this.startTimer(timer.id);
                     }
                 }
-                
+
                 console.log("✅ Timer displays restored:", this.timers.length, "timers");
             } catch (error) {
                 console.error("❌ Failed to restore timer displays:", error);
@@ -762,7 +762,7 @@
         async saveTimers() {
             try {
                 console.log("💾 BULLETPROOF SAVE - Starting with", this.timers.length, "timers");
-                
+
                 // Create clean state object (no DOM references, no functions)
                 const cleanState = {
                     timers: this.timers.map(timer => ({
@@ -787,21 +787,21 @@
                     lastSaved: Date.now(),
                     version: '1.0'
                 };
-                
+
                 const stateString = JSON.stringify(cleanState);
                 console.log("💾 State string length:", stateString.length);
                 console.log("💾 State preview:", stateString.substring(0, 200));
-                
+
                 // TRIPLE SAVE: localStorage (primary), Chrome storage (backup), sessionStorage (emergency)
-                
+
                 // Method 1: localStorage (synchronous, most reliable)
                 localStorage.setItem('sidekick_timer_state', stateString);
                 console.log("✅ localStorage save completed");
-                
+
                 // Method 2: sessionStorage (backup)
                 sessionStorage.setItem('sidekick_timer_state', stateString);
                 console.log("✅ sessionStorage save completed");
-                
+
                 // Method 3: Chrome storage (async backup)
                 try {
                     if (window.SidekickModules?.Core?.ChromeStorage?.set) {
@@ -811,7 +811,7 @@
                 } catch (chromeError) {
                     console.debug("🔧 Chrome storage backup failed (expected if context invalidated):", chromeError);
                 }
-                
+
                 // Immediate verification
                 const verification = localStorage.getItem('sidekick_timer_state');
                 if (verification) {
@@ -820,7 +820,7 @@
                 } else {
                     console.error("❌ SAVE FAILED - no data in localStorage");
                 }
-                
+
             } catch (error) {
                 console.error('❌ CRITICAL SAVE FAILURE:', error);
                 throw error; // Make failures visible
@@ -830,18 +830,18 @@
         // Restore timer panels after page refresh
         restoreTimerPanels() {
             console.log("🔄 Restoring", this.timers.length, "timer panels after page refresh...");
-            
+
             if (this.timers.length === 0) {
                 console.log("⏰ No timers to restore");
                 return;
             }
-            
+
             // Create panels for all saved timers
             this.timers.forEach(timer => {
                 try {
                     console.log("🔄 Restoring timer:", timer.name, "at position", timer.x, timer.y);
                     this.renderTimer(timer);
-                    
+
                     // If the timer was running, restart it
                     if (timer.isRunning && timer.remainingTime > 0) {
                         this.startTimer(timer.id);
@@ -850,40 +850,40 @@
                     console.error("❌ Failed to restore timer:", timer.name, error);
                 }
             });
-            
+
             console.log("✅ Timer panels restoration completed");
         },
 
         // Create a new timer window in the sidebar
         addTimer(name = 'Timer') {
             console.log('⏰ Adding new timer:', name, '- Current timer count:', this.timers.length);
-            
+
             // Safeguard: Don't interfere with existing timers
             const currentTimerCount = this.timers.length;
             if (currentTimerCount > 0) {
                 console.log('🔍 Existing timers found, ensuring no conflicts...');
             }
-            
+
             // Get content area for positioning within sidepanel
             const contentArea = document.getElementById('sidekick-content');
             const contentWidth = contentArea ? contentArea.clientWidth : 480;
             const contentHeight = contentArea ? contentArea.clientHeight : 500;
-            
+
             // Better stacking algorithm
             const timerWidth = Math.min(280, contentWidth - 40);
             const timerHeight = Math.min(140, contentHeight - 60); // Smaller height since no buttons
             const padding = 10;
             const stackOffset = 25;
-            
+
             // Calculate position for better stacking
             const timerCount = this.timers.length;
             const maxColumns = Math.floor((contentWidth - padding * 2) / (timerWidth + stackOffset));
             const column = timerCount % maxColumns;
             const row = Math.floor(timerCount / maxColumns);
-            
+
             const x = padding + (column * (timerWidth + stackOffset));
             const y = padding + (row * (timerHeight + stackOffset));
-            
+
             const timer = {
                 id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 name: name,
@@ -904,14 +904,14 @@
             };
 
             this.timers.push(timer);
-            
+
             // Save timers immediately after adding
             console.log('💾 Saving timers after adding new timer');
             this.saveTimers();
-            
+
             // Render the blank timer window
             this.renderTimer(timer);
-            
+
             console.log('⏰ Timer added successfully, total timers:', this.timers.length);
             return timer;
         },
@@ -938,11 +938,11 @@
             const selectorElement = document.createElement('div');
             selectorElement.className = 'cooldown-selector';
             selectorElement.dataset.timerId = timer.id;
-            
+
             // Use content area dimensions for positioning within sidepanel
             const contentWidth = contentArea.clientWidth || 480;
             const contentHeight = contentArea.clientHeight || 500;
-            
+
             const width = Math.min(300, contentWidth - 40);
             const height = Math.min(400, contentHeight - 60);
             const x = Math.min(Math.max(timer.x || 10, 0), contentWidth - width);
@@ -962,7 +962,7 @@
                 z-index: 1000;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.4);
             `;
-            
+
             selectorElement.innerHTML = `
                 <div style="
                     background: linear-gradient(135deg, #2196F3, #1976D2);
@@ -1025,7 +1025,7 @@
                         " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.4)'"
                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
                             <span>${info.name}</span>
-                            <span style="font-size: 10px; opacity: 0.8;">${Math.floor(info.duration/60)}m ${info.duration%60}s</span>
+                            <span style="font-size: 10px; opacity: 0.8;">${Math.floor(info.duration / 60)}m ${info.duration % 60}s</span>
                         </button>
                     `).join('')}
                     
@@ -1062,7 +1062,7 @@
             selectorElement.querySelectorAll('.cooldown-option').forEach(option => {
                 option.addEventListener('click', () => {
                     const type = option.dataset.type;
-                    
+
                     if (type) {
                         // Set up cooldown timer
                         const cooldownInfo = cooldownTypes[type];
@@ -1078,7 +1078,7 @@
                         timer.duration = 300; // 5 minutes default
                         timer.remainingTime = 300;
                     }
-                    
+
                     this.saveTimers();
                     selectorElement.remove();
                     this.renderTimer(timer);
@@ -1089,7 +1089,7 @@
         // Render a timer window as a standalone draggable window
         renderTimer(timer) {
             console.log('🔍 renderTimer - Creating standalone timer window for timer:', timer.id);
-            
+
             // ALWAYS remove any existing element first to prevent duplication
             const existingElement = document.getElementById(`sidekick-timer-${timer.id}`);
             if (existingElement) {
@@ -1109,24 +1109,24 @@
             timerElement.className = 'movable-timer';
             timerElement.id = `sidekick-timer-${timer.id}`;  // Add the missing ID!
             timerElement.dataset.timerId = timer.id;
-            
+
             // Get content area for positioning within sidepanel
             const contentArea = document.getElementById('sidekick-content');
             if (!contentArea) {
                 console.error('⏰ Sidekick content area not found');
                 return;
             }
-            
+
             console.log(`🔍 Content area found:`, contentArea);
             console.log(`🔍 Content area parent:`, contentArea.parentNode);
             console.log(`🔍 Content area children count:`, contentArea.children.length);
             console.log(`🔍 Content area innerHTML length:`, contentArea.innerHTML.length);
-            
+
             const contentWidth = contentArea.clientWidth || 480;
             const contentHeight = contentArea.clientHeight || 500;
-            
+
             console.log(`🔍 Content dimensions: ${contentWidth}x${contentHeight}`);
-            
+
             const width = Math.min(Math.max(timer.width || 280, 140), contentWidth - 20);
             const height = Math.min(Math.max(timer.height || 180, 80), contentHeight - 40);
             const x = Math.min(Math.max(timer.x || 10, 0), contentWidth - width);
@@ -1150,7 +1150,7 @@
                 overflow: hidden;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.4);
             `;
-            
+
             timerElement.innerHTML = `
                 <div class="timer-header" style="
                     background: linear-gradient(135deg, ${timer.color || '#2196F3'}, ${this.darkenColor(timer.color || '#2196F3', 15)});
@@ -1282,7 +1282,7 @@
                 
                 <div class="timer-content" style="
                     flex: 1;
-                    padding: 12px;
+                    padding: 12px 12px 12px 12px;
                     display: flex;
                     flex-direction: column;
                     gap: 8px;
@@ -1290,7 +1290,7 @@
                     scrollbar-width: none;
                     -ms-overflow-style: none;
                     align-items: center;
-                    justify-content: center;
+                    justify-content: flex-start;
                     color: #999;
                     font-size: 14px;
                     text-align: center;
@@ -1300,18 +1300,18 @@
                         display: none;
                     }
                 </style>
-                    ${(function() {
-                        console.log(`🔍 renderTimer - timer.remainingTime: ${timer.remainingTime}, name: ${timer.name}`);
-                        
-                        if (timer.cooldowns && Object.keys(timer.cooldowns).length > 1) {
-                            // Multi-cooldown display
-                            const cooldownNames = {
-                                'drug': 'Drug',
-                                'medical': 'Medical', 
-                                'booster': 'Booster'
-                            };
-                            
-                            return Object.entries(timer.cooldowns).map(([type, time]) => `
+                    ${(function () {
+                    console.log(`🔍 renderTimer - timer.remainingTime: ${timer.remainingTime}, name: ${timer.name}`);
+
+                    if (timer.cooldowns && Object.keys(timer.cooldowns).length > 1) {
+                        // Multi-cooldown display
+                        const cooldownNames = {
+                            'drug': 'Drug',
+                            'medical': 'Medical',
+                            'booster': 'Booster'
+                        };
+
+                        return Object.entries(timer.cooldowns).map(([type, time]) => `
                                 <div style="
                                     background: rgba(255,255,255,0.1);
                                     border-radius: 6px;
@@ -1354,9 +1354,9 @@
                                     </div>
                                 </div>
                             `).join('');
-                        } else if (timer.remainingTime > 0) {
-                            // Single cooldown display
-                            return `
+                    } else if (timer.remainingTime > 0) {
+                        // Single cooldown display
+                        return `
                                 <div class="timer-display" style="
                                     text-align: center;
                                     font-size: 18px;
@@ -1365,9 +1365,9 @@
                                     font-family: 'Courier New', monospace;
                                 ">${this.formatTime(timer.remainingTime)}</div>
                             `;
-                        } else {
-                            // Empty timer
-                            return `
+                    } else {
+                        // Empty timer
+                        return `
                                 <div class="timer-display" style="
                                     text-align: center;
                                     font-size: 24px;
@@ -1376,8 +1376,8 @@
                                     font-family: 'Courier New', monospace;
                                 "></div>
                             `;
-                        }
-                    }).call(this)}
+                    }
+                }).call(this)}
                 </div>
             `;
 
@@ -1385,7 +1385,7 @@
             console.log(`🔍 About to append timer element:`, timerElement);
             console.log(`🔍 Timer element ID:`, timerElement.id);
             console.log(`🔍 Timer element className:`, timerElement.className);
-            
+
             try {
                 contentArea.appendChild(timerElement);
                 console.log(`🔍 appendChild() completed without error`);
@@ -1393,48 +1393,48 @@
                 console.error(`🚨 appendChild() failed with error:`, error);
                 return;
             }
-            
+
             console.log(`🔍 Timer element appended to sidepanel content area with ID: sidekick-timer-${timer.id}`);
-            
+
             // Simple verification that the element was properly added
             const verifyElement = document.getElementById(`sidekick-timer-${timer.id}`);
             if (verifyElement) {
                 console.log(`✅ Timer ${timer.id} successfully rendered and verified`);
-                
+
                 // Pinned timers have no special visual styling
                 // They simply cannot be moved or resized
             } else {
                 console.error(`� Timer ${timer.id} failed to render properly`);
                 return;
             }
-            
+
             this.setupTimerEventListeners(timer, timerElement);
-            
+
             console.log('⏰ Timer rendered:', timer.name);
         },
 
         // Set up timer event listeners
         setupTimerEventListeners(timer, element) {
             const self = this; // Preserve context
-            
+
             // Dropdown toggle
             const dropdownBtn = element.querySelector('.dropdown-btn');
             const dropdownContent = element.querySelector('.dropdown-content');
-            
+
             if (dropdownBtn && dropdownContent) {
                 console.log('🔍 Setting up dropdown for timer:', timer.id);
-                
-                dropdownBtn.addEventListener('click', function(e) {
+
+                dropdownBtn.addEventListener('click', function (e) {
                     e.stopPropagation();
                     console.log('🔍 Dropdown button clicked');
-                    
+
                     // Close all other dropdowns first
                     document.querySelectorAll('.timer-dropdown .dropdown-content').forEach(dropdown => {
                         if (dropdown !== dropdownContent) {
                             dropdown.style.display = 'none';
                         }
                     });
-                    
+
                     // Toggle this dropdown
                     const isVisible = dropdownContent.style.display === 'block';
                     dropdownContent.style.display = isVisible ? 'none' : 'block';
@@ -1442,7 +1442,7 @@
                 });
 
                 // Close dropdown when clicking outside (use a more specific approach)
-                document.addEventListener('click', function(e) {
+                document.addEventListener('click', function (e) {
                     if (!element.contains(e.target)) {
                         dropdownContent.style.display = 'none';
                     }
@@ -1451,31 +1451,31 @@
                 // Handle cooldown option clicks
                 const cooldownOptions = element.querySelectorAll('.cooldown-option');
                 console.log(`🔍 Found ${cooldownOptions.length} cooldown options`);
-                
+
                 cooldownOptions.forEach((option, index) => {
                     const cooldownType = option.dataset.type;
                     console.log(`🔍 Setting up option ${index}:`, option.textContent, 'data-type:', cooldownType);
-                    
-                    option.addEventListener('mouseenter', function() {
+
+                    option.addEventListener('mouseenter', function () {
                         option.style.background = 'rgba(255,255,255,0.1)';
                     });
-                    option.addEventListener('mouseleave', function() {
+                    option.addEventListener('mouseleave', function () {
                         option.style.background = 'none';
                     });
-                    option.addEventListener('click', async function(e) {
+                    option.addEventListener('click', async function (e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        
+
                         console.log(`🔍 Cooldown option clicked: ${cooldownType}`);
-                        
+
                         if (cooldownType) {
                             // Close dropdown immediately
                             dropdownContent.style.display = 'none';
-                            
+
                             try {
                                 // Call the cooldown check with proper context
                                 await self.checkSpecificCooldown(timer, cooldownType);
-                                
+
                                 // Show visual feedback that timer was started
                                 const timerWindow = document.getElementById(`sidekick-timer-${timer.id}`);
                                 if (timerWindow) {
@@ -1497,33 +1497,33 @@
                 // Handle timer pin option click
                 const pinOption = element.querySelector('.timer-pin-option');
                 if (pinOption) {
-                    pinOption.addEventListener('mouseenter', function() {
+                    pinOption.addEventListener('mouseenter', function () {
                         pinOption.style.background = 'rgba(255,255,255,0.1)';
                     });
-                    pinOption.addEventListener('mouseleave', function() {
+                    pinOption.addEventListener('mouseleave', function () {
                         pinOption.style.background = 'none';
                     });
-                    pinOption.addEventListener('click', function(e) {
+                    pinOption.addEventListener('click', function (e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        
+
                         console.log(`🔍 Timer pin clicked for timer: ${timer.id}`);
-                        
+
                         // Toggle pinned state
                         timer.pinned = !timer.pinned;
-                        
+
                         // Update button text
                         pinOption.textContent = timer.pinned ? '📌 Unpin' : '📌 Pin';
-                        
+
                         // No visual changes - pinned timers look the same
                         // They simply cannot be moved or resized
-                        
+
                         // Close dropdown
                         dropdownContent.style.display = 'none';
-                        
+
                         // Save timer state
                         self.saveTimers();
-                        
+
                         console.log(`⏰ Timer ${timer.pinned ? 'pinned' : 'unpinned'}`);
                     });
                 }
@@ -1554,14 +1554,14 @@
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    
+
                     // Prevent rapid clicking/spam
                     if (btn.disabled) return;
                     btn.disabled = true;
                     btn.style.opacity = '0.3';
-                    
+
                     this.removeCooldown(timer.id, cooldownType);
-                    
+
                     // Re-enable after delay
                     setTimeout(() => {
                         if (btn && btn.parentNode) {
@@ -1570,7 +1570,7 @@
                         }
                     }, 1000);
                 });
-                
+
                 // Hover effects
                 btn.addEventListener('mouseenter', () => {
                     if (!btn.disabled) {
@@ -1600,7 +1600,7 @@
 
             // Make draggable
             this.makeDraggable(element, timer);
-            
+
             // Add resize observer to save size changes
             this.addResizeObserver(element, timer);
         },
@@ -1623,7 +1623,7 @@
             const interval = setInterval(() => {
                 // Update last updated time
                 timer.lastUpdated = new Date().toISOString();
-                
+
                 if (timer.type === 'countdown') {
                     if (timer.cooldowns) {
                         // Update multiple cooldowns
@@ -1634,10 +1634,10 @@
                                 allExpired = false;
                             }
                         }
-                        
+
                         // Update main timer remaining time to the longest cooldown
                         timer.remainingTime = Math.max(...Object.values(timer.cooldowns));
-                        
+
                         if (allExpired) {
                             timer.isRunning = false;
                             clearInterval(interval);
@@ -1645,9 +1645,9 @@
                             // All cooldowns finished notification
                             if (window.SidekickModules?.Core?.NotificationSystem) {
                                 window.SidekickModules.Core.NotificationSystem.show(
-                                    'Cooldowns Finished', 
-                                    'All cooldowns have finished!', 
-                                    'success', 
+                                    'Cooldowns Finished',
+                                    'All cooldowns have finished!',
+                                    'success',
                                     5000
                                 );
                             }
@@ -1662,9 +1662,9 @@
                             // Timer finished notification
                             if (window.SidekickModules?.Core?.NotificationSystem) {
                                 window.SidekickModules.Core.NotificationSystem.show(
-                                    'Timer Finished', 
-                                    `${timer.name} has finished!`, 
-                                    'success', 
+                                    'Timer Finished',
+                                    `${timer.name} has finished!`,
+                                    'success',
                                     5000
                                 );
                             }
@@ -1686,15 +1686,15 @@
         updateTimerDisplay(id) {
             const timer = this.timers.find(t => t.id === id);
             const element = document.getElementById(`sidekick-timer-${timer.id}`);
-            
+
             console.log(`🔍 updateTimerDisplay - Timer:`, timer?.name, 'remainingTime:', timer?.remainingTime);
             console.log(`🔍 updateTimerDisplay - Looking for ID: sidekick-timer-${timer.id}`);
             console.log(`🔍 updateTimerDisplay - Element found:`, !!element);
-            
+
             // Debug: Log all existing timer elements
             const allTimerElements = document.querySelectorAll('[id^="sidekick-timer-"]');
             console.log(`🔍 All timer elements in DOM:`, Array.from(allTimerElements).map(el => el.id));
-            
+
             if (!timer || !element) {
                 console.error(`🔍 Cannot update - timer exists: ${!!timer}, element exists: ${!!element}`);
                 return;
@@ -1716,25 +1716,25 @@
             if (contentArea) {
                 // ALWAYS rebuild for now to prevent duplication issues
                 const needsRebuild = true; // this.checkIfRebuildNeeded(contentArea, timer);
-                
+
                 if (!needsRebuild) {
                     // Just update time displays without recreating elements
                     this.updateTimeDisplaysOnly(contentArea, timer);
                     return;
                 }
-                
+
                 // Clear and rebuild content - CLEAR ALL CHILDREN TO PREVENT DUPLICATES
                 contentArea.innerHTML = '';
-                
+
                 // Add new content based on timer type
                 if (timer.cooldowns && Object.keys(timer.cooldowns).length > 1) {
                     // Multi-cooldown display
                     const cooldownNames = {
                         'drug': 'Drug',
-                        'medical': 'Medical', 
+                        'medical': 'Medical',
                         'booster': 'Booster'
                     };
-                    
+
                     Object.entries(timer.cooldowns).forEach(([type, time]) => {
                         const cooldownDiv = document.createElement('div');
                         cooldownDiv.style.cssText = `
@@ -1779,21 +1779,21 @@
                                 " title="Remove ${cooldownNames[type] || type} cooldown">×</button>
                             </div>
                         `;
-                        
+
                         // Add event listeners for the remove button
                         const removeBtn = cooldownDiv.querySelector('.remove-cooldown-btn');
                         if (removeBtn) {
                             removeBtn.addEventListener('click', (e) => {
                                 e.stopPropagation();
                                 e.preventDefault();
-                                
+
                                 // Prevent rapid clicking/spam
                                 if (removeBtn.disabled) return;
                                 removeBtn.disabled = true;
                                 removeBtn.style.opacity = '0.3';
-                                
+
                                 this.removeCooldown(timer.id, type);
-                                
+
                                 // Re-enable after a delay
                                 setTimeout(() => {
                                     if (removeBtn && removeBtn.parentNode) {
@@ -1802,7 +1802,7 @@
                                     }
                                 }, 1000);
                             });
-                            
+
                             // Hover effects
                             removeBtn.addEventListener('mouseenter', () => {
                                 if (!removeBtn.disabled) {
@@ -1815,7 +1815,7 @@
                                 }
                             });
                         }
-                        
+
                         contentArea.appendChild(cooldownDiv);
                     });
                 } else {
@@ -1846,18 +1846,18 @@
                 const existingCooldowns = contentArea.querySelectorAll('[data-cooldown-type]');
                 const existingTypes = Array.from(existingCooldowns).map(el => el.dataset.cooldownType);
                 const currentTypes = Object.keys(timer.cooldowns);
-                
+
                 // Need rebuild if different structure (different types or count)
                 if (existingTypes.length !== currentTypes.length) return true;
                 if (!existingTypes.every(type => currentTypes.includes(type))) return true;
-                
+
                 // Structure matches, no rebuild needed
                 return false;
             } else {
                 // Single timer - check if we have the right display type
                 const hasMultiDisplay = contentArea.querySelector('[data-cooldown-type]');
                 const hasSingleDisplay = contentArea.querySelector('.timer-display');
-                
+
                 // Need rebuild if we have multi-display but need single, or no single display
                 return hasMultiDisplay || !hasSingleDisplay;
             }
@@ -1894,30 +1894,30 @@
                 console.log(`🚫 Debouncing remove request for ${cooldownType} on timer ${timerId}`);
                 return;
             }
-            
+
             if (!this.removeDebounce) this.removeDebounce = {};
             this.removeDebounce[debounceKey] = true;
-            
+
             // Clear debounce after short delay
             setTimeout(() => {
                 if (this.removeDebounce) {
                     delete this.removeDebounce[debounceKey];
                 }
             }, 500);
-            
+
             console.log(`🗑️ Attempting to remove ${cooldownType} cooldown from timer ${timerId}`);
-            
+
             const timer = this.timers.find(t => t.id === timerId);
             if (!timer) {
                 console.warn(`⚠️ Timer ${timerId} not found`);
                 return;
             }
-            
+
             if (!timer.cooldowns) {
                 console.warn(`⚠️ Timer ${timerId} has no cooldowns object`);
                 return;
             }
-            
+
             // Check if the cooldown type exists before trying to remove it
             if (!timer.cooldowns.hasOwnProperty(cooldownType)) {
                 console.warn(`⚠️ Cooldown ${cooldownType} not found in timer ${timerId}. Available cooldowns:`, Object.keys(timer.cooldowns));
@@ -1927,10 +1927,10 @@
             // Remove the specific cooldown
             delete timer.cooldowns[cooldownType];
             console.log(`✅ Removed ${cooldownType} cooldown`);
-            
+
             const remainingCooldowns = Object.keys(timer.cooldowns);
             console.log(`🔍 Remaining cooldowns: ${remainingCooldowns.join(', ')}`);
-            
+
             if (remainingCooldowns.length === 0) {
                 // No cooldowns left - delete the entire timer
                 console.log(`🗑️ No cooldowns remaining, deleting timer ${timerId}`);
@@ -1941,7 +1941,7 @@
                 const remainingType = remainingCooldowns[0];
                 const cooldownNames = {
                     'drug': 'Drug Cooldown',
-                    'medical': 'Medical Cooldown', 
+                    'medical': 'Medical Cooldown',
                     'booster': 'Booster Cooldown'
                 };
                 timer.name = cooldownNames[remainingType] || 'Cooldown';
@@ -1957,23 +1957,23 @@
                 timer.duration = Math.max(...Object.values(timer.cooldowns));
                 console.log(`🔄 Timer kept as multi-cooldown: ${remainingCooldowns.length} remaining`);
             }
-            
-                // Save and update display
-                this.saveTimers();
-                this.updateTimerDisplay(timerId);
-                
-                // Start API monitoring for this timer if it's API-based
-                if (timer.isApiTimer) {
-                    this.startApiMonitoring(timerId);
-                }            // Show notification
+
+            // Save and update display
+            this.saveTimers();
+            this.updateTimerDisplay(timerId);
+
+            // Start API monitoring for this timer if it's API-based
+            if (timer.isApiTimer) {
+                this.startApiMonitoring(timerId);
+            }            // Show notification
             if (window.SidekickModules?.UI?.showNotification) {
                 const cooldownNames = {
                     'drug': 'Drug',
-                    'medical': 'Medical', 
+                    'medical': 'Medical',
                     'booster': 'Booster'
                 };
                 window.SidekickModules.UI.showNotification(
-                    'INFO', 
+                    'INFO',
                     `${cooldownNames[cooldownType] || cooldownType} cooldown removed`
                 );
             }
@@ -1983,7 +1983,7 @@
         deleteTimer(id) {
             console.log('🚨 TIMER DELETION - ID:', id);
             console.trace('🚨 DELETION CALL STACK:');
-            
+
             const timer = this.timers.find(t => t.id === id);
             if (!timer) return;
 
@@ -2028,7 +2028,7 @@
 
             function dragStart(e) {
                 if (e.target.closest('button')) return;
-                
+
                 initialX = e.clientX - xOffset;
                 initialY = e.clientY - yOffset;
 
@@ -2051,10 +2051,10 @@
                     if (contentArea) {
                         const bounds = contentArea.getBoundingClientRect();
                         const elementBounds = element.getBoundingClientRect();
-                        
+
                         currentX = Math.max(0, Math.min(currentX, bounds.width - elementBounds.width));
                         currentY = Math.max(0, Math.min(currentY, bounds.height - elementBounds.height));
-                        
+
                         xOffset = currentX;
                         yOffset = currentY;
                     }
@@ -2073,12 +2073,12 @@
                     timer.x = currentX;
                     timer.y = currentY;
                     timer.modified = new Date().toISOString();
-                    
+
                     // Save to storage
                     if (window.SidekickModules?.Timer?.saveTimers) {
                         window.SidekickModules.Timer.saveTimers();
                     }
-                    
+
                     console.log(`⏰ Timer position saved: x=${currentX}, y=${currentY}`);
                 }
             }
@@ -2089,12 +2089,12 @@
             const resizeObserver = new ResizeObserver((entries) => {
                 for (let entry of entries) {
                     const { width, height } = entry.contentRect;
-                    
+
                     // Update timer object with new size
                     timer.width = Math.max(width, 140);
                     timer.height = Math.max(height, 80);
                     timer.modified = new Date().toISOString();
-                    
+
                     // Debounced save to avoid too frequent saves during resize
                     clearTimeout(timer._resizeTimeout);
                     timer._resizeTimeout = setTimeout(() => {
@@ -2103,15 +2103,15 @@
                     }, 500);
                 }
             });
-            
+
             resizeObserver.observe(element);
-            
+
             // Store observer for cleanup
             element._resizeObserver = resizeObserver;
-            
+
             // Cleanup on element removal
             const originalRemove = element.remove;
-            element.remove = function() {
+            element.remove = function () {
                 if (this._resizeObserver) {
                     this._resizeObserver.disconnect();
                     this._resizeObserver = null;
@@ -2126,19 +2126,19 @@
             if (!this.apiKey && window.SidekickModules?.Settings?.getSetting) {
                 this.apiKey = window.SidekickModules.Settings.getSetting('apiKey');
             }
-            
+
             if (!this.apiKey) {
                 console.log('⚠️ No API key available for cooldown monitoring');
                 return;
             }
-            
+
             // Start interval to check API for cooldown updates every 30 seconds
             if (!this.apiCheckInterval) {
                 console.log('🔍 Starting API cooldown monitoring...');
                 this.apiCheckInterval = setInterval(() => {
                     this.checkApiForCooldowns();
                 }, 30000); // Check every 30 seconds
-                
+
                 // Do immediate check
                 setTimeout(() => {
                     this.checkApiForCooldowns();
@@ -2150,9 +2150,9 @@
         async checkApiForCooldowns() {
             try {
                 if (!this.apiKey) return;
-                
+
                 console.log('🔍 Checking API for cooldown updates...');
-                
+
                 // Try background script approach first (better for CORS issues)
                 if (chrome?.runtime?.sendMessage) {
                     try {
@@ -2167,10 +2167,10 @@
                         console.log('⚠️ Background script cooldown API failed, trying direct fetch...');
                     }
                 }
-                
+
                 // Fallback to direct fetch with better error handling
                 await this.makeDirectCooldownApiCall(this.apiKey);
-                
+
             } catch (error) {
                 console.error('❌ Error checking API for cooldowns:', error);
                 this.handleCooldownApiError(error);
@@ -2205,20 +2205,20 @@
             const fetchWithTimeout = async (url, timeout = 10000) => {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), timeout);
-                
+
                 try {
-                    const response = await fetch(url, { 
+                    const response = await fetch(url, {
                         signal: controller.signal,
                         headers: {
                             'User-Agent': 'Sidekick Chrome Extension Timer'
                         }
                     });
                     clearTimeout(timeoutId);
-                    
+
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
-                    
+
                     return response;
                 } catch (error) {
                     clearTimeout(timeoutId);
@@ -2229,30 +2229,30 @@
             console.log('📊 Making direct cooldown API call...');
             const response = await fetchWithTimeout(`https://api.torn.com/user/?selections=cooldowns,money&key=${apiKey}`);
             const data = await response.json();
-            
+
             if (data.error) {
                 console.error('❌ API Error checking cooldowns:', data.error);
-                
+
                 // Handle specific API errors
                 if (data.error.code === 2) {
                     console.error('🔑 Invalid API key for cooldowns - please check settings');
                 } else if (data.error.code === 5) {
                     console.error('⏱️ Cooldown API rate limit exceeded - will retry later');
                 }
-                
+
                 throw new Error(`API Error ${data.error.code}: ${data.error.error}`);
             }
-            
+
             if (data.cooldowns || data.money) {
                 console.log('✅ Direct cooldown API call successful');
                 const cooldowns = data.cooldowns || {};
-                
+
                 // Add bank investment if active
                 if (data.money && data.money.city_bank && data.money.city_bank.time_left > 0) {
                     cooldowns.Bank = data.money.city_bank.time_left;
                     console.log(`💰 Bank investment active: ${data.money.city_bank.time_left}s remaining (amount: $${data.money.city_bank.amount.toLocaleString()})`);
                 }
-                
+
                 this.updateTimersFromApiCooldowns(cooldowns);
             }
         },
@@ -2283,7 +2283,7 @@
             } else if (error.message.includes('CORS')) {
                 console.error('🚫 Cooldown CORS error - browser blocking request');
             }
-            
+
             // Could add failure counting here similar to todolist if needed
             console.log('⚠️ Cooldown API check will retry on next interval');
         },
@@ -2291,29 +2291,29 @@
         // Update existing timers and create new ones from API cooldowns
         updateTimersFromApiCooldowns(apiCooldowns) {
             console.log('📊 Processing API cooldowns:', apiCooldowns);
-            
+
             let hasUpdates = false;
             const now = Date.now();
-            
+
             // Check each API cooldown
             for (const cooldownType in apiCooldowns) {
                 const apiCooldown = apiCooldowns[cooldownType];
                 if (apiCooldown <= 0) continue; // Skip expired cooldowns
-                
+
                 console.log(`🔍 Processing ${cooldownType} cooldown: ${apiCooldown}s`);
-                
+
                 // Find existing timer with this cooldown
-                let existingTimer = this.timers.find(timer => 
-                    timer.isApiTimer && 
-                    timer.cooldowns && 
+                let existingTimer = this.timers.find(timer =>
+                    timer.isApiTimer &&
+                    timer.cooldowns &&
                     timer.cooldowns[cooldownType]
                 );
-                
+
                 if (existingTimer) {
                     // Update existing timer
                     const currentTime = existingTimer.cooldowns[cooldownType];
                     const apiTime = apiCooldown;
-                    
+
                     // Only update if API time is significantly different (more than 5 seconds)
                     if (Math.abs(currentTime - apiTime) > 5) {
                         console.log(`⏰ Updating ${cooldownType}: ${currentTime}s → ${apiTime}s`);
@@ -2325,12 +2325,12 @@
                     }
                 } else {
                     // Check if we should create a new timer or add to existing multi-cooldown timer
-                    let targetTimer = this.timers.find(timer => 
-                        timer.isApiTimer && 
-                        timer.cooldowns && 
+                    let targetTimer = this.timers.find(timer =>
+                        timer.isApiTimer &&
+                        timer.cooldowns &&
                         Object.keys(timer.cooldowns).length < 3 // Max 3 cooldowns per timer
                     );
-                    
+
                     if (targetTimer) {
                         // Add to existing multi-cooldown timer
                         console.log(`➕ Adding ${cooldownType} to existing timer: ${targetTimer.id}`);
@@ -2348,7 +2348,7 @@
                     }
                 }
             }
-            
+
             // Remove expired cooldowns from existing timers
             for (const timer of this.timers) {
                 if (timer.isApiTimer && timer.cooldowns) {
@@ -2357,12 +2357,12 @@
                         if (cooldownType === 'Bank') {
                             continue;
                         }
-                        
+
                         if (!apiCooldowns[cooldownType] || apiCooldowns[cooldownType] <= 0) {
                             console.log(`🗑️ Removing expired ${cooldownType} from timer ${timer.id}`);
                             delete timer.cooldowns[cooldownType];
                             hasUpdates = true;
-                            
+
                             // Check if timer is now empty
                             if (Object.keys(timer.cooldowns).length === 0) {
                                 console.log(`🗑️ Timer ${timer.id} has no cooldowns left, removing`);
@@ -2375,7 +2375,7 @@
                     }
                 }
             }
-            
+
             if (hasUpdates) {
                 this.saveTimers();
                 console.log('✅ Timer updates from API complete');
@@ -2405,12 +2405,12 @@
                 width: 200,
                 height: 100
             };
-            
+
             this.timers.push(timer);
             this.renderTimer(timer);
             this.startTimer(timer.id);
             this.saveTimers();
-            
+
             console.log(`🆕 Created API cooldown timer for ${cooldownType}: ${remainingTime}s`);
             return timer;
         },
@@ -2419,17 +2419,17 @@
         destroy() {
             this.intervals.forEach(interval => clearInterval(interval));
             this.intervals.clear();
-            
+
             if (this.apiCheckInterval) {
                 clearInterval(this.apiCheckInterval);
                 this.apiCheckInterval = null;
             }
-            
+
             this.timers = [];
             this.isInitialized = false;
             console.log('⏰ Timer Module destroyed');
         },
-        
+
         // Helper methods
         darkenColor(color, percent) {
             const num = parseInt(color.replace("#", ""), 16);
@@ -2455,12 +2455,12 @@
 
         formatTime(seconds) {
             if (seconds < 0) return '00:00:00';
-            
+
             const days = Math.floor(seconds / 86400);
             const hours = Math.floor((seconds % 86400) / 3600);
             const mins = Math.floor((seconds % 3600) / 60);
             const secs = seconds % 60;
-            
+
             if (days > 0) {
                 return `${days}d ${hours.toString().padStart(2, '0')}h ${mins.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`;
             } else if (hours > 0) {
@@ -2468,6 +2468,28 @@
             } else {
                 return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
             }
+        },
+
+        // Get display name for cooldown type
+        getCooldownDisplayName(cooldownType) {
+            const names = {
+                'drug': 'Drug Cooldown',
+                'medical': 'Medical Cooldown',
+                'booster': 'Booster Cooldown',
+                'Bank': 'Bank Investment'
+            };
+            return names[cooldownType] || 'Cooldown';
+        },
+
+        // Get color for cooldown type
+        getCooldownColor(cooldownType) {
+            const colors = {
+                'drug': '#e74c3c',
+                'medical': '#3498db',
+                'booster': '#f39c12',
+                'Bank': '#2ecc71'
+            };
+            return colors[cooldownType] || '#9b59b6';
         }
     };
 

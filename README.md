@@ -8,6 +8,64 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.4.0 (2025-12-05) - Critical Bug Fixes: Debt Tracker & Todo List 🐛✅
+
+#### **Debt Tracker - Fixed Payment Detection** 💰
+- **CRITICAL FIX**: Automatic payment detection now works correctly
+- **Root Cause**: Payment IDs were being marked as "processed" BEFORE checking if they matched any debt/loan entry
+  - This caused legitimate payments to be permanently skipped as "duplicates"
+  - Payments were never applied to debt/loan balances
+- **The Fix**:
+  - Moved `processedPayments.add(paymentId)` to AFTER successful payment application
+  - Only marks payments as processed once they've actually updated a debt/loan
+  - Applied fix to both sent and received payments
+- **Terminology Fix**: Corrected debt/loan logic mismatch
+  - UI shows "Debts Owed" (money YOU owe) vs "Loans Given" (money others owe YOU)
+  - Code was checking opposite conditions
+  - Now correctly matches: Send money → updates "Debts Owed", Receive money → updates "Loans Given"
+- **How It Works Now**:
+  - Send $1 with message "Loan" → Automatically deducts from your debt (e.g., $1000 → $999) ✅
+  - Receive $1 with message "Loan" → Automatically deducts from debt someone owes you ✅
+  - Duplicate payments (same amount/timestamp) still blocked as intended ✅
+
+#### **Todo List - Fixed Xanax Counter** 💊
+- **CRITICAL FIX**: Xanax counter now shows proper progression: `0/3` → `1/3` → `2/3` → `3/3`
+- **Root Cause 1 - Baseline Not Persisting**:
+  - `apiBaselines` object (stores xantaken value from midnight UTC) wasn't being saved to Chrome storage
+  - Every page reload lost the baseline → couldn't calculate daily usage → showed `0/3`
+- **Root Cause 2 - Legacy Code Conflict**:
+  - Old code path was re-marking xanax as completed even when count was 0
+  - Legacy check ran AFTER the correct baseline system initialized
+- **The Fix**:
+  - Added `apiBaselines` to save/load in Chrome storage (persists across reloads)
+  - Added validation on load: if `completed=true` but `currentCount=0`, auto-fix to `completed=false`
+  - Removed legacy xanax tracking code that conflicted with new baseline system
+- **How It Works Now**:
+  1. Midnight UTC: Baseline resets, shows `0/3` unchecked ✅
+  2. Take 1 xanax: Shows `1/3` unchecked ✅
+  3. Take 2 xanax: Shows `2/3` unchecked ✅
+  4. Take 3 xanax: Shows `3/3` CHECKED ✅
+  5. Page reload: Count and status persist correctly ✅
+
+#### **Technical Details**
+- **Files Modified**:
+  - `debt.module.js`: Fixed payment detection logic (lines 730, 780)
+  - `todolist.module.js`: Added baseline persistence and validation (lines 171-177, 211, 935-940)
+- **Improved Logging**:
+  - Debt tracker: Shows which debts/loans are being checked for payment matching
+  - Todo list: Shows baseline values and count progression in console
+- **Data Migration**: Both fixes include automatic correction of stale data
+
+#### **User Experience**
+- Debt tracker now reliably tracks payments without manual intervention
+- Xanax counter provides clear visual feedback on daily usage
+- No user action required - fixes apply automatically on page load
+
+---
+
+**Note**: This extension is not affiliated with Torn.com. It's a community-created tool to enhance the gaming experience.
+
+
 ### v1.3.0 (2025-12-01) - Vault Tracker: COMPLETE REWRITE 🔥🚀
 - **MAJOR CHANGE - Simplified Architecture**:
   - ❌ REMOVED complex transaction history tracking

@@ -5,7 +5,7 @@
  * Author: Machiacelli
  */
 
-(function() {
+(function () {
     'use strict';
 
     console.log("⚙️ Loading Sidekick Settings Module V2...");
@@ -52,7 +52,7 @@
         // Create comprehensive settings panel UI
         createSettingsPanel() {
             console.log("⚙️ Settings: Creating comprehensive settings panel");
-            
+
             // Remove existing panel if present
             const existingPanel = document.querySelector('.sidekick-settings-panel');
             if (existingPanel) {
@@ -60,7 +60,7 @@
                 console.log("⚙️ Settings: Removed existing panel");
                 return; // Toggle behavior
             }
-            
+
             const panel = document.createElement('div');
             panel.className = 'sidekick-settings-panel';
             panel.style.cssText = `
@@ -73,14 +73,14 @@
                 background: linear-gradient(135deg, #2a2a2a, #1f1f1f);
                 border: 1px solid #444;
                 border-radius: 12px;
-                z-index: 10001;
+                z-index: 99999;
                 box-shadow: 0 8px 32px rgba(0,0,0,0.7);
                 backdrop-filter: blur(20px);
                 color: #fff;
                 font-family: Arial, sans-serif;
                 overflow: hidden;
             `;
-            
+
             panel.innerHTML = `
                 <div style="padding: 20px; position: relative;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -506,19 +506,19 @@
 
             // General Tab listeners
             this.attachGeneralTabListeners(panel);
-            
+
             // Modules Tab listeners
             this.attachModulesTabListeners(panel);
-            
+
             // Xanax Viewer Tab listeners
             this.attachXanaxTabListeners(panel);
-            
+
             // Chain Timer Tab listeners
             this.attachChainTimerTabListeners(panel);
-            
+
             // Notifications Tab listeners
             this.attachNotificationsTabListeners(panel);
-            
+
             // Mug Calculator Tab listeners
             this.attachMugCalculatorTabListeners(panel);
         },
@@ -563,7 +563,7 @@
                 try {
                     await window.SidekickModules.Core.ChromeStorage.set('sidekick_api_key', apiKey);
                     this.showStatus(statusDiv, 'API key saved successfully!', 'success');
-                    
+
                     if (window.SidekickModules.Core.NotificationSystem) {
                         window.SidekickModules.Core.NotificationSystem.show(
                             'Settings Saved',
@@ -595,7 +595,7 @@
                         this.showStatus(statusDiv, `API Error: ${data.error.error}`, 'error');
                     } else {
                         this.showStatus(statusDiv, `API Working! Welcome ${data.name} [${data.player_id}]`, 'success');
-                        
+
                         if (window.SidekickModules.Core.NotificationSystem) {
                             window.SidekickModules.Core.NotificationSystem.show(
                                 'API Test Success',
@@ -624,7 +624,7 @@
                     const track = toggle.querySelector('.toggle-track');
                     const thumb = toggle.querySelector('.toggle-thumb');
                     const isActive = toggle.dataset.active === 'true';
-                    
+
                     toggle.dataset.active = !isActive;
                     this.updateToggleVisual(track, thumb, !isActive);
                 });
@@ -633,7 +633,7 @@
             // Save button
             saveBtn.addEventListener('click', async () => {
                 const settings = {};
-                
+
                 toggleSwitches.forEach(toggle => {
                     const moduleId = toggle.dataset.module;
                     const isEnabled = toggle.dataset.active === 'true';
@@ -645,9 +645,9 @@
                     for (const [key, value] of Object.entries(settings)) {
                         await window.SidekickModules.Core.ChromeStorage.set(key, value);
                     }
-                    
+
                     this.showStatus(statusDiv, 'Module settings saved successfully!', 'success');
-                    
+
                     if (window.SidekickModules.Core.NotificationSystem) {
                         window.SidekickModules.Core.NotificationSystem.show(
                             'Modules Updated',
@@ -686,7 +686,7 @@
                 try {
                     await window.SidekickModules.Core.ChromeStorage.set('sidekick_xanax_viewer', settings);
                     this.showStatus(xanaxStatusDiv, 'Xanax Viewer settings saved!', 'success');
-                    
+
                     if (window.SidekickModules.Core.NotificationSystem) {
                         window.SidekickModules.Core.NotificationSystem.show(
                             'Xanax Viewer Settings',
@@ -705,7 +705,7 @@
                 try {
                     await window.SidekickModules.Core.ChromeStorage.set('xanaxviewer_cache', {});
                     this.showStatus(xanaxStatusDiv, 'Cache cleared successfully!', 'success');
-                    
+
                     if (window.SidekickModules.Core.NotificationSystem) {
                         window.SidekickModules.Core.NotificationSystem.show(
                             'Cache Cleared',
@@ -747,7 +747,7 @@
                 try {
                     await window.SidekickModules.Core.ChromeStorage.set('sidekick_chain_timer', settings);
                     this.showStatus(chainStatusDiv, 'Chain Timer settings saved!', 'success');
-                    
+
                     if (window.SidekickModules.Core.NotificationSystem) {
                         window.SidekickModules.Core.NotificationSystem.show(
                             'Chain Timer Settings',
@@ -791,7 +791,7 @@
                     try {
                         await window.SidekickModules.Core.ChromeStorage.set('sidekick_notifications', settings);
                         this.showStatus(notifStatusDiv, 'Notification settings saved!', 'success');
-                        
+
                         if (window.SidekickModules.Core.NotificationSystem) {
                             window.SidekickModules.Core.NotificationSystem.show(
                                 'Notification Settings',
@@ -824,7 +824,7 @@
                             const mugMeritsVal = parseInt(mugMeritsInput.value.trim(), 10);
                             await window.SidekickModules.Core.ChromeStorage.set('mugMerits', isNaN(mugMeritsVal) ? 0 : Math.min(Math.max(mugMeritsVal, 0), 10));
                         }
-                        
+
                         // Save plunder percentage
                         if (plunderInput) {
                             let plunderInputVal = parseFloat(plunderInput.value.trim());
@@ -839,15 +839,15 @@
                             }
                             await window.SidekickModules.Core.ChromeStorage.set('mugPlunder', plunderInputVal);
                         }
-                        
+
                         // Save threshold
                         if (thresholdInput) {
                             const thresholdVal = parseInt(thresholdInput.value.trim(), 10);
                             await window.SidekickModules.Core.ChromeStorage.set('mugThreshold', isNaN(thresholdVal) ? 0 : thresholdVal);
                         }
-                        
+
                         this.showStatus(mugCalcStatusDiv, 'Mug calculator settings saved!', 'success');
-                        
+
                         if (window.SidekickModules.Core.NotificationSystem) {
                             window.SidekickModules.Core.NotificationSystem.show(
                                 'Mug Calculator',
@@ -882,7 +882,7 @@
                 const xanaxAutoLimitSlider = document.querySelector('#sidekick-xanax-autolimit');
                 const xanaxAutoLimitDisplay = document.querySelector('#sidekick-xanax-autolimit-display');
                 const xanaxRelativeCheckbox = document.querySelector('#sidekick-xanax-relative');
-                
+
                 if (xanaxAutoLimitSlider) {
                     xanaxAutoLimitSlider.value = xanaxSettings.autoLimit || 0;
                     xanaxAutoLimitDisplay.textContent = xanaxSettings.autoLimit || 0;
@@ -898,7 +898,7 @@
                 const chainAlertsCheckbox = document.querySelector('#sidekick-chain-alerts');
                 const chainPopupCheckbox = document.querySelector('#sidekick-chain-popup');
                 const chainFlashCheckbox = document.querySelector('#sidekick-chain-flash');
-                
+
                 if (chainThresholdSlider) {
                     const thresholdMinutes = (chainSettings.alertThresholdSeconds || 240) / 60;
                     chainThresholdSlider.value = thresholdMinutes;
@@ -921,7 +921,7 @@
                 const notifAutoDismissCheckbox = document.querySelector('#sidekick-notif-auto-dismiss');
                 const notifDurationSlider = document.querySelector('#sidekick-notif-duration');
                 const notifDurationDisplay = document.querySelector('#sidekick-notif-duration-display');
-                
+
                 if (notifPositionSelect) {
                     notifPositionSelect.value = notifSettings.position || 'top-right';
                 }
@@ -958,7 +958,7 @@
                 const storageKey = `sidekick_${moduleId.replace(/-/g, '_')}`;
                 const settings = await window.SidekickModules.Core.ChromeStorage.get(storageKey) || {};
                 const isEnabled = settings.isEnabled !== false; // Default to true
-                
+
                 const toggle = document.querySelector(`.toggle-switch[data-module="${moduleId}"]`);
                 if (toggle) {
                     toggle.dataset.active = isEnabled;
@@ -967,16 +967,16 @@
                     this.updateToggleVisual(track, thumb, isEnabled);
                 }
             }
-            
+
             // Load mug calculator settings
             const mugMerits = await window.SidekickModules.Core.ChromeStorage.get('mugMerits') || 0;
             const mugPlunder = await window.SidekickModules.Core.ChromeStorage.get('mugPlunder') || 0;
             const mugThreshold = await window.SidekickModules.Core.ChromeStorage.get('mugThreshold') || 0;
-            
+
             const mugMeritsInput = document.querySelector('#mugMeritsInput');
             const plunderInput = document.querySelector('#plunderInput');
             const thresholdInput = document.querySelector('#thresholdInput');
-            
+
             if (mugMeritsInput) mugMeritsInput.value = mugMerits;
             if (plunderInput) plunderInput.value = parseFloat(mugPlunder).toFixed(2);
             if (thresholdInput) thresholdInput.value = mugThreshold;
@@ -996,7 +996,7 @@
         // Show status message
         showStatus(element, message, type) {
             element.textContent = message;
-            
+
             if (type === 'success') {
                 element.style.background = 'rgba(76, 175, 80, 0.3)';
             } else if (type === 'error') {

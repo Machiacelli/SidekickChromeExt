@@ -5,7 +5,7 @@
  * Author: Machiacelli
  */
 
-(function() {
+(function () {
     'use strict';
 
     console.log("📋 Loading Sidekick Todo List Module...");
@@ -16,7 +16,7 @@
         lastResetDate: null,
         dailyResetInterval: null,
         apiCheckInterval: null,
-        
+
         // Daily task tracking with API integration
         dailyTasks: {
             energyRefill: {
@@ -42,7 +42,7 @@
                 resetDaily: true // Ensure this always resets at midnight UTC
             },
             nerveRefill: {
-                name: 'Nerve Refill', 
+                name: 'Nerve Refill',
                 icon: '🧠',
                 color: '#45B7D1',
                 description: 'Daily nerve refill',
@@ -66,7 +66,7 @@
             xanaxDose: {
                 name: 'Xanax Dose',
                 icon: '💊',
-                color: '#E74C3C', 
+                color: '#E74C3C',
                 description: 'Daily Xanax dose (up to 3)',
                 apiField: 'xantaken',  // Use personalstats.xantaken for instant updates
                 maxCount: 3,
@@ -91,11 +91,11 @@
             try {
                 await this.loadTodoLists();
                 await this.loadDailyTasks();
-                
+
                 // ALWAYS check for reset on initialization - this handles reconnection scenarios
                 console.log("📋 Checking for daily reset on initialization...");
                 this.checkForDailyReset();
-                
+
                 this.startDailyResetTimer();
                 this.startApiCheckInterval();
                 this.isInitialized = true;
@@ -127,35 +127,35 @@
             try {
                 const saved = await window.SidekickModules.Core.ChromeStorage.get('sidekick_dailytasks');
                 const lastReset = await window.SidekickModules.Core.ChromeStorage.get('sidekick_dailytasks_reset');
-                
+
                 console.log("📋 Loading daily tasks...");
                 console.log("📋 Saved data:", saved);
                 console.log("📋 Last reset:", lastReset);
-                
+
                 const now = new Date();
                 console.log("📋 Current time:", now.toISOString());
-                
+
                 if (saved && lastReset) {
                     const lastResetDate = new Date(lastReset);
-                    
+
                     // Calculate today's UTC date (00:00:00)
                     const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-                    
+
                     // Calculate last reset's UTC date (00:00:00)
                     const lastResetUTC = new Date(Date.UTC(lastResetDate.getUTCFullYear(), lastResetDate.getUTCMonth(), lastResetDate.getUTCDate()));
-                    
+
                     console.log("📋 Today UTC midnight:", todayUTC.toISOString());
                     console.log("📋 Last reset UTC midnight:", lastResetUTC.toISOString());
                     console.log("📋 Same day?", todayUTC.getTime() === lastResetUTC.getTime());
-                    
+
                     if (todayUTC.getTime() !== lastResetUTC.getTime()) {
                         console.log("🔄 Daily reset needed - clearing daily tasks (different day detected)");
                         console.log("🔄 Time difference:", (todayUTC.getTime() - lastResetUTC.getTime()) / (1000 * 60 * 60), "hours");
-                        
+
                         // Force reset immediately and save the reset state
                         this.resetDailyTasksData();
                         await this.saveDailyTasks();
-                        
+
                         console.log("📋 Reset applied and saved - all tasks are now incomplete");
                     } else {
                         // Same day - load saved data and preserve state
@@ -163,14 +163,36 @@
                             if (saved[taskKey]) {
                                 // Preserve the saved state while keeping the task structure
                                 Object.assign(this.dailyTasks[taskKey], saved[taskKey]);
+
+                                // Validate completed state for tasks with maxCount (like xanax)
+                                const task = this.dailyTasks[taskKey];
+                                if (task.maxCount !== undefined) {
+                                    const currentCount = task.currentCount || 0;
+                                    const shouldBeCompleted = currentCount >= task.maxCount;
+                                    if (task.completed !== shouldBeCompleted) {
+                                        console.log(`🔧 Fixing ${task.name}: completed=${task.completed} but count is ${currentCount}/${task.maxCount}, setting to ${shouldBeCompleted}`);
+                                        task.completed = shouldBeCompleted;
+                                    }
+                                }
                             }
                         }
                         this.lastResetDate = lastResetDate;
+
+                        // Load API baselines for daily progress tracking
+                        const savedBaselines = await window.SidekickModules.Core.ChromeStorage.get('sidekick_api_baselines');
+                        if (savedBaselines) {
+                            this.apiBaselines = savedBaselines;
+                            console.log('💊 Loaded API baselines from storage:', this.apiBaselines);
+                        } else {
+                            console.log('💊 No saved API baselines found');
+                        }
+
                         console.log("✅ Loaded daily tasks from Chrome storage (same day):", this.dailyTasks);
-                        
+
                         // Log the current completion state for debugging
                         for (const [taskKey, task] of Object.entries(this.dailyTasks)) {
-                            console.log(`📋 ${task.name}: completed=${task.completed}`);
+                            const countInfo = task.maxCount ? ` (${task.currentCount || 0}/${task.maxCount})` : '';
+                            console.log(`📋 ${task.name}: completed=${task.completed}${countInfo}`);
                         }
                     }
                 } else {
@@ -205,19 +227,21 @@
                         currentCount: task.currentCount || 0
                     };
                 }
-                
+
                 await window.SidekickModules.Core.ChromeStorage.set('sidekick_dailytasks', dataToSave);
                 await window.SidekickModules.Core.ChromeStorage.set('sidekick_dailytasks_reset', this.lastResetDate?.toISOString() || new Date().toISOString());
-                
+                // Save API baselines for daily progress tracking
+                await window.SidekickModules.Core.ChromeStorage.set('sidekick_api_baselines', this.apiBaselines);
+
                 console.log('💾 Daily tasks saved successfully to Chrome storage');
                 console.log('💾 Saved data:', dataToSave);
-                
+
                 // Verify the save worked by reading it back
                 setTimeout(async () => {
                     const verification = await window.SidekickModules.Core.ChromeStorage.get('sidekick_dailytasks');
                     console.log('🔍 Verification - saved daily tasks:', verification);
                 }, 100);
-                
+
             } catch (error) {
                 console.error('Failed to save daily tasks to Chrome storage:', error);
             }
@@ -226,14 +250,14 @@
         // Reset daily tasks data only (no UI refresh)
         resetDailyTasksData() {
             console.log("🔄 Resetting daily tasks data only");
-            
+
             for (const taskKey in this.dailyTasks) {
                 const task = this.dailyTasks[taskKey];
-                
+
                 // Force reset for all daily tasks
                 console.log(`🔄 Resetting task: ${task.name} (was completed: ${task.completed})`);
                 task.completed = false;
-                
+
                 if (task.currentCount !== undefined) {
                     task.currentCount = 0;
                 }
@@ -241,15 +265,15 @@
                     task.baseline = 0;
                 }
             }
-            
+
             // Clear API baselines for new day (will be re-initialized on next API call)
             this.apiBaselines = {};
             console.log('🔄 Cleared API baselines - xantaken will be re-baselined on next API call');
-            
+
             // Set last reset date to current UTC date (not time)
             const now = new Date();
             this.lastResetDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-            
+
             console.log("✅ Daily tasks data reset complete for:", this.lastResetDate.toISOString());
             console.log("🔄 All daily tasks reset to incomplete state");
         },
@@ -258,7 +282,7 @@
         resetDailyTasks() {
             this.resetDailyTasksData();
             this.saveDailyTasks();
-            
+
             // Force immediate UI refresh for all open todo lists
             console.log('🔄 Refreshing todo list UI after reset');
             setTimeout(() => {
@@ -275,7 +299,7 @@
                     }
                 });
             }, 100);
-            
+
             console.log('✅ Daily tasks reset complete for:', this.lastResetDate.toISOString());
             console.log('🔄 All daily tasks reset to incomplete state');
         },
@@ -287,7 +311,7 @@
                 this.checkForDailyReset();
                 this.checkCustomTaskResets();
             }, 60000); // Check every minute
-            
+
             console.log('⏰ Daily reset timer started');
         },
 
@@ -295,16 +319,16 @@
         checkForDailyReset() {
             const now = new Date();
             const currentUTCDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-            
+
             console.log("🔄 Checking for daily reset...");
             console.log("🔄 Current time:", now.toISOString());
             console.log("🔄 Current UTC date:", currentUTCDate.toISOString());
             console.log("🔄 Last reset date:", this.lastResetDate ? new Date(this.lastResetDate).toISOString() : 'null');
-            
+
             if (this.lastResetDate) {
                 const lastReset = new Date(this.lastResetDate);
                 const lastResetUTCDate = new Date(Date.UTC(lastReset.getUTCFullYear(), lastReset.getUTCMonth(), lastReset.getUTCDate()));
-                
+
                 console.log("🔄 Last reset UTC date:", lastResetUTCDate.toISOString());
                 console.log("🔄 Time comparison:", {
                     currentUTCTime: currentUTCDate.getTime(),
@@ -312,16 +336,16 @@
                     difference: currentUTCDate.getTime() - lastResetUTCDate.getTime(),
                     differenceHours: (currentUTCDate.getTime() - lastResetUTCDate.getTime()) / (1000 * 60 * 60)
                 });
-                
+
                 // Compare UTC dates - if current UTC date is different from last reset UTC date, we need to reset
                 if (currentUTCDate.getTime() !== lastResetUTCDate.getTime()) {
                     console.log('🔄 UTC midnight passed - resetting daily tasks');
                     console.log(`🔄 Last reset: ${lastResetUTCDate.toISOString()}`);
                     console.log(`🔄 Current UTC: ${currentUTCDate.toISOString()}`);
                     console.log(`🔄 Hours since last reset: ${(currentUTCDate.getTime() - lastResetUTCDate.getTime()) / (1000 * 60 * 60)}`);
-                    
+
                     this.resetDailyTasks();
-                    
+
                     // Show notification to user
                     if (window.SidekickModules?.UI?.showNotification) {
                         window.SidekickModules.UI.showNotification(
@@ -345,13 +369,13 @@
         checkCustomTaskResets() {
             let hasUpdates = false;
             const now = new Date();
-            
+
             for (const todoList of this.todoLists) {
                 for (const task of todoList.tasks) {
                     if (task.completed && task.completedAt && task.resetDuration && task.resetDuration !== 'never') {
                         const completedTime = new Date(task.completedAt);
                         const resetMs = this.parseResetDuration(task.resetDuration);
-                        
+
                         if (resetMs > 0 && (now.getTime() - completedTime.getTime()) >= resetMs) {
                             task.completed = false;
                             task.completedAt = null;
@@ -362,7 +386,7 @@
                     }
                 }
             }
-            
+
             if (hasUpdates) {
                 this.saveTodoLists();
                 this.renderAllTodoLists();
@@ -373,10 +397,10 @@
         parseResetDuration(duration) {
             const match = duration.match(/^(\d+)([hd])$/);
             if (!match) return 0;
-            
+
             const value = parseInt(match[1]);
             const unit = match[2];
-            
+
             switch (unit) {
                 case 'h': return value * 60 * 60 * 1000; // hours to ms
                 case 'd': return value * 24 * 60 * 60 * 1000; // days to ms
@@ -388,32 +412,32 @@
         startApiCheckInterval() {
             // Initialize failure counter
             this.apiCheckFailureCount = 0;
-            
+
             // Do an immediate check
             setTimeout(() => {
                 this.checkApiForCompletedTasks();
             }, 2000); // Wait 2 seconds for initialization to complete
-            
+
             // Check API with adaptive interval based on failures
             this.apiCheckInterval = setInterval(async () => {
                 // Adaptive interval: increase delay after failures
                 const baseInterval = 60000; // 1 minute
                 const failureMultiplier = Math.min(this.apiCheckFailureCount || 0, 5); // Max 5x delay
                 const actualInterval = baseInterval * (1 + failureMultiplier);
-                
+
                 if (failureMultiplier > 0) {
                     console.log(`⚠️ Using longer interval due to failures: ${actualInterval / 1000}s`);
                 }
-                
+
                 await this.checkApiForCompletedTasks();
-                
+
                 // Reset failure count on successful check (will be reset in success case)
                 if (this.apiCheckFailureCount > 0) {
                     // This will be decremented in the success case
                     this.apiCheckFailureCount = Math.max(0, this.apiCheckFailureCount - 0.5);
                 }
             }, 60000); // Base interval of 1 minute
-            
+
             console.log('🔍 API check interval started (adaptive timing based on success rate)');
         },
 
@@ -436,14 +460,14 @@
                         attempts++;
                     }
                 }
-                
+
                 if (!apiKey) {
                     console.log('⚠️ No API key available for daily task checking');
                     return;
                 }
-                
+
                 console.log('🔍 Checking Torn API for daily task updates...');
-                
+
                 // Try background script approach first (better for CORS issues)
                 if (window.SidekickModules?.Core?.SafeMessageSender?.isExtensionContextValid()) {
                     try {
@@ -452,7 +476,7 @@
                         if (backgroundResult.success) {
                             console.log('✅ Background API call successful');
                             this.updateTasksFromApi(
-                                backgroundResult.personalstats, 
+                                backgroundResult.personalstats,
                                 backgroundResult.logs,
                                 backgroundResult.bars,
                                 backgroundResult.cooldowns,
@@ -471,10 +495,10 @@
                         }
                     }
                 }
-                
+
                 // Fallback to direct fetch with better error handling
                 await this.makeDirectApiCall(apiKey);
-                
+
             } catch (error) {
                 console.error('❌ Error checking API for daily tasks:', error);
                 this.handleApiError(error);
@@ -494,9 +518,9 @@
                     apiKey: apiKey,
                     selections: ['personalstats', 'logs', 'bars', 'cooldowns', 'refills']
                 });
-                
+
                 return response;
-                
+
             } catch (error) {
                 if (error.message.includes('Extension context invalidated')) {
                     console.warn('📋 Extension context lost during API call');
@@ -512,33 +536,33 @@
             const fetchWithTimeout = async (url, timeout = 10000) => {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), timeout);
-                
+
                 try {
-                    const response = await fetch(url, { 
+                    const response = await fetch(url, {
                         signal: controller.signal,
                         headers: {
                             'User-Agent': 'Sidekick Chrome Extension'
                         }
                     });
                     clearTimeout(timeoutId);
-                    
+
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
-                    
+
                     return response;
                 } catch (error) {
                     clearTimeout(timeoutId);
                     throw error;
                 }
             };
-            
+
             // Get user data with personalstats for daily tracking
             let personalStatsData = null;
             let logData = null;
             let barsData = null;
             let cooldownsData = null;
-            
+
             try {
                 console.log('📊 Fetching personal stats...');
                 const personalStatsResponse = await fetchWithTimeout(`https://api.torn.com/user?selections=personalstats&key=${apiKey}`);
@@ -548,7 +572,7 @@
                 console.error('❌ Failed to fetch personal stats:', error.message);
                 throw error; // Re-throw to be handled by main error handler
             }
-            
+
             try {
                 console.log('📊 Fetching bars data...');
                 const barsResponse = await fetchWithTimeout(`https://api.torn.com/user?selections=bars&key=${apiKey}`);
@@ -558,7 +582,7 @@
                 console.error('❌ Failed to fetch bars data:', error.message);
                 // Don't throw here, continue with other data
             }
-            
+
             try {
                 console.log('📊 Fetching cooldowns data...');
                 const cooldownsResponse = await fetchWithTimeout(`https://api.torn.com/user?selections=cooldowns&key=${apiKey}`);
@@ -568,7 +592,7 @@
                 console.error('❌ Failed to fetch cooldowns data:', error.message);
                 // Don't throw here, continue with other data
             }
-            
+
             try {
                 console.log('📋 Fetching log data...');
                 const logResponse = await fetchWithTimeout(`https://api.torn.com/user?selections=log&key=${apiKey}`);
@@ -578,7 +602,7 @@
                 console.error('❌ Failed to fetch log data:', error.message);
                 // Don't throw here, continue with other data
             }
-            
+
             // NEW: Fetch refills data (most important for daily tasks!)
             let refillsData = null;
             try {
@@ -590,30 +614,30 @@
                 console.error('❌ Failed to fetch refills data:', error.message);
                 // Don't throw here, continue with other data
             }
-            
+
             // Process data if we got anything
             if (personalStatsData && !personalStatsData.error && personalStatsData.personalstats) {
                 console.log('📊 Processing personal stats data');
                 this.updateTasksFromApi(
-                    personalStatsData.personalstats, 
-                    logData?.log, 
-                    barsData?.bars, 
+                    personalStatsData.personalstats,
+                    logData?.log,
+                    barsData?.bars,
                     cooldownsData?.cooldowns,
                     refillsData?.refills  // Pass refills data
                 );
-                
+
                 // Reset failure count on successful API call
                 this.apiCheckFailureCount = 0;
             } else if (personalStatsData && personalStatsData.error) {
                 console.error('❌ API Error in personal stats:', personalStatsData.error);
-                
+
                 // Handle specific API errors
                 if (personalStatsData.error.code === 2) {
                     console.error('🔑 Invalid API key - please check your settings');
                 } else if (personalStatsData.error.code === 5) {
                     console.error('⏱️ API rate limit exceeded - will retry later');
                 }
-                
+
                 throw new Error(`API Error ${personalStatsData.error.code}: ${personalStatsData.error.error}`);
             } else {
                 console.log('ℹ️ No valid personal stats data received - skipping update');
@@ -623,23 +647,23 @@
         // Check if refills are actually available and override completed state if needed
         checkRefillAvailability(barsData, cooldownsData) {
             console.log('🔍 Checking refill availability...');
-            
+
             // Note: Energy and nerve refills are DAILY POINT PURCHASES (30 points each)
             // that reset at midnight UTC regardless of current levels or cooldowns
-            
+
             if (!barsData) {
                 console.log('⚠️ Missing bars data for refill availability check');
                 return false;
             }
-            
+
             let hasAvailabilityChanges = false;
-            
+
             // Removed automatic completion state overrides
             // Daily tasks should only be marked complete through:
             // 1. Manual user interaction (checking the box)
             // 2. Log detection (when the action is actually performed)
             // 3. Daily reset at midnight UTC (which clears all completed states)
-            
+
             console.log('📊 Bars data received - daily tasks rely on manual completion and daily reset');
             return false; // No automatic changes needed
         },
@@ -648,37 +672,37 @@
         canPurchaseEnergyRefill(barsData) {
             try {
                 console.log('⚡ DEBUG: Full barsData structure:', JSON.stringify(barsData, null, 2));
-                
+
                 // Energy refill is a daily purchase with points (30 points)
                 // It's available once per day regardless of current energy level or cooldowns
                 // We need to check if the purchase has been made today
-                
+
                 // The only way to know if it's been purchased is through the refill counter
                 // If the bars data includes refill information, use that
                 if (barsData?.refill) {
                     const energyRefillsUsed = barsData.refill.energy || 0;
                     console.log(`⚡ Energy refills used today: ${energyRefillsUsed}/1`);
-                    
+
                     // Can purchase if we haven't used our daily refill yet
                     return energyRefillsUsed < 1;
                 }
-                
+
                 // Check for other possible refill indicators in the API data
                 if (barsData?.energy?.refill_used !== undefined) {
                     console.log(`⚡ Alternative: energy.refill_used = ${barsData.energy.refill_used}`);
                     return !barsData.energy.refill_used;
                 }
-                
+
                 // If we don't have refill data, we need to rely on other methods
                 // Check if there's any indication in the bars data about available refills
                 console.log('⚡ No refill counter data available - checking other indicators');
                 console.log('⚡ Available energy properties:', Object.keys(barsData?.energy || {}));
-                
+
                 // For now, since we can't definitively determine, let the reset system handle it
                 // The daily reset should clear these tasks at midnight UTC
                 console.log('⚡ Cannot determine purchase status - relying on daily reset system');
                 return false; // Don't override completed state if we can't determine
-                
+
             } catch (error) {
                 console.error('⚡ Error checking energy refill purchase availability:', error);
                 return false; // Don't override on error
@@ -689,37 +713,37 @@
         canPurchaseNerveRefill(barsData) {
             try {
                 console.log('🧠 DEBUG: Full barsData structure:', JSON.stringify(barsData, null, 2));
-                
+
                 // Nerve refill is a daily purchase with points (30 points)
                 // It's available once per day regardless of current nerve level or cooldowns
                 // We need to check if the purchase has been made today
-                
+
                 // The only way to know if it's been purchased is through the refill counter
                 // If the bars data includes refill information, use that
                 if (barsData?.refill) {
                     const nerveRefillsUsed = barsData.refill.nerve || 0;
                     console.log(`🧠 Nerve refills used today: ${nerveRefillsUsed}/1`);
-                    
+
                     // Can purchase if we haven't used our daily refill yet
                     return nerveRefillsUsed < 1;
                 }
-                
+
                 // Check for other possible refill indicators in the API data
                 if (barsData?.nerve?.refill_used !== undefined) {
                     console.log(`🧠 Alternative: nerve.refill_used = ${barsData.nerve.refill_used}`);
                     return !barsData.nerve.refill_used;
                 }
-                
+
                 // If we don't have refill data, we need to rely on other methods
                 // Check if there's any indication in the bars data about available refills
                 console.log('🧠 No refill counter data available - checking other indicators');
                 console.log('🧠 Available nerve properties:', Object.keys(barsData?.nerve || {}));
-                
+
                 // For now, since we can't definitively determine, let the reset system handle it
                 // The daily reset should clear these tasks at midnight UTC
                 console.log('🧠 Cannot determine purchase status - relying on daily reset system');
                 return false; // Don't override completed state if we can't determine
-                
+
             } catch (error) {
                 console.error('🧠 Error checking nerve refill purchase availability:', error);
                 return false; // Don't override on error
@@ -736,14 +760,14 @@
             } else if (error.message.includes('CORS')) {
                 console.error('🚫 CORS error - browser blocking request');
             }
-            
+
             // Increment failure counter
             if (this.apiCheckFailureCount) {
                 this.apiCheckFailureCount++;
             } else {
                 this.apiCheckFailureCount = 1;
             }
-            
+
             // If we've had multiple failures, increase retry interval
             if (this.apiCheckFailureCount > 3) {
                 console.log('⚠️ Multiple API failures detected - reducing check frequency');
@@ -753,7 +777,7 @@
         // Update daily task completion based on API data
         updateTasksFromApi(personalstats, logData = null, barsData = null, cooldownsData = null, refillsData = null) {
             let hasUpdates = false;
-            
+
             // Store API data for debugging
             this.lastApiData = {
                 personalstats,
@@ -762,7 +786,7 @@
                 cooldowns: cooldownsData,
                 refills: refillsData
             };
-            
+
             console.log('📋 Updating tasks from API data...');
             console.log('📋 Available data:', {
                 personalstats: !!personalstats,
@@ -771,7 +795,7 @@
                 cooldownsData: !!cooldownsData,
                 refillsData: !!refillsData
             });
-            
+
             // 🆕 PRIORITY: Initialize xantaken baseline if not set
             if (personalstats && personalstats.xantaken !== undefined) {
                 if (this.apiBaselines.xantaken === undefined) {
@@ -779,14 +803,14 @@
                     console.log('💊 Initialized Xanax baseline:', this.apiBaselines.xantaken);
                 }
             }
-            
+
             // 🆕 PRIORITY: Update Xanax count from xantaken (instant updates)
             if (personalstats && personalstats.xantaken !== undefined) {
                 const currentXan = personalstats.xantaken;
                 const baselineXan = this.apiBaselines.xantaken || currentXan;
                 const xanUsedToday = Math.max(0, currentXan - baselineXan);
                 const xanClamped = Math.min(3, xanUsedToday);
-                
+
                 const xanTask = this.dailyTasks.xanaxDose;
                 if (xanTask.currentCount !== xanClamped) {
                     xanTask.currentCount = xanClamped;
@@ -797,17 +821,17 @@
                     console.log(`💊 Xanax status confirmed: ${xanClamped}/3`);
                 }
             }
-            
+
             // 🆕 PRIORITY: Check refills data first (most reliable method)
             if (refillsData) {
                 console.log('💊 Processing refills data from API:', refillsData);
-                
+
                 // Energy Refill - Direct from API
                 if (typeof refillsData.energy_refill_used === 'boolean') {
                     const energyTask = this.dailyTasks.energyRefill;
                     const wasCompleted = energyTask.completed;
                     energyTask.completed = refillsData.energy_refill_used;
-                    
+
                     if (wasCompleted !== energyTask.completed) {
                         hasUpdates = true;
                         console.log(`⚡ Updated Energy Refill from API: ${energyTask.completed ? '✅ USED' : '❌ NOT USED'}`);
@@ -815,13 +839,13 @@
                         console.log(`⚡ Energy Refill status confirmed: ${energyTask.completed ? '✅ USED' : '❌ NOT USED'}`);
                     }
                 }
-                
+
                 // Nerve Refill - Direct from API
                 if (typeof refillsData.nerve_refill_used === 'boolean') {
                     const nerveTask = this.dailyTasks.nerveRefill;
                     const wasCompleted = nerveTask.completed;
                     nerveTask.completed = refillsData.nerve_refill_used;
-                    
+
                     if (wasCompleted !== nerveTask.completed) {
                         hasUpdates = true;
                         console.log(`🧠 Updated Nerve Refill from API: ${nerveTask.completed ? '✅ USED' : '❌ NOT USED'}`);
@@ -829,59 +853,59 @@
                         console.log(`🧠 Nerve Refill status confirmed: ${nerveTask.completed ? '✅ USED' : '❌ NOT USED'}`);
                     }
                 }
-                
+
                 console.log('✅ Refills data processed successfully from dedicated API endpoint');
             } else {
                 console.log('⚠️ No refills data available - falling back to log detection');
             }
-            
+
             // Add debug function to global console for easy access
             // Debug functions are now handled by injection method above
             if (typeof window !== 'undefined') {
                 console.log('💊 Debug functions available via injection: debugXanaxLogs(), debugNerveRefillLogs(), debugEnergyRefillLogs()');
             }
-            
+
             // First, check for actual refill availability to override completed state if needed
             this.checkRefillAvailability(barsData);
-            
+
             // Get today's UTC start time for log filtering
             const todayUTCStart = new Date();
             todayUTCStart.setUTCHours(0, 0, 0, 0);
             const todayUTCStartTimestamp = Math.floor(todayUTCStart.getTime() / 1000);
-            
+
             // Alternative calculation - try Torn's timezone (assuming Torn uses UTC)
             const alternativeStart = new Date();
             alternativeStart.setHours(0, 0, 0, 0); // Local timezone start
             const alternativeTimestamp = Math.floor(alternativeStart.getTime() / 1000);
-            
+
             console.log(`🕐 UTC timestamp calculation:`);
             console.log(`🕐 Current time: ${new Date().toISOString()}`);
             console.log(`🕐 Today UTC start: ${todayUTCStart.toISOString()}`);
             console.log(`🕐 UTC start timestamp: ${todayUTCStartTimestamp}`);
             console.log(`🕐 Local start timestamp: ${alternativeTimestamp}`);
             console.log(`🕐 Your xanax time (19:39:17 18/11/25) would be timestamp: ${Math.floor(new Date('2025-11-18T19:39:17Z').getTime() / 1000)}`);
-            
+
             for (const taskKey in this.dailyTasks) {
                 const task = this.dailyTasks[taskKey];
-                
+
                 // Skip Energy and Nerve refills if we already processed them from refills API
                 if (refillsData && (taskKey === 'energyRefill' || taskKey === 'nerveRefill')) {
                     console.log(`✅ Skipping ${task.name} - already processed from refills API endpoint`);
                     continue;
                 }
-                
+
                 // Check if this task should be detected from logs
                 if (task.detectFromLogs && task.logPatterns) {
                     console.log(`🔍 Starting ${task.name} detection from logs...`);
-                    
+
                     // Try both UTC and local timezone calculations
                     const countUTC = this.countItemUsageFromLogs(logData, todayUTCStartTimestamp, task.logPatterns, task.name, 'UTC');
                     const countLocal = this.countItemUsageFromLogs(logData, alternativeTimestamp, task.logPatterns, task.name, 'LOCAL');
-                    
+
                     // Use the higher count (in case timezone calculation is wrong)
                     const itemCount = Math.max(countUTC, countLocal);
                     console.log(`${task.icon} Final ${task.name} count: UTC=${countUTC}, Local=${countLocal}, Using=${itemCount}`);
-                    
+
                     if (task.maxCount) {
                         // Multi-completion task (like xanax)
                         if (itemCount !== task.currentCount) {
@@ -901,17 +925,22 @@
                     }
                     continue;
                 }
-                
+
                 // Skip API-based tracking for tasks using log detection
                 if (task.detectFromLogs) {
                     console.log(`🔍 Skipping API tracking for ${task.name} - uses log detection`);
                     continue;
                 }
-                
+
+                // Skip xanax - it's now handled at the top with baseline system (lines 783-798)
+                if (taskKey === 'xanaxDose') {
+                    continue;
+                }
+
                 // Legacy handling for tasks not using log detection (kept for backward compatibility)
                 let apiValue = undefined;
                 let usedField = task.apiField;
-                
+
                 if (task.apiField && personalstats[task.apiField] !== undefined) {
                     apiValue = personalstats[task.apiField];
                 } else if (task.alternativeFields) {
@@ -924,20 +953,20 @@
                         }
                     }
                 }
-                
+
                 if (apiValue !== undefined) {
                     console.log(`🔍 Checking ${task.name} (${usedField}): API value = ${apiValue}, current completed = ${task.completed}`);
-                    
+
                     // Set baseline if not already set (for cumulative fields)
                     if (task.baseline !== undefined && this.apiBaselines[usedField] === undefined) {
                         this.apiBaselines[usedField] = apiValue;
                         task.baseline = apiValue;
                         console.log(`📊 Set baseline for ${task.name} (${usedField}): ${apiValue}`);
                     }
-                    
-                    if (task.maxCount && taskKey !== 'xanaxDose') {
+
+                    if (task.maxCount) {
                         // Multi-completion task - use daily progress from baseline
-                        const dailyProgress = task.baseline !== undefined ? 
+                        const dailyProgress = task.baseline !== undefined ?
                             Math.max(0, apiValue - task.baseline) : apiValue;
                         const newCount = Math.min(dailyProgress, task.maxCount);
                         if (newCount !== task.currentCount) {
@@ -948,7 +977,7 @@
                         }
                     } else {
                         // Single completion task - use daily progress from baseline if available
-                        const dailyProgress = task.baseline !== undefined ? 
+                        const dailyProgress = task.baseline !== undefined ?
                             Math.max(0, apiValue - task.baseline) : apiValue;
                         const isCompleted = dailyProgress > 0;
                         if (isCompleted !== task.completed) {
@@ -961,12 +990,12 @@
                     console.log(`⚠️ No valid API field found for ${task.name}. Tried: ${task.apiField}${task.alternativeFields ? ', ' + task.alternativeFields.join(', ') : ''}`);
                 }
             }
-            
+
             if (hasUpdates) {
                 this.saveDailyTasks();
                 this.renderAllTodoLists();
                 console.log('✅ Daily tasks updated and saved');
-                
+
                 // Log current completion status for debugging
                 console.log('📋 Current Daily Task Status:');
                 for (const [taskKey, task] of Object.entries(this.dailyTasks)) {
@@ -976,7 +1005,7 @@
                 }
             } else {
                 console.log('ℹ️ No updates needed for daily tasks');
-                
+
                 // Still log current status for debugging
                 console.log('📋 Current Daily Task Status (no changes):');
                 for (const [taskKey, task] of Object.entries(this.dailyTasks)) {
@@ -992,15 +1021,15 @@
             console.log(`🔍 [${timezone}] Raw logData received for ${itemName}:`, logData);
             console.log(`🔍 [${timezone}] logData type:`, typeof logData);
             console.log(`🔍 [${timezone}] logData keys:`, logData ? Object.keys(logData) : 'null');
-            
+
             // Handle different log data formats from Torn API
             let logsArray = [];
-            
+
             if (!logData) {
                 console.log(`⚠️ [${timezone}] No log data provided for ${itemName}`);
                 return 0;
             }
-            
+
             if (Array.isArray(logData)) {
                 // Direct array format
                 logsArray = logData;
@@ -1017,58 +1046,58 @@
                 console.log(`⚠️ [${timezone}] Unknown log data format for ${itemName}:`, logData);
                 return 0;
             }
-            
+
             if (!Array.isArray(logsArray) || logsArray.length === 0) {
                 console.log(`⚠️ [${timezone}] No valid log entries found for ${itemName}`);
                 return 0;
             }
-            
+
             console.log(`🔍 [${timezone}] Searching logs for ${itemName} usage since timestamp: ${sinceTimestamp} (${new Date(sinceTimestamp * 1000).toISOString()})`);
             console.log(`📊 [${timezone}] Total log entries to check: ${logsArray.length}`);
-            
+
             let itemCount = 0;
             let checkedEntries = 0;
             let recentEntries = [];
-            
+
             // Search for item usage in logs
             for (const entry of logsArray) {
                 // Ensure entry has required properties
                 if (!entry || !entry.timestamp || !entry.log) {
                     continue;
                 }
-                
+
                 // Check if log entry is from today (after cutoff timestamp)
                 if (entry.timestamp < sinceTimestamp) {
                     continue; // Skip older entries
                 }
-                
+
                 checkedEntries++;
                 recentEntries.push({
                     time: new Date(entry.timestamp * 1000).toISOString(),
                     log: entry.log
                 });
-                
+
                 console.log(`🔍 [${timezone}] Entry ${checkedEntries}: ${new Date(entry.timestamp * 1000).toISOString()} - "${entry.log}"`);
-                
+
                 // Look for item usage patterns in log text
                 if (entry.log && typeof entry.log === 'string') {
                     const logText = entry.log;
-                    
+
                     // Check for numeric log codes first (new format)
                     const numericCode = parseInt(logText.trim());
                     let foundItem = false;
                     let matchedPattern = '';
-                    
+
                     if (!isNaN(numericCode)) {
                         // Known Torn log codes for different items
                         const itemCodes = this.getLogCodesForItem(itemName);
-                        
+
                         if (itemCodes.includes(numericCode)) {
                             foundItem = true;
                             matchedPattern = `Numeric Code: ${numericCode} (${itemName} usage)`;
                         }
                     }
-                    
+
                     // Fallback to text patterns if no numeric match (legacy format)
                     if (!foundItem && logPatterns) {
                         for (let i = 0; i < logPatterns.length; i++) {
@@ -1080,7 +1109,7 @@
                             }
                         }
                     }
-                    
+
                     if (foundItem) {
                         itemCount++;
                         console.log(`✅ [${timezone}] Found ${itemName} usage #${itemCount} - Matched: ${matchedPattern}`);
@@ -1088,19 +1117,19 @@
                     }
                 }
             }
-            
+
             console.log(`📊 [${timezone}] ${itemName} search complete:`);
             console.log(`📊 [${timezone}] - Checked ${checkedEntries} entries since ${new Date(sinceTimestamp * 1000).toISOString()}`);
             console.log(`📊 [${timezone}] - Found ${itemCount} ${itemName} usages`);
             console.log(`📊 [${timezone}] Recent entries (last 5):`, recentEntries.slice(-5));
-            
+
             if (itemCount === 0 && checkedEntries > 0) {
                 console.log(`⚠️ [${timezone}] No ${itemName} found but entries exist. Sample log entries:`);
                 recentEntries.slice(0, 3).forEach((entry, i) => {
                     console.log(`Sample ${i + 1}: ${entry.time} - "${entry.log}"`);
                 });
             }
-            
+
             return itemCount;
         },
 
@@ -1131,22 +1160,22 @@
                     // Add more as discovered through testing
                 ]
             };
-            
+
             return logCodes[itemName] || [];
         },
 
         // Debug function to analyze recent logs for xanax detection
         debugXanaxLogs() {
             console.log('🔍 === XANAX DEBUG ANALYSIS ===');
-            
+
             if (!this.lastApiData || !this.lastApiData.logs) {
                 console.log('❌ No log data available for debugging');
                 return;
             }
-            
+
             const logs = this.lastApiData.logs;
             let logsArray = [];
-            
+
             if (Array.isArray(logs)) {
                 logsArray = logs;
             } else if (logs.log && Array.isArray(logs.log)) {
@@ -1154,27 +1183,27 @@
             } else if (typeof logs === 'object') {
                 logsArray = Object.values(logs);
             }
-            
+
             console.log(`📊 Total log entries: ${logsArray.length}`);
-            
+
             // Get today's start time
             const todayUTCStart = new Date();
             todayUTCStart.setUTCHours(0, 0, 0, 0);
             const todayTimestamp = Math.floor(todayUTCStart.getTime() / 1000);
-            
+
             console.log(`📅 Today UTC start: ${todayUTCStart.toISOString()} (${todayTimestamp})`);
-            
+
             let recentLogs = [];
             let xanaxRelated = [];
-            
+
             for (let i = 0; i < Math.min(50, logsArray.length); i++) {
                 const entry = logsArray[i];
                 if (!entry || !entry.timestamp || !entry.log) continue;
-                
+
                 const entryDate = new Date(entry.timestamp * 1000);
                 const logText = entry.log.toString();
                 const numericCode = parseInt(logText.trim());
-                
+
                 // Collect recent logs
                 if (entry.timestamp >= todayTimestamp) {
                     recentLogs.push({
@@ -1184,7 +1213,7 @@
                         numericCode: !isNaN(numericCode) ? numericCode : null
                     });
                 }
-                
+
                 // Look for anything xanax-related
                 if (logText.toLowerCase().includes('xanax') || [2290, 2291, 2292].includes(numericCode)) {
                     xanaxRelated.push({
@@ -1196,37 +1225,37 @@
                     });
                 }
             }
-            
+
             console.log(`📋 Recent logs since today (${recentLogs.length}):`);
             recentLogs.slice(0, 10).forEach((log, i) => {
                 console.log(`  ${i + 1}. ${log.time} - Code:${log.numericCode || 'text'} - "${log.log}"`);
             });
-            
+
             console.log(`💊 Xanax-related logs found (${xanaxRelated.length}):`);
             xanaxRelated.forEach((log, i) => {
                 console.log(`  ${i + 1}. ${log.time} - ${log.isToday ? 'TODAY' : 'OLD'} - Code:${log.numericCode || 'text'} - "${log.log}"`);
             });
-            
+
             console.log('🔍 === END XANAX DEBUG ===');
         },
 
         // Debug function to analyze recent logs for nerve refill detection
         debugNerveRefillLogs() {
             console.log('🧠 === NERVE REFILL DEBUG ANALYSIS ===');
-            
+
             if (!this.lastApiData || !this.lastApiData.logs) {
                 console.log('❌ No log data available for debugging');
                 return;
             }
-            
+
             const logData = this.lastApiData.logs;
             console.log('🧠 Raw log data:', logData);
-            
+
             // Get today's timestamp
             const todayUTC = new Date();
             todayUTC.setUTCHours(0, 0, 0, 0);
             const todayTimestamp = Math.floor(todayUTC.getTime() / 1000);
-            
+
             // Handle different log formats
             let logsArray = [];
             if (Array.isArray(logData)) {
@@ -1236,14 +1265,14 @@
             } else if (typeof logData === 'object') {
                 logsArray = Object.values(logData);
             }
-            
+
             console.log(`🧠 Total logs: ${logsArray.length}`);
             console.log(`🧠 Looking for entries since: ${new Date(todayTimestamp * 1000).toISOString()}`);
-            
+
             // Recent logs
             const recentLogs = [];
             const nerveRelated = [];
-            
+
             // Nerve refill patterns from dailyTasks
             const nervePatterns = [
                 /nerve.*?(refill|pill)/i,
@@ -1258,19 +1287,19 @@
                 /used.*?nerve.*?(pill|refill)/i,
                 /gained.*?nerve/i
             ];
-            
+
             for (const entry of logsArray) {
                 if (!entry || !entry.timestamp || !entry.log) continue;
-                
+
                 const numericCode = parseInt(entry.log.trim());
-                
+
                 recentLogs.push({
                     time: new Date(entry.timestamp * 1000).toISOString(),
                     log: entry.log,
                     numericCode: !isNaN(numericCode) ? numericCode : null,
                     isToday: entry.timestamp >= todayTimestamp
                 });
-                
+
                 // Check for nerve-related patterns
                 for (const pattern of nervePatterns) {
                     if (pattern.test(entry.log)) {
@@ -1284,7 +1313,7 @@
                         break;
                     }
                 }
-                
+
                 // Check for specific nerve refill log IDs
                 if (!isNaN(numericCode) && nerveRefillLogIds.includes(numericCode)) {
                     nerveRelated.push({
@@ -1296,12 +1325,12 @@
                     });
                     console.log(`🧠 Found nerve refill by log ID ${numericCode}: ${new Date(entry.timestamp * 1000).toISOString()}`);
                 }
-                
+
                 // Also check for "nerve" keyword in any form
                 if (entry.log.toString().toLowerCase().includes('nerve')) {
                     console.log(`🧠 Found "nerve" keyword: ${new Date(entry.timestamp * 1000).toISOString()} - "${entry.log}"`);
                 }
-                
+
                 // Check if this might be a Torn log with title field
                 if (entry.title && entry.title.toLowerCase().includes('nerve')) {
                     console.log(`🧠 Found "nerve" in title: ${new Date(entry.timestamp * 1000).toISOString()} - "${entry.title}"`);
@@ -1314,38 +1343,38 @@
                     });
                 }
             }
-            
+
             console.log(`🧠 Recent logs since today (${recentLogs.length}):`);
             recentLogs.slice(0, 10).forEach((log, i) => {
                 console.log(`  ${i + 1}. ${log.time} - Code:${log.numericCode || 'text'} - "${log.log}"`);
             });
-            
+
             console.log(`🧠 Nerve-related logs found (${nerveRelated.length}):`);
             nerveRelated.forEach((log, i) => {
                 console.log(`  ${i + 1}. ${log.time} - ${log.isToday ? 'TODAY' : 'OLD'} - Code:${log.numericCode || 'text'} - "${log.log}"`);
                 console.log(`      Pattern: ${log.pattern}`);
             });
-            
+
             console.log('🧠 === END NERVE REFILL DEBUG ===');
         },
 
         // Debug function to analyze recent logs for energy refill detection
         debugEnergyRefillLogs() {
             console.log('⚡ === ENERGY REFILL DEBUG ANALYSIS ===');
-            
+
             if (!this.lastApiData || !this.lastApiData.logs) {
                 console.log('❌ No log data available for debugging');
                 return;
             }
-            
+
             const logData = this.lastApiData.logs;
             console.log('⚡ Raw log data:', logData);
-            
+
             // Get today's timestamp
             const todayUTC = new Date();
             todayUTC.setUTCHours(0, 0, 0, 0);
             const todayTimestamp = Math.floor(todayUTC.getTime() / 1000);
-            
+
             // Handle different log formats
             let logsArray = [];
             if (Array.isArray(logData)) {
@@ -1355,14 +1384,14 @@
             } else if (typeof logData === 'object') {
                 logsArray = Object.values(logData);
             }
-            
+
             console.log(`⚡ Total logs: ${logsArray.length}`);
             console.log(`⚡ Looking for entries since: ${new Date(todayTimestamp * 1000).toISOString()}`);
-            
+
             // Recent logs
             const recentLogs = [];
             const energyRelated = [];
-            
+
             // Energy refill patterns from dailyTasks
             const energyPatterns = [
                 /energy.*?(refill|drink|can)/i,
@@ -1377,19 +1406,19 @@
                 /used.*?energy.*?(can|drink|refill)/i,
                 /gained.*?energy/i
             ];
-            
+
             for (const entry of logsArray) {
                 if (!entry || !entry.timestamp || !entry.log) continue;
-                
+
                 const numericCode = parseInt(entry.log.trim());
-                
+
                 recentLogs.push({
                     time: new Date(entry.timestamp * 1000).toISOString(),
                     log: entry.log,
                     numericCode: !isNaN(numericCode) ? numericCode : null,
                     isToday: entry.timestamp >= todayTimestamp
                 });
-                
+
                 // Check for energy-related patterns
                 for (const pattern of energyPatterns) {
                     if (pattern.test(entry.log)) {
@@ -1403,40 +1432,40 @@
                         break;
                     }
                 }
-                
+
                 // Also check for "energy" keyword
                 if (entry.log.toLowerCase().includes('energy')) {
                     console.log(`⚡ Found "energy" keyword: ${new Date(entry.timestamp * 1000).toISOString()} - "${entry.log}"`);
                 }
             }
-            
+
             console.log(`⚡ Recent logs since today (${recentLogs.length}):`);
             recentLogs.slice(0, 10).forEach((log, i) => {
                 console.log(`  ${i + 1}. ${log.time} - Code:${log.numericCode || 'text'} - "${log.log}"`);
             });
-            
+
             console.log(`⚡ Energy-related logs found (${energyRelated.length}):`);
             energyRelated.forEach((log, i) => {
                 console.log(`  ${i + 1}. ${log.time} - ${log.isToday ? 'TODAY' : 'OLD'} - Code:${log.numericCode || 'text'} - "${log.log}"`);
                 console.log(`      Pattern: ${log.pattern}`);
             });
-            
+
             console.log('⚡ === END ENERGY REFILL DEBUG ===');
         },
 
         // Debug function to find refill log codes by searching for "points" keywords
         debugRefillLogCodes() {
             console.log('🔍 === REFILL LOG CODE DISCOVERY ===');
-            
+
             if (!this.lastApiData || !this.lastApiData.logs) {
                 console.log('❌ No log data available for debugging');
                 console.log('💡 Use the API to fetch logs first by waiting for automatic update or manually refreshing');
                 return;
             }
-            
+
             const logs = this.lastApiData.logs;
             let logsArray = [];
-            
+
             if (Array.isArray(logs)) {
                 logsArray = logs;
             } else if (logs.log && Array.isArray(logs.log)) {
@@ -1444,26 +1473,26 @@
             } else if (typeof logs === 'object') {
                 logsArray = Object.values(logs);
             }
-            
+
             console.log(`📊 Total log entries: ${logsArray.length}`);
-            
+
             // Get today's start time
             const todayUTCStart = new Date();
             todayUTCStart.setUTCHours(0, 0, 0, 0);
             const todayTimestamp = Math.floor(todayUTCStart.getTime() / 1000);
-            
+
             console.log(`📅 Today UTC start: ${todayUTCStart.toISOString()} (${todayTimestamp})`);
-            
+
             const refillKeywords = ['refill', 'points', 'energy', 'nerve', 'used.*points', 'gaining'];
             const potentialRefills = [];
-            
+
             for (const entry of logsArray) {
                 if (!entry || !entry.timestamp || !entry.log) continue;
-                
+
                 const logText = entry.log.toString().toLowerCase();
                 const numericCode = parseInt(entry.log.toString().trim());
                 const entryDate = new Date(entry.timestamp * 1000);
-                
+
                 // Look for logs containing refill-related keywords
                 let matchedKeywords = [];
                 for (const keyword of refillKeywords) {
@@ -1471,7 +1500,7 @@
                         matchedKeywords.push(keyword);
                     }
                 }
-                
+
                 if (matchedKeywords.length > 0) {
                     potentialRefills.push({
                         time: entryDate.toISOString(),
@@ -1485,7 +1514,7 @@
                     });
                 }
             }
-            
+
             console.log(`🔍 Found ${potentialRefills.length} potential refill-related logs:`);
             potentialRefills.forEach((log, i) => {
                 console.log(`\n  ${i + 1}. ${log.time} - ${log.isToday ? '✅ TODAY' : '❌ OLD'}`);
@@ -1494,7 +1523,7 @@
                 console.log(`     Matched Keywords: ${log.matchedKeywords.join(', ')}`);
                 console.log(`     Full entry:`, log.fullEntry);
             });
-            
+
             // Look specifically for today's refills
             const todayRefills = potentialRefills.filter(log => log.isToday);
             console.log(`\n🎯 Today's potential refills (${todayRefills.length}):`);
@@ -1505,14 +1534,14 @@
                     console.log(`     ⚠️ NUMERIC CODE: ${log.numericCode} - ADD THIS TO getLogCodesForItem!`);
                 }
             });
-            
+
             console.log('\n💡 INSTRUCTIONS:');
             console.log('   1. Look at the logs above from today when you used refills');
             console.log('   2. Find the numeric codes for Energy Refill and Nerve Refill');
             console.log('   3. These codes need to be added to getLogCodesForItem() function');
             console.log('   4. Let me know the codes and I will update the detection system');
             console.log('🔍 === END REFILL LOG CODE DISCOVERY ===');
-            
+
             return todayRefills;
         },
 
@@ -1530,7 +1559,7 @@
                 /xanax.*?active/i,
                 /\bxanax\b/i  // Just the word xanax anywhere
             ];
-            
+
             const count = this.countItemUsageFromLogs(logData, sinceTimestamp, xanaxPatterns, 'Xanax Dose', timezone);
             return Math.min(count, 3); // Cap at 3 per day
         },
@@ -1547,12 +1576,12 @@
 
             const contentWidth = contentArea.clientWidth || 480;
             const contentHeight = contentArea.clientHeight || 500;
-            
+
             const todoListWidth = Math.min(320, contentWidth - 40);
             const todoListHeight = Math.min(400, contentHeight - 60);
             const padding = 10;
             const stackOffset = 30;
-            
+
             const todoListCount = this.todoLists.length;
             const x = padding + (todoListCount * stackOffset) % (contentWidth - todoListWidth);
             const y = padding + Math.floor((todoListCount * stackOffset) / (contentWidth - todoListWidth)) * stackOffset;
@@ -1574,7 +1603,7 @@
             this.todoLists.push(todoList);
             this.saveTodoLists();
             this.renderTodoList(todoList);
-            
+
             console.log('📋 Todo list created successfully, total lists:', this.todoLists.length);
             return todoList;
         },
@@ -1594,7 +1623,7 @@
             todoListElement.className = 'movable-todolist';
             todoListElement.id = `sidekick-todolist-${todoList.id}`;
             todoListElement.dataset.todolistId = todoList.id;
-            
+
             const width = Math.max(todoList.width || 320, 200);
             const height = Math.max(todoList.height || 400, 200);
             const x = Math.max(todoList.x || 10, 0);
@@ -1618,7 +1647,7 @@
                 overflow: hidden;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.4);
             `;
-            
+
             todoListElement.innerHTML = `
                 <div class="todolist-header" style="
                     background: linear-gradient(135deg, #4CAF50, #388E3C);
@@ -1771,41 +1800,41 @@
 
             contentArea.appendChild(todoListElement);
             this.setupTodoListEventListeners(todoList, todoListElement);
-            
+
             console.log('📋 Todo list rendered:', todoList.name);
         },
 
         // Render tasks content (daily + custom tasks)
         renderTasksContent(todoList) {
             let content = '';
-            
+
             // Daily tasks section
             if (todoList.showDailyTasks) {
                 content += '<div style="margin-bottom: 10px;"><h4 style="color: #ccc; font-size: 11px; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">Daily Tasks</h4>';
-                
+
                 for (const taskKey in this.dailyTasks) {
                     const task = this.dailyTasks[taskKey];
                     content += this.renderDailyTask(task);
                 }
-                
+
                 content += '</div>';
             }
-            
+
             // Custom tasks section
             if (todoList.tasks.length > 0) {
                 content += '<div><h4 style="color: #ccc; font-size: 11px; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">Custom Tasks</h4>';
-                
+
                 todoList.tasks.forEach(task => {
                     content += this.renderCustomTask(task, todoList.id);
                 });
-                
+
                 content += '</div>';
             }
-            
+
             if (todoList.tasks.length === 0 && !todoList.showDailyTasks) {
                 content = '<div style="color: #888; font-size: 12px; text-align: center; margin-top: 20px;">Click + to add tasks</div>';
             }
-            
+
             return content;
         },
 
@@ -1813,7 +1842,7 @@
         renderDailyTask(task) {
             const isCompleted = task.completed;
             const progressText = task.maxCount ? ` (${task.currentCount || 0}/${task.maxCount})` : '';
-            
+
             return `
                 <div class="task-item daily-task" style="
                     background: ${isCompleted ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255,255,255,0.1)'};
@@ -1863,7 +1892,7 @@
                     const now = new Date();
                     const timeElapsed = now.getTime() - completedTime.getTime();
                     const timeRemaining = resetMs - timeElapsed;
-                    
+
                     if (timeRemaining > 0) {
                         const remainingText = this.formatDuration(timeRemaining);
                         resetInfo = ` (resets in ${remainingText})`;
@@ -1872,7 +1901,7 @@
                     resetInfo = ` (auto-resets: ${this.formatResetDuration(task.resetDuration)})`;
                 }
             }
-            
+
             return `
                 <div class="task-item custom-task" style="
                     background: ${task.completed ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255,255,255,0.1)'};
@@ -1939,28 +1968,28 @@
             // Todo list dropdown menu - using working pattern from timer module
             const dropdownBtn = element.querySelector('.todolist-dropdown-btn');
             const dropdownContent = element.querySelector('.todolist-dropdown-content');
-            
+
             if (dropdownBtn && dropdownContent) {
                 console.log('🔧 Setting up dropdown for todolist:', todoList.id);
-                
-                dropdownBtn.addEventListener('click', function(e) {
+
+                dropdownBtn.addEventListener('click', function (e) {
                     e.stopPropagation();
                     console.log('🔧 Dropdown button clicked');
-                    
+
                     // Close all other dropdowns first
                     document.querySelectorAll('.todolist-dropdown .todolist-dropdown-content').forEach(dropdown => {
                         if (dropdown !== dropdownContent) {
                             dropdown.style.display = 'none';
                         }
                     });
-                    
+
                     // Toggle this dropdown
                     const isVisible = dropdownContent.style.display === 'block';
                     dropdownContent.style.display = isVisible ? 'none' : 'block';
-                    
+
                     console.log('🔧 Dropdown toggled to:', dropdownContent.style.display);
                 });
-                
+
                 // Handle option clicks
                 const options = dropdownContent.querySelectorAll('.todolist-option');
                 options.forEach(option => {
@@ -1968,10 +1997,10 @@
                         e.stopPropagation();
                         const action = option.getAttribute('data-action');
                         console.log('🔧 Option clicked:', action);
-                        
+
                         dropdownContent.style.display = 'none';
-                        
-                        switch(action) {
+
+                        switch (action) {
                             case 'refresh':
                                 window.SidekickModules.TodoList.checkApiForCompletedTasks();
                                 break;
@@ -1996,14 +2025,14 @@
                         }
                     });
                 });
-                
+
                 console.log('✅ Dropdown menu setup complete with', options.length, 'options');
             } else {
                 console.error('❌ Dropdown elements not found. Btn:', !!dropdownBtn, 'Content:', !!dropdownContent);
             }
-            
+
             // Close dropdown when clicking outside
-            document.addEventListener('click', function(e) {
+            document.addEventListener('click', function (e) {
                 if (!element.contains(e.target)) {
                     dropdownContent.style.display = 'none';
                 }
@@ -2031,7 +2060,7 @@
         // Show todo list options menu
         showTodoListOptionsMenu(todoListId, cogButton) {
             console.log('🔧 showTodoListOptionsMenu called with:', todoListId, 'button:', !!cogButton);
-            
+
             const existingMenu = document.querySelector('.todolist-options-menu');
             if (existingMenu) {
                 console.log('🔧 Removing existing menu');
@@ -2151,12 +2180,12 @@
             let resizeTimeout;
             const resizeObserver = new ResizeObserver(entries => {
                 if (todoList.pinned) return;
-                
+
                 for (let entry of entries) {
                     if (entry.target === element) {
                         todoList.width = entry.contentRect.width;
                         todoList.height = entry.contentRect.height;
-                        
+
                         clearTimeout(resizeTimeout);
                         resizeTimeout = setTimeout(() => {
                             this.saveTodoLists();
@@ -2342,7 +2371,7 @@
             todoList.modified = new Date().toISOString();
             this.saveTodoLists();
             this.renderTodoList(todoList);
-            
+
             console.log(`📋 Created task "${taskName}" with reset: ${resetDuration}`);
         },
 
@@ -2365,7 +2394,7 @@
             todoList.modified = new Date().toISOString();
             this.saveTodoLists();
             this.renderTodoList(todoList);
-            
+
             console.log(`📋 Added custom task "${taskName}" to "${todoList.name}"`);
         },
 
@@ -2378,7 +2407,7 @@
             if (!task) return;
 
             task.completed = !task.completed;
-            
+
             if (task.completed) {
                 // Mark completion time for auto-reset functionality
                 task.completedAt = new Date().toISOString();
@@ -2388,7 +2417,7 @@
                 task.completedAt = null;
                 console.log(`❌ Task "${task.name}" marked as incomplete`);
             }
-            
+
             todoList.modified = new Date().toISOString();
             this.saveTodoLists();
             this.renderTodoList(todoList);
@@ -2414,7 +2443,7 @@
 
             this.todoLists = this.todoLists.filter(tl => tl.id !== id);
             this.saveTodoLists();
-            
+
             console.log('📋 Todo list deleted');
         },
 
@@ -2437,7 +2466,7 @@
 
             function dragStart(e) {
                 if (e.target.closest('input') || e.target.closest('button') || todoList.pinned) return;
-                
+
                 initialX = e.clientX - xOffset;
                 initialY = e.clientY - yOffset;
 
@@ -2460,10 +2489,10 @@
                     if (contentArea) {
                         const bounds = contentArea.getBoundingClientRect();
                         const elementBounds = element.getBoundingClientRect();
-                        
+
                         currentX = Math.max(0, Math.min(currentX, bounds.width - elementBounds.width));
                         currentY = Math.max(0, Math.min(currentY, bounds.height - elementBounds.height));
-                        
+
                         xOffset = currentX;
                         yOffset = currentY;
                     }
@@ -2481,11 +2510,11 @@
                     todoList.x = currentX;
                     todoList.y = currentY;
                     todoList.modified = new Date().toISOString();
-                    
+
                     if (window.SidekickModules?.TodoList?.saveTodoLists) {
                         window.SidekickModules.TodoList.saveTodoLists();
                     }
-                    
+
                     console.log(`📋 Todo list position saved: x=${currentX}, y=${currentY}`);
                 }
             }
@@ -2519,10 +2548,10 @@
         formatResetDuration(duration) {
             const match = duration.match(/^(\d+)([hd])$/);
             if (!match) return duration;
-            
+
             const value = parseInt(match[1]);
             const unit = match[2];
-            
+
             switch (unit) {
                 case 'h': return value === 1 ? '1 hour' : `${value} hours`;
                 case 'd': return value === 1 ? '1 day' : `${value} days`;
@@ -2536,7 +2565,7 @@
             const minutes = Math.floor(seconds / 60);
             const hours = Math.floor(minutes / 60);
             const days = Math.floor(hours / 24);
-            
+
             if (days > 0) {
                 return days === 1 ? '1 day' : `${days} days`;
             } else if (hours > 0) {
@@ -2552,13 +2581,13 @@
         debugResetState() {
             const now = new Date();
             const currentUTCDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-            
+
             console.log('🐛 DEBUG: Current reset state:');
             console.log('🐛 Current time:', now.toISOString());
             console.log('🐛 Current UTC date:', currentUTCDate.toISOString());
             console.log('🐛 Last reset date:', this.lastResetDate ? new Date(this.lastResetDate).toISOString() : 'null');
             console.log('🐛 Daily tasks state:', this.dailyTasks);
-            
+
             if (this.lastResetDate) {
                 const lastReset = new Date(this.lastResetDate);
                 const lastResetUTCDate = new Date(Date.UTC(lastReset.getUTCFullYear(), lastReset.getUTCMonth(), lastReset.getUTCDate()));
@@ -2567,28 +2596,28 @@
                 console.log('🐛 Hours difference:', (currentUTCDate.getTime() - lastResetUTCDate.getTime()) / (1000 * 60 * 60));
             }
         },
-        
+
         // Manual refresh function for testing and debugging
         manualRefresh() {
             console.log('🔄 Manual refresh triggered');
-            
+
             // Force check for daily reset
             this.checkForDailyReset();
-            
+
             // Force API check
             this.checkApiForCompletedTasks();
-            
+
             // Refresh all todo lists
             this.renderAllTodoLists();
-            
+
             console.log('✅ Manual refresh complete');
         },
-        
+
         // Force reset daily tasks (for testing)
         forceResetDailyTasks() {
             console.log('🔄 Force reset daily tasks triggered');
             this.resetDailyTasks();
-            
+
             // Show notification to confirm manual reset
             if (window.SidekickModules?.UI?.showNotification) {
                 window.SidekickModules.UI.showNotification(
@@ -2596,7 +2625,7 @@
                     'Daily tasks manually reset - all checkboxes should now be unchecked!'
                 );
             }
-            
+
             console.log('✅ Daily tasks force reset complete');
         }
     };
@@ -2608,25 +2637,25 @@
 
     // Export Todo List module to global namespace
     window.SidekickModules.TodoList = TodoListModule;
-    
+
     // Add global debugging functions for easy console access
-    window.debugTodoList = function() {
+    window.debugTodoList = function () {
         if (window.SidekickModules?.TodoList) {
             window.SidekickModules.TodoList.debugResetState();
         } else {
             console.error("❌ Todo List module not available");
         }
     };
-    
-    window.refreshTodoList = function() {
+
+    window.refreshTodoList = function () {
         if (window.SidekickModules?.TodoList) {
             window.SidekickModules.TodoList.manualRefresh();
         } else {
             console.error("❌ Todo List module not available");
         }
     };
-    
-    window.forceResetTodoList = function() {
+
+    window.forceResetTodoList = function () {
         if (window.SidekickModules?.TodoList) {
             if (confirm('Are you sure you want to force reset all daily tasks?')) {
                 window.SidekickModules.TodoList.forceResetDailyTasks();
@@ -2635,8 +2664,8 @@
             console.error("❌ Todo List module not available");
         }
     };
-    
-    window.checkRefillAvailability = function() {
+
+    window.checkRefillAvailability = function () {
         if (window.SidekickModules?.TodoList) {
             console.log('🔍 Manually checking refill availability...');
             window.SidekickModules.TodoList.checkApiForCompletedTasks();
@@ -2644,29 +2673,29 @@
             console.error("❌ Todo List module not available");
         }
     };
-    
-    window.forceResetRefills = function() {
+
+    window.forceResetRefills = function () {
         if (window.SidekickModules?.TodoList) {
             console.log('🔄 Force resetting refill tasks...');
             const todoList = window.SidekickModules.TodoList;
-            
+
             // Reset energy and nerve refill tasks
             if (todoList.dailyTasks.energyRefill) {
                 todoList.dailyTasks.energyRefill.completed = false;
                 console.log('⚡ Energy refill reset to incomplete');
             }
-            
+
             if (todoList.dailyTasks.nerveRefill) {
                 todoList.dailyTasks.nerveRefill.completed = false;
                 console.log('🧠 Nerve refill reset to incomplete');
             }
-            
+
             // Save and render
             todoList.saveDailyTasks();
             todoList.renderAllTodoLists();
-            
+
             console.log('✅ Refill tasks force reset complete');
-            
+
             // Show notification
             if (window.SidekickModules?.UI?.showNotification) {
                 window.SidekickModules.UI.showNotification(
@@ -2678,41 +2707,41 @@
             console.error("❌ Todo List module not available");
         }
     };
-    
+
     // Direct Debug Function Exposure - Simple Chrome Extension Compatible
     const exposeDebugFunctions = () => {
         console.log('🔧 Exposing debug functions directly...');
-        
+
         // Direct reference to this TodoList module instance
         const todoListModule = TodoListModule;
-        
+
         try {
             // Method 1: Direct window assignment using module reference
-            window.debugNerveRefillLogs = function() {
+            window.debugNerveRefillLogs = function () {
                 if (todoListModule && typeof todoListModule.debugNerveRefillLogs === 'function') {
                     todoListModule.debugNerveRefillLogs();
                 } else {
                     console.error('❌ TodoList debugNerveRefillLogs function not found');
                 }
             };
-            
-            window.debugEnergyRefillLogs = function() {
+
+            window.debugEnergyRefillLogs = function () {
                 if (todoListModule && typeof todoListModule.debugEnergyRefillLogs === 'function') {
                     todoListModule.debugEnergyRefillLogs();
                 } else {
                     console.error('❌ TodoList debugEnergyRefillLogs function not found');
                 }
             };
-            
-            window.debugXanaxLogs = function() {
+
+            window.debugXanaxLogs = function () {
                 if (todoListModule && typeof todoListModule.debugXanaxLogs === 'function') {
                     todoListModule.debugXanaxLogs();
                 } else {
                     console.error('❌ TodoList debugXanaxLogs function not found');
                 }
             };
-            
-            window.debugRefillLogCodes = function() {
+
+            window.debugRefillLogCodes = function () {
                 if (todoListModule && typeof todoListModule.debugRefillLogCodes === 'function') {
                     return todoListModule.debugRefillLogCodes();
                 } else {
@@ -2720,7 +2749,7 @@
                     return null;
                 }
             };
-            
+
             console.log('✅ Debug functions exposed successfully');
             console.log('🔍 Test with: debugNerveRefillLogs(), debugEnergyRefillLogs(), debugXanaxLogs(), debugRefillLogCodes()');
         } catch (e) {

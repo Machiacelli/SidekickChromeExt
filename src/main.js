@@ -5,7 +5,7 @@
  * Author: Machiacelli
  */
 
-(function() {
+(function () {
     "use strict";
 
     // Immediate test - this should show up right away
@@ -220,14 +220,10 @@
                 console.warn("⚠️ Debt Module not available");
             }
 
-            // Initialize Vault Tracker Module
-            console.log("🏦 Sidekick: Initializing Vault Tracker...");
-            if (window.SidekickModules.VaultTracker?.init) {
-                await window.SidekickModules.VaultTracker.init();
-                console.log("✅ Sidekick: Vault Tracker initialized");
-            } else {
-                console.warn("⚠️ Vault Tracker module not available");
-            }
+
+            // REMOVED: Vault Tracker Module
+            // Vault Tracker has been removed from the extension
+
 
             // Initialize Notion Bug Reporter Module
             console.log("🐛 Sidekick: Initializing Notion Bug Reporter...");
@@ -243,17 +239,17 @@
 
             // Expose global helper functions for testing
             exposeGlobalHelpers();
-            
+
             // Test multiple exposure methods for Chrome extension content script environment
             console.log('🧪 Testing multiple global function exposure methods:');
-            
+
             // Method 1: Standard window assignment (already done above)
             console.log('🔧 Method 1: Standard window assignment complete');
-            
+
             // Method 2: Direct window property assignment (CSP-compliant)
             // These functions are already exposed via exposeGlobalHelpers() above
             console.log('🔧 Method 2: Using direct window property assignment (CSP-compliant)');
-            
+
             // Method 3: Verify accessibility
             setTimeout(() => {
                 console.log('🧪 Testing function accessibility after injection:');
@@ -288,7 +284,7 @@
     // Expose global helper functions for debugging and testing
     function exposeGlobalHelpers() {
         // Extension connectivity tests
-        window.testExtensionConnection = function() {
+        window.testExtensionConnection = function () {
             if (window.SidekickModules?.Core?.SafeMessageSender?.testExtensionConnection) {
                 return window.SidekickModules.Core.SafeMessageSender.testExtensionConnection();
             } else {
@@ -297,7 +293,7 @@
             }
         };
 
-        window.checkExtensionContext = function() {
+        window.checkExtensionContext = function () {
             if (window.SidekickModules?.Core?.SafeMessageSender?.isExtensionContextValid) {
                 const isValid = window.SidekickModules.Core.SafeMessageSender.isExtensionContextValid();
                 console.log(`🔍 Extension context valid: ${isValid}`);
@@ -308,7 +304,7 @@
             }
         };
 
-        window.forceContextRecovery = function() {
+        window.forceContextRecovery = function () {
             if (window.SidekickModules?.Core?.SafeMessageSender?.attemptContextRecovery) {
                 return window.SidekickModules.Core.SafeMessageSender.attemptContextRecovery();
             } else {
@@ -318,7 +314,7 @@
         };
 
         // Debug shortcut for daily tasks
-        window.testDailyTasks = function() {
+        window.testDailyTasks = function () {
             if (window.SidekickModules?.TodoList) {
                 console.log('📋 Available TodoList debug functions:', {
                     debugTodoList: typeof window.debugTodoList,
@@ -326,7 +322,7 @@
                     debugEnergyRefillLogs: typeof window.debugEnergyRefillLogs,
                     debugXanaxLogs: typeof window.debugXanaxLogs
                 });
-                
+
                 if (typeof window.debugTodoList === 'function') {
                     return window.debugTodoList();
                 }
@@ -341,7 +337,7 @@
             globalThis.checkExtensionContext = window.checkExtensionContext;
             globalThis.forceContextRecovery = window.forceContextRecovery;
             globalThis.testDailyTasks = window.testDailyTasks;
-            
+
             console.log('✅ Functions exposed to global scope');
         } catch (e) {
             console.warn('⚠️ Could not expose to global scope:', e.message);
@@ -353,7 +349,7 @@
         console.log('  - checkExtensionContext():', typeof window.checkExtensionContext);
         console.log('  - forceContextRecovery():', typeof window.forceContextRecovery);
         console.log('  - testDailyTasks():', typeof window.testDailyTasks);
-        
+
         // Also expose them as properties of window explicitly
         try {
             Object.defineProperty(window, 'testExtensionConnection', {
@@ -386,48 +382,48 @@
     function setupMessageListener() {
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             console.log('📨 Received message:', request);
-            
+
             if (request.action === 'openSettings') {
                 handleOpenSettings(sendResponse);
                 return true;
             }
-            
+
             if (request.action === 'toggleModule') {
                 handleModuleToggle(request.moduleType, request.enabled, sendResponse);
                 return true; // Keep message channel open for async response
             }
-            
+
             // Legacy support for old action name
             if (request.action === 'toggleAttackButtonMover') {
                 handleModuleToggle('attackButtonMover', request.enabled, sendResponse);
                 return true;
             }
-            
+
             if (request.action === 'settingsUpdated') {
                 handleSettingsUpdate(request.settings);
                 sendResponse({ success: true });
             }
-            
+
             if (request.action === 'reloadXanaxViewer') {
                 handleReloadXanaxViewer(sendResponse);
                 return true;
             }
-            
+
             if (request.action === 'reloadChainTimer') {
                 handleReloadChainTimer(sendResponse);
                 return true;
             }
-            
+
             if (request.action === 'dataCleared') {
                 handleDataCleared();
                 sendResponse({ success: true });
             }
-            
+
             if (request.action === 'openBugReporter') {
                 handleOpenBugReporter(sendResponse);
                 return true; // Keep message channel open for async response
             }
-            
+
             if (request.action === 'toggleTrainingBlocker') {
                 handleToggleTrainingBlocker(request.enabled, sendResponse);
                 return true; // Keep message channel open for async response
@@ -440,7 +436,7 @@
         try {
             let module;
             let displayName;
-            
+
             switch (moduleType) {
                 case 'xanaxViewer':
                     module = window.SidekickModules?.XanaxViewer;
@@ -475,7 +471,7 @@
                     sendResponse({ success: false, error: 'Unknown module type' });
                     return;
             }
-            
+
             if (module) {
                 const newState = await module.toggle();
                 console.log(`⚙️ ${displayName} toggled:`, newState);
@@ -495,23 +491,23 @@
         console.log('⚙️ Settings updated:', settings);
         // Modules will automatically pick up new settings on next operation
     }
-    
+
     // Handle Xanax Viewer reload from popup
     async function handleReloadXanaxViewer(sendResponse) {
         try {
             const module = window.SidekickModules?.XanaxViewer;
             if (module) {
                 console.log('💊 Reloading Xanax Viewer settings...');
-                
+
                 // Reload settings
                 await module.loadSettings();
-                
+
                 // If enabled, restart the viewer
                 if (module.isEnabled) {
                     module.stopXanaxViewer();
                     await module.startXanaxViewer();
                 }
-                
+
                 console.log('✅ Xanax Viewer reloaded successfully');
                 sendResponse({ success: true });
             } else {
@@ -523,23 +519,23 @@
             sendResponse({ success: false, error: error.message });
         }
     }
-    
+
     // Handle Chain Timer reload from popup
     async function handleReloadChainTimer(sendResponse) {
         try {
             const module = window.SidekickModules?.ChainTimer;
             if (module) {
                 console.log('⏱️ Reloading Chain Timer settings...');
-                
+
                 // Reload settings
                 await module.loadSettings();
-                
+
                 // If enabled, restart the timer
                 if (module.isEnabled) {
                     module.stopMonitoring();
                     module.startMonitoring();
                 }
-                
+
                 console.log('✅ Chain Timer reloaded successfully');
                 sendResponse({ success: true });
             } else {
@@ -574,19 +570,19 @@
             sendResponse({ success: false, error: error.message });
         }
     }
-    
+
     async function handleToggleTrainingBlocker(enabled, sendResponse) {
         try {
             if (window.SidekickModules?.BlockTraining) {
                 window.SidekickModules.BlockTraining.isBlocked = enabled;
                 await window.SidekickModules.BlockTraining.saveSettings();
-                
+
                 if (enabled) {
                     window.SidekickModules.BlockTraining.startBlocking();
                 } else {
                     window.SidekickModules.BlockTraining.stopBlocking();
                 }
-                
+
                 sendResponse({ success: true });
             } else {
                 console.warn('⚠️ Block Training module not available');
@@ -617,7 +613,7 @@
     // Fallback function to create hamburger button if modules fail
     function createFallbackButton() {
         console.log("🔧 Creating fallback hamburger button...");
-        
+
         const button = document.createElement('button');
         button.id = 'sidekick-hamburger-fallback';
         button.style.cssText = `
@@ -640,11 +636,11 @@
         `;
         button.textContent = '☰';
         button.title = 'Sidekick (Fallback Mode)';
-        
+
         button.addEventListener('click', () => {
             alert('Sidekick is running in fallback mode. Check console for errors.');
         });
-        
+
         document.body.appendChild(button);
         console.log("✅ Fallback button created");
     }

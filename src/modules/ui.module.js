@@ -6,7 +6,7 @@
  * Author: Machiacelli
  */
 
-(function() {
+(function () {
     "use strict";
 
     // Ensure SidekickModules namespace exists
@@ -56,13 +56,13 @@
 
                 // Create hamburger button
                 this.createHamburgerButton();
-                
+
                 // Create sidebar
                 this.createSidebar();
 
                 // Apply loaded state
                 this.applySidebarState();
-                
+
                 // Set up cross-tab state synchronization
                 this.setupStateSync();
 
@@ -132,7 +132,7 @@
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 flex-shrink: 0;
             `;
-            
+
             this.topBar.innerHTML = `
                 <div style="display: flex; align-items: center; width: 100%;">
                     <span style="
@@ -193,24 +193,24 @@
                 user-select: none;
                 z-index: 10;
             `;
-            
+
             cogButton.addEventListener('mouseenter', () => {
                 cogButton.style.background = 'rgba(255,255,255,0.1)';
                 cogButton.style.color = '#fff';
                 cogButton.style.transform = 'translateY(-50%) scale(1.1)';
             });
-            
+
             cogButton.addEventListener('mouseleave', () => {
                 cogButton.style.background = 'none';
                 cogButton.style.color = 'rgba(255,255,255,0.8)';
                 cogButton.style.transform = 'translateY(-50%) scale(1)';
             });
-            
+
             cogButton.addEventListener('click', () => {
                 console.log("🔧 Cogwheel button clicked!");
                 this.showAdvancedSettings();
             });
-            
+
             this.topBar.appendChild(cogButton);
 
             // Create sidebar content with proper positioning
@@ -255,19 +255,19 @@
                 align-items: center;
                 justify-content: center;
             `;
-            
+
             addModuleButton.addEventListener('mouseenter', () => {
                 addModuleButton.style.background = 'rgba(255,255,255,0.2)';
                 addModuleButton.style.color = 'white';
                 addModuleButton.style.transform = 'translateY(-2px)';
             });
-            
+
             addModuleButton.addEventListener('mouseleave', () => {
                 addModuleButton.style.background = 'rgba(255,255,255,0.1)';
                 addModuleButton.style.color = 'rgba(255,255,255,0.7)';
                 addModuleButton.style.transform = 'translateY(0)';
             });
-            
+
             addModuleButton.addEventListener('click', () => {
                 this.showAddModuleMenu();
             });
@@ -302,13 +302,13 @@
                 this.sidebar.classList.remove('hidden');
                 this.sidebarVisible = true;
                 console.log("📖 Sidebar opened");
-                
+
                 // Trigger lazy initialization for timer module when sidebar opens
                 if (window.SidekickModules?.Timer?.lazyInit) {
                     console.log("🔄 Triggering Timer lazy initialization...");
                     window.SidekickModules.Timer.lazyInit();
                 }
-                
+
                 // Initialize/refresh Link Group module when sidebar opens
                 if (window.SidekickModules?.LinkGroup) {
                     if (!window.SidekickModules.LinkGroup.isInitialized) {
@@ -322,7 +322,7 @@
                         window.SidekickModules.LinkGroup.refresh();
                     }
                 }
-                
+
                 // Initialize/refresh Attack List module when sidebar opens
                 if (window.SidekickModules?.AttackList) {
                     if (!window.SidekickModules.AttackList.isInitialized) {
@@ -336,7 +336,7 @@
                         window.SidekickModules.AttackList.renderAllAttackLists();
                     }
                 }
-                
+
                 // Initialize/refresh Todo List module when sidebar opens
                 if (window.SidekickModules?.TodoList) {
                     if (!window.SidekickModules.TodoList.isInitialized) {
@@ -350,7 +350,7 @@
                         window.SidekickModules.TodoList.renderAllTodoLists();
                     }
                 }
-                
+
                 // Save state
                 this.saveSidebarState();
             }
@@ -366,13 +366,13 @@
                 this.sidebar.classList.add('hidden');
                 this.sidebarVisible = false;
                 console.log("📕 Sidebar closed");
-                
+
                 // Don't clear existing link group elements when sidebar closes - they should persist
                 // Comment out the clearing to keep link groups visible
                 // if (window.SidekickModules?.LinkGroup?.clearExistingLinkGroups) {
                 //     window.SidekickModules.LinkGroup.clearExistingLinkGroups();
                 // }
-                
+
                 // Save state
                 this.saveSidebarState();
             }
@@ -416,7 +416,7 @@
                 }
 
                 await window.SidekickModules.Notepad.init();
-                
+
                 // Create notepad immediately without prompting for title
                 const notepad = window.SidekickModules.Notepad.addNotepad('New Note');
             } catch (error) {
@@ -584,24 +584,6 @@
                     ">
                         <span style="font-size: 13px; filter: grayscale(0.2);">💰</span> Debt Tracker
                     </button>
-                    <button class="module-option" data-module="vaulttracker" style="
-                        background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
-                        border: 1px solid rgba(255,255,255,0.06);
-                        color: rgba(255,255,255,0.92);
-                        padding: 10px 12px;
-                        border-radius: 6px;
-                        cursor: pointer;
-                        text-align: left;
-                        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                        font-size: 11px;
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                        font-weight: 500;
-                        letter-spacing: 0.3px;
-                    ">
-                        <span style="font-size: 13px; filter: grayscale(0.2);">🏦</span> Vault Tracker
-                    </button>
                 </div>
             `;
 
@@ -652,7 +634,7 @@
         // Add new notepad module directly to sidebar
         addNewModule(moduleType) {
             console.log(`➕ Adding new ${moduleType} module`);
-            
+
             switch (moduleType) {
                 case 'notepad':
                     this.createNewNotepad();
@@ -675,9 +657,6 @@
                 case 'debttracker':
                     this.createNewDebtTracker();
                     break;
-                case 'vaulttracker':
-                    this.createNewVaultTracker();
-                    break;
                 default:
                     this.showNotification('Unknown Module', 'Module type not recognized', 'error');
             }
@@ -695,7 +674,7 @@
                 if (!window.SidekickModules.Timer.isInitialized) {
                     await window.SidekickModules.Timer.init();
                 }
-                
+
                 // Create timer immediately with cooldown selection interface
                 const timer = window.SidekickModules.Timer.addTimer('Cooldown Timer');
                 this.showNotification('Timer Created', 'New cooldown timer created', 'success');
@@ -714,7 +693,7 @@
                 }
 
                 await window.SidekickModules.Notepad.init();
-                
+
                 // Create notepad immediately without prompting for title
                 const notepad = window.SidekickModules.Notepad.addNotepad('New Note');
             } catch (error) {
@@ -735,7 +714,7 @@
                 if (!window.SidekickModules.LinkGroup.isInitialized) {
                     await window.SidekickModules.LinkGroup.init();
                 }
-                
+
                 // Create link group immediately with default name
                 const linkGroup = window.SidekickModules.LinkGroup.createLinkGroup('Links');
                 this.showNotification('Link Group Created', 'New link group created', 'success');
@@ -757,7 +736,7 @@
                 if (!window.SidekickModules.AttackList.isInitialized) {
                     await window.SidekickModules.AttackList.init();
                 }
-                
+
                 // Create attack list immediately with default name
                 const attackList = window.SidekickModules.AttackList.createNewAttackList();
                 this.showNotification('Attack List Created', 'New attack list created', 'success');
@@ -779,7 +758,7 @@
                 if (!window.SidekickModules.TodoList.isInitialized) {
                     await window.SidekickModules.TodoList.init();
                 }
-                
+
                 // Create todo list immediately
                 const todoList = window.SidekickModules.TodoList.createNewTodoList();
                 this.showNotification('Todo List Created', 'New todo list with daily tasks created', 'success');
@@ -801,7 +780,7 @@
                 if (!window.SidekickModules.Debt.isInitialized) {
                     await window.SidekickModules.Debt.init();
                 }
-                
+
                 // Show unified debt tracker window
                 window.SidekickModules.Debt.showDebtTrackerWindow();
                 this.showNotification('Debt Tracker', 'Debt tracker window opened', 'info');
@@ -811,37 +790,7 @@
             }
         },
 
-        async createNewVaultTracker() {
-            try {
-                if (!window.SidekickModules?.VaultTracker) {
-                    this.showNotification('Vault Tracker Error', 'Vault Tracker module not loaded', 'error');
-                    return;
-                }
 
-                // Initialize if not already done
-                if (!window.SidekickModules.VaultTracker.initDone) {
-                    await window.SidekickModules.VaultTracker.init();
-                }
-                
-                // Create/show the window
-                await window.SidekickModules.VaultTracker.setupUI();
-                
-                // Auto-sync if on vault page
-                const isVaultPage = window.location.href.includes('properties.php') && window.location.href.includes('vault');
-                if (isVaultPage) {
-                    console.log('[VaultTracker] On vault page - auto-syncing...');
-                    const success = await window.SidekickModules.VaultTracker.syncNow();
-                    if (success) {
-                        this.showNotification('Vault Tracker', 'Vault data synced successfully', 'success');
-                    }
-                }
-                
-                await window.SidekickModules.VaultTracker.renderPanel();
-            } catch (error) {
-                console.error('Failed to create vault tracker:', error);
-                this.showNotification('Vault Tracker Error', 'Failed to open vault tracker', 'error');
-            }
-        },
 
         // Show advanced settings panel
         showAdvancedSettings() {
@@ -961,9 +910,9 @@
                     chainTimerToggle.textContent = status.isActive ? 'On' : 'Off';
                     chainTimerToggle.style.background = status.isActive ? '#4CAF50' : '#444';
                 };
-                
+
                 updateChainTimerButton();
-                
+
                 chainTimerToggle.addEventListener('click', async () => {
                     try {
                         await window.SidekickModules.ChainTimer.toggle();
@@ -998,7 +947,7 @@
                     document.removeEventListener('click', closeOnClickOutside);
                 }
             };
-            
+
             setTimeout(() => {
                 document.addEventListener('click', closeOnClickOutside);
             }, 100);
@@ -1024,7 +973,7 @@
                 if (window.SidekickModules?.Core?.ChromeStorage?.set) {
                     const state = { visible: this.sidebarVisible };
                     await window.SidekickModules.Core.ChromeStorage.set('sidekick_sidebar_state', state);
-                    
+
                     // Broadcast to other tabs
                     chrome.runtime.sendMessage({
                         type: 'SIDEBAR_STATE_CHANGED',
@@ -1065,7 +1014,7 @@
                         }
                     }
                 });
-                
+
                 // Also check for state changes via storage events
                 if (chrome.storage && chrome.storage.onChanged) {
                     chrome.storage.onChanged.addListener((changes, namespace) => {
@@ -1088,7 +1037,7 @@
         // Show notification (placeholder for now)
         showNotification(title, message, type = 'info') {
             console.log(`🔔 ${type.toUpperCase()}: ${title} - ${message}`);
-            
+
             // Use Core notification system if available
             if (window.SidekickModules?.Core?.NotificationSystem) {
                 window.SidekickModules.Core.NotificationSystem.show(title, message, type, 3000);
