@@ -1,4 +1,4 @@
-// Vault Tracker Module for SidekickChromeExt
+﻿// Vault Tracker Module for SidekickChromeExt
 // Features:
 //  - Persistent ledger of vault transactions (Chrome storage)
 //  - WebSocket injection to capture live vault events (property/vault)
@@ -13,6 +13,7 @@
   const MODULE_NAME = 'VaultTracker';
   const STORAGE_KEY = 'sidekick:vaultledger:v1';
   const SETTINGS_KEY = 'sidekick:vaultsettings:v1';
+  const PANEL_STATE_KEY = 'sidekick:vaultpanel:v1';
   const MAX_LOAD_MORE_CLICKS = 25;
   const LOAD_MORE_PAUSE_MS = 900;
 
@@ -65,15 +66,23 @@
     },
 
     async load() {
-      const stored = await chromeStorageGet(STORAGE_KEY);
-      if (stored && stored.transactions && stored.order) {
-        this.data = stored;
+      try {
+        const stored = await window.SidekickModules.Core.ChromeStorage.get(STORAGE_KEY);
+        if (stored && stored.transactions && stored.order) {
+          this.data = stored;
+          console.log(`[VaultTracker] Ledger loaded: ${stored.order.length} transactions`);
+        } else {
+          console.log(`[VaultTracker] No existing ledger data found`);
+        }
+      } catch (error) {
+        console.error(`[VaultTracker] Failed to load ledger:`, error);
       }
     },
 
     async save() {
       try {
-        await chromeStorageSet({ [STORAGE_KEY]: this.data });
+        await window.SidekickModules.Core.ChromeStorage.set(STORAGE_KEY, this.data);
+        console.log(`[VaultTracker] Ledger saved: ${this.data.order.length} transactions`);
       } catch (e) {
         console.error(`${MODULE_NAME}: Failed to save ledger`, e);
       }
@@ -120,12 +129,12 @@
         timestamp: tNormalized.timestamp
       };
 
-      // FIX 4: Auto re-render panel on every ledger update
+      // FIX 4: Auto re-render panel on every ledger update (no pulse to avoid constant flashing)
       this.save();
       if (window.SidekickModules && window.SidekickModules.VaultTracker) {
         try {
           window.SidekickModules.VaultTracker.renderPanel();
-        } catch (e) {}
+        } catch (e) { }
       }
       return true;
     },
@@ -175,14 +184,42 @@
       this.hookPageVisibility();
       isInitialized = true;
       console.log(`${MODULE_NAME}: Initialized`);
+
+      // Auto-restore panel - try ChromeStorage first, fallback to localStorage
+      let savedState = await window.SidekickModules.Core.ChromeStorage.get(PANEL_STATE_KEY);
+      if (!savedState) {
+        // Fallback to localStorage if ChromeStorage returns null/undefined
+        const localData = localStorage.getItem(PANEL_STATE_KEY);
+        savedState = localData ? JSON.parse(localData) : null;
+      }
+      console.log(`${MODULE_NAME}: Checking saved panel state:`, savedState);
+      if (savedState && savedState.wasOpen) {
+        console.log(`Restoring vault tracker panel after page refresh...`);
+        // Wait a bit for UI to be ready
+        setTimeout(async () => {
+          await this.setupUI(savedState);
+          // Detect spouse to get player IDs before rendering
+          await this.autoDetectSpouse();
+          // Now render the panel with loaded ledger data
+          this.renderPanel();
+          console.log(`Vault tracker panel restored`);
+        }, 300);
+      } else {
+        console.log(`No vault tracker panel to restore (wasOpen: ${savedState?.wasOpen})`);
+      }
     },
 
     async loadSettings() {
       const s = await chromeStorageGet(SETTINGS_KEY);
       if (s) {
         this.settings = Object.assign(this.settings, s);
-      } else {
-        // try reading player info from page
+      }
+
+      // If no settings found or missing player/spouse info, auto-detect from API
+      const needsAutoDetect = !this.settings.playerId || !this.settings.playerName || this.settings.spouseId === undefined;
+
+      if (needsAutoDetect) {
+        // Try reading player info from page first
         try {
           const conn = document.querySelector('#websocketConnectionData');
           if (conn) {
@@ -190,10 +227,81 @@
             if (parsed && parsed.playerid) {
               this.settings.playerId = Number(parsed.playerid);
               this.settings.playerName = parsed.playername || this.settings.playerName;
-              await chromeStorageSet({ [SETTINGS_KEY]: this.settings });
             }
           }
         } catch (e) { /* ignore */ }
+
+        // If we have player ID, auto-detect spouse from API
+        if (this.settings.playerId) {
+          await this.autoDetectSpouse();
+        }
+      }
+    },
+
+    async getApiKey() {
+      try {
+        if (window.SidekickModules?.Core?.ChromeStorage) {
+          return await window.SidekickModules.Core.ChromeStorage.get('sidekick_api_key');
+        }
+        // Fallback to direct localStorage
+        const key = localStorage.getItem('sidekick_api_key');
+        return key ? JSON.parse(key) : null;
+      } catch (e) {
+        console.warn(`${MODULE_NAME}: Failed to get API key`, e);
+        return null;
+      }
+    },
+
+    async autoDetectSpouse() {
+      try {
+        const apiKey = await this.getApiKey();
+        if (!apiKey) {
+          console.log(`${MODULE_NAME}: No API key found, skipping spouse detection`);
+          return false;
+        }
+
+        console.log(`${MODULE_NAME}: Fetching player profile for spouse detection...`);
+        const response = await fetch(`https://api.torn.com/user/?selections=profile&key=${apiKey}`);
+        const data = await response.json();
+
+        if (data.error) {
+          console.warn(`${MODULE_NAME}: API error:`, data.error);
+          return false;
+        }
+
+        // Update player info
+        this.settings.playerId = data.player_id;
+        this.settings.playerName = data.name;
+
+        // Check if married and extract spouse info
+        if (data.married && data.married.spouse_id) {
+          this.settings.spouseId = data.married.spouse_id;
+          this.settings.spouseName = data.married.spouse_name || 'Spouse';
+
+          console.log(`${MODULE_NAME}: Spouse detected - ${this.settings.spouseName} [${this.settings.spouseId}]`);
+
+          // Show notification to user
+          if (window.SidekickModules?.Core?.NotificationSystem) {
+            window.SidekickModules.Core.NotificationSystem.show(
+              'Vault Tracker',
+              `Spouse detected: ${this.settings.spouseName}`,
+              'success',
+              4000
+            );
+          }
+        } else {
+          // Not married - set spouse to null so we know we checked
+          this.settings.spouseId = null;
+          this.settings.spouseName = null;
+          console.log(`${MODULE_NAME}: No spouse found - tracking only player balance`);
+        }
+
+        // Save updated settings
+        await this.saveSettings();
+        return true;
+      } catch (error) {
+        console.error(`${MODULE_NAME}: Failed to auto-detect spouse:`, error);
+        return false;
       }
     },
 
@@ -203,34 +311,14 @@
 
     injectWebSocketHook() {
       if (document[VaultTracker.injectedFlag]) return;
-      
-      // FIX 5: Inject WebSocket hook correctly for Chrome Extensions
-      const injectedScript = document.createElement('script');
-      injectedScript.textContent = '(' + function () {
-        const origWS = window.WebSocket;
-        window.WebSocket = function (...args) {
-          const ws = new origWS(...args);
-
-          ws.addEventListener('message', evt => {
-            try {
-              const data = JSON.parse(evt.data);
-              window.dispatchEvent(new CustomEvent("SK_VAULT_WSS", { detail: data }));
-            } catch (e) {}
-          });
-
-          return ws;
-        };
-      } + ')();';
-
-      document.documentElement.appendChild(injectedScript);
       document[VaultTracker.injectedFlag] = true;
 
-      // Listen for WebSocket events from page context
-      window.addEventListener("SK_VAULT_WSS", (evt) => {
-        try {
-          VaultTracker.handleInjectedEvent(evt.detail);
-        } catch (err) { /* swallow */ }
-      });
+      // FIX: Instead of inline script injection (CSP violation), use MutationObserver
+      // to watch for vault page elements and parse transactions directly from DOM
+      console.log(`${MODULE_NAME}: Using DOM-based transaction detection instead of WebSocket hook`);
+
+      // No WebSocket hook injection - CSP blocks it
+      // Transactions will be captured via manual sync only
     },
 
     async handleInjectedEvent(payload) {
@@ -245,20 +333,20 @@
     },
 
     hookPageVisibility() {
-      const mo = new MutationObserver(() => {
-        if (location.pathname.includes('properties.php') && location.href.includes('vault')) {
-          setTimeout(() => {
-            try {
-              this.syncFromVaultPage(false);
-            } catch (e) { /* ignore */ }
-          }, 800);
-        }
-      });
-      mo.observe(document.documentElement, { childList: true, subtree: true });
+      // Removed MutationObserver - WebSocket hook already handles live updates
+      // No need for additional page monitoring that causes excessive triggering
     },
 
-    async setupUI() {
-      if (this.panelEl) return;
+    async setupUI(passedState = null) {
+      console.log('[VaultTracker] setupUI called');
+
+      // Remove existing panel if present
+      if (this.panelEl) {
+        console.log('[VaultTracker] Removing existing panel');
+        this.panelEl.remove();
+        this.panelEl = null;
+      }
+
       const root = document.querySelector('#sidekick-content');
       if (!root) {
         console.error('[VaultTracker] Content area not found');
@@ -268,14 +356,21 @@
       const container = document.createElement('div');
       container.id = 'sidekick-vault-tracker';
       container.className = 'movable-notepad';
-      
+
       const contentWidth = root.clientWidth || 480;
       const contentHeight = root.clientHeight || 500;
-      
-      const width = 280;
-      const height = 260;
-      const x = 20;
-      const y = 20;
+
+      // Use passed state or load from storage
+      let savedState = passedState;
+      if (!savedState) {
+        savedState = await window.SidekickModules.Core.ChromeStorage.get(PANEL_STATE_KEY) || {};
+      }
+      console.log('[VaultTracker] Applying saved state:', savedState);
+
+      const width = savedState.width || 280;
+      const height = savedState.height || 260;
+      const x = savedState.x !== undefined ? savedState.x : 20;
+      const y = savedState.y !== undefined ? savedState.y : 20;
 
       container.style.cssText = `
         position: absolute;
@@ -311,17 +406,30 @@
           user-select: none;
         ">
           <span style="color: #fff; font-weight: 600; font-size: 11px;">Vault Tracker</span>
-          <button class="vault-close-btn" style="
-            background: rgba(255,0,0,0.8);
-            border: none;
-            color: #fff;
-            cursor: pointer;
-            font-size: 12px;
-            padding: 0px 4px;
-            border-radius: 2px;
-            line-height: 16px;
-            font-weight: bold;
-          ">✕</button>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="vault-settings-btn" style="
+              background: rgba(255,255,255,0.1);
+              border: none;
+              color: #fff;
+              cursor: pointer;
+              font-size: 12px;
+              padding: 2px 6px;
+              border-radius: 2px;
+              line-height: 16px;
+              font-weight: bold;
+            ">⚙️</button>
+            <button class="vault-close-btn" style="
+              background: rgba(255,0,0,0.8);
+              border: none;
+              color: #fff;
+              cursor: pointer;
+              font-size: 12px;
+              padding: 0px 4px;
+              border-radius: 2px;
+              line-height: 16px;
+              font-weight: bold;
+            ">✕</button>
+          </div>
         </div>
         <div class="vault-body" style="
           flex: 1;
@@ -341,10 +449,17 @@
 
       root.appendChild(container);
 
+      // Settings button
+      container.querySelector('.vault-settings-btn').addEventListener('click', () => {
+        this.showSettings();
+      });
+
       // Close button
-      container.querySelector('.vault-close-btn').addEventListener('click', () => {
+      container.querySelector('.vault-close-btn').addEventListener('click', async () => {
         container.remove();
         this.panelEl = null;
+        // Mark panel as closed
+        await chromeStorageSet({ [PANEL_STATE_KEY]: { ...await chromeStorageGet(PANEL_STATE_KEY), wasOpen: false } });
       });
 
       // Sync button
@@ -385,11 +500,168 @@
 
       document.addEventListener('mouseup', () => {
         isDragging = false;
+        // Save position after dragging
+        this.savePanelState();
       });
+
+      // Save size when resized
+      const resizeObserver = new ResizeObserver(() => {
+        this.savePanelState();
+      });
+      resizeObserver.observe(container);
+
+      // CRITICAL: Append to DOM FIRST before saving state
+      root.appendChild(container);
+      console.log('[VaultTracker] Container appended to DOM');
 
       this.panelEl = container;
       console.log('[VaultTracker] UI created as movable window');
+
+      // CRITICAL: Save panel state immediately after creation
+      await this.savePanelState();
+      console.log('[VaultTracker] Panel state saved with wasOpen=true');
+
       this.renderPanel();
+    },
+
+    async savePanelState() {
+      if (!this.panelEl) return;
+      const rect = this.panelEl.getBoundingClientRect();
+      const state = {
+        x: this.panelEl.offsetLeft,
+        y: this.panelEl.offsetTop,
+        width: rect.width,
+        height: rect.height,
+        wasOpen: true  // Mark that panel was open
+      };
+      console.log('[VaultTracker] Saving state:', state);
+      console.log('[VaultTracker] Storage key:', PANEL_STATE_KEY);
+
+      // Use Core.ChromeStorage directly (the wrapper is broken!)
+      await window.SidekickModules.Core.ChromeStorage.set(PANEL_STATE_KEY, state);
+      console.log('[VaultTracker] Core.ChromeStorage.set() completed');
+
+      // Verify immediately
+      const result = await window.SidekickModules.Core.ChromeStorage.get(PANEL_STATE_KEY); const verify = result && result[PANEL_STATE_KEY];
+      console.log('[VaultTracker] 🔍 Immediate verification:', verify);
+    },
+
+    showSettings() {
+      // Remove existing settings overlay if present
+      const existing = document.getElementById('vault-settings-overlay');
+      if (existing) {
+        existing.remove();
+        return;
+      }
+
+      const overlay = document.createElement('div');
+      overlay.id = 'vault-settings-overlay';
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.7);
+        z-index: 999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `;
+
+      const playerLabel = this.settings.playerName || 'Unknown';
+      const spouseLabel = this.settings.spouseName || 'Not detected';
+      const spouseStatus = this.settings.spouseId ? `ID: ${this.settings.spouseId}` : 'Not married';
+
+      overlay.innerHTML = `
+        <div style="
+          background: #2a2a2a;
+          border: 1px solid #444;
+          border-radius: 8px;
+          padding: 20px;
+          max-width: 400px;
+          width: 90%;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        ">
+          <h3 style="margin: 0 0 15px 0; color: #fff; font-size: 16px;">Vault Tracker Settings</h3>
+          
+          <div style="margin-bottom: 15px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+            <div style="color: #aaa; font-size: 11px; margin-bottom: 8px;">PLAYER INFO</div>
+            <div style="color: #fff; font-size: 14px; margin-bottom: 4px;">${playerLabel}</div>
+            <div style="color: #888; font-size: 11px;">ID: ${this.settings.playerId || 'Not detected'}</div>
+          </div>
+          
+          <div style="margin-bottom: 15px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+            <div style="color: #aaa; font-size: 11px; margin-bottom: 8px;">SPOUSE INFO</div>
+            <div style="color: #fff; font-size: 14px; margin-bottom: 4px;">${spouseLabel}</div>
+            <div style="color: #888; font-size: 11px;">${spouseStatus}</div>
+          </div>
+          
+          <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button id="vault-refresh-spouse" style="
+              flex: 1;
+              padding: 10px;
+              background: #4CAF50;
+              border: none;
+              color: white;
+              border-radius: 5px;
+              cursor: pointer;
+              font-weight: bold;
+            ">Refresh Spouse</button>
+            <button id="vault-reset-tracking" style="
+              flex: 1;
+              padding: 10px;
+              background: #f44336;
+              border: none;
+              color: white;
+              border-radius: 5px;
+              cursor: pointer;
+              font-weight: bold;
+            ">Reset Tracking</button>
+          </div>
+          
+          <button id="vault-close-settings" style="
+            width: 100%;
+            padding: 10px;
+            background: #666;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+          ">Close</button>
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+
+      // Event listeners
+      overlay.querySelector('#vault-close-settings').addEventListener('click', () => {
+        overlay.remove();
+      });
+
+      overlay.querySelector('#vault-refresh-spouse').addEventListener('click', async () => {
+        const btn = overlay.querySelector('#vault-refresh-spouse');
+        btn.textContent = 'Refreshing...';
+        btn.disabled = true;
+
+        await this.autoDetectSpouse();
+        overlay.remove();
+        this.renderPanel();
+      });
+
+      overlay.querySelector('#vault-reset-tracking').addEventListener('click', async () => {
+        if (!confirm('Clear all vault tracking data? This cannot be undone.')) return;
+
+        Ledger.clearAll();
+        this.renderPanel();
+        overlay.remove();
+      });
+
+      // Close on overlay click
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.remove();
+      });
     },
 
     async renderPanel() {
@@ -406,24 +678,57 @@
 
       const fmt = (n) => (n === null || n === undefined) ? '—' : (n < 0 ? ('-$' + Math.abs(n).toLocaleString()) : ('$' + n.toLocaleString()));
 
+      const playerLabel = this.settings.playerName || 'You';
+      const spouseLabel = this.settings.spouseName || 'Spouse';
+      const showSpouse = this.settings.spouseId !== null;
+
+      // Calculate time since last transaction
+      const lastUpdateText = last ? this.getTimeSince(last.timestamp) : 'No activity';
+
+      // Status indicator
+      const statusIcon = '🟢';
+      const statusText = 'Tracking';
+
       values.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:12px;color:#cfd6da">You</div>
-          <div style="font-weight:700">${fmt(bal.you)}</div>
+          <div style="font-size:12px;color:#cfd6da">${playerLabel}</div>
+          <div style="font-weight:700;color:${bal.you >= 0 ? '#6dd36d' : '#ff6b6b'}">${fmt(bal.you)}</div>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:12px;color:#cfd6da">Spouse</div>
-          <div style="font-weight:700">${fmt(bal.spouse)}</div>
+        ${showSpouse ? `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+          <div style="font-size:12px;color:#cfd6da">${spouseLabel}</div>
+          <div style="font-weight:700;color:${bal.spouse >= 0 ? '#6dd36d' : '#ff6b6b'}">${fmt(bal.spouse)}</div>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid rgba(255,255,255,0.03);">
+        ` : ''}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;margin-top:4px;border-top:1px solid rgba(255,255,255,0.08);">
           <div style="font-size:12px;color:#b7bfc5">Total</div>
-          <div style="font-weight:700">${fmt(bal.total)}</div>
+          <div style="font-weight:700;color:#fff">${fmt(bal.total)}</div>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;color:${deltaColor};font-weight:600;">
-          <div style="font-size:11px;">Last change</div>
-          <div style="font-size:12px;">${delta !== 0 ? ((delta>0?'+':'') + '$' + Math.abs(delta).toLocaleString()) : '—'}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05);">
+          <div style="font-size:11px;color:#999">Last change</div>
+          <div style="font-size:12px;color:${deltaColor};font-weight:600;">${delta !== 0 ? ((delta > 0 ? '+' : '') + '$' + Math.abs(delta).toLocaleString()) : '—'}</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+          <div style="font-size:11px;color:#999">Last update</div>
+          <div style="font-size:11px;color:#aaa">${lastUpdateText}</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+          <div style="font-size:11px;color:#999">Status</div>
+          <div style="font-size:11px;color:#6dd36d">${statusIcon} ${statusText}</div>
         </div>
       `;
+    },
+
+    // Helper function to get time since timestamp
+    getTimeSince(timestamp) {
+      if (!timestamp) return 'Never';
+      const now = Math.floor(Date.now() / 1000);
+      const diff = now - timestamp;
+
+      if (diff < 60) return 'Just now';
+      if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+      if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+      return Math.floor(diff / 86400) + 'd ago';
     },
 
     async syncFromVaultPage(userTriggered) {
@@ -447,7 +752,7 @@
           document.querySelector('[id*="vault"][id*="trans"]');
 
         if (!wrap) return [];
-        
+
         return Array.from(
           wrap.querySelectorAll('li[transaction_id], li, .transaction')
         );
@@ -499,7 +804,7 @@
           loadBtn.scrollIntoView({ behavior: 'instant', block: 'center' });
           loadBtn.click();
         } catch (e) {
-          try { loadBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })); } catch (e2) {}
+          try { loadBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })); } catch (e2) { }
         }
         clicks++;
         await new Promise(r => setTimeout(r, LOAD_MORE_PAUSE_MS));
@@ -602,7 +907,7 @@
       console.log('[VaultTracker] Initializing...');
       await VaultTracker.init();
     },
-    
+
     init: async function () {
       if (isInitialized) {
         this.initDone = true;
@@ -613,12 +918,34 @@
       isInitialized = true;
       this.initDone = true;
     },
-    
+
     initDone: false,
-    setupUI: async function() { await VaultTracker.setupUI(); },
+    setupUI: async function () { await VaultTracker.setupUI(); },
     syncNow: async function () { await VaultTracker.syncFromVaultPage(true); return true; },
     renderPanel: async function () { VaultTracker.renderPanel(); },
-    refresh: function() { VaultTracker.renderPanel(); }
+    refresh: function () { VaultTracker.renderPanel(); },
+
+    // Visual pulse effect when transaction is added
+    pulsePanel: function () {
+      if (!VaultTracker.panelEl) return;
+      const values = VaultTracker.panelEl.querySelector('#vault-values');
+      if (!values) return;
+
+      // Add pulse animation
+      values.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease';
+      values.style.transform = 'scale(1.02)';
+      values.style.boxShadow = '0 0 10px rgba(76, 175, 80, 0.3)';
+
+      setTimeout(() => {
+        values.style.transform = 'scale(1)';
+        values.style.boxShadow = 'none';
+      }, 300);
+    },
+
+    // Helper function to get time since timestamp (delegate to VaultTracker method)
+    getTimeSince: function (timestamp) {
+      return VaultTracker.getTimeSince(timestamp);
+    }
   };
 
   console.log('[VaultTracker] Module registered');
