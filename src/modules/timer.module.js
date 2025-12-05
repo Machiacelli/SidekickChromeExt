@@ -528,7 +528,36 @@
         findOrCreateCooldownTimer(currentTimer, cooldownType) {
             console.log(`🔍 findOrCreateCooldownTimer for ${cooldownType}, currentTimer:`, currentTimer.id);
 
-            // ALWAYS use the current timer that was clicked - no searching for old timers
+            // Search for existing timers that have or previously had this cooldown type
+            const existingTimersWithCooldown = this.timers.filter(timer => {
+                // Check if timer currently has this cooldown type in its cooldowns object
+                if (timer.cooldowns && timer.cooldowns[cooldownType] !== undefined) {
+                    return true;
+                }
+                // Check if timer's cooldownType property matches (for single-cooldown timers)
+                if (timer.cooldownType === cooldownType) {
+                    return true;
+                }
+                return false;
+            });
+
+            if (existingTimersWithCooldown.length > 0) {
+                // Sort by most recently modified to get the last used timer with this cooldown type
+                existingTimersWithCooldown.sort((a, b) => {
+                    const aTime = new Date(a.modified || a.created || 0).getTime();
+                    const bTime = new Date(b.modified || b.created || 0).getTime();
+                    return bTime - aTime; // Descending order (most recent first)
+                });
+
+                const selectedTimer = existingTimersWithCooldown[0];
+                console.log(`✅ Found existing timer with ${cooldownType} cooldown type:`, selectedTimer.id);
+                console.log(`🔍 Timer name: ${selectedTimer.name}, Last modified: ${selectedTimer.modified || selectedTimer.created}`);
+                console.log(`🔍 Reusing existing window instead of creating new one`);
+                return selectedTimer;
+            }
+
+            // No existing timer found with this cooldown type, use the clicked timer
+            console.log(`ℹ️ No existing timer found with cooldown type ${cooldownType}`);
             console.log(`🔍 Using clicked timer:`, currentTimer.id);
             return currentTimer;
         },
