@@ -8,6 +8,59 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.4.1 (2025-12-05) - Premium Admin Panel 👑💎
+
+#### **Admin Panel for Premium Management**
+- **NEW FEATURE**: Admin panel for granting premium access to testers
+- **Admin Button**: Added 👑 Admin button to settings panel (visible only to admin)
+- **Grant Premium**: Admins can grant premium time (in days) to any user by Torn ID
+- **Unlimited Access**: Admin users get unlimited premium access automatically
+- **Security**: Admin functions secured with whitelist verification via Torn API
+
+#### **Premium System Enhancements**
+- **Admin-Granted Premium**: New storage system for admin-granted subscriptions
+  - Separate from Xanax-based premium (stored in `sidekick_premium_grant_[userID]`)
+  - Tracks expiration, granted by, granted at timestamp, and days granted
+- **Premium Dialog**: Fixed "View Details" button in popup
+  - Now properly displays admin-granted premium status
+  - Shows correct days remaining and expiration date
+  - "Refresh Subscription" button checks both Xanax and admin-granted premium
+- **Popup Display**: Premium status in extension popup now shows admin-granted subscriptions
+  - Automatically detects admin-granted premium on load
+  - Displays accurate days remaining and expiration
+
+#### **Technical Implementation**
+- **Files Modified**:
+  - `premium.module.js`: Added admin panel, grant functions, admin-granted premium checks
+  - `settings.module.js`: Added admin button with security verification  
+  - `popup.js`: Enhanced premium status loading to check admin grants
+  - `main.js`: Added showPremiumDialog message handler
+- **Admin Whitelist**: Configurable admin ID list (currently: Machiacelli [2407280])
+- **Premium Checks**: `isSubscribed()` now checks:
+  1. Admin status (unlimited access)
+  2. Admin-granted premium (from storage)
+  3. Xanax-based premium (existing system)
+- **Dialog System**: Created `showSubscriptionDialog()` function
+  - Auto-refreshes subscription status before displaying
+  - Updates in real-time when "Refresh" clicked
+  - Shows accurate premium info for both grant types
+
+#### **User Experience**
+- Admin sees 👑 Admin button in settings after API verification
+- Click admin button → Opens admin panel overlay
+- Enter user Torn ID + days → Click "Grant Premium" → Done!
+- Testers see premium status immediately in popup
+- All premium features work with both Xanax and admin-granted premium
+- No manual configuration needed - admin status detected automatically
+
+#### **Security Features**
+- Admin button only visible to whitelisted users
+- Admin functions verify user ID via Torn API before executing
+- Non-admin users see error if they somehow access admin functions
+- Secure storage with user-specific grant keys
+
+---
+
 ### v1.4.0 (2025-12-05) - Critical Bug Fixes: Debt Tracker & Todo List 🐛✅
 
 #### **Debt Tracker - Fixed Payment Detection** 💰

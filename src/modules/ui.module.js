@@ -974,16 +974,21 @@
                     const state = { visible: this.sidebarVisible };
                     await window.SidekickModules.Core.ChromeStorage.set('sidekick_sidebar_state', state);
 
-                    // Broadcast to other tabs
-                    chrome.runtime.sendMessage({
-                        type: 'SIDEBAR_STATE_CHANGED',
-                        state: state
-                    }).catch(() => {
-                        // Silent fail if no other tabs
-                    });
+                    // Broadcast to other tabs (only if runtime is valid)
+                    if (chrome?.runtime?.id) {
+                        chrome.runtime.sendMessage({
+                            type: 'SIDEBAR_STATE_CHANGED',
+                            state: state
+                        }).catch(() => {
+                            // Silent fail if no other tabs or context invalid
+                        });
+                    }
                 }
             } catch (error) {
-                console.warn("⚠️ Failed to save sidebar state:", error);
+                // Silent catch - extension context may be invalidated after reload
+                if (error.message && !error.message.includes('Extension context invalidated')) {
+                    console.warn("⚠️ Failed to save sidebar state:", error);
+                }
             }
         },
 

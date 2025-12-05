@@ -342,6 +342,33 @@
                 " class="slider"></span>
             </label>
         </div>
+        
+        <!-- Premium Status Section -->
+        <div id="premiumStatus" style="margin-top: 15px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span id="premiumIcon" style="font-size: 18px;">🔒</span>
+                    <span id="premiumLabel" style="font-size: 13px; font-weight: 500;">Premium Status</span>
+                </div>
+                <span id="premiumDays" style="font-size: 11px; opacity: 0.7;">Loading...</span>
+            </div>
+            <div id="premiumDetails" style="font-size: 11px; opacity: 0.7; line-height: 1.5;">
+                Checking subscription...
+            </div>
+            <button id="premiumActionBtn" style="
+                width: 100%;
+                margin-top: 8px;
+                padding: 8px;
+                background: rgba(255,215,0,0.2);
+                border: 1px solid rgba(255,215,0,0.4);
+                color: #FFD700;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 11px;
+                font-weight: 600;
+                transition: all 0.2s;
+            ">View Details</button>
+        </div>
     </div>
     
     <div class="content">

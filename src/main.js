@@ -202,6 +202,24 @@
                 console.warn("⚠️ Flight Tracker module not available");
             }
 
+            // Initialize TravelArc Module
+            console.log("🌍 Sidekick: Initializing TravelArc...");
+            if (window.SidekickModules.TravelArc?.init) {
+                await window.SidekickModules.TravelArc.init();
+                console.log("✅ Sidekick: TravelArc initialized");
+            } else {
+                console.warn("⚠️ TravelArc module not available");
+            }
+
+            // Initialize Premium Module
+            console.log("💎 Sidekick: Initializing Premium...");
+            if (window.SidekickModules.Premium?.init) {
+                await window.SidekickModules.Premium.init();
+                console.log("✅ Sidekick: Premium initialized");
+            } else {
+                console.warn("⚠️ Premium module not available");
+            }
+
             // Initialize Todo List
             console.log("📋 Sidekick: Initializing Todo List...");
             if (window.SidekickModules.TodoList?.init) {
@@ -427,6 +445,16 @@
             if (request.action === 'toggleTrainingBlocker') {
                 handleToggleTrainingBlocker(request.enabled, sendResponse);
                 return true; // Keep message channel open for async response
+            }
+
+            if (request.action === 'showPremiumDialog') {
+                if (window.SidekickModules?.Premium?.showSubscriptionDialog) {
+                    window.SidekickModules.Premium.showSubscriptionDialog();
+                    sendResponse({ success: true });
+                } else {
+                    sendResponse({ success: false, error: 'Premium module not available' });
+                }
+                return true;
             }
         });
     }

@@ -47,6 +47,8 @@
         "src/modules/mugcalculator.module.js",
         "src/modules/flighttracker.module.js",
         "src/modules/debt.module.js",
+        "src/modules/travelarc.module.js",
+        "src/modules/premium.module.js",
         "src/modules/notionBugReporter.js",
         "src/modules/ui.module.js",
         "src/main.js"

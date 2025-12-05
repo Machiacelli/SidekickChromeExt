@@ -2595,6 +2595,126 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
         }
     };
 
+    // Load debt tracker window state from storage
+    DebtModule.loadWindowState = async function () {
+        try {
+            if (window.SidekickModules?.Core?.ChromeStorage?.get) {
+                const state = await window.SidekickModules.Core.ChromeStorage.get('sidekick_debt_tracker_state');
+                return state || { position: null, size: null, pinned: false };
+            }
+            return { position: null, size: null, pinned: false };
+        } catch (error) {
+            console.warn('⚠️ Failed to load debt tracker window state:', error);
+            return { position: null, size: null, pinned: false };
+        }
+    };
+
+    // Save debt tracker window state to storage
+    DebtModule.saveWindowState = async function (isOpen, element = null) {
+        try {
+            if (window.SidekickModules?.Core?.ChromeStorage?.set) {
+                const state = {
+                    isOpen: isOpen,
+                    pinned: this.debtTrackerPinned || false
+                };
+
+                // Save position and size if element is provided
+                if (element) {
+                    const rect = element.getBoundingClientRect();
+                    state.position = {
+                        x: parseInt(element.style.left) || 10,
+                        y: parseInt(element.style.top) || 10
+                    };
+                    state.size = {
+                        width: rect.width,
+                        height: rect.height
+                    };
+                }
+
+                await window.SidekickModules.Core.ChromeStorage.set('sidekick_debt_tracker_state', state);
+                console.log('💰 Debt tracker window state saved:', state);
+            }
+        } catch (error) {
+            // Silent catch for extension context invalidation
+            if (error.message && !error.message.includes('Extension context invalidated')) {
+                console.warn('⚠️ Failed to save debt tracker window state:', error);
+            }
+        }
+    };
+
+    // Make sidebar element draggable
+    DebtModule.makeSidebarElementDraggable = function (element, header) {
+        let isDragging = false;
+        let currentX = 0;
+        let currentY = 0;
+        let initialX = 0;
+        let initialY = 0;
+
+        // Debounced save
+        let saveTimeout;
+        const debouncedSave = () => {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                this.saveWindowState(true, element);
+            }, 250);
+        };
+
+        header.addEventListener('mousedown', (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+
+            isDragging = true;
+            const currentLeft = parseInt(element.style.left) || 0;
+            const currentTop = parseInt(element.style.top) || 0;
+            initialX = e.clientX - currentLeft;
+            initialY = e.clientY - currentTop;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            e.preventDefault();
+            currentX = e.clientX - initialX;
+            currentY = e.clientY - initialY;
+
+            // Constrain within sidebar content area
+            const contentArea = document.getElementById('sidekick-content');
+            if (contentArea) {
+                const bounds = contentArea.getBoundingClientRect();
+                const elementBounds = element.getBoundingClientRect();
+
+                currentX = Math.max(0, Math.min(currentX, bounds.width - elementBounds.width));
+                currentY = Math.max(0, Math.min(currentY, bounds.height - elementBounds.height));
+            }
+
+            element.style.left = currentX + 'px';
+            element.style.top = currentY + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                debouncedSave();
+            }
+            isDragging = false;
+        });
+    };
+
+    // Add resize observer to save size changes
+    DebtModule.addResizeObserver = function (element) {
+        const resizeObserver = new ResizeObserver(this.debounceResize(() => {
+            this.saveWindowState(true, element);
+        }, 500));
+
+        resizeObserver.observe(element);
+
+        // Clean up observer when element is removed
+        const originalRemove = element.remove;
+        element.remove = function () {
+            resizeObserver.disconnect();
+            originalRemove.call(this);
+        };
+    };
+
+
     // Make sure functions are accessible
     setTimeout(() => {
         console.log("🔍 Debug: Debt module functions available:");
