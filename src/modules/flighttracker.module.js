@@ -1,7 +1,7 @@
 /**
- * Flight Tracker Module - Premium Enhanced Version
- * Tracks when players will return to Torn from abroad
- * Shows: "Waiting for departure..." during outbound, then countdown until return
+ * Flight Tracker Module - Complete Rebuild
+ * Monitors player travel status via area selection
+ * Shows countdown timers for when players return to Torn
  */
 
 (function () {
@@ -11,50 +11,33 @@
         isEnabled: true,
         isInitialized: false,
         trackedPlayers: new Map(),
-        checkInterval: null,
+        updateInterval: null,
+        travelTimesLoaded: false,
 
         // Initialize the module
         async init() {
-            console.log('✈️ Initializing Flight Tracker Module (Premium)...');
+            console.log('✈️ Initializing Flight Tracker Module...');
 
             try {
-                // Check premium subscription
-                if (!(await this.checkPremiumStatus())) {
-                    console.log('✈️ FlightTracker: Premium subscription required');
-                    return;
-                }
-
                 await this.waitForCore();
+                await this.loadTravelTimes();
                 await this.loadSettings();
                 await this.loadTrackedPlayers();
 
                 if (this.isEnabled) {
-                    this.startTracking();
+                    this.startMonitoring();
                 }
 
-                // Add profile display if on a profile page
-                this.addProfileDisplay();
+                // Add track button if on profile page
+                this.addTrackButton();
 
                 // Listen for page changes
                 this.setupPageListener();
 
                 this.isInitialized = true;
-                console.log('✅ Flight Tracker Module initialized successfully (Premium)');
+                console.log('✅ Flight Tracker Module initialized successfully');
             } catch (error) {
                 console.error('❌ Flight Tracker initialization failed:', error);
-            }
-        },
-
-        // Check premium status
-        async checkPremiumStatus() {
-            try {
-                if (window.SidekickModules?.Premium?.isSubscribed) {
-                    return await window.SidekickModules.Premium.isSubscribed();
-                }
-                return false;
-            } catch (error) {
-                console.warn('⚠️ Could not check premium status:', error);
-                return false;
             }
         },
 
@@ -67,6 +50,17 @@
             }
             if (!window.SidekickModules?.Core) {
                 throw new Error('Core module not available');
+            }
+        },
+
+        // Load travel times data
+        async loadTravelTimes() {
+            // The travel-times.js file should be loaded before this module
+            if (window.TravelTimesData) {
+                this.travelTimesLoaded = true;
+                console.log('✅ Travel times data loaded');
+            } else {
+                console.warn('⚠️ Travel times data not available');
             }
         },
 
@@ -87,7 +81,9 @@
         async saveSettings() {
             try {
                 const settings = { enabled: this.isEnabled };
-                await window.SidekickModules.Core.ChromeStorage.set('flighttracker_settings', settings);
+                await window.Sidekick
+
+                Modules.Core.ChromeStorage.set('flighttracker_settings', settings);
             } catch (error) {
                 console.warn('⚠️ Failed to save Flight Tracker settings:', error);
             }
@@ -116,8 +112,8 @@
             }
         },
 
-        // Add enhanced profile display
-        addProfileDisplay() {
+        // Add track button to profile page
+        addTrackButton() {
             if (!window.location.href.includes('XID=')) {
                 return;
             }
@@ -129,315 +125,634 @@
 
             const playerId = userIdMatch[1];
 
-            if (document.querySelector('.sidekick-flight-tracker-container')) {
+            // Don't add if already exists
+            if (document.querySelector('.sidekick-flight-tracker-btn')) {
                 return;
             }
 
             try {
-                const profileImg = document.querySelector('img[src*="profileimages"]');
-                if (!profileImg) {
+                // Find the status container (the area with the travel image)
+                const statusContainer = this.findStatusContainer();
+                if (!statusContainer) {
+                    console.debug('Could not find status container');
                     return;
                 }
 
-                let profileContainer = profileImg.closest('.basic-information, .profile-container, [class*="basic"], [class*="profile"]');
-                if (!profileContainer) {
-                    profileContainer = profileImg.parentNode;
-                }
+                // Find a good container to insert our button
+                let targetContainer = statusContainer?.parentElement;
 
-                // Create container
-                const container = document.createElement('div');
-                container.className = 'sidekick-flight-tracker-container';
-                container.style.cssText = `
-                    display: flex;
-                    gap: 10px;
-                    margin: 10px 0 5px 0;
-                    align-items: flex-start;
+                // Create button container that flows with the page
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = 'sidekick-flight-tracker-container';
+                buttonContainer.id = `flight-tracker-btn-${playerId}`;
+                buttonContainer.style.cssText = `
+                    margin: 10px 0;
+                    width: 100%;
+                    max-width: 250px;
                 `;
 
                 // Create track button
                 const button = document.createElement('button');
                 button.className = 'sidekick-flight-tracker-btn';
-                button.innerHTML = '✈️ Track';
+                button.innerHTML = '✈️ Track Player';
                 button.style.cssText = `
-                    background: #4CAF50;
+                    background: linear-gradient(135deg, #4CAF50, #45a049);
                     border: none;
                     color: white;
-                    padding: 8px 12px;
-                    border-radius: 4px;
+                    padding: 10px 16px;
+                    border-radius: 6px;
                     cursor: pointer;
-                    font-size: 11px;
+                    font-size: 12px;
                     font-weight: 600;
-                    white-space: nowrap;
-                    flex-shrink: 0;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                    transition: all 0.3s ease;
+                    display: block;
+                    width: 100%;
                 `;
 
-                // Create info panel
-                const panel = document.createElement('div');
-                panel.className = 'sidekick-flight-info-panel';
-                panel.style.cssText = `
-                    background: rgba(0,0,0,0.3);
-                    padding: 8px 12px;
-                    border-radius: 4px;
-                    font-size: 11px;
-                    line-height: 1.4;
-                    color: #fff;
-                    flex: 1;
-                    min-width: 200px;
-                `;
-                panel.innerHTML = '<div style="opacity: 0.6;">Loading travel info...</div>';
+                button.addEventListener('mouseenter', () => {
+                    button.style.transform = 'scale(1.05)';
+                    button.style.boxShadow = '0 4px 12px rgba(0,0,0,0.4)';
+                });
+
+                button.addEventListener('mouseleave', () => {
+                    button.style.transform = 'scale(1)';
+                    button.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+                });
 
                 button.addEventListener('click', (e) => {
                     e.preventDefault();
-                    this.handleButtonClick(playerId, button, panel);
+                    e.stopPropagation();
+                    this.handleTrackButtonClick(playerId, statusContainer);
                 });
 
-                container.appendChild(button);
-                container.appendChild(panel);
-                profileContainer.appendChild(container);
+                buttonContainer.appendChild(button);
 
-                // Initial update
-                this.updateProfileDisplay(playerId, button, panel);
+                if (targetContainer) {
+                    targetContainer.appendChild(buttonContainer);
+                }
+
+                // Create info panel
+                this.createInfoPanel(playerId, targetContainer);
 
             } catch (error) {
-                console.error('❌ Error creating flight tracker display:', error);
+                console.error('❌ Error creating flight tracker button:', error);
             }
         },
 
-        // Handle button click
-        handleButtonClick(playerId, button, panel) {
+        // Find the status container with travel image
+        findStatusContainer() {
+            // Look for elements containing travel-related images or text
+            const selectors = [
+                'div[class*="travel"]',
+                'div[class*="status"]',
+                'img[src*="travel"]',
+                'div:has(img[src*="airplane"])',
+            ];
+
+            for (const selector of selectors) {
+                const element = document.querySelector(selector);
+                if (element) {
+                    return element;
+                }
+            }
+
+            // Fallback: look for any div with travel text
+            const allDivs = document.querySelectorAll('div');
+            for (const div of allDivs) {
+                const text = div.textContent;
+                if (text && (text.includes('Traveling to') || text.includes('Returning to Torn') || text.includes('In '))) {
+                    return div;
+                }
+            }
+
+            return null;
+        },
+
+        // Handle track button click
+        handleTrackButtonClick(playerId, statusContainer) {
             const player = this.trackedPlayers.get(playerId.toString());
 
             if (player) {
+                // Already tracking - ask to remove
                 if (confirm('Stop tracking this player?')) {
                     this.removePlayer(playerId);
-                    this.updateProfileDisplay(playerId, button, panel);
+                    // Update UI immediately
+                    const button = document.querySelector('.sidekick-flight-tracker-btn');
+                    if (button) {
+                        button.innerHTML = '✈️ Track Player';
+                        button.style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
+                    }
                 }
             } else {
-                this.addPlayer(playerId);
-                this.updateProfileDisplay(playerId, button, panel);
+                // Start tracking with area selection
+                this.startAreaSelection(playerId, statusContainer);
             }
         },
 
-        // Add player to tracking
-        addPlayer(playerId) {
+        // Start area selection mode
+        startAreaSelection(playerId, statusContainer) {
+            console.log('Starting area selection for player:', playerId);
+
+            // Create overlay for area selection
+            const overlay = document.createElement('div');
+            overlay.id = 'flight-tracker-selection-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 99999;
+                cursor: crosshair;
+            `;
+
+            const instructions = document.createElement('div');
+            instructions.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                padding: 20px 30px;
+                border-radius: 8px;
+                color: #333;
+                font-size: 14px;
+                text-align: center;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            `;
+            instructions.innerHTML = `
+                <div style="font-weight: bold; font-size: 16px; margin-bottom: 10px;">Select Area to Monitor</div>
+                <div>Drag to select the status box area</div>
+                <div style="font-size: 12px; color: #666; margin-top: 10px;">Press ESC to cancel</div>
+            `;
+
+            overlay.appendChild(instructions);
+            document.body.appendChild(overlay);
+
+            let selectionRect = null;
+            let startX, startY;
+            let isSelecting = false;
+
+            overlay.addEventListener('mousedown', (e) => {
+                if (e.target === overlay || e.target.parentElement === overlay) {
+                    isSelecting = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+
+                    instructions.style.display = 'none';
+
+                    selectionRect = document.createElement('div');
+                    selectionRect.style.cssText = `
+                        position: fixed;
+                        border: 2px dashed #4CAF50;
+                        background: rgba(76, 175, 80, 0.2);
+                        pointer-events: none;
+                        z-index: 100000;
+                    `;
+                    overlay.appendChild(selectionRect);
+                }
+            });
+
+            overlay.addEventListener('mousemove', (e) => {
+                if (!isSelecting || !selectionRect) return;
+
+                const currentX = e.clientX;
+                const currentY = e.clientY;
+
+                const left = Math.min(startX, currentX);
+                const top = Math.min(startY, currentY);
+                const width = Math.abs(currentX - startX);
+                const height = Math.abs(currentY - startY);
+
+                selectionRect.style.left = left + 'px';
+                selectionRect.style.top = top + 'px';
+                selectionRect.style.width = width + 'px';
+                selectionRect.style.height = height + 'px';
+            });
+
+            overlay.addEventListener('mouseup', (e) => {
+                if (!isSelecting) return;
+
+                const endX = e.clientX;
+                const endY = e.clientY;
+
+                const selectedArea = {
+                    x: Math.min(startX, endX),
+                    y: Math.min(startY, endY),
+                    width: Math.abs(endX - startX),
+                    height: Math.abs(endY - startY)
+                };
+
+                overlay.remove();
+                this.completeAreaSelection(playerId, selectedArea);
+            });
+
+            // ESC to cancel
+            const handleEscape = (e) => {
+                if (e.key === 'Escape') {
+                    overlay.remove();
+                    document.removeEventListener('keydown', handleEscape);
+                }
+            };
+            document.addEventListener('keydown', handleEscape);
+        },
+
+        // Complete area selection and start tracking
+        async completeAreaSelection(playerId, selectedArea) {
             const playerName = this.getPlayerName();
 
             const player = {
                 id: playerId,
                 name: playerName,
-                lastStatus: 'Unknown',
-                lastKnownCountry: 'unknown',
-                lastChecked: null,
+                selectedArea: selectedArea,
+                currentStatus: 'Monitoring...',
+                currentCountry: null,
+                ticketType: null,
+                departureTime: null,
+                landingTime: null,
+                detectedPlaneType: null,
                 addedAt: Date.now()
             };
 
             this.trackedPlayers.set(playerId.toString(), player);
-            this.saveTrackedPlayers();
+            await this.saveTrackedPlayers();
 
-            if (!this.checkInterval) {
-                this.startTracking();
-            }
+            console.log('✅ Started tracking player:', player);
+
+            // Start monitoring immediately
+            this.updatePlayerStatus(playerId);
+
+            // Update UI
+            this.updateInfoPanel(playerId);
         },
 
-        // Remove player from tracking
-        removePlayer(playerId) {
-            const player = this.trackedPlayers.get(playerId.toString());
-            if (player) {
-                this.trackedPlayers.delete(playerId.toString());
-                this.saveTrackedPlayers();
+        // Create info panel
+        createInfoPanel(playerId, targetContainer) {
+            // Remove existing panel
+            const existing = document.querySelector('.sidekick-flight-info-panel');
+            if (existing) {
+                existing.remove();
             }
+
+            const panel = document.createElement('div');
+            panel.className = 'sidekick-flight-info-panel';
+            panel.dataset.playerId = playerId; // Store which player this panel is for
+            panel.style.cssText = `
+                margin-top: 10px;
+                width: 100%;
+                max-width: 250px;
+                background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(30,30,30,0.9));
+                padding: 12px 16px;
+                border-radius: 8px;
+                font-size: 12px;
+                color: #fff;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                border: 1px solid rgba(255,255,255,0.1);
+            `;
+
+            if (targetContainer) {
+                targetContainer.appendChild(panel);
+            }
+
+            this.updateInfoPanel(playerId);
         },
 
-        // Update profile display with travel info
-        async updateProfileDisplay(playerId, button, panel) {
-            const isTracking = this.trackedPlayers.has(playerId.toString());
+        // Update info panel with current status
+        updateInfoPanel(playerId) {
+            const panel = document.querySelector('.sidekick-flight-info-panel');
+            if (!panel) return;
 
-            // Update button
-            if (isTracking) {
-                button.innerHTML = '✅ Tracking';
-                button.style.background = '#2196F3';
-            } else {
-                button.innerHTML = '✈️ Track';
-                button.style.background = '#4CAF50';
-            }
-
-            // Fetch and display travel info
-            try {
-                const apiKey = await this.getApiKey();
-                if (!apiKey) {
-                    panel.innerHTML = '<div style="opacity: 0.6;">API key required</div>';
-                    return;
-                }
-
-                const travelInfo = await this.fetchTravelInfo(playerId, apiKey);
-
-                if (!travelInfo) {
-                    panel.innerHTML = '<div style="opacity: 0.6;">No travel data available</div>';
-                    return;
-                }
-
-                // Render travel status
-                this.renderTravelInfo(panel, travelInfo);
-
-            } catch (error) {
-                console.debug('⚠️ Error updating profile display:', error);
-                panel.innerHTML = '<div style="opacity: 0.6;">Error loading travel info</div>';
-            }
-        },
-
-        // Fetch travel info from API
-        async fetchTravelInfo(playerId, apiKey) {
-            try {
-                const response = await fetch(`https://api.torn.com/user/${playerId}?selections=travel&key=${apiKey}`);
-
-                if (!response.ok) return null;
-
-                const data = await response.json();
-                if (data.error) return null;
-
-                return data.travel || null;
-
-            } catch (error) {
-                console.debug('⚠️ Error fetching travel info:', error);
-                return null;
-            }
-        },
-
-        // Render travel info panel
-        renderTravelInfo(panel, travel) {
-            // Not traveling
-            if (!travel || !travel.destination || travel.destination === 'Torn') {
-                panel.innerHTML = `<div style="opacity: 0.6;">🏠 Currently in Torn</div>`;
+            // Only update if this panel belongs to the current player
+            if (panel.dataset.playerId !== playerId.toString()) {
                 return;
             }
 
-            const destination = travel.destination;
-            const timeLeft = Number(travel.time_left || 0);
-            const now = Date.now() / 1000;
+            const player = this.trackedPlayers.get(playerId.toString());
 
-            // Traveling TO destination (outbound)
-            if (timeLeft > 0 && travel.departed && now < travel.timestamp) {
+            if (!player) {
                 panel.innerHTML = `
-                    <div style="margin-bottom: 4px; font-weight: bold; color: #FF9800;">
-                        ✈️ Traveling to ${destination}
-                    </div>
-                    <div style="opacity: 0.7; font-size: 10px;">
-                        Waiting for departure...
-                    </div>
+                    <div style="opacity: 0.6; text-align: center;">Not tracking</div>
                 `;
                 return;
             }
 
-            // In foreign country - show return countdown
-            panel.innerHTML = `
-                <div style="margin-bottom: 4px;">
-                    <span style="font-weight: bold; color: #2196F3;">📍 ${destination}</span>
-                </div>
-                <div style="font-size: 10px; opacity: 0.8;">
-                    ${this.formatTimeRemaining(timeLeft)} until return
+            // Build status display
+            let statusHTML = `
+                <div style="font-weight: bold; color: #FFC107; margin-bottom: 8px;">
+                    ✈️ Flight Tracker
                 </div>
             `;
 
-            // Update every second for active travelers
-            if (timeLeft > 0) {
-                setTimeout(() => {
-                    const updatedPanel = document.querySelector('.sidekick-flight-info-panel');
-                    if (updatedPanel) {
-                        const pid = window.location.href.match(/XID=(\d+)/)?.[1];
-                        if (pid) {
-                            this.updateProfileDisplay(pid,
-                                document.querySelector('.sidekick-flight-tracker-btn'),
-                                updatedPanel
-                            );
-                        }
-                    }
-                }, 1000);
-            }
-        },
+            if (player.currentCountry) {
+                // Show waiting for departure status
+                const statusText = player.currentStatus === 'returning'
+                    ? 'Returning to Torn from'
+                    : player.currentStatus === 'traveling'
+                        ? 'Traveling to'
+                        : 'In';
 
-        // Format time remaining
-        formatTimeRemaining(seconds) {
-            if (seconds <= 0) return 'Returning soon';
+                statusHTML += `
+                    <div style="margin-bottom: 6px;">
+                        <span style="color: #FF9800;">📍 ${statusText} ${player.currentCountry}</span>
+                    </div>
+                `;
 
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            const secs = seconds % 60;
-
-            if (hours > 0) {
-                return `⏱️ ${hours}h ${minutes}m`;
-            } else if (minutes > 0) {
-                return `⏱️ ${minutes}m ${secs}s`;
-            } else {
-                return `⏱️ ${secs}s`;
-            }
-        },
-
-        // Get player name from page
-        getPlayerName() {
-            const nameElement = document.querySelector('.basic-information h4, .profile-container h4, h4');
-            return nameElement ? nameElement.textContent.trim() : 'Unknown Player';
-        },
-
-        // Start tracking
-        startTracking() {
-            if (this.checkInterval) return;
-
-            this.checkInterval = setInterval(() => {
-                this.checkAllPlayers();
-            }, 30000);
-
-            this.checkAllPlayers();
-        },
-
-        // Stop tracking
-        stopTracking() {
-            if (this.checkInterval) {
-                clearInterval(this.checkInterval);
-                this.checkInterval = null;
-            }
-        },
-
-        // Check all tracked players
-        async checkAllPlayers() {
-            if (this.trackedPlayers.size === 0) return;
-
-            for (const [playerId, player] of this.trackedPlayers) {
-                await this.checkPlayer(playerId, player);
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-        },
-
-        // Check individual player
-        async checkPlayer(playerId, player) {
-            try {
-                const apiKey = await this.getApiKey();
-                if (!apiKey) return;
-
-                const response = await fetch(`https://api.torn.com/user/${playerId}?selections=basic,travel&key=${apiKey}`);
-
-                if (!response.ok) return;
-
-                const data = await response.json();
-                if (data.error) return;
-
-                player.lastStatus = data.status.description;
-                player.lastKnownCountry = data.travel?.destination || 'Torn';
-                player.lastChecked = Date.now();
-
-                this.trackedPlayers.set(playerId, player);
-                this.saveTrackedPlayers();
-
-                // Update display if on this player's profile
-                if (window.location.href.includes('XID=' + playerId)) {
-                    const button = document.querySelector('.sidekick-flight-tracker-btn');
-                    const panel = document.querySelector('.sidekick-flight-info-panel');
-                    if (button && panel) {
-                        this.updateProfileDisplay(playerId, button, panel);
-                    }
+                // Always show detected plane type if available
+                if (player.detectedPlaneType) {
+                    const planeIcon = player.detectedPlaneType === 'airstrip' ? '🛩️' : '✈️';
+                    const planeLabel = player.detectedPlaneType === 'airstrip' ? 'Airstrip' : 'Commercial';
+                    statusHTML += `
+                        <div style="margin-bottom: 6px; font-size: 11px;">
+                            ${planeIcon} Detected: <span style="color: #4CAF50; font-weight: bold;">${planeLabel}</span>
+                        </div>
+                    `;
+                } else {
+                    // Show detecting message if not detected yet
+                    statusHTML += `
+                        <div style="margin-bottom: 6px; font-size: 11px; opacity: 0.6;">
+                            🔍 Detecting plane type...
+                        </div>
+                    `;
                 }
 
+                // Show WLT benefit if applicable (only when returning)
+                if (player.hasWLTBenefit && player.currentStatus === 'returning') {
+                    statusHTML += `
+                        <div style="margin-bottom: 6px; font-size: 11px;">
+                            ⚡ <span style="color: #FFD700; font-weight: bold;">WLT Benefit Active</span>
+                            <div style="font-size: 10px; color: #aaa; margin-left: 14px;">10★ Lingerie Store</div>
+                        </div>
+                    `;
+                }
+
+                // Show countdown if returning
+                if (player.landingTime && player.currentStatus === 'returning') {
+                    const timeLeft = Math.max(0, Math.floor((player.landingTime - Date.now()) / 1000));
+                    const timeStr = window.TravelTimesData?.formatTravelTime(timeLeft) || `${timeLeft}s`;
+
+                    // Visual alert colors based on time remaining
+                    let timerColor = '#4CAF50'; // Green
+                    let timerIcon = '⏱️';
+                    if (timeLeft <= 60) {
+                        timerColor = '#f44336'; // Red - less than 1 min
+                        timerIcon = '🚨';
+                    } else if (timeLeft <= 300) {
+                        timerColor = '#FF9800'; // Orange - less than 5 min
+                        timerIcon = '⚠️';
+                    }
+
+                    statusHTML += `
+                        <div style="font-size: 14px; font-weight: bold; color: ${timerColor}; margin-top: 8px;">
+                            ${timerIcon} Landing in: ${timeStr}
+                        </div>
+                    `;
+
+                    // Flash animation for imminent landing
+                    if (timeLeft <= 60 && timeLeft > 0) {
+                        panel.style.animation = 'pulse 1s ease-in-out infinite';
+                        panel.style.borderColor = '#f44336';
+                    } else {
+                        panel.style.animation = 'none';
+                        panel.style.borderColor = 'rgba(255,255,255,0.1)';
+                    }
+                }
+            } else {
+                statusHTML += `
+                    <div style="opacity: 0.7; font-size: 11px;">
+                        ${player.currentStatus}
+                    </div>
+                `;
+            }
+
+            panel.innerHTML = statusHTML;
+        },
+
+        // Update player status by monitoring selected area
+        async updatePlayerStatus(playerId) {
+            const player = this.trackedPlayers.get(playerId.toString());
+            if (!player) return;
+
+            // Get text from selected area
+            const statusText = this.getTextFromArea(player.selectedArea);
+
+            // Parse status
+            const parsedStatus = this.parseStatusText(statusText);
+
+            if (parsedStatus.country) {
+                player.currentCountry = parsedStatus.country;
+                player.currentStatus = parsedStatus.status;
+
+                // Detect plane type from image
+                const planeType = await this.detectPlaneType(player.selectedArea);
+                if (planeType) {
+                    player.detectedPlaneType = planeType;
+                }
+
+                // If returning, start countdown
+                if (parsedStatus.status === 'returning' && !player.landingTime) {
+                    await this.startCountdown(player);
+                }
+            }
+
+            await this.saveTrackedPlayers();
+            this.updateInfoPanel(playerId);
+        },
+
+        // Get text from selected area
+        getTextFromArea(area) {
+            const elements = document.elementsFromPoint(
+                area.x + area.width / 2,
+                area.y + area.height / 2
+            );
+
+            for (const element of elements) {
+                const text = element.textContent?.trim();
+                if (text && (text.includes('Traveling') || text.includes('Returning') || text.includes('In '))) {
+                    return text;
+                }
+            }
+
+            return '';
+        },
+
+        // Parse status text to extract country and status
+        parseStatusText(text) {
+            const result = {
+                country: null,
+                status: 'unknown'
+            };
+
+            if (!text) return result;
+
+            // "Traveling to [country]"
+            const travelingMatch = text.match(/Traveling to (.+)/i);
+            if (travelingMatch) {
+                result.country = travelingMatch[1].trim();
+                result.status = 'traveling';
+                return result;
+            }
+
+            // "Returning to Torn from [country]"
+            const returningMatch = text.match(/Returning to Torn from (.+)/i);
+            if (returningMatch) {
+                result.country = returningMatch[1].trim();
+                result.status = 'returning';
+                return result;
+            }
+
+            // "In [country]"
+            const inMatch = text.match(/In (.+)/i);
+            if (inMatch) {
+                result.country = inMatch[1].trim();
+                result.status = 'abroad';
+                return result;
+            }
+
+            return result;
+        },
+
+        // Detect plane type from image in selected area
+        async detectPlaneType(area) {
+            console.log('🔍 Detecting plane type from selected area:', area);
+
+            // Search for elements with travel-related classes
+            const allTravelElements = document.querySelectorAll('[class*="travel"], [class*="flying"], [class*="abroad"]');
+            console.log(`📍 Found ${allTravelElements.length} travel-related elements on page`);
+
+            // Check each travel element to see if it's in our selected area
+            for (const element of allTravelElements) {
+                const rect = element.getBoundingClientRect();
+
+                // Check if this element overlaps with our selected area
+                const overlaps = !(
+                    rect.right < area.x ||
+                    rect.left > area.x + area.width ||
+                    rect.bottom < area.y ||
+                    rect.top > area.y + area.height
+                );
+
+                if (overlaps) {
+                    const className = element.className?.toString().toLowerCase() || '';
+                    const baseVal = element.className?.baseVal?.toLowerCase() || '';
+                    const fullClass = className || baseVal;
+
+                    console.log('✅ Found travel element in selected area!');
+                    console.log('   Class:', fullClass);
+                    console.log('   Tag:', element.tagName);
+
+                    // Check for airstrip
+                    if (fullClass.includes('airstrip')) {
+                        console.log('🛩️ Detected: Airstrip plane (found "airstrip" in class)');
+                        return 'airstrip';
+                    }
+
+                    // Found travel element without airstrip = commercial
+                    if (fullClass.includes('travel') || fullClass.includes('flying')) {
+                        console.log('✈️ Detected: Commercial plane (travel element without airstrip)');
+                        return 'commercial';
+                    }
+                }
+            }
+
+            console.log('❌ No travel element detected in selected area');
+            console.log('💡 Tip: Make sure to select the box that contains "Traveling to..." text');
+            return null;
+        },
+
+        // Start countdown for player return
+        async startCountdown(player) {
+            if (!this.travelTimesLoaded || !window.TravelTimesData) {
+                console.warn('Travel times data not loaded');
+                return;
+            }
+
+            // Check for company perks (10-star Lingerie Store = WLT benefit)
+            const hasWLTBenefit = await this.checkCompanyPerks(player.id);
+
+            let ticketType = player.detectedPlaneType === 'airstrip' ? 'airstrip' : 'standard';
+
+            // Apply WLT benefit if player works at 10-star Lingerie Store
+            if (hasWLTBenefit) {
+                ticketType = 'wltBenefit';
+                player.hasWLTBenefit = true;
+            }
+
+            const travelTime = window.TravelTimesData.getTravelTime(player.currentCountry, ticketType);
+
+            if (!travelTime) {
+                console.warn('Could not get travel time for country:', player.currentCountry);
+                return;
+            }
+
+            player.departureTime = Date.now();
+            player.landingTime = Date.now() + (travelTime * 1000);
+            player.ticketType = ticketType;
+
+            console.log(`Started countdown for ${player.name} - Landing in ${travelTime}s (WLT: ${hasWLTBenefit})`);
+        },
+
+        // Check if player works at 10-star Lingerie Store (grants WLT benefit)
+        async checkCompanyPerks(playerId) {
+            try {
+                const apiKey = await this.getApiKey();
+                if (!apiKey) {
+                    console.debug('No API key available for company check');
+                    return false;
+                }
+
+                // Fetch player's job information from basic selections
+                const response = await fetch(`https://api.torn.com/user/${playerId}?selections=profile&key=${apiKey}`);
+
+                if (!response.ok) {
+                    console.debug('Failed to fetch player profile');
+                    return false;
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    console.debug('API error:', data.error);
+                    return false;
+                }
+
+                // Check if player has a job
+                if (!data.job || !data.job.company_id) {
+                    return false;
+                }
+
+                const companyId = data.job.company_id;
+
+                // Fetch company information
+                const companyResponse = await fetch(`https://api.torn.com/company/${companyId}?selections=profile&key=${apiKey}`);
+
+                if (!companyResponse.ok) {
+                    console.debug('Failed to fetch company info');
+                    return false;
+                }
+
+                const companyData = await companyResponse.json();
+
+                if (companyData.error) {
+                    console.debug('Company API error:', companyData.error);
+                    return false;
+                }
+
+                // Check if it's a 10-star Lingerie Store
+                const isLingerieStore = companyData.company?.company_type === 32; // Type 32 = Lingerie Store
+                const is10Star = companyData.company?.rating === 10;
+
+                if (isLingerieStore && is10Star) {
+                    console.log('✅ Player works at 10-star Lingerie Store - WLT benefit applied!');
+                    return true;
+                }
+
+                return false;
+
             } catch (error) {
-                console.debug('⚠️ Error checking player:', error);
+                console.debug('Error checking company perks:', error);
+                return false;
             }
         },
 
@@ -454,17 +769,82 @@
 
                 return null;
             } catch (error) {
-                console.debug('🗝 Could not retrieve API key:', error);
+                console.debug('Could not retrieve API key:', error);
                 return null;
+            }
+        },
+
+        // Get player name from page
+        getPlayerName() {
+            const nameSelectors = [
+                '.basic-information h4',
+                '.profile-container h4',
+                'h4[class*="name"]',
+                'div[class*="userName"]'
+            ];
+
+            for (const selector of nameSelectors) {
+                const element = document.querySelector(selector);
+                if (element) {
+                    return element.textContent.trim().replace(/\[.*?\]/g, '').trim();
+                }
+            }
+
+            return 'Unknown Player';
+        },
+
+        // Remove player from tracking
+        removePlayer(playerId) {
+            this.trackedPlayers.delete(playerId.toString());
+            this.saveTrackedPlayers();
+
+            const panel = document.querySelector('.sidekick-flight-info-panel');
+            if (panel) {
+                panel.remove();
+            }
+        },
+
+        // Start monitoring all tracked players
+        startMonitoring() {
+            if (this.updateInterval) return;
+
+            this.updateInterval = setInterval(() => {
+                this.updateAllPlayers();
+            }, 1000); // Update every second
+
+            console.log('✅ Flight tracker monitoring started');
+        },
+
+        // Stop monitoring
+        stopMonitoring() {
+            if (this.updateInterval) {
+                clearInterval(this.updateInterval);
+                this.updateInterval = null;
+            }
+        },
+
+        // Update all tracked players
+        async updateAllPlayers() {
+            // Get current player ID from URL
+            const currentPlayerMatch = window.location.href.match(/XID=(\d+)/);
+            const currentPlayerId = currentPlayerMatch ? currentPlayerMatch[1] : null;
+
+            for (const [playerId, player] of this.trackedPlayers) {
+                // Only update the player we're currently viewing
+                if (currentPlayerId && playerId === currentPlayerId) {
+                    await this.updatePlayerStatus(playerId);
+                    this.updateInfoPanel(playerId);
+                }
             }
         },
 
         // Setup page listener
         setupPageListener() {
             setInterval(() => {
-                const display = document.querySelector('.sidekick-flight-tracker-container');
-                if (!display && window.location.href.includes('XID=')) {
-                    this.addProfileDisplay();
+                if (window.location.href.includes('XID=')) {
+                    if (!document.querySelector('.sidekick-flight-tracker-btn')) {
+                        this.addTrackButton();
+                    }
                 }
             }, 2000);
         },
@@ -473,27 +853,25 @@
         getStatus() {
             return {
                 isEnabled: this.isEnabled,
-                isInitialized: this.isInit
-
-ialized,
+                isInitialized: this.isInitialized,
                 trackedPlayersCount: this.trackedPlayers.size,
-                isTracking: !!this.checkInterval
+                isMonitoring: !!this.updateInterval
             };
         },
 
-        // Enable tracking
+        // Enable
         enable() {
             this.isEnabled = true;
             this.saveSettings();
             if (this.isInitialized) {
-                this.startTracking();
+                this.startMonitoring();
             }
         },
 
-        // Disable tracking
+        // Disable
         disable() {
             this.isEnabled = false;
-            this.stopTracking();
+            this.stopMonitoring();
             this.saveSettings();
         }
     };
@@ -505,6 +883,6 @@ ialized,
 
     // Export Flight Tracker module
     window.SidekickModules.FlightTracker = FlightTrackerModule;
-    console.log('✅ Flight Tracker Module (Premium) loaded and ready');
+    console.log('✅ Flight Tracker Module loaded and ready');
 
 })();

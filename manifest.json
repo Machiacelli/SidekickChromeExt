@@ -45,6 +45,7 @@
         "src/modules/randomtarget.module.js",
         "src/modules/inventorysorter.module.js",
         "src/modules/mugcalculator.module.js",
+        "src/data/travel-times.js",
         "src/modules/flighttracker.module.js",
         "src/modules/debt.module.js",
         "src/modules/travelarc.module.js",
