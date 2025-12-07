@@ -39,6 +39,15 @@
         apiKey: null,
         apiCheckInterval: null,
         interestUpdateInterval: null,
+        tabId: (function () {
+            // Get or create tab ID that persists across refreshes within same tab
+            let id = sessionStorage.getItem('sidekick_tab_id');
+            if (!id) {
+                id = crypto.randomUUID();
+                sessionStorage.setItem('sidekick_tab_id', id);
+            }
+            return id;
+        })(), // Unique ID for this tab instance, persists across refreshes
 
         // Interest calculation types
         interestTypes: {
@@ -2267,8 +2276,10 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
                 }
 
                 if (window.SidekickModules?.Core?.ChromeStorage?.set) {
-                    await window.SidekickModules.Core.ChromeStorage.set('debt_tracker_window_state', state);
-                    console.log("💰 Window state saved:", state);
+                    // Use tab-specific storage key
+                    const storageKey = `debt_tracker_window_state_${this.tabId}`;
+                    await window.SidekickModules.Core.ChromeStorage.set(storageKey, state);
+                    console.log(`💰 Window state saved for tab ${this.tabId.substring(0, 8)}:`, state);
                 }
             } catch (error) {
                 console.error('Failed to save window state:', error);
@@ -2279,8 +2290,10 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
         async loadWindowState() {
             try {
                 if (window.SidekickModules?.Core?.ChromeStorage?.get) {
-                    const state = await window.SidekickModules.Core.ChromeStorage.get('debt_tracker_window_state');
-                    console.log("💰 Loaded window state:", state);
+                    // Use tab-specific storage key
+                    const storageKey = `debt_tracker_window_state_${this.tabId}`;
+                    const state = await window.SidekickModules.Core.ChromeStorage.get(storageKey);
+                    console.log(`💰 Loaded window state for tab ${this.tabId.substring(0, 8)}:`, state);
                     return state || { isOpen: false, pinned: false };
                 }
             } catch (error) {

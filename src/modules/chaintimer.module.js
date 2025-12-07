@@ -5,7 +5,7 @@
  * Author: Machiacelli
  */
 
-(function() {
+(function () {
     'use strict';
 
     console.log("⏱️ Loading Sidekick Chain Timer Module...");
@@ -51,14 +51,14 @@
                 await waitForCore();
                 await this.loadSettings();
                 this.isInitialized = true;
-                
+
                 if (this.isEnabled) {
                     console.log('✅ Chain Timer: Enabled - starting monitoring');
                     this.startMonitoring();
                 } else {
                     console.log('⏸️ Chain Timer: Disabled');
                 }
-                
+
                 console.log("✅ Chain Timer Module initialized successfully");
             } catch (error) {
                 console.error("❌ Chain Timer Module initialization failed:", error);
@@ -82,8 +82,8 @@
                     this.screenFlashEnabled = true;
                     this.alertThresholdSeconds = 240;
                 }
-                console.log('⏱️ Chain Timer settings loaded:', { 
-                    enabled: this.isEnabled, 
+                console.log('⏱️ Chain Timer settings loaded:', {
+                    enabled: this.isEnabled,
                     threshold: this.alertThresholdSeconds,
                     alerts: this.alertsEnabled,
                     popup: this.popupEnabled,
@@ -115,7 +115,7 @@
         async toggle() {
             this.isEnabled = !this.isEnabled;
             await this.saveSettings();
-            
+
             if (this.isEnabled) {
                 console.log('✅ Chain Timer: Enabled');
                 this.startMonitoring();
@@ -125,19 +125,25 @@
                 this.stopMonitoring();
                 this.showNotification('Chain Timer disabled!', 'info');
             }
-            
+
             return this.isEnabled;
         },
 
         // Start monitoring chain status
         startMonitoring() {
+            // Don't start if disabled in settings
+            if (!this.isEnabled) {
+                console.log('⏸️ Chain Timer is disabled in settings, not starting monitoring');
+                return;
+            }
+
             this.stopMonitoring(); // Clean up any existing monitoring
-            
+
             this.createFloatingDisplay();
             this.monitorInterval = setInterval(() => {
                 this.updateChainTimer();
             }, 1000);
-            
+
             // Initial update
             this.updateChainTimer();
         },
@@ -148,7 +154,7 @@
                 clearInterval(this.monitorInterval);
                 this.monitorInterval = null;
             }
-            
+
             this.removeFloatingDisplay();
             this.stopFlashing();
             this.hasAlerted = false;
@@ -157,7 +163,7 @@
         // Create floating timer display
         createFloatingDisplay() {
             this.removeFloatingDisplay();
-            
+
             this.floatingDisplay = document.createElement('div');
             this.floatingDisplay.id = 'sidekick-chain-timer';
             this.floatingDisplay.style.cssText = `
@@ -173,36 +179,72 @@
                 font-size: 14px;
                 z-index: 9999;
                 min-width: 160px;
+                min-height: 80px;
                 text-align: center;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.3);
                 backdrop-filter: blur(10px);
-                cursor: pointer;
-                transition: all 0.3s ease;
+                cursor: move;
                 user-select: none;
+                resize: both;
+                overflow: auto;
             `;
-            
+
             this.floatingDisplay.innerHTML = `
                 <div style="font-weight: bold; margin-bottom: 4px; color: #FFC107;">⏱️ Chain Timer</div>
                 <div id="chain-time-display" style="font-size: 16px; color: #4CAF50;">--:--:--</div>
                 <div id="chain-status" style="font-size: 12px; color: #aaa; margin-top: 4px;">Monitoring...</div>
             `;
-            
+
             // Add hover effects
             this.floatingDisplay.addEventListener('mouseenter', () => {
                 this.floatingDisplay.style.transform = 'scale(1.05)';
                 this.floatingDisplay.style.boxShadow = '0 6px 16px rgba(0,0,0,0.4)';
             });
-            
+
             this.floatingDisplay.addEventListener('mouseleave', () => {
                 this.floatingDisplay.style.transform = 'scale(1)';
                 this.floatingDisplay.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
             });
-            
-            // Click to toggle
-            this.floatingDisplay.addEventListener('click', () => {
-                this.toggle();
+
+            // Make draggable (removed click-to-toggle to prevent accidental disable)
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
+
+            this.floatingDisplay.addEventListener('mousedown', (e) => {
+                // Don't start drag if clicking on the resize corner (bottom-right 20px)
+                const rect = this.floatingDisplay.getBoundingClientRect();
+                const isResizeCorner = (
+                    e.clientX > rect.right - 20 &&
+                    e.clientY > rect.bottom - 20
+                );
+
+                if (isResizeCorner) return;
+
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                startLeft = rect.left;
+                startTop = rect.top;
+                this.floatingDisplay.style.cursor = 'grabbing';
+                e.preventDefault();
             });
-            
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                this.floatingDisplay.style.left = (startLeft + dx) + 'px';
+                this.floatingDisplay.style.top = (startTop + dy) + 'px';
+                this.floatingDisplay.style.right = 'auto'; // Clear right positioning
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    this.floatingDisplay.style.cursor = 'move';
+                }
+                isDragging = false;
+            });
+
             document.body.appendChild(this.floatingDisplay);
         },
 
@@ -217,17 +259,33 @@
         // Update chain timer display
         updateChainTimer() {
             if (!this.floatingDisplay) return;
-            
+
             const chainData = this.getChainData();
             const timeDisplay = document.getElementById('chain-time-display');
             const statusDisplay = document.getElementById('chain-status');
-            
+
             if (!timeDisplay || !statusDisplay) return;
-            
+
+            // Parse chain length
+            const chainLength = parseInt(chainData.length) || 0;
+
+            // MINIMUM 25-HIT THRESHOLD - prevent activation on low/zero chains
+            if (chainLength < 25) {
+                timeDisplay.textContent = '--:--:--';
+                timeDisplay.style.color = '#aaa';
+                this.floatingDisplay.style.borderColor = '#444';
+                statusDisplay.textContent = chainLength > 0
+                    ? `Chain too low (${chainLength}/25 min)`
+                    : 'No active chain';
+                this.hasAlerted = false;
+                this.stopFlashing(); // Stop any active red screen flash
+                return; // Don't process timer logic for low chains
+            }
+
             if (chainData.timeLeft) {
                 const seconds = this.parseTimeToSeconds(chainData.timeLeft);
                 timeDisplay.textContent = chainData.timeLeft;
-                
+
                 // Update colors based on time remaining
                 if (seconds <= 60) {
                     timeDisplay.style.color = '#f44336'; // Red - critical
@@ -239,18 +297,18 @@
                     timeDisplay.style.color = '#4CAF50'; // Green - safe
                     this.floatingDisplay.style.borderColor = '#444';
                 }
-                
+
                 // Alert if threshold reached
                 if (seconds <= this.alertThresholdSeconds && !this.hasAlerted) {
                     this.triggerAlert(seconds);
                     this.hasAlerted = true;
                 }
-                
+
                 // Reset alert flag if time goes back up
                 if (seconds > this.alertThresholdSeconds) {
                     this.hasAlerted = false;
                 }
-                
+
                 statusDisplay.textContent = `Chain: ${chainData.length || '?'}`;
             } else {
                 timeDisplay.textContent = '--:--:--';
@@ -270,18 +328,18 @@
                 '.chain-time',
                 '.timeleft'
             ];
-            
+
             const lengthSelectors = [
                 '.bar-value___uxnah',
                 '[class*="chain-length"]',
                 '.chain-length',
                 '.chain-count'
             ];
-            
+
             let timeLeft = null;
             let length = null;
             let status = 'Monitoring...';
-            
+
             // Find time element
             for (const selector of timeSelectors) {
                 const element = document.querySelector(selector);
@@ -293,7 +351,7 @@
                     }
                 }
             }
-            
+
             // Find length element
             for (const selector of lengthSelectors) {
                 const element = document.querySelector(selector);
@@ -302,7 +360,7 @@
                     break;
                 }
             }
-            
+
             // Determine status
             if (!timeLeft) {
                 // Check if we're on faction page
@@ -312,7 +370,7 @@
                     status = 'Not on faction page';
                 }
             }
-            
+
             return { timeLeft, length, status };
         },
 
@@ -330,27 +388,27 @@
         // Trigger alert when threshold reached
         triggerAlert(secondsLeft) {
             if (!this.alertsEnabled) return;
-            
+
             const minutes = Math.floor(secondsLeft / 60);
             const seconds = secondsLeft % 60;
             const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-            
+
             // Popup alert
             if (this.popupEnabled) {
                 alert(`Chain timer is below ${this.alertThresholdSeconds / 60} minutes!`);
             }
-            
+
             // Screen flash
             if (this.screenFlashEnabled) {
                 this.startFlashing();
             }
-            
+
             // Visual alert - flash the display
             this.flashDisplay();
-            
+
             // Show notification
             this.showNotification(`Chain expires in ${timeStr}!`, 'warning');
-            
+
             // Browser notification if supported
             if ('Notification' in window && Notification.permission === 'granted') {
                 new Notification('Chain Timer Alert', {
@@ -363,13 +421,13 @@
         // Flash the display for visual alert
         flashDisplay() {
             if (!this.floatingDisplay) return;
-            
+
             let flashCount = 0;
             const flashInterval = setInterval(() => {
-                this.floatingDisplay.style.background = flashCount % 2 === 0 
-                    ? 'linear-gradient(135deg, #f44336, #d32f2f)' 
+                this.floatingDisplay.style.background = flashCount % 2 === 0
+                    ? 'linear-gradient(135deg, #f44336, #d32f2f)'
                     : 'linear-gradient(135deg, #2a2a2a, #1a1a1a)';
-                
+
                 flashCount++;
                 if (flashCount >= 6) {
                     clearInterval(flashInterval);

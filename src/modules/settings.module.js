@@ -749,6 +749,7 @@
 
         // Chain Timer Tab listeners
         attachChainTimerTabListeners(panel) {
+            const chainTimerToggle = panel.querySelector('.toggle-switch[data-module="chain-timer"]');
             const chainThresholdSlider = panel.querySelector('#sidekick-chain-threshold');
             const chainThresholdDisplay = panel.querySelector('#sidekick-chain-threshold-display');
             const chainAlertsCheckbox = panel.querySelector('#sidekick-chain-alerts');
@@ -762,22 +763,43 @@
             });
 
             saveChainBtn.addEventListener('click', async () => {
+                // Get actual toggle state (not hardcoded!)
+                const isEnabled = chainTimerToggle ? chainTimerToggle.dataset.active === 'true' : false;
+
                 const settings = {
+                    isEnabled: isEnabled,  // Use actual toggle state
                     alertThresholdSeconds: parseFloat(chainThresholdSlider.value) * 60,
                     alertsEnabled: chainAlertsCheckbox.checked,
                     popupEnabled: chainPopupCheckbox.checked,
-                    screenFlashEnabled: chainFlashCheckbox.checked,
-                    isEnabled: true
+                    screenFlashEnabled: chainFlashCheckbox.checked
                 };
 
                 try {
                     await window.SidekickModules.Core.ChromeStorage.set('sidekick_chain_timer', settings);
                     this.showStatus(chainStatusDiv, 'Chain Timer settings saved!', 'success');
 
+                    // Immediately apply the settings to the chain timer module
+                    if (window.SidekickModules?.ChainTimer) {
+                        window.SidekickModules.ChainTimer.isEnabled = isEnabled;
+                        window.SidekickModules.ChainTimer.alertThresholdSeconds = settings.alertThresholdSeconds;
+                        window.SidekickModules.ChainTimer.alertsEnabled = settings.alertsEnabled;
+                        window.SidekickModules.ChainTimer.popupEnabled = settings.popupEnabled;
+                        window.SidekickModules.ChainTimer.screenFlashEnabled = settings.screenFlashEnabled;
+
+                        // Start or stop monitoring based on enabled state
+                        if (isEnabled) {
+                            console.log('✅ Chain Timer enabled via settings');
+                            window.SidekickModules.ChainTimer.startMonitoring();
+                        } else {
+                            console.log('⏸️ Chain Timer disabled via settings');
+                            window.SidekickModules.ChainTimer.stopMonitoring();
+                        }
+                    }
+
                     if (window.SidekickModules.Core.NotificationSystem) {
                         window.SidekickModules.Core.NotificationSystem.show(
                             'Chain Timer Settings',
-                            'Settings saved successfully',
+                            isEnabled ? 'Chain Timer enabled' : 'Chain Timer disabled',
                             'success',
                             3000
                         );

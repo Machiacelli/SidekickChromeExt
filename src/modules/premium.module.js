@@ -254,13 +254,6 @@
                                     dialog.innerHTML = this.renderSubscriptionInfo();
                                 }
 
-                                if (window.SidekickModules?.UI?.showNotification) {
-                                    window.SidekickModules.UI.showNotification(
-                                        'Premium Active',
-                                        `${this.getRemainingDays()} days remaining`,
-                                        'success'
-                                    );
-                                }
                                 return;
                             }
                         }
@@ -275,13 +268,14 @@
 
             if (xanaxSent === 0) {
                 console.log('💎 No Xanax payments or admin grants found');
-                if (window.SidekickModules?.UI?.showNotification) {
-                    window.SidekickModules.UI.showNotification(
-                        'No Premium Found',
-                        'Send Xanax to activate premium',
-                        'warning'
-                    );
-                }
+                // Notification removed - no need to notify user every time
+                // if (window.SidekickModules?.UI?.showNotification) {
+                //     window.SidekickModules.UI.showNotification(
+                //         'No Premium Found',
+                //         'Send Xanax to activate premium',
+                //         'warning'
+                //     );
+                // }
                 return;
             }
 

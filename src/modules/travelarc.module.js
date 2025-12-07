@@ -100,7 +100,7 @@
             await this.waitForMapContainer();
 
             if (!this.mapContainer) {
-                console.warn('⚠️ Travel map container not found');
+                console.debug('⚠️ Travel map container not found'); // Debug instead of warn
                 return;
             }
 
@@ -130,7 +130,7 @@
 
                 await new Promise(resolve => setTimeout(resolve, 200));
             }
-            console.warn('⚠️ Map container not found after waiting');
+            console.debug('⚠️ Map container not found after waiting'); // Debug instead of warn
         },
 
         createSVGOverlay() {

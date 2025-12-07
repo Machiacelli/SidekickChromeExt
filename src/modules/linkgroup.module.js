@@ -5,7 +5,7 @@
  * Author: Machiacelli
  */
 
-(function() {
+(function () {
     'use strict';
 
     console.log("🔗 Loading Sidekick Link Group Module...");
@@ -28,6 +28,14 @@
     const LinkGroupModule = {
         isInitialized: false,
         linkGroups: [],
+        tabId: (function () {
+            let id = sessionStorage.getItem('sidekick_tab_id');
+            if (!id) {
+                id = crypto.randomUUID();
+                sessionStorage.setItem('sidekick_tab_id', id);
+            }
+            return id;
+        })(),
 
         // Initialize the link group module
         async init() {
@@ -40,25 +48,25 @@
 
             try {
                 await waitForCore();
-                
+
                 // Additional check to ensure we have access to Chrome storage
                 if (!window.SidekickModules?.Core?.ChromeStorage) {
                     throw new Error("Chrome storage not available");
                 }
-                
+
                 await this.loadLinkGroups();
-                
+
                 // Clear any existing link groups from previous initialization attempts
                 this.clearExistingLinkGroups();
-                
+
                 // Render all existing link groups
                 this.renderAllLinkGroups();
-                
+
                 this.isInitialized = true;
                 console.log("✅ Link Group Module initialized successfully");
             } catch (error) {
                 console.error("❌ Link Group Module initialization failed:", error);
-                
+
                 // Try again after a delay
                 setTimeout(() => {
                     console.log("🔄 Retrying Link Group Module initialization...");
@@ -71,24 +79,25 @@
         // Load link groups from storage
         async loadLinkGroups() {
             try {
-                const saved = await window.SidekickModules.Core.ChromeStorage.get('sidekick_linkgroups');
+                const storageKey = `sidekick_linkgroups_${this.tabId}`;
+                const saved = await window.SidekickModules.Core.ChromeStorage.get(storageKey);
                 if (saved && Array.isArray(saved)) {
                     this.linkGroups = saved;
-                    console.log("✅ Loaded", this.linkGroups.length, "link groups from Chrome storage");
+                    console.log(`✅ Loaded ${this.linkGroups.length} link groups for tab ${this.tabId.substring(0, 8)}`);
                 } else {
                     this.linkGroups = [];
                     console.log("📭 No saved link groups found in Chrome storage");
                 }
             } catch (error) {
                 console.error('Failed to load link groups from Chrome storage:', error);
-                
+
                 // Fallback to localStorage for migration
                 try {
                     const localSaved = localStorage.getItem('sidekick_linkgroups');
                     if (localSaved) {
                         this.linkGroups = JSON.parse(localSaved);
                         console.log("🔄 Migrated", this.linkGroups.length, "link groups from localStorage");
-                        
+
                         // Save to Chrome storage and remove from localStorage
                         await this.saveLinkGroups();
                         localStorage.removeItem('sidekick_linkgroups');
@@ -105,8 +114,9 @@
         // Save link groups to storage
         async saveLinkGroups() {
             try {
-                await window.SidekickModules.Core.ChromeStorage.set('sidekick_linkgroups', this.linkGroups);
-                console.log('💾 Link groups saved successfully to Chrome storage');
+                const storageKey = `sidekick_linkgroups_${this.tabId}`;
+                await window.SidekickModules.Core.ChromeStorage.set(storageKey, this.linkGroups);
+                console.log(`💾 Link groups saved for tab ${this.tabId.substring(0, 8)}`);
             } catch (error) {
                 console.error('Failed to save link groups to Chrome storage:', error);
             }
@@ -124,13 +134,13 @@
 
             const contentWidth = contentArea.clientWidth || 480;
             const contentHeight = contentArea.clientHeight || 500;
-            
+
             // Calculate position for stacking
             const linkGroupWidth = Math.min(300, contentWidth - 40);
             const linkGroupHeight = Math.min(250, contentHeight - 60);
             const padding = 10;
             const stackOffset = 30;
-            
+
             const linkGroupCount = this.linkGroups.length;
             const x = padding + (linkGroupCount * stackOffset) % (contentWidth - linkGroupWidth);
             const y = padding + Math.floor((linkGroupCount * stackOffset) / (contentWidth - linkGroupWidth)) * stackOffset;
@@ -151,7 +161,7 @@
             this.linkGroups.push(linkGroup);
             this.saveLinkGroups();
             this.renderLinkGroup(linkGroup);
-            
+
             console.log('🔗 Link group created successfully, total groups:', this.linkGroups.length);
             return linkGroup;
         },
@@ -171,9 +181,9 @@
             linkGroupElement.className = 'movable-linkgroup';
             linkGroupElement.id = `sidekick-linkgroup-${linkGroup.id}`;
             linkGroupElement.dataset.linkgroupId = linkGroup.id;
-            
-            const width = Math.max(linkGroup.width || 300, 200);
-            const height = Math.max(linkGroup.height || 250, 150);
+
+            const width = Math.max(linkGroup.width || 300, 170);
+            const height = Math.max(linkGroup.height || 250, 102);
             const x = Math.max(linkGroup.x || 10, 0);
             const y = Math.max(linkGroup.y || 10, 0);
 
@@ -188,14 +198,14 @@
                 border-radius: 6px;
                 display: flex;
                 flex-direction: column;
-                min-width: 200px;
-                min-height: 150px;
+                min-width: 170px;
+                min-height: 102px;
                 z-index: 1000;
                 resize: ${linkGroup.pinned ? 'none' : 'both'};
                 overflow: hidden;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.4);
             `;
-            
+
             linkGroupElement.innerHTML = `
                 <div class="linkgroup-header" style="
                     background: linear-gradient(135deg, #607D8B, #455A64);
@@ -308,18 +318,18 @@
                     flex-direction: column;
                     gap: 4px;
                 ">
-                    ${linkGroup.links.length === 0 ? 
-                        `<div style="color: #888; font-size: 12px; text-align: center; margin-top: 20px;">
+                    ${linkGroup.links.length === 0 ?
+                    `<div style="color: #888; font-size: 12px; text-align: center; margin-top: 20px;">
                             Click the + button to add links
-                        </div>` : 
-                        linkGroup.links.map(link => this.renderLink(link)).join('')
-                    }
+                        </div>` :
+                    linkGroup.links.map(link => this.renderLink(link)).join('')
+                }
                 </div>
             `;
 
             contentArea.appendChild(linkGroupElement);
             this.setupLinkGroupEventListeners(linkGroup, linkGroupElement);
-            
+
             console.log('🔗 Link group rendered:', linkGroup.name);
         },
 
@@ -379,17 +389,17 @@
             // Dropdown functionality
             const dropdownBtn = element.querySelector('.linkgroup-dropdown-btn');
             const dropdownContent = element.querySelector('.linkgroup-dropdown-content');
-            
+
             if (dropdownBtn && dropdownContent) {
                 dropdownBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const isVisible = dropdownContent.style.display === 'block';
-                    
+
                     // Close all other dropdowns first
                     document.querySelectorAll('.linkgroup-dropdown-content').forEach(dropdown => {
                         dropdown.style.display = 'none';
                     });
-                    
+
                     dropdownContent.style.display = isVisible ? 'none' : 'block';
                 });
 
@@ -480,7 +490,7 @@
 
             this.linkGroups = this.linkGroups.filter(lg => lg.id !== id);
             this.saveLinkGroups();
-            
+
             console.log('🔗 Link group deleted');
         },
 
@@ -508,10 +518,10 @@
                     for (let entry of entries) {
                         if (entry.target === element && !isResizing) {
                             const rect = entry.contentRect;
-                            linkGroup.width = Math.max(rect.width, 200);
-                            linkGroup.height = Math.max(rect.height, 150);
+                            linkGroup.width = Math.max(rect.width, 170);
+                            linkGroup.height = Math.max(rect.height, 102);
                             linkGroup.modified = new Date().toISOString();
-                            
+
                             // Save dimensions after a short delay to avoid excessive saves during resize
                             clearTimeout(this.saveTimeout);
                             this.saveTimeout = setTimeout(() => {
@@ -526,7 +536,7 @@
 
             function dragStart(e) {
                 if (e.target.closest('input') || e.target.closest('button') || linkGroup.pinned) return;
-                
+
                 initialX = e.clientX - xOffset;
                 initialY = e.clientY - yOffset;
 
@@ -549,10 +559,10 @@
                     if (contentArea) {
                         const bounds = contentArea.getBoundingClientRect();
                         const elementBounds = element.getBoundingClientRect();
-                        
+
                         currentX = Math.max(0, Math.min(currentX, bounds.width - elementBounds.width));
                         currentY = Math.max(0, Math.min(currentY, bounds.height - elementBounds.height));
-                        
+
                         xOffset = currentX;
                         yOffset = currentY;
                     }
@@ -571,12 +581,12 @@
                     linkGroup.x = currentX;
                     linkGroup.y = currentY;
                     linkGroup.modified = new Date().toISOString();
-                    
+
                     // Save to storage
                     if (window.SidekickModules?.LinkGroup?.saveLinkGroups) {
                         window.SidekickModules.LinkGroup.saveLinkGroups();
                     }
-                    
+
                     console.log(`🔗 Link group position saved: x=${currentX}, y=${currentY}`);
                 }
             }

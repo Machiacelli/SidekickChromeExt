@@ -5,7 +5,7 @@
  * Author: Machiacelli
  */
 
-(function() {
+(function () {
     'use strict';
 
     console.log("⚔️ Loading Sidekick Attack List Module...");
@@ -84,12 +84,12 @@
 
             const contentWidth = contentArea.clientWidth || 480;
             const contentHeight = contentArea.clientHeight || 500;
-            
+
             const attackListWidth = Math.min(300, contentWidth - 40);
             const attackListHeight = Math.min(250, contentHeight - 60);
             const padding = 10;
             const stackOffset = 30;
-            
+
             const attackListCount = this.attackLists.length;
             const x = padding + (attackListCount * stackOffset) % (contentWidth - attackListWidth);
             const y = padding + Math.floor((attackListCount * stackOffset) / (contentWidth - attackListWidth)) * stackOffset;
@@ -111,7 +111,7 @@
             this.attackLists.push(attackList);
             this.saveAttackLists();
             this.renderAttackList(attackList);
-            
+
             console.log('⚔️ Attack list created successfully, total lists:', this.attackLists.length);
             return attackList;
         },
@@ -131,9 +131,9 @@
             attackListElement.className = 'movable-attacklist';
             attackListElement.id = `sidekick-attacklist-${attackList.id}`;
             attackListElement.dataset.attacklistId = attackList.id;
-            
-            const width = Math.max(attackList.width || 300, 200);
-            const height = Math.max(attackList.height || 250, 150);
+
+            const width = Math.max(attackList.width || 300, 170);
+            const height = Math.max(attackList.height || 250, 102);
             const x = Math.max(attackList.x || 10, 0);
             const y = Math.max(attackList.y || 10, 0);
 
@@ -148,14 +148,14 @@
                 border-radius: 6px;
                 display: flex;
                 flex-direction: column;
-                min-width: 200px;
-                min-height: 150px;
+                min-width: 170px;
+                min-height: 102px;
                 z-index: 1000;
                 resize: ${attackList.pinned ? 'none' : 'both'};
                 overflow: hidden;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.4);
             `;
-            
+
             attackListElement.innerHTML = `
                 <div class="attacklist-header" style="
                     background: linear-gradient(135deg, ${attackList.color || '#f44336'}, #B71C1C);
@@ -269,12 +269,12 @@
                     gap: 4px;
                 ">
                     <div class="targets-container">
-                        ${attackList.targets.length === 0 ? 
-                            `<div style="color: #888; font-size: 12px; text-align: center; margin-top: 20px;">
+                        ${attackList.targets.length === 0 ?
+                    `<div style="color: #888; font-size: 12px; text-align: center; margin-top: 20px;">
                                 Click the ⚙️ button to add targets
-                            </div>` : 
-                            ''
-                        }
+                            </div>` :
+                    ''
+                }
                     </div>
                 </div>
             `;
@@ -282,7 +282,7 @@
             contentArea.appendChild(attackListElement);
             this.renderTargets(attackList);
             this.setupAttackListEventListeners(attackList, attackListElement);
-            
+
             console.log('⚔️ Attack list rendered:', attackList.name);
         },
 
@@ -302,7 +302,7 @@
             }
 
             container.innerHTML = attackList.targets.map(target => this.renderTarget(target)).join('');
-            
+
             // Re-add event listeners for remove target buttons
             container.querySelectorAll('.remove-target-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -318,7 +318,7 @@
         renderTarget(target) {
             const statusDisplay = this.renderTargetStatus(target);
             const playerName = target.name || `Player ${target.id}`;
-            
+
             return `
                 <div class="target-item" data-target-id="${target.id}" style="
                     background: #333;
@@ -409,13 +409,13 @@
         formatTimeRemaining(timestamp) {
             const now = Math.floor(Date.now() / 1000);
             const timeLeft = timestamp - now;
-            
+
             if (timeLeft <= 0) return 'Available';
-            
+
             const hours = Math.floor(timeLeft / 3600);
             const minutes = Math.floor((timeLeft % 3600) / 60);
             const seconds = timeLeft % 60;
-            
+
             if (hours > 0) {
                 return `${hours}h ${minutes}m`;
             } else if (minutes > 0) {
@@ -438,17 +438,17 @@
             // Dropdown functionality
             const dropdownBtn = element.querySelector('.attacklist-dropdown-btn');
             const dropdownContent = element.querySelector('.attacklist-dropdown-content');
-            
+
             if (dropdownBtn && dropdownContent) {
                 dropdownBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const isVisible = dropdownContent.style.display === 'block';
-                    
+
                     // Close all other dropdowns first
                     document.querySelectorAll('.attacklist-dropdown-content').forEach(dropdown => {
                         dropdown.style.display = 'none';
                     });
-                    
+
                     dropdownContent.style.display = isVisible ? 'none' : 'block';
                 });
 
@@ -489,12 +489,12 @@
             let resizeTimeout;
             const resizeObserver = new ResizeObserver(entries => {
                 if (attackList.pinned) return;
-                
+
                 for (let entry of entries) {
                     if (entry.target === element) {
                         attackList.width = entry.contentRect.width;
                         attackList.height = entry.contentRect.height;
-                        
+
                         // Debounce saves to prevent excessive saving during resize
                         clearTimeout(resizeTimeout);
                         resizeTimeout = setTimeout(() => {
@@ -567,7 +567,7 @@
 
             this.attackLists = this.attackLists.filter(al => al.id !== id);
             this.saveAttackLists();
-            
+
             console.log('⚔️ Attack list deleted');
         },
 
@@ -575,17 +575,17 @@
         async updateTargetStatus(target) {
             try {
                 console.log(`🎯 Fetching data for player ${target.id}...`);
-                
+
                 // Get API key from settings
                 const apiKey = await window.SidekickModules.Settings.getApiKey();
                 if (!apiKey) {
                     throw new Error('API key not configured');
                 }
-                
+
                 // Fetch player data using Torn API
                 const response = await fetch(`https://api.torn.com/user/${target.id}?selections=basic,profile&key=${apiKey}`);
                 const data = await response.json();
-                
+
                 if (data && !data.error) {
                     target.name = data.name || `Player ${target.id}`;
                     target.data = {
@@ -599,7 +599,7 @@
                     console.error(`❌ API Error for player ${target.id}:`, data.error);
                     target.name = `Player ${target.id}`;
                     target.data = { error: data.error.error || 'Unknown error' };
-                    
+
                     // Show user-friendly error message
                     if (data.error.code === 6) {
                         console.warn(`Player ID ${target.id} not found`);
@@ -637,7 +637,7 @@
         // Update all targets in all attack lists
         async updateAllTargets() {
             console.log('⚔️ Updating all target statuses...');
-            
+
             for (const attackList of this.attackLists) {
                 for (const target of attackList.targets) {
                     await this.updateTargetStatus(target);
@@ -646,7 +646,7 @@
                 }
                 this.renderTargets(attackList);
             }
-            
+
             this.saveAttackLists();
             console.log('✅ All targets updated');
         },
@@ -677,7 +677,7 @@
 
             function dragStart(e) {
                 if (e.target.closest('input') || e.target.closest('button') || attackList.pinned) return;
-                
+
                 initialX = e.clientX - xOffset;
                 initialY = e.clientY - yOffset;
 
@@ -700,10 +700,10 @@
                     if (contentArea) {
                         const bounds = contentArea.getBoundingClientRect();
                         const elementBounds = element.getBoundingClientRect();
-                        
+
                         currentX = Math.max(0, Math.min(currentX, bounds.width - elementBounds.width));
                         currentY = Math.max(0, Math.min(currentY, bounds.height - elementBounds.height));
-                        
+
                         xOffset = currentX;
                         yOffset = currentY;
                     }
@@ -722,11 +722,11 @@
                     attackList.x = currentX;
                     attackList.y = currentY;
                     attackList.modified = new Date().toISOString();
-                    
+
                     if (window.SidekickModules?.AttackList?.saveAttackLists) {
                         window.SidekickModules.AttackList.saveAttackLists();
                     }
-                    
+
                     console.log(`⚔️ Attack list position saved: x=${currentX}, y=${currentY}`);
                 }
             }

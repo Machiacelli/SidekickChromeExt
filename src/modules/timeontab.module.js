@@ -5,7 +5,7 @@
  * Author: Machiacelli
  */
 
-(function() {
+(function () {
     'use strict';
 
     console.log("⏰ Loading Sidekick Time on Tab Module...");
@@ -44,7 +44,7 @@
             try {
                 await waitForCore();
                 await this.loadSettings();
-                
+
                 // Store original title, ensuring we don't capture a timer title
                 if (!this.originalTitle || this.originalTitle.includes('Chain:') || this.originalTitle.includes('Hospital:') || this.originalTitle.includes('Jail:')) {
                     this.originalTitle = 'TORN'; // Default fallback
@@ -56,18 +56,18 @@
                 } else {
                     this.originalTitle = document.title;
                 }
-                
+
                 console.log('⏰ Original title stored:', this.originalTitle);
-                
+
                 this.isInitialized = true;
-                
+
                 if (this.isEnabled) {
                     console.log('✅ Time on Tab: Enabled - monitoring page for timers');
                     this.startMonitoring();
                 } else {
                     console.log('⏸️ Time on Tab: Disabled via settings');
                 }
-                
+
                 console.log("✅ Time on Tab Module initialized successfully");
             } catch (error) {
                 console.error("❌ Time on Tab Module initialization failed:", error);
@@ -106,7 +106,7 @@
         async toggle() {
             this.isEnabled = !this.isEnabled;
             await this.saveSettings();
-            
+
             if (this.isEnabled) {
                 console.log('✅ Time on Tab: Enabled');
                 this.startMonitoring();
@@ -117,14 +117,14 @@
                 this.restoreTitle();
                 this.showNotification('Time on Tab disabled!', 'info');
             }
-            
+
             return this.isEnabled;
         },
 
         // Start monitoring for timers
         startMonitoring() {
             this.stopMonitoring(); // Clean up any existing monitoring
-            
+
             // Start update interval
             this.updateInterval = setInterval(() => {
                 this.updateTabTitle();
@@ -132,7 +132,7 @@
 
             // Set up observer for DOM changes
             this.setupObserver();
-            
+
             // Initial update
             this.updateTabTitle();
         },
@@ -143,7 +143,7 @@
                 clearInterval(this.updateInterval);
                 this.updateInterval = null;
             }
-            
+
             if (this.observer) {
                 this.observer.disconnect();
                 this.observer = null;
@@ -171,7 +171,7 @@
             }
 
             const timerInfo = this.getActiveTimerInfo();
-            
+
             if (timerInfo) {
                 // Only update if we have an actual active timer
                 const newTitle = `${timerInfo} | TORN`;
@@ -196,24 +196,24 @@
                     return `Hospital: ${hospitalTime}`;
                 }
             }
-            
+
             // Chain timer - only show if chain is actually active
             const chainTimer = document.querySelector('p.bar-timeleft___B9RGV');
             const chainValue = document.querySelector('.bar-value___uxnah');
-            
+
             if (chainTimer && chainTimer.textContent.trim()) {
                 const chainTime = chainTimer.textContent.trim();
                 const chainLength = chainValue ? chainValue.textContent.trim() : '0';
-                
-                // Only show if there's an active chain (not 00:00 and chain length > 0)
-                if (chainTime.match(/\d+:\d+/) && 
-                    chainTime !== '00:00' && 
-                    chainTime !== '0:00' && 
-                    parseInt(chainLength) > 0) {
+
+                // Only show if there's an active chain (not 00:00 and chain length >= 25)
+                if (chainTime.match(/\d+:\d+/) &&
+                    chainTime !== '00:00' &&
+                    chainTime !== '0:00' &&
+                    parseInt(chainLength) >= 25) {
                     return `Chain ${chainLength}: ${chainTime}`;
                 }
             }
-            
+
             // Jail timer - only show if actually in jail
             const jailTimer = document.querySelector('[class*="jail"] [class*="timer"], #jailTimer');
             if (jailTimer && jailTimer.textContent.trim()) {
@@ -222,7 +222,7 @@
                     return `Jail: ${jailTime}`;
                 }
             }
-            
+
             // Racing timer - only show if actually racing
             const racingTimer = document.querySelector('#infoSpot');
             if (racingTimer && racingTimer.textContent.trim()) {
@@ -231,14 +231,14 @@
                     return `Racing: ${racingTime}`;
                 }
             }
-            
+
             // Travel timer - only on travel page with specific selector
             if (window.location.href.includes('page.php?sid=travel')) {
                 const travelTimer = document.querySelector("#travel-root > div.flightProgressSection___fhrD5 > div.progressText___qJFfY > span > span:nth-child(2) > time");
                 if (travelTimer && travelTimer.textContent.trim()) {
                     const travelTime = travelTimer.textContent.trim();
-                    if (travelTime.match(/\d+:\d+/) && 
-                        travelTime !== '00:00' && 
+                    if (travelTime.match(/\d+:\d+/) &&
+                        travelTime !== '00:00' &&
                         travelTime !== '0:00') {
                         return `Travel: ${travelTime}`;
                     }
@@ -250,10 +250,10 @@
 
         // Get travel time
         getTravelTime() {
-            const timeElement = document.querySelector('.time') || 
-                              document.querySelector('[class*="time"]') ||
-                              document.querySelector('#travel-time');
-            
+            const timeElement = document.querySelector('.time') ||
+                document.querySelector('[class*="time"]') ||
+                document.querySelector('#travel-time');
+
             if (timeElement) {
                 const timeText = timeElement.textContent.trim();
                 if (timeText && timeText !== 'None' && !timeText.includes('Torn')) {
@@ -266,9 +266,9 @@
         // Get hospital time
         getHospitalTime() {
             const timeElement = document.querySelector('#theCounter') ||
-                              document.querySelector('.time-left') ||
-                              document.querySelector('[class*="hospital-time"]');
-            
+                document.querySelector('.time-left') ||
+                document.querySelector('[class*="hospital-time"]');
+
             if (timeElement) {
                 const timeText = timeElement.textContent.trim();
                 if (timeText && timeText !== '0' && !timeText.includes('ready')) {
@@ -281,9 +281,9 @@
         // Get racing time
         getRacingTime() {
             const timeElement = document.querySelector('#infoSpot') ||
-                              document.querySelector('.race-time') ||
-                              document.querySelector('[class*="racing-time"]');
-            
+                document.querySelector('.race-time') ||
+                document.querySelector('[class*="racing-time"]');
+
             if (timeElement) {
                 const timeText = timeElement.textContent.trim();
                 if (timeText && timeText.includes(':')) {
@@ -296,9 +296,9 @@
         // Get chain time
         getChainTime() {
             const chainTimeElement = document.querySelector('.bar-timeleft___B9RGV') ||
-                                   document.querySelector('[class*="chain-time"]') ||
-                                   document.querySelector('.chain-time');
-            
+                document.querySelector('[class*="chain-time"]') ||
+                document.querySelector('.chain-time');
+
             if (chainTimeElement) {
                 const timeText = chainTimeElement.textContent.trim();
                 if (timeText && !timeText.includes('ended')) {
@@ -325,9 +325,9 @@
         // Get jail time
         getJailTime() {
             const timeElement = document.querySelector('.time-left') ||
-                              document.querySelector('#jail-time') ||
-                              document.querySelector('[class*="jail-time"]');
-            
+                document.querySelector('#jail-time') ||
+                document.querySelector('[class*="jail-time"]');
+
             if (timeElement) {
                 const timeText = timeElement.textContent.trim();
                 if (timeText && timeText !== '0' && !timeText.includes('free')) {

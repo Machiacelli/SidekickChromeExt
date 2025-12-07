@@ -5,7 +5,7 @@
  * Author: Machiacelli
  */
 
-(function() {
+(function () {
     'use strict';
 
     console.log("📝 Loading Sidekick Notepad Module...");
@@ -29,7 +29,7 @@
                 console.log("🔍 SidekickModules exists:", !!window.SidekickModules);
                 console.log("🔍 Core exists:", !!window.SidekickModules?.Core);
                 console.log("🔍 ChromeStorage exists:", !!window.SidekickModules?.Core?.ChromeStorage);
-                
+
                 if (window.SidekickModules?.Core?.ChromeStorage) {
                     console.log("📝 Core module with ChromeStorage ready for Notepad");
                     resolve();
@@ -69,9 +69,9 @@
         async loadNotepads() {
             try {
                 console.log("🔍 loadNotepads - Starting with robust storage access...");
-                
+
                 let stored = null;
-                
+
                 // Method 1: Try Chrome storage wrapper (now handles extension context internally)
                 try {
                     if (window.SidekickModules?.Core?.ChromeStorage?.get) {
@@ -82,7 +82,7 @@
                 } catch (error) {
                     console.warn("⚠️ ChromeStorage wrapper failed:", error.message);
                 }
-                
+
                 // Method 2: Fallback to localStorage if wrapper failed
                 if (stored === null) {
                     try {
@@ -93,23 +93,23 @@
                         console.warn("⚠️ localStorage fallback failed:", error);
                     }
                 }
-                
+
                 this.notepads = stored || [];
                 console.log(`📝 Loaded ${this.notepads.length} notepads`);
 
                 // Refresh display after loading
                 this.refreshDisplay();
-                
+
             } catch (error) {
                 console.error('Failed to load notepads:', error);
                 console.error('Error stack:', error.stack);
                 this.notepads = [];
-                
+
                 // Show user-friendly error
                 if (window.SidekickModules?.Core?.NotificationSystem) {
                     window.SidekickModules.Core.NotificationSystem.show(
-                        'Notepad Error', 
-                        'Failed to load saved notepads: ' + error.message, 
+                        'Notepad Error',
+                        'Failed to load saved notepads: ' + error.message,
                         'error'
                     );
                 }
@@ -120,9 +120,9 @@
         async saveNotepads() {
             try {
                 console.log("💾 saveNotepads - Starting save...");
-                
+
                 let saved = false;
-                
+
                 // Method 1: Try Chrome storage wrapper (now handles extension context internally)
                 try {
                     if (window.SidekickModules?.Core?.ChromeStorage?.set) {
@@ -134,7 +134,7 @@
                 } catch (error) {
                     console.warn("⚠️ ChromeStorage wrapper save failed:", error.message);
                 }
-                
+
                 // Method 2: Fallback to localStorage if wrapper failed
                 if (!saved) {
                     try {
@@ -147,16 +147,16 @@
                         throw error;
                     }
                 }
-                
+
                 console.log('📝 Notepads saved successfully');
             } catch (error) {
                 console.error('Failed to save notepads:', error);
-                
+
                 // Show user-friendly error
                 if (window.SidekickModules?.Core?.NotificationSystem) {
                     window.SidekickModules.Core.NotificationSystem.show(
-                        'Save Error', 
-                        'Failed to save notepad changes: ' + error.message, 
+                        'Save Error',
+                        'Failed to save notepad changes: ' + error.message,
                         'error'
                     );
                 }
@@ -166,11 +166,11 @@
         // Create a new notepad window in the sidebar
         addNotepad(title = 'New Note') {
             console.log('📝 Adding new notepad:', title);
-            
+
             const contentArea = document.getElementById('sidekick-content');
             const contentWidth = contentArea ? contentArea.clientWidth : 480; // Updated for wider sidebar
             const contentHeight = contentArea ? contentArea.clientHeight : 500;
-            
+
             const notepad = {
                 id: Date.now() + Math.random(),
                 title: title,
@@ -187,19 +187,19 @@
 
             this.notepads.push(notepad);
             this.saveNotepads();
-            
+
             // Render the new notepad window
             this.renderNotepad(notepad);
-            
+
             if (window.SidekickModules?.Core?.NotificationSystem) {
                 window.SidekickModules.Core.NotificationSystem.show(
-                    'Notepad', 
-                    'New notepad created', 
-                    'info', 
+                    'Notepad',
+                    'New notepad created',
+                    'info',
                     2000
                 );
             }
-            
+
             console.log('📝 Notepad added successfully, total notepads:', this.notepads.length);
             return notepad;
         },
@@ -209,34 +209,34 @@
             const notepad = this.notepads.find(n => n.id === id);
             if (notepad && confirm(`Delete notepad "${notepad.title}"?`)) {
                 console.log('📝 Deleting notepad:', id, notepad.title);
-                
+
                 // Remove from local array
                 this.notepads = this.notepads.filter(n => n.id !== id);
-                
+
                 // Remove from DOM
                 const element = document.querySelector(`[data-notepad-id="${id}"]`);
                 if (element) {
                     element.remove();
                     console.log('📝 Removed notepad element from DOM');
                 }
-                
+
                 // Save updated array
                 this.saveNotepads();
-                
+
                 // Show placeholder if no notepads left
                 if (this.notepads.length === 0) {
                     this.showPlaceholder();
                 }
-                
+
                 if (window.SidekickModules?.Core?.NotificationSystem) {
                     window.SidekickModules.Core.NotificationSystem.show(
-                        'Notepad', 
-                        'Notepad deleted', 
-                        'success', 
+                        'Notepad',
+                        'Notepad deleted',
+                        'success',
                         2000
                     );
                 }
-                
+
                 console.log('📝 Notepad deleted successfully, remaining notepads:', this.notepads.length);
             }
         },
@@ -302,15 +302,15 @@
             const notepadElement = document.createElement('div');
             notepadElement.className = 'movable-notepad';
             notepadElement.dataset.notepadId = notepad.id;
-            
+
             // Use content area dimensions instead of sidebar dimensions
             const contentWidth = contentArea.clientWidth || 480; // Updated for wider sidebar
             const contentHeight = contentArea.clientHeight || 500;
-            
+
             // Clamp notepad dimensions and position to content area
             console.log(`📏 Notepad '${notepad.name}' saved dimensions: ${notepad.width || 'none'}x${notepad.height || 'none'}`);
-            
-            const width = Math.min(Math.max(notepad.width || 320, 140), contentWidth - 20); // Smaller minimum width
+
+            const width = Math.min(Math.max(notepad.width || 320, 100), contentWidth - 20); // Smaller minimum width
             const height = Math.min(Math.max(notepad.height || 200, 80), contentHeight - 40); // Smaller minimum height
             const x = Math.min(Math.max(notepad.x || 10, 0), contentWidth - width);
             const y = Math.min(Math.max(notepad.y || 10, 0), contentHeight - height);
@@ -328,14 +328,14 @@
                 border-radius: 6px;
                 display: flex;
                 flex-direction: column;
-                min-width: 140px;
+                min-width: 100px;
                 min-height: 80px;
                 z-index: 1000;
                 resize: ${notepad.pinned ? 'none' : 'both'};
                 overflow: hidden;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.4);
             `;
-            
+
             notepadElement.innerHTML = `
                 <div class="notepad-header" style="
                     background: linear-gradient(135deg, ${notepad.color || '#4CAF50'}, ${this.darkenColor(notepad.color || '#4CAF50', 15)});
@@ -513,7 +513,7 @@
                     notepad.title = titleInput.value;
                     this.saveNotepads();
                 });
-                
+
                 titleInput.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') {
                         titleInput.blur();
@@ -538,7 +538,7 @@
                     notepadElement.style.borderColor = '#66BB6A';
                     notepadElement.style.boxShadow = '0 0 0 2px rgba(102, 187, 106, 0.2)';
                 });
-                
+
                 textarea.addEventListener('blur', () => {
                     notepadElement.style.borderColor = '#444';
                     notepadElement.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
@@ -558,15 +558,15 @@
                 dropdownBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const isVisible = dropdownContent.style.display === 'block';
-                    
+
                     // Close all other dropdowns first
                     document.querySelectorAll('.dropdown-content').forEach(dropdown => {
                         dropdown.style.display = 'none';
                     });
-                    
+
                     dropdownContent.style.display = isVisible ? 'none' : 'block';
                 });
-                
+
                 // Close dropdown when clicking outside
                 document.addEventListener('click', () => {
                     dropdownContent.style.display = 'none';
@@ -579,10 +579,10 @@
                     e.stopPropagation();
                     notepad.pinned = !notepad.pinned;
                     pinBtn.textContent = notepad.pinned ? '📌 Unpin' : '📌 Pin';
-                    
+
                     notepadElement.style.resize = notepad.pinned ? 'none' : 'both';
                     header.style.cursor = notepad.pinned ? 'default' : 'move';
-                    
+
                     this.saveNotepads();
                     dropdownContent.style.display = 'none';
                 });
@@ -605,35 +605,35 @@
                 header.addEventListener('mousedown', (e) => {
                     if (notepad.pinned) return;
                     if (e.target.closest('button') || e.target.closest('input')) return;
-                    
+
                     isDragging = true;
                     const rect = notepadElement.getBoundingClientRect();
                     const sidebarRect = document.getElementById('sidekick-content').getBoundingClientRect();
-                    
+
                     dragOffset.x = e.clientX - rect.left;
                     dragOffset.y = e.clientY - rect.top;
-                    
+
                     notepadElement.style.zIndex = '1100';
                     e.preventDefault();
                 });
 
                 document.addEventListener('mousemove', (e) => {
                     if (!isDragging || notepad.pinned) return;
-                    
+
                     const sidebarContent = document.getElementById('sidekick-content');
                     const sidebarRect = sidebarContent.getBoundingClientRect();
-                    
+
                     let newX = e.clientX - sidebarRect.left - dragOffset.x;
                     let newY = e.clientY - sidebarRect.top - dragOffset.y;
-                    
+
                     // Constrain to sidebar bounds
                     const notepadRect = notepadElement.getBoundingClientRect();
                     newX = Math.max(0, Math.min(newX, sidebarContent.offsetWidth - notepadRect.width));
                     newY = Math.max(0, Math.min(newY, sidebarContent.offsetHeight - notepadRect.height));
-                    
+
                     notepadElement.style.left = newX + 'px';
                     notepadElement.style.top = newY + 'px';
-                    
+
                     notepad.x = newX;
                     notepad.y = newY;
                 });
@@ -651,12 +651,12 @@
             let resizeTimeout;
             const resizeObserver = new ResizeObserver(entries => {
                 if (notepad.pinned) return;
-                
+
                 for (let entry of entries) {
                     if (entry.target === notepadElement) {
                         notepad.width = entry.contentRect.width;
                         notepad.height = entry.contentRect.height;
-                        
+
                         // Debounce saves to prevent excessive saving during resize
                         clearTimeout(resizeTimeout);
                         resizeTimeout = setTimeout(() => {
@@ -674,7 +674,7 @@
             // Remove any existing color picker
             const existingPicker = document.querySelector('.color-picker');
             if (existingPicker) existingPicker.remove();
-            
+
             const colorPicker = document.createElement('div');
             colorPicker.className = 'color-picker';
             colorPicker.style.cssText = `
@@ -692,14 +692,14 @@
                 gap: 8px;
                 box-shadow: 0 8px 32px rgba(0,0,0,0.5);
             `;
-            
+
             const colors = [
-                '#4CAF50', '#2196F3', '#FF9800', '#f44336', 
-                '#9C27B0', '#607D8B', '#795548', '#E91E63', 
-                '#00BCD4', '#8BC34A', '#FFC107', '#FFEB3B', 
+                '#4CAF50', '#2196F3', '#FF9800', '#f44336',
+                '#9C27B0', '#607D8B', '#795548', '#E91E63',
+                '#00BCD4', '#8BC34A', '#FFC107', '#FFEB3B',
                 '#BDBDBD', '#333', '#FFFFFF', '#000000'
             ];
-            
+
             colors.forEach(color => {
                 const colorBtn = document.createElement('div');
                 colorBtn.style.cssText = `
@@ -711,31 +711,31 @@
                     cursor: pointer;
                     transition: all 0.2s ease;
                 `;
-                
+
                 colorBtn.addEventListener('click', () => {
                     notepad.color = color;
                     const header = notepadElement.querySelector('.notepad-header');
                     header.style.background = `linear-gradient(135deg, ${color}, ${this.darkenColor(color, 15)})`;
-                    
+
                     this.saveNotepads();
                     colorPicker.remove();
-                    
+
                     console.log(`🎨 Notepad color changed to ${color}`);
                 });
-                
+
                 colorBtn.addEventListener('mouseenter', () => {
                     colorBtn.style.transform = 'scale(1.1)';
                 });
-                
+
                 colorBtn.addEventListener('mouseleave', () => {
                     colorBtn.style.transform = 'scale(1)';
                 });
-                
+
                 colorPicker.appendChild(colorBtn);
             });
-            
+
             document.body.appendChild(colorPicker);
-            
+
             // Close when clicking outside
             setTimeout(() => {
                 document.addEventListener('click', function closeColorPicker(e) {

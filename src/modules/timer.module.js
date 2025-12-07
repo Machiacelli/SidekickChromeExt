@@ -37,6 +37,7 @@
         intervals: new Map(),
         apiKey: null,
         apiCheckInterval: null,
+        cooldownWindowMap: {}, // Map of cooldownType -> timerId to remember which window each cooldown belongs to
 
         // Add timer persistence safeguard during navigation
         setupNavigationHandler() {
@@ -528,7 +529,22 @@
         findOrCreateCooldownTimer(currentTimer, cooldownType) {
             console.log(`🔍 findOrCreateCooldownTimer for ${cooldownType}, currentTimer:`, currentTimer.id);
 
-            // Search for existing timers that have or previously had this cooldown type
+            // FIRST: Check if we have a saved mapping for this cooldown type
+            if (this.cooldownWindowMap[cooldownType]) {
+                const mappedTimerId = this.cooldownWindowMap[cooldownType];
+                const mappedTimer = this.timers.find(t => t.id === mappedTimerId);
+
+                if (mappedTimer) {
+                    console.log(`✅ Found saved window mapping for ${cooldownType}:`, mappedTimer.id);
+                    console.log(`🔍 Reusing window "${mappedTimer.name}" based on saved mapping`);
+                    return mappedTimer;
+                } else {
+                    console.log(`⚠️ Saved mapping points to non-existent timer ${mappedTimerId}, clearing mapping`);
+                    delete this.cooldownWindowMap[cooldownType];
+                }
+            }
+
+            // SECOND: Search for existing timers that have or previously had this cooldown type
             const existingTimersWithCooldown = this.timers.filter(timer => {
                 // Check if timer currently has this cooldown type in its cooldowns object
                 if (timer.cooldowns && timer.cooldowns[cooldownType] !== undefined) {
@@ -553,12 +569,22 @@
                 console.log(`✅ Found existing timer with ${cooldownType} cooldown type:`, selectedTimer.id);
                 console.log(`🔍 Timer name: ${selectedTimer.name}, Last modified: ${selectedTimer.modified || selectedTimer.created}`);
                 console.log(`🔍 Reusing existing window instead of creating new one`);
+
+                // Save this association for next time
+                this.cooldownWindowMap[cooldownType] = selectedTimer.id;
+                console.log(`💾 Saved ${cooldownType} -> ${selectedTimer.id} mapping`);
+
                 return selectedTimer;
             }
 
-            // No existing timer found with this cooldown type, use the clicked timer
+            // THIRD: No existing timer found with this cooldown type, use the clicked timer
             console.log(`ℹ️ No existing timer found with cooldown type ${cooldownType}`);
             console.log(`🔍 Using clicked timer:`, currentTimer.id);
+
+            // Save this association for future use
+            this.cooldownWindowMap[cooldownType] = currentTimer.id;
+            console.log(`💾 Saved new ${cooldownType} -> ${currentTimer.id} mapping`);
+
             return currentTimer;
         },
 
@@ -648,8 +674,10 @@
                         state = await window.SidekickModules.Core.ChromeStorage.get('sidekick_timer_state');
                         if (state && state.timers) {
                             this.timers = state.timers;
+                            this.cooldownWindowMap = state.cooldownWindowMap || {}; // Load cooldown-to-window mapping
                             loaded = true;
                             console.log("✅ ChromeStorage wrapper load succeeded, loaded:", this.timers.length, "timers");
+                            console.log("✅ Loaded cooldown window map:", Object.keys(this.cooldownWindowMap).length, "mappings");
                         }
                     }
                 } catch (error) {
@@ -663,8 +691,10 @@
                         const savedState = JSON.parse(localStorage.getItem('sidekick_timer_state') || '{}');
                         if (savedState && savedState.timers) {
                             this.timers = savedState.timers;
+                            this.cooldownWindowMap = savedState.cooldownWindowMap || {}; // Load cooldown-to-window mapping
                             loaded = true;
                             console.log("✅ localStorage fallback load succeeded, loaded:", this.timers.length, "timers");
+                            console.log("✅ Loaded cooldown window map:", Object.keys(this.cooldownWindowMap).length, "mappings");
                         }
                     } catch (error) {
                         console.warn("⚠️ localStorage fallback load failed:", error);
@@ -813,6 +843,7 @@
                         cooldownType: timer.cooldownType,
                         cooldowns: timer.cooldowns
                     })),
+                    cooldownWindowMap: this.cooldownWindowMap || {}, // Save cooldown-to-window mapping
                     lastSaved: Date.now(),
                     version: '1.0'
                 };
@@ -2020,6 +2051,14 @@
             if (this.intervals.has(id)) {
                 clearInterval(this.intervals.get(id));
                 this.intervals.delete(id);
+            }
+
+            // Clean up cooldown window mappings pointing to this timer
+            for (const [cooldownType, timerId] of Object.entries(this.cooldownWindowMap)) {
+                if (timerId === id) {
+                    console.log(`🗑️ Removing ${cooldownType} mapping for deleted timer ${id}`);
+                    delete this.cooldownWindowMap[cooldownType];
+                }
             }
 
             // Remove from array
