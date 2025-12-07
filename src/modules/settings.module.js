@@ -378,23 +378,7 @@
             return `
                 <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">🔔 Notification Settings</h4>
                 
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Notification Position:</label>
-                    <select id="sidekick-notif-position" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); 
-                                                                 border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 5px;">
-                        <option value="top-right">Top Right</option>
-                        <option value="top-left">Top Left</option>
-                        <option value="bottom-right">Bottom Right</option>
-                        <option value="bottom-left">Bottom Left</option>
-                    </select>
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="display: flex; align-items: center; gap: 10px; color: #ccc; cursor: pointer;">
-                        <input type="checkbox" id="sidekick-notif-sound" style="accent-color: #2196F3;">
-                        <span>Enable Notification Sounds</span>
-                    </label>
-                </div>
+                ${this.createToggle('notif-sound', '🔊 Notification Sounds', 'Play a sound when notifications appear')}
                 
                 <div style="margin-bottom: 15px;">
                     <label style="display: flex; align-items: center; gap: 10px; color: #ccc; cursor: pointer;">
@@ -813,8 +797,7 @@
 
         // Notifications Tab listeners
         attachNotificationsTabListeners(panel) {
-            const notifPositionSelect = panel.querySelector('#sidekick-notif-position');
-            const notifSoundCheckbox = panel.querySelector('#sidekick-notif-sound');
+            const notifSoundToggle = panel.querySelector('.toggle-switch[data-module="notif-sound"]');
             const notifAutoDismissCheckbox = panel.querySelector('#sidekick-notif-auto-dismiss');
             const notifDurationSlider = panel.querySelector('#sidekick-notif-duration');
             const notifDurationDisplay = panel.querySelector('#sidekick-notif-duration-display');
@@ -830,8 +813,7 @@
             if (saveNotifBtn) {
                 saveNotifBtn.addEventListener('click', async () => {
                     const settings = {
-                        position: notifPositionSelect.value,
-                        soundEnabled: notifSoundCheckbox.checked,
+                        soundEnabled: notifSoundToggle?.classList.contains('active') || false,
                         autoDismiss: notifAutoDismissCheckbox.checked,
                         duration: parseInt(notifDurationSlider.value) * 1000
                     };
@@ -964,17 +946,17 @@
 
                 // Load Notification settings
                 const notifSettings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_notifications') || {};
-                const notifPositionSelect = document.querySelector('#sidekick-notif-position');
-                const notifSoundCheckbox = document.querySelector('#sidekick-notif-sound');
+                const notifSoundToggle = document.querySelector('.toggle-switch[data-module="notif-sound"]');
                 const notifAutoDismissCheckbox = document.querySelector('#sidekick-notif-auto-dismiss');
                 const notifDurationSlider = document.querySelector('#sidekick-notif-duration');
                 const notifDurationDisplay = document.querySelector('#sidekick-notif-duration-display');
 
-                if (notifPositionSelect) {
-                    notifPositionSelect.value = notifSettings.position || 'top-right';
-                }
-                if (notifSoundCheckbox) {
-                    notifSoundCheckbox.checked = notifSettings.soundEnabled || false;
+                if (notifSoundToggle) {
+                    const isEnabled = notifSettings.soundEnabled || false;
+                    notifSoundToggle.dataset.active = isEnabled;
+                    const track = notifSoundToggle.querySelector('.toggle-track');
+                    const thumb = notifSoundToggle.querySelector('.toggle-thumb');
+                    this.updateToggleVisual(track, thumb, isEnabled);
                 }
                 if (notifAutoDismissCheckbox) {
                     notifAutoDismissCheckbox.checked = notifSettings.autoDismiss !== false;

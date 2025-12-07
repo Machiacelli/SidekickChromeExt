@@ -6,7 +6,7 @@
  * Author: Machiacelli
  */
 
-(function() {
+(function () {
     "use strict";
 
     // Ensure SidekickModules namespace exists
@@ -31,29 +31,32 @@
         notifications: [], // Track active notifications
         baseTop: 20, // Fixed top position for new notifications
         minSpacing: 15, // Minimum spacing between notifications
-        
+
         show(title, message, type = 'info', duration = 4000) {
             // Prevent duplicate notifications with same message
-            const existingNotification = this.notifications.find(n => 
+            const existingNotification = this.notifications.find(n =>
                 n.element && n.element.textContent.includes(message)
             );
             if (existingNotification) {
                 console.log('🔔 Duplicate notification prevented:', message);
                 return;
             }
-            
+
+            // Play notification sound if enabled
+            this.playNotificationSound();
+
             const notification = document.createElement('div');
             notification.className = `sidekick-notification ${type}`;
-            
+
             // Create unique ID for this notification
             const notificationId = Date.now() + Math.random();
             notification.dataset.notificationId = notificationId;
-            
+
             notification.innerHTML = `
                 <div style="font-weight: bold; margin-bottom: 4px;">${title}</div>
                 <div style="font-size: 13px; opacity: 0.9;">${message}</div>
             `;
-            
+
             // Enhanced notification styles with better positioning
             const baseStyle = `
                 position: fixed;
@@ -70,52 +73,65 @@
                 transition: all 0.3s ease;
                 backdrop-filter: blur(5px);
             `;
-            
+
             const typeStyles = {
                 'info': baseStyle + 'background: rgba(33, 150, 243, 0.95); color: white; padding: 16px;',
                 'success': baseStyle + 'background: rgba(76, 175, 80, 0.95); color: white; padding: 16px;',
                 'warning': baseStyle + 'background: rgba(255, 152, 0, 0.95); color: white; padding: 16px;',
                 'error': baseStyle + 'background: rgba(244, 67, 54, 0.95); color: white; padding: 16px;'
             };
-            
+
             notification.style.cssText = typeStyles[type] || typeStyles['info'];
-            
+
             // Calculate position for new notification
             const newPosition = this.calculateNewNotificationPosition();
             notification.style.top = newPosition + 'px';
             notification.style.zIndex = 999999 + this.notifications.length;
-            
+
             // Add click to dismiss functionality
             notification.addEventListener('click', () => {
                 this.removeNotification(notificationId);
             });
-            
+
             // Add to DOM and trigger slide-in animation
             document.body.appendChild(notification);
-            
+
             // Trigger slide-in animation
             requestAnimationFrame(() => {
                 notification.style.transform = 'translateX(0)';
             });
-            
+
             // Add new notification to array
             this.notifications.push({
                 id: notificationId,
                 element: notification,
                 position: newPosition
             });
-            
+
             // Auto remove with repositioning
             setTimeout(() => {
                 this.removeNotification(notificationId);
             }, duration);
         },
-        
+        async playNotificationSound() {
+            try {
+                const settings = await ChromeStorage.get('sidekick_notifications') || {};
+                if (settings.soundEnabled) {
+                    const soundUrl = chrome.runtime.getURL('assets/sounds/NotificationSound1.mp3');
+                    const audio = new Audio(soundUrl);
+                    audio.volume = 0.5; // 50% volume
+                    audio.play().catch(err => console.debug('Sound play failed:', err));
+                }
+            } catch (error) {
+                console.debug('Failed to play notification sound:', error);
+            }
+        },
+
         calculateNewNotificationPosition() {
             if (this.notifications.length === 0) {
                 return this.baseTop;
             }
-            
+
             // Find the bottom-most notification and add spacing
             let maxBottom = this.baseTop;
             this.notifications.forEach(notification => {
@@ -125,29 +141,29 @@
                     maxBottom = Math.max(maxBottom, currentBottom);
                 }
             });
-            
+
             return maxBottom + this.minSpacing;
         },
-        
+
         removeNotification(notificationId) {
             const notificationIndex = this.notifications.findIndex(n => n.id === notificationId);
             if (notificationIndex === -1) return;
-            
+
             const notification = this.notifications[notificationIndex];
-            
+
             // Animate out
             if (notification.element && notification.element.parentNode) {
                 notification.element.style.transform = 'translateX(100%)';
                 notification.element.style.opacity = '0';
-                
+
                 setTimeout(() => {
                     if (notification.element && notification.element.parentNode) {
                         notification.element.parentNode.removeChild(notification.element);
                     }
-                    
+
                     // Remove from array
                     this.notifications.splice(notificationIndex, 1);
-                    
+
                     // Reposition remaining notifications to fill gaps
                     this.repositionNotifications();
                 }, 300);
@@ -156,27 +172,27 @@
                 this.notifications.splice(notificationIndex, 1);
             }
         },
-        
+
         repositionNotifications() {
             // Clean up dead notifications first
-            this.notifications = this.notifications.filter(n => 
+            this.notifications = this.notifications.filter(n =>
                 n.element && n.element.parentNode
             );
-            
+
             // Reposition all notifications from top to bottom with proper spacing
             let currentTop = this.baseTop;
-            
+
             this.notifications.forEach((notification, index) => {
                 if (notification.element && notification.element.parentNode) {
                     const targetTop = currentTop;
-                    
+
                     // Only animate if position actually changed
                     if (notification.position !== targetTop) {
                         notification.position = targetTop;
                         notification.element.style.transition = 'top 0.3s ease';
                         notification.element.style.top = targetTop + 'px';
                     }
-                    
+
                     // Calculate next position
                     const rect = notification.element.getBoundingClientRect();
                     currentTop += rect.height + this.minSpacing;
@@ -406,11 +422,11 @@
         // Start monitoring extension context
         startMonitoring() {
             if (this.isMonitoring) return;
-            
+
             console.log('🔍 Starting extension context monitoring...');
             this.isMonitoring = true;
             this.lastKnownState = SafeMessageSender.isExtensionContextValid();
-            
+
             this.monitorInterval = setInterval(() => {
                 this.checkContextState();
             }, 5000); // Check every 5 seconds
@@ -428,12 +444,12 @@
         // Check current context state
         async checkContextState() {
             const currentState = SafeMessageSender.isExtensionContextValid();
-            
+
             if (this.lastKnownState === true && currentState === false) {
                 console.debug('🔄 Extension context invalidation detected by monitor');
                 console.debug('📍 Context:', window.location.href);
                 console.debug('🔗 Stack trace:', new Error().stack);
-                
+
                 // Try recovery once automatically (silently)
                 const recovered = await SafeMessageSender.attemptContextRecovery();
                 if (recovered) {
@@ -443,7 +459,7 @@
                     SafeMessageSender.reExposeGlobalFunctions();
                 } else {
                     this.lastKnownState = false;
-                    
+
                     // Notify user about context loss
                     if (window.SidekickModules?.Core?.NotificationSystem) {
                         window.SidekickModules.Core.NotificationSystem.show(
@@ -458,7 +474,7 @@
             } else if (this.lastKnownState === false && currentState === true) {
                 console.log('✅ Extension context restored');
                 this.lastKnownState = true;
-                
+
                 if (window.SidekickModules?.Core?.NotificationSystem) {
                     window.SidekickModules.Core.NotificationSystem.show(
                         'Extension Reconnected',
@@ -476,7 +492,7 @@
         // Safely send message to background script with extension context handling
         async sendToBackground(message, timeout = 30000, retryCount = 2) {
             let lastError = null;
-            
+
             for (let attempt = 0; attempt < retryCount; attempt++) {
                 try {
                     return await new Promise((resolve, reject) => {
@@ -495,11 +511,11 @@
 
                             chrome.runtime.sendMessage(message, (response) => {
                                 clearTimeout(timeoutId);
-                                
+
                                 if (chrome.runtime.lastError) {
                                     const error = chrome.runtime.lastError.message;
                                     console.warn(`🔄 Runtime error (attempt ${attempt + 1}/${retryCount}):`, error);
-                                    
+
                                     if (error.includes('Extension context invalidated') || error.includes('receiving end does not exist')) {
                                         reject(new Error('Extension context invalidated'));
                                     } else {
@@ -518,10 +534,10 @@
                     });
                 } catch (error) {
                     lastError = error;
-                    
+
                     if (error.message.includes('Extension context invalidated')) {
                         console.warn(`🔄 Extension context lost on attempt ${attempt + 1}/${retryCount}`);
-                        
+
                         // Wait a bit before retrying
                         if (attempt < retryCount - 1) {
                             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -533,12 +549,12 @@
                     }
                 }
             }
-            
+
             // All retries failed
             if (lastError?.message.includes('Extension context invalidated')) {
                 this.showExtensionReloadNotification();
             }
-            
+
             throw lastError;
         },
 
@@ -578,10 +594,10 @@
         // Attempt to recover extension context
         async attemptContextRecovery() {
             console.log('🔄 Attempting to recover extension context...');
-            
+
             for (let attempt = 1; attempt <= 3; attempt++) {
                 await new Promise(resolve => setTimeout(resolve, 500 * attempt));
-                
+
                 try {
                     // Test if extension context is working
                     const testResponse = await chrome.runtime.sendMessage({ action: 'ping' });
@@ -593,7 +609,7 @@
                     console.log(`❌ Recovery attempt ${attempt} failed:`, error.message);
                 }
             }
-            
+
             return false;
         },
 
@@ -611,7 +627,7 @@
         reExposeGlobalFunctions() {
             try {
                 console.log('🔧 Re-exposing global functions after context recovery...');
-                
+
                 // Re-inject debug functions into page context
                 const script = document.createElement('script');
                 script.textContent = `
@@ -641,10 +657,10 @@
                     
                     console.log('✅ Global functions re-exposed after context recovery');
                 `;
-                
+
                 (document.head || document.documentElement).appendChild(script);
                 setTimeout(() => script.remove(), 100);
-                
+
             } catch (e) {
                 console.error('❌ Failed to re-expose global functions:', e.message);
             }
@@ -672,23 +688,23 @@
         // Test extension connectivity (debug function)
         async testExtensionConnection() {
             console.log('🔍 Testing extension connection...');
-            
+
             try {
                 const isValid = this.isExtensionContextValid();
                 console.log(`Context valid: ${isValid}`);
-                
+
                 if (!isValid) {
                     console.log('⚠️ Context invalid, attempting recovery...');
                     const recovered = await this.attemptContextRecovery();
                     console.log(`Recovery result: ${recovered}`);
                     return recovered;
                 }
-                
+
                 // Test actual message sending
                 const testResponse = await chrome.runtime.sendMessage({ action: 'ping' });
                 console.log('✅ Extension connection test successful:', testResponse);
                 return true;
-                
+
             } catch (error) {
                 console.error('❌ Extension connection test failed:', error);
                 return false;
@@ -703,14 +719,14 @@
         ChromeStorage,
         SafeMessageSender,
         ExtensionContextMonitor,
-        
+
         // Initialize core functionality
         async init() {
             console.log("🔧 Initializing Core Module...");
-            
+
             // Start extension context monitoring
             ExtensionContextMonitor.startMonitoring();
-            
+
             console.log("✅ Core Module initialized successfully");
             return true;
         }
@@ -718,7 +734,7 @@
 
     // Export to global namespace
     window.SidekickModules.Core = CoreModule;
-    
+
     // Ensure ChromeStorage is immediately accessible
     Object.defineProperty(window.SidekickModules.Core, 'ChromeStorage', {
         value: ChromeStorage,
@@ -726,7 +742,7 @@
         enumerable: true,
         configurable: false
     });
-    
+
     console.log("✅ Core Module loaded and ready");
     console.log("🔍 CoreModule contents:", Object.keys(CoreModule));
     console.log("🔍 ChromeStorage available:", !!CoreModule.ChromeStorage);

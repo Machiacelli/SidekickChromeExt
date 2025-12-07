@@ -1304,7 +1304,6 @@
                     font-size: 12px;
                 ">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 14px;">💰</span>
                         <span>Debt Tracker</span>
                     </div>
                     <div style="display: flex; gap: 4px; align-items: center;">
@@ -2155,7 +2154,7 @@
                 });
 
                 // Save and update UI
-                this.saveToStorage();
+                this.saveDebtsAndLoans();
                 this.populateDebtTrackerWindow();
                 this.showNotification(`Loan to ${entry.playerName} increased by $${increase.toLocaleString()}`, 'success');
 

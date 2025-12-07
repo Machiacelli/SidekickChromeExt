@@ -75,7 +75,8 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "assets/icons/sidekick-logo.png"
+        "assets/icons/sidekick-logo.png",
+        "assets/sounds/NotificationSound1.mp3"
       ],
       "matches": [
         "<all_urls>"
