@@ -582,22 +582,22 @@
                     throw new Error("API key not configured");
                 }
 
-                // Fetch all item prices in one call
+                // Fetch item data from torn API which includes market prices
                 const itemIds = Object.values(ITEM_IDS).join(',');
-                const response = await fetch(`https://api.torn.com/market/${itemIds}?selections=itemmarket&key=${apiKey}`);
+                const response = await fetch(`https://api.torn.com/torn/${itemIds}?selections=items&key=${apiKey}`);
                 const data = await response.json();
 
                 if (data.error) {
                     throw new Error(data.error.error);
                 }
 
-                // Extract lowest market price for each item
+                // Extract market prices from items data
                 const prices = {};
                 for (const [key, itemId] of Object.entries(ITEM_IDS)) {
-                    const itemData = data.itemmarket?.[itemId];
-                    if (itemData && itemData.length > 0) {
-                        // Get lowest price from market listings
-                        prices[key] = Math.min(...itemData.map(listing => listing.cost));
+                    const itemData = data.items?.[itemId];
+                    if (itemData && itemData.market_value) {
+                        // Use market_value from items endpoint
+                        prices[key] = itemData.market_value;
                     } else {
                         prices[key] = 0; // No market data available
                     }
