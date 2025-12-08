@@ -933,6 +933,28 @@
 
             document.body.appendChild(menu);
 
+            // DEBUG: Verify dropdown is in DOM and visible
+            console.log("📈 Dropdown appended to body");
+            console.log("📈 Dropdown in DOM?", document.body.contains(menu));
+            console.log("📈 Dropdown computed style:", {
+                display: getComputedStyle(menu).display,
+                visibility: getComputedStyle(menu).visibility,
+                opacity: getComputedStyle(menu).opacity,
+                position: getComputedStyle(menu).position,
+                top: getComputedStyle(menu).top,
+                right: getComputedStyle(menu).right,
+                zIndex: getComputedStyle(menu).zIndex
+            });
+            const menuRect = menu.getBoundingClientRect();
+            console.log("📈 Dropdown bounding rect:", {
+                top: menuRect.top,
+                right: menuRect.right,
+                bottom: menuRect.bottom,
+                left: menuRect.left,
+                width: menuRect.width,
+                height: menuRect.height
+            });
+
             // Hover effect
             const refreshBtn = menu.querySelector('.menu-refresh');
             refreshBtn.addEventListener('mouseenter', () => {
