@@ -64,6 +64,17 @@
         "YAZ": { stockId: 8, name: "Yazoo", sharesRequired: 1000000, type: "Passive", frequencyDays: null, benefit: "Free Banner Advertising (Newspaper)", benefitKind: "access" }
     };
 
+    // Stocks to exclude from ROI ranking (utility/access perks with no passive income)
+    const EXCLUDED_STOCKS = new Set([
+        'SYS', // Advanced Firewall - one-time utility
+        'YAZ', // Free Banner Ads - no income
+        'MSG', // Free Classifieds - no income
+        'IST', // Free Education - no income
+        'WLT', // Private Jet - no income
+        'IIL', // Virus Coding Time - utility
+        'ELT'  // Property Discount - saves money, not income
+    ]);
+
     // Default user settings for benefit conversion
     const DEFAULT_SETTINGS = {
         // Stat conversions (USD value)
@@ -724,11 +735,18 @@
                 // Calculate metrics for all stocks
                 const allMetrics = [];
                 for (const acronym in STOCK_BENEFITS) {
+                    // Skip utility/access stocks that don't generate income
+                    if (EXCLUDED_STOCKS.has(acronym)) {
+                        continue;
+                    }
+
                     const metrics = this.calculateStockMetrics(acronym, stockData, portfolio);
                     if (metrics) {
                         allMetrics.push(metrics);
                     }
                 }
+
+                console.log(`📈 Filtered to ${allMetrics.length} income-generating stocks (excluded ${EXCLUDED_STOCKS.size} utility stocks)`);
 
                 // Sort by ROI descending
                 allMetrics.sort((a, b) => b.roi - a.roi);
@@ -793,7 +811,7 @@
                         </div>
                         <div>
                             <span style="color: #888;">Stocks Owned:</span>
-                            <span style="color: #fff; margin-left: 4px;">${ownedCount}/35</span>
+                            <span style="color: #fff; margin-left: 4px;">${ownedCount}/28</span>
                         </div>
                         <div>
                             <span style="color: #888;">Best ROI:</span>
