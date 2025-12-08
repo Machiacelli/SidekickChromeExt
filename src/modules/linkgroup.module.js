@@ -76,14 +76,15 @@
             }
         },
 
-        // Load link groups from storage
+        // Load link groups from storage (shared across all tabs)
         async loadLinkGroups() {
             try {
-                const storageKey = `sidekick_linkgroups_${this.tabId}`;
+                // Use global storage key (not tab-specific) so link groups are shared
+                const storageKey = 'sidekick_linkgroups';
                 const saved = await window.SidekickModules.Core.ChromeStorage.get(storageKey);
                 if (saved && Array.isArray(saved)) {
                     this.linkGroups = saved;
-                    console.log(`✅ Loaded ${this.linkGroups.length} link groups for tab ${this.tabId.substring(0, 8)}`);
+                    console.log(`✅ Loaded ${this.linkGroups.length} link groups (shared across tabs)`);
                 } else {
                     this.linkGroups = [];
                     console.log("📭 No saved link groups found in Chrome storage");
@@ -111,12 +112,13 @@
             }
         },
 
-        // Save link groups to storage
+        // Save link groups to storage (shared across all tabs)
         async saveLinkGroups() {
             try {
-                const storageKey = `sidekick_linkgroups_${this.tabId}`;
+                // Use global storage key (not tab-specific) so link groups are shared
+                const storageKey = 'sidekick_linkgroups';
                 await window.SidekickModules.Core.ChromeStorage.set(storageKey, this.linkGroups);
-                console.log(`💾 Link groups saved for tab ${this.tabId.substring(0, 8)}`);
+                console.log('💾 Link groups saved (shared across tabs)');
             } catch (error) {
                 console.error('Failed to save link groups to Chrome storage:', error);
             }

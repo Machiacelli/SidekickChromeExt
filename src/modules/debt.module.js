@@ -2253,46 +2253,46 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
             }, 3000);
         },
 
-        // Save window state for persistence
+        // Save window state for persistence (shared across all tabs)
         async saveWindowState(isOpen, element = null) {
             try {
                 const state = { isOpen };
 
                 if (element && isOpen) {
-                    const rect = element.getBoundingClientRect();
                     const contentArea = document.getElementById('sidekick-content');
                     if (contentArea) {
-                        const contentRect = contentArea.getBoundingClientRect();
+                        // Use offsetWidth/offsetHeight for actual rendered size
+                        // Use parseInt on style.left/top for position (these are set by dragging)
                         state.position = {
                             x: parseInt(element.style.left) || 10,
                             y: parseInt(element.style.top) || 10
                         };
                         state.size = {
-                            width: parseInt(element.style.width) || 350,
-                            height: parseInt(element.style.height) || 400
+                            width: element.clientWidth || 350,
+                            height: element.clientHeight || 400
                         };
                     }
                 }
 
                 if (window.SidekickModules?.Core?.ChromeStorage?.set) {
-                    // Use tab-specific storage key
-                    const storageKey = `debt_tracker_window_state_${this.tabId}`;
+                    // Use global storage key (not tab-specific) so window state is shared
+                    const storageKey = 'debt_tracker_window_state';
                     await window.SidekickModules.Core.ChromeStorage.set(storageKey, state);
-                    console.log(`💰 Window state saved for tab ${this.tabId.substring(0, 8)}:`, state);
+                    console.log('💰 Window state saved (shared across tabs):', state);
                 }
             } catch (error) {
                 console.error('Failed to save window state:', error);
             }
         },
 
-        // Load window state for persistence
+        // Load window state for persistence (shared across all tabs)
         async loadWindowState() {
             try {
                 if (window.SidekickModules?.Core?.ChromeStorage?.get) {
-                    // Use tab-specific storage key
-                    const storageKey = `debt_tracker_window_state_${this.tabId}`;
+                    // Use global storage key (not tab-specific) so window state is shared
+                    const storageKey = 'debt_tracker_window_state';
                     const state = await window.SidekickModules.Core.ChromeStorage.get(storageKey);
-                    console.log(`💰 Loaded window state for tab ${this.tabId.substring(0, 8)}:`, state);
+                    console.log('💰 Loaded window state (shared across tabs):', state);
                     return state || { isOpen: false, pinned: false };
                 }
             } catch (error) {
@@ -2337,22 +2337,30 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
         addResizeObserver(element) {
             console.log("💰 Adding resize observer to debt tracker");
 
+            // Flag to prevent saving during initial layout
+            let isInitializing = true;
+            setTimeout(() => {
+                isInitializing = false;
+            }, 500); // Allow initial layout to settle
+
             const resizeObserver = new ResizeObserver((entries) => {
                 for (let entry of entries) {
                     const { width, height } = entry.contentRect;
 
-                    // Update the element's style to match actual size
-                    element.style.width = width + 'px';
-                    element.style.height = height + 'px';
-
                     console.log(`💰 Debt tracker resized to: ${width}x${height}`);
+
+                    // Don't save during initial layout phase
+                    if (isInitializing) {
+                        console.log('💰 Skipping save during initialization');
+                        return;
+                    }
 
                     // Debounced save to avoid too frequent saves during resize
                     clearTimeout(element._resizeTimeout);
                     element._resizeTimeout = setTimeout(() => {
                         this.saveWindowState(true, element);
                         console.log(`💰 Debt tracker size saved: ${width}x${height}`);
-                    }, 1000); // Increased timeout to reduce saves
+                    }, 500); // Save after resize settles
                 }
             });
 
@@ -2607,52 +2615,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
         }
     };
 
-    // Load debt tracker window state from storage
-    DebtModule.loadWindowState = async function () {
-        try {
-            if (window.SidekickModules?.Core?.ChromeStorage?.get) {
-                const state = await window.SidekickModules.Core.ChromeStorage.get('sidekick_debt_tracker_state');
-                return state || { position: null, size: null, pinned: false };
-            }
-            return { position: null, size: null, pinned: false };
-        } catch (error) {
-            console.warn('⚠️ Failed to load debt tracker window state:', error);
-            return { position: null, size: null, pinned: false };
-        }
-    };
 
-    // Save debt tracker window state to storage
-    DebtModule.saveWindowState = async function (isOpen, element = null) {
-        try {
-            if (window.SidekickModules?.Core?.ChromeStorage?.set) {
-                const state = {
-                    isOpen: isOpen,
-                    pinned: this.debtTrackerPinned || false
-                };
-
-                // Save position and size if element is provided
-                if (element) {
-                    const rect = element.getBoundingClientRect();
-                    state.position = {
-                        x: parseInt(element.style.left) || 10,
-                        y: parseInt(element.style.top) || 10
-                    };
-                    state.size = {
-                        width: rect.width,
-                        height: rect.height
-                    };
-                }
-
-                await window.SidekickModules.Core.ChromeStorage.set('sidekick_debt_tracker_state', state);
-                console.log('💰 Debt tracker window state saved:', state);
-            }
-        } catch (error) {
-            // Silent catch for extension context invalidation
-            if (error.message && !error.message.includes('Extension context invalidated')) {
-                console.warn('⚠️ Failed to save debt tracker window state:', error);
-            }
-        }
-    };
 
     // Make sidebar element draggable
     DebtModule.makeSidebarElementDraggable = function (element, header) {

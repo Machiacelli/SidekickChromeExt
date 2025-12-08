@@ -351,6 +351,14 @@
                     }
                 }
 
+                // Initialize Stock Advisor module when sidebar opens
+                if (window.SidekickModules?.StockAdvisor) {
+                    if (!window.SidekickModules.StockAdvisor.isInitialized) {
+                        console.log("📊 Triggering Stock Advisor initialization...");
+                        window.SidekickModules.StockAdvisor.init();
+                    }
+                }
+
                 // Save state
                 this.saveSidebarState();
             }
@@ -512,7 +520,7 @@
                     ">
                         <span style="font-size: 13px; filter: grayscale(0.2);">✅</span> Todo
                     </button>
-                    <button class="module-option" data-module="stockticker" style="
+                    <button class="module-option" data-module="stockadvisor" style="
                         background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
                         border: 1px solid rgba(255,255,255,0.06);
                         color: rgba(255,255,255,0.92);
@@ -528,7 +536,7 @@
                         font-weight: 500;
                         letter-spacing: 0.3px;
                     ">
-                        <span style="font-size: 13px; filter: grayscale(0.2);">📈</span> Stock
+                        <span style="font-size: 13px; filter: grayscale(0.2);">📊</span> Stock Advisor
                     </button>
                     <button class="module-option" data-module="linkgroup" style="
                         background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
@@ -651,8 +659,8 @@
                 case 'todolist':
                     this.createNewTodoList();
                     break;
-                case 'stockticker':
-                    this.showNotification('Stock Ticker Module', 'Stock ticker module coming soon!', 'info');
+                case 'stockadvisor':
+                    this.createStockAdvisor();
                     break;
                 case 'debttracker':
                     this.createNewDebtTracker();
@@ -790,7 +798,27 @@
             }
         },
 
+        // Create Stock Advisor window
+        async createStockAdvisor() {
+            try {
+                if (!window.SidekickModules?.StockAdvisor) {
+                    this.showNotification('Stock Advisor Error', 'Stock Advisor module not loaded', 'error');
+                    return;
+                }
 
+                // Initialize if not already done
+                if (!window.SidekickModules.StockAdvisor.isInitialized) {
+                    await window.SidekickModules.StockAdvisor.init();
+                }
+
+                // Show stock advisor window
+                window.SidekickModules.StockAdvisor.showStockAdvisor();
+                this.showNotification('Stock Advisor', 'Stock advisor window opened', 'info');
+            } catch (error) {
+                console.error('Failed to create stock advisor:', error);
+                this.showNotification('Stock Advisor Error', 'Failed to open stock advisor', 'error');
+            }
+        },
 
         // Show advanced settings panel
         showAdvancedSettings() {
