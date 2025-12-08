@@ -1,0 +1,969 @@
+/**
+ * Sidekick Chrome Extension - Stock Advisor Module
+ * Analyzes Torn stock investments and calculates ROI based on stock perks
+ * Version: 1.0.0
+ * Author: Machiacelli
+ */
+
+(function () {
+    'use strict';
+
+    console.log("📈 Loading Sidekick Stock Advisor Module...");
+
+    // Wait for Core module to be available
+    function waitForCore() {
+        return new Promise((resolve) => {
+            const checkCore = () => {
+                if (window.SidekickModules?.Core?.ChromeStorage) {
+                    console.log("📈 Core module ready for Stock Advisor");
+                    resolve();
+                } else {
+                    setTimeout(checkCore, 100);
+                }
+            };
+            checkCore();
+        });
+    }
+
+    // Stock Benefit Data - All 35 Torn stocks (alphabetically by acronym, from user's list)
+    const STOCK_BENEFITS = {
+        "ASS": { stockId: 32, name: "Alcoholics Synonymous", sharesRequired: 1000000, type: "Active", frequencyDays: 7, benefit: "1x Six Pack of Alcohol", benefitKind: "item" },
+        "BAG": { stockId: 27, name: "Big Al's Gun Shop", sharesRequired: 3000000, type: "Active", frequencyDays: 7, benefit: "1x Ammunition Pack (Special Ammo)", benefitKind: "item" },
+        "CBD": { stockId: 33, name: "Herbal Releaf Co.", sharesRequired: 350000, type: "Active", frequencyDays: 7, benefit: "50 Nerve", benefitKind: "nerve" },
+        "CNC": { stockId: 10, name: "Crude & Co", sharesRequired: 7500000, type: "Active", frequencyDays: 31, benefit: "$80,000,000", benefitKind: "cash" },
+        "ELT": { stockId: 21, name: "Empty Lunchbox Traders", sharesRequired: 5000000, type: "Passive", frequencyDays: null, benefit: "10% Home Upgrade Discount (Property)", benefitKind: "percent" },
+        "EVL": { stockId: 28, name: "Evil Ducks Candy Corp", sharesRequired: 100000, type: "Active", frequencyDays: 7, benefit: "1000 Happy", benefitKind: "happy" },
+        "EWM": { stockId: 19, name: "Eaglewood Mercenary", sharesRequired: 1000000, type: "Active", frequencyDays: 7, benefit: "1x Box of Grenades", benefitKind: "item" },
+        "FHG": { stockId: 15, name: "Feathery Hotels Group", sharesRequired: 2000000, type: "Active", frequencyDays: 7, benefit: "1x Feathery Hotel Coupon", benefitKind: "item" },
+        "GRN": { stockId: 6, name: "Grain", sharesRequired: 500000, type: "Active", frequencyDays: 31, benefit: "$4,000,000", benefitKind: "cash" },
+        "HRG": { stockId: 22, name: "Home Retail Group", sharesRequired: 10000000, type: "Active", frequencyDays: 31, benefit: "1x Random Property", benefitKind: "property" },
+        "IIL": { stockId: 14, name: "I Industries Ltd.", sharesRequired: 1000000, type: "Passive", frequencyDays: null, benefit: "50% Virus Coding Time Reduction", benefitKind: "percent" },
+        "IOU": { stockId: 5, name: "Insured On Us", sharesRequired: 3000000, type: "Active", frequencyDays: 31, benefit: "$12,000,000", benefitKind: "cash" },
+        "IST": { stockId: 26, name: "International School TC", sharesRequired: 100000, type: "Passive", frequencyDays: null, benefit: "Free Education Courses", benefitKind: "access" },
+        "LAG": { stockId: 4, name: "Legal Authorities Group", sharesRequired: 750000, type: "Active", frequencyDays: 7, benefit: "1x Lawyer Business Card", benefitKind: "item" },
+        "LOS": { stockId: 34, name: "Lo Squalo Waste Management", sharesRequired: 7500000, type: "Passive", frequencyDays: null, benefit: "25% Boost to mission credits and money earned", benefitKind: "percent" },
+        "LSC": { stockId: 17, name: "Lucky Shots Casino", sharesRequired: 500000, type: "Active", frequencyDays: 7, benefit: "1x Lottery Voucher", benefitKind: "item" },
+        "MCS": { stockId: 29, name: "Mc Smoogle Corp", sharesRequired: 350000, type: "Active", frequencyDays: 7, benefit: "100 Energy", benefitKind: "energy" },
+        "MSG": { stockId: 11, name: "Messaging Inc.", sharesRequired: 300000, type: "Passive", frequencyDays: null, benefit: "Free Classified Advertising (Newspaper)", benefitKind: "access" },
+        "MUN": { stockId: 24, name: "Munster Beverage Corp.", sharesRequired: 5000000, type: "Active", frequencyDays: 7, benefit: "1x Six Pack of Energy Drink", benefitKind: "item" },
+        "PRN": { stockId: 18, name: "Performance Ribaldry Network", sharesRequired: 1000000, type: "Active", frequencyDays: 7, benefit: "1x Erotic DVD", benefitKind: "item" },
+        "PTS": { stockId: 35, name: "PointLess", sharesRequired: 10000000, type: "Active", frequencyDays: 7, benefit: "100 Points", benefitKind: "points" },
+        "SYM": { stockId: 16, name: "Symbiotic Ltd.", sharesRequired: 500000, type: "Active", frequencyDays: 7, benefit: "1x Drug Pack", benefitKind: "item" },
+        "SYS": { stockId: 3, name: "Syscore MFG", sharesRequired: 3000000, type: "Passive", frequencyDays: null, benefit: "Advanced Firewall", benefitKind: "access" },
+        "TCC": { stockId: 31, name: "Torn City Clothing", sharesRequired: 7500000, type: "Active", frequencyDays: 31, benefit: "1x Clothing Cache", benefitKind: "item" },
+        "TCI": { stockId: 2, name: "Torn City Investments", sharesRequired: 1500000, type: "Passive", frequencyDays: null, benefit: "10% Bank Interest Bonus", benefitKind: "percent" },
+        "TCM": { stockId: 20, name: "Torn City Motors", sharesRequired: 1000000, type: "Passive", frequencyDays: null, benefit: "10% Racing Skill Boost", benefitKind: "percent" },
+        "TCP": { stockId: 13, name: "TC Media Productions", sharesRequired: 1000000, type: "Passive", frequencyDays: null, benefit: "Company Sales Boost", benefitKind: "percent" },
+        "TCT": { stockId: 9, name: "The Torn City Times", sharesRequired: 100000, type: "Active", frequencyDays: 31, benefit: "$1,000,000", benefitKind: "cash" },
+        "TGP": { stockId: 23, name: "Tell Group Plc.", sharesRequired: 2500000, type: "Passive", frequencyDays: null, benefit: "Company Advertising Boost", benefitKind: "percent" },
+        "THS": { stockId: 7, name: "Torn City Health Service", sharesRequired: 150000, type: "Active", frequencyDays: 7, benefit: "1x Box of Medical Supplies", benefitKind: "item" },
+        "TMI": { stockId: 12, name: "TC Music Industries", sharesRequired: 6000000, type: "Active", frequencyDays: 31, benefit: "$25,000,000", benefitKind: "cash" },
+        "TSB": { stockId: 1, name: "Torn & Shanghai Banking", sharesRequired: 3000000, type: "Active", frequencyDays: 31, benefit: "$50,000,000", benefitKind: "cash" },
+        "WLT": { stockId: 30, name: "Wind Lines Travel", sharesRequired: 9000000, type: "Passive", frequencyDays: null, benefit: "Private Jet Access (Travel)", benefitKind: "access" },
+        "WSU": { stockId: 25, name: "West Side University", sharesRequired: 1000000, type: "Passive", frequencyDays: null, benefit: "10% Education Course Time Reduction", benefitKind: "percent" },
+        "YAZ": { stockId: 8, name: "Yazoo", sharesRequired: 1000000, type: "Passive", frequencyDays: null, benefit: "Free Banner Advertising (Newspaper)", benefitKind: "access" }
+    };
+
+    // Default user settings for benefit conversion
+    const DEFAULT_SETTINGS = {
+        // Stat conversions (USD value)
+        energyValue: 1000,
+        nerveValue: 2500,
+        happyValue: 1500,
+        pointsValue: 50000,
+
+        // Item conversions (USD value)
+        grenadeBoxValue: 5000000,
+        drugPackValue: 3000000,
+        clothingCacheValue: 2000000,
+        hotelCouponValue: 500000,
+        medicalSupplyBoxValue: 1000000,
+        ammunitionBoxValue: 500000,
+        sixPackAlcoholValue: 150000,
+        sixPackEnergyDrinkValue: 200000,
+        lotteryVoucherValue: 1000000,
+
+        // Percent-based perk baselines
+        bankBaselineValue: 1000000000, // $1B in bank for 10% interest
+        casinoBaselineDaily: 5000000, // Daily casino earnings
+        missionBaselineDaily: 500000, // Daily mission credits
+        advertisingValuePerDay: 100000,
+        educationValuePerHour: 50000,
+        educationHoursPerMonth: 100,
+        racingBaselineValue: 1000000, // Value of 2.5% skill increase
+        stockProfitBaselineDaily: 1000000,
+
+        // Special items
+        privateJetValuePerDay: 500000,
+        advancedFirewallValue: 10000000, // One-time value
+        randomPropertyValue: 50000000 // Expected value
+    };
+
+    // Stock Advisor Module Implementation
+    const StockAdvisorModule = {
+        isInitialized: false,
+        isWindowOpen: false,
+        settings: { ...DEFAULT_SETTINGS },
+        cachedStockData: null,
+        cachedPortfolio: null,
+        lastCacheTime: 0,
+        refreshInterval: null,
+
+        // Initialize module
+        async init() {
+            console.log("📈 Initializing Stock Advisor Module...");
+
+            await this.loadSettings();
+
+            // Check if window was open before page refresh
+            const savedState = await this.loadWindowState();
+            if (savedState?.isOpen) {
+                console.log("📈 Restoring Stock Advisor window from previous session");
+                // Wait for sidebar to be ready
+                setTimeout(() => {
+                    const contentArea = document.getElementById('sidekick-content');
+                    if (contentArea) {
+                        this.showStockAdvisor();
+                    } else {
+                        console.log("📈 Sidebar not ready yet, will restore when sidebar opens");
+                    }
+                }, 500);
+            }
+
+            this.isInitialized = true;
+            console.log("✅ Stock Advisor Module initialized successfully");
+        },
+
+        // Load user settings
+        async loadSettings() {
+            try {
+                const saved = await window.SidekickModules.Core.ChromeStorage.get('sidekick_stockadvisor_settings');
+                if (saved) {
+                    this.settings = { ...DEFAULT_SETTINGS, ...saved };
+                    console.log("📈 Loaded Stock Advisor settings");
+                }
+            } catch (error) {
+                console.error("Failed to load Stock Advisor settings:", error);
+                this.settings = { ...DEFAULT_SETTINGS };
+            }
+        },
+
+        // Save user settings
+        async saveSettings() {
+            try {
+                await window.SidekickModules.Core.ChromeStorage.set('sidekick_stockadvisor_settings', this.settings);
+                console.log("📈 Saved Stock Advisor settings");
+            } catch (error) {
+                console.error("Failed to save Stock Advisor settings:", error);
+            }
+        },
+
+        // Show Stock Advisor window
+        async showStockAdvisor() {
+            console.log('📈 Creating Stock Advisor window...');
+
+            const contentArea = document.getElementById('sidekick-content');
+            if (!contentArea) {
+                console.error('📈 Sidebar content area not found');
+                return;
+            }
+
+            // Toggle: close if already open
+            const existingWindow = contentArea.querySelector('.movable-stockadvisor');
+            if (existingWindow) {
+                existingWindow.remove();
+                this.isWindowOpen = false;
+                if (this.refreshInterval) {
+                    clearInterval(this.refreshInterval);
+                    this.refreshInterval = null;
+                }
+                return;
+            }
+
+            const contentWidth = contentArea.clientWidth || 480;
+            const contentHeight = contentArea.clientHeight || 500;
+
+            // Load saved window state
+            const savedState = await this.loadWindowState();
+            const width = savedState?.width || Math.min(450, contentWidth - 30);
+            const height = savedState?.height || Math.min(500, contentHeight - 30);
+            const x = savedState?.x || 10;
+            const y = savedState?.y || 10;
+
+            console.log("📈 Using window state:", { x, y, width, height });
+
+            const windowElement = document.createElement('div');
+            windowElement.className = 'movable-stockadvisor';
+            windowElement.style.cssText = `
+                position: absolute;
+                left: ${x}px;
+                top: ${y}px;
+                width: ${width}px;
+                height: ${height}px;
+                background: #2a2a2a;
+                border: 1px solid #444;
+                border-radius: 6px;
+                display: flex;
+                flex-direction: column;
+                min-width: 350px;
+                min-height: 300px;
+                z-index: 1000;
+                resize: both;
+                overflow: hidden;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            `;
+
+            windowElement.innerHTML = `
+                <div class="stock-header" style="
+                    background: linear-gradient(135deg, #2196F3, #1976D2);
+                    padding: 8px 12px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    cursor: move;
+                    color: #fff;
+                    font-weight: bold;
+                    border-radius: 6px 6px 0 0;
+                    font-size: 13px;
+                    user-select: none;
+                ">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span>📈 Stock Advisor</span>
+                    </div>
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                        <button class="stock-menu-btn" style="
+                            background: none;
+                            border: none;
+                            color: #fff;
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 3px;
+                            cursor: pointer;
+                            font-size: 12px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            transition: background 0.2s;
+                        " title="Menu">⚙️</button>
+                        <button class="stock-close-btn" style="
+                            background: #dc3545;
+                            border: none;
+                            color: white;
+                            cursor: pointer;
+                            font-size: 10px;
+                            padding: 0;
+                            width: 14px;
+                            height: 14px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            border-radius: 50%;
+                            transition: all 0.2s;
+                            font-weight: bold;
+                        ">×</button>
+                    </div>
+                </div>
+                
+                <div class="stock-content" style="
+                    flex: 1;
+                    overflow-y: auto;
+                    background: #1f1f1f;
+                    color: #fff;
+                    display: flex;
+                    flex-direction: column;
+                    scrollbar-width: none; /* Firefox */
+                    -ms-overflow-style: none; /* IE/Edge */
+                ">
+                    <style>
+                        .stock-content::-webkit-scrollbar {
+                            display: none; /* Chrome/Safari */
+                        }
+                    </style>
+                    <div class="stock-loading" style="
+                        padding: 40px;
+                        text-align: center;
+                        color: #888;
+                        font-size: 14px;
+                    ">
+                        <div style="font-size: 32px; margin-bottom: 10px;">📊</div>
+                        <div>Loading stock data...</div>
+                    </div>
+                </div>
+            `;
+
+            contentArea.appendChild(windowElement);
+            this.isWindowOpen = true;
+
+            // Set up event handlers
+            this.setupWindowHandlers(windowElement);
+
+            // Start loading data
+            await this.refreshData();
+
+            console.log('📈 Stock Advisor window created');
+        },
+
+        // Setup window event handlers
+        setupWindowHandlers(windowElement) {
+            const header = windowElement.querySelector('.stock-header');
+            const closeBtn = windowElement.querySelector('.stock-close-btn');
+            const menuBtn = windowElement.querySelector('.stock-menu-btn');
+
+            // Close button
+            closeBtn?.addEventListener('click', async () => {
+                // Save state with isOpen=false
+                await window.SidekickModules.Core.ChromeStorage.set('sidekick_stockadvisor_window', {
+                    isOpen: false,
+                    x: parseInt(windowElement.style.left) || 10,
+                    y: parseInt(windowElement.style.top) || 10,
+                    width: windowElement.offsetWidth,
+                    height: windowElement.offsetHeight
+                });
+                console.log("📈 Window closed, state saved as closed");
+
+                windowElement.remove();
+                this.isWindowOpen = false;
+                if (this.refreshInterval) {
+                    clearInterval(this.refreshInterval);
+                    this.refreshInterval = null;
+                }
+            });
+
+            // Menu button (cogwheel)
+            menuBtn?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                console.log("📈 Menu button clicked");
+                this.showMenuDropdown(menuBtn);
+            });
+
+            // Make draggable
+            this.makeWindowDraggable(windowElement, header);
+
+            // Add resize observer
+            this.addResizeObserver(windowElement);
+        },
+
+        // Make window draggable
+        makeWindowDraggable(windowElement, header) {
+            let isDragging = false;
+            let currentX = 0;
+            let currentY = 0;
+            let initialX = 0;
+            let initialY = 0;
+
+            header.addEventListener('mousedown', (e) => {
+                if (e.target.closest('button')) return;
+
+                isDragging = true;
+                const currentLeft = parseInt(windowElement.style.left) || 0;
+                const currentTop = parseInt(windowElement.style.top) || 0;
+                initialX = e.clientX - currentLeft;
+                initialY = e.clientY - currentTop;
+                windowElement.style.zIndex = '1100';
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+
+                e.preventDefault();
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+
+                const contentArea = document.getElementById('sidekick-content');
+                if (contentArea) {
+                    const bounds = contentArea.getBoundingClientRect();
+                    const elementBounds = windowElement.getBoundingClientRect();
+
+                    currentX = Math.max(0, Math.min(currentX, contentArea.offsetWidth - elementBounds.width));
+                    currentY = Math.max(0, Math.min(currentY, contentArea.offsetHeight - elementBounds.height));
+                }
+
+                windowElement.style.left = currentX + 'px';
+                windowElement.style.top = currentY + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    windowElement.style.zIndex = '1000';
+                    this.saveWindowState(windowElement);
+                }
+            });
+        },
+
+        // Add resize observer
+        addResizeObserver(windowElement) {
+            let resizeTimeout;
+            let isInitializing = true;
+
+            // Skip saves during initial layout
+            setTimeout(() => {
+                isInitializing = false;
+            }, 1000);
+
+            const resizeObserver = new ResizeObserver(() => {
+                if (isInitializing) {
+                    console.log('📈 Skipping save during initialization');
+                    return;
+                }
+
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    this.saveWindowState(windowElement);
+                    console.log('📈 Window resized, state saved');
+                }, 500);
+            });
+
+            resizeObserver.observe(windowElement);
+
+            // Clean up on removal
+            windowElement._resizeObserver = resizeObserver;
+        },
+
+        // Load window state
+        async loadWindowState() {
+            try {
+                const state = await window.SidekickModules.Core.ChromeStorage.get('sidekick_stockadvisor_window');
+                console.log("📈 Loaded window state:", state);
+                return state || null;
+            } catch (error) {
+                console.error("Failed to load window state:", error);
+                return null;
+            }
+        },
+
+        // Save window state
+        async saveWindowState(windowElement) {
+            try {
+                const state = {
+                    isOpen: true,
+                    x: parseInt(windowElement.style.left) || 10,
+                    y: parseInt(windowElement.style.top) || 10,
+                    width: windowElement.offsetWidth,
+                    height: windowElement.offsetHeight
+                };
+                await window.SidekickModules.Core.ChromeStorage.set('sidekick_stockadvisor_window', state);
+                console.log("📈 Window state saved:", state);
+            } catch (error) {
+                console.error("Failed to save window state:", error);
+            }
+        },
+
+        // Fetch global stock data from Torn API
+        async fetchStockData(forceRefresh = false) {
+            // Check cache
+            const now = Date.now();
+            const cacheAge = now - this.lastCacheTime;
+            const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+            if (!forceRefresh && this.cachedStockData && cacheAge < CACHE_TTL) {
+                console.log("📈 Using cached stock data");
+                return this.cachedStockData;
+            }
+
+            console.log("📈 Fetching stock data from API...");
+
+            try {
+                const apiKey = await window.SidekickModules.Settings.getApiKey();
+                if (!apiKey) {
+                    throw new Error("API key not configured");
+                }
+
+                const response = await fetch(`https://api.torn.com/torn/?selections=stocks&key=${apiKey}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error.error);
+                }
+
+                console.log("✅ Stock data fetched successfully");
+                console.log("📈 DEBUG - Stock API data structure:", {
+                    stocksKey: data.stocks ? 'EXISTS' : 'MISSING',
+                    firstStockId: data.stocks ? Object.keys(data.stocks)[0] : 'N/A',
+                    sampleStock: data.stocks ? data.stocks[1] : 'N/A'
+                });
+                this.cachedStockData = data.stocks;
+                this.lastCacheTime = now;
+                return this.cachedStockData;
+            } catch (error) {
+                console.error("❌ Failed to fetch stock data:", error);
+                throw error;
+            }
+        },
+
+        // Fetch user portfolio from Torn API
+        async fetchPortfolio(forceRefresh = false) {
+            const now = Date.now();
+            const cacheAge = now - this.lastCacheTime;
+            const CACHE_TTL = 5 * 60 * 1000;
+
+            if (!forceRefresh && this.cachedPortfolio && cacheAge < CACHE_TTL) {
+                console.log("📈 Using cached portfolio");
+                return this.cachedPortfolio;
+            }
+
+            console.log("📈 Fetching portfolio from API...");
+
+            try {
+                const apiKey = await window.SidekickModules.Settings.getApiKey();
+                if (!apiKey) {
+                    throw new Error("API key not configured");
+                }
+
+                const response = await fetch(`https://api.torn.com/user/?selections=stocks&key=${apiKey}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error.error);
+                }
+
+                console.log("✅ Portfolio fetched successfully");
+                console.log("📈 DEBUG - Portfolio data structure:", {
+                    keys: Object.keys(data),
+                    stocksKeys: data.stocks ? Object.keys(data.stocks) : 'NO STOCKS KEY',
+                    firstFewStocks: data.stocks ? Object.keys(data.stocks).slice(0, 5) : [],
+                    sampleStock: data.stocks ? data.stocks[Object.keys(data.stocks)[0]] : 'N/A'
+                });
+                this.cachedPortfolio = data.stocks;
+                return this.cachedPortfolio;
+            } catch (error) {
+                console.error("❌ Failed to fetch portfolio:", error);
+                throw error;
+            }
+        },
+
+        // Calculate benefit value in USD
+        calculateBenefitValue(acronym) {
+            const benefit = STOCK_BENEFITS[acronym];
+            if (!benefit) return 0;
+
+            const benefitStr = benefit.benefit;
+            let value = 0;
+
+            // Cash benefits
+            if (benefit.benefitKind === "cash") {
+                const match = benefitStr.match(/\$([0-9,]+)/);
+                if (match) {
+                    value = parseInt(match[1].replace(/,/g, ''));
+                }
+            }
+
+            // Energy
+            else if (benefit.benefitKind === "energy") {
+                const match = benefitStr.match(/(\d+)\s+Energy/);
+                if (match) {
+                    value = parseInt(match[1]) * this.settings.energyValue;
+                }
+            }
+
+            // Nerve
+            else if (benefit.benefitKind === "nerve") {
+                const match = benefitStr.match(/(\d+)\s+Nerve/);
+                if (match) {
+                    value = parseInt(match[1]) * this.settings.nerveValue;
+                }
+            }
+
+            // Happy
+            else if (benefit.benefitKind === "happy") {
+                const match = benefitStr.match(/(\d+)\s+Happy/);
+                if (match) {
+                    value = parseInt(match[1]) * this.settings.happyValue;
+                }
+            }
+
+            // Points
+            else if (benefit.benefitKind === "points") {
+                const match = benefitStr.match(/(\d+)\s+Points/);
+                if (match) {
+                    value = parseInt(match[1]) * this.settings.pointsValue;
+                }
+            }
+
+            // Items
+            else if (benefit.benefitKind === "item") {
+                if (benefitStr.includes("Grenade")) value = this.settings.grenadeBoxValue;
+                else if (benefitStr.includes("Drug Pack")) value = this.settings.drugPackValue;
+                else if (benefitStr.includes("Clothing Cache")) value = this.settings.clothingCacheValue;
+                else if (benefitStr.includes("Hotel Coupon")) value = this.settings.hotelCouponValue;
+                else if (benefitStr.includes("Medical Supply")) value = this.settings.medicalSupplyBoxValue;
+                else if (benefitStr.includes("Ammunition")) value = this.settings.ammunitionBoxValue;
+                else if (benefitStr.includes("Alcohol")) value = this.settings.sixPackAlcoholValue;
+                else if (benefitStr.includes("Energy Drink")) value = this.settings.sixPackEnergyDrinkValue;
+                else if (benefitStr.includes("Lottery Voucher")) value = this.settings.lotteryVoucherValue;
+            }
+
+            // Percent-based passives
+            else if (benefit.benefitKind === "percent") {
+                if (benefitStr.includes("Bank Interest")) {
+                    value = (this.settings.bankBaselineValue * 0.10) / 365;
+                } else if (benefitStr.includes("Casino")) {
+                    value = this.settings.casinoBaselineDaily * 0.25;
+                } else if (benefitStr.includes("Mission")) {
+                    // LOS - Mission boost is too variable to calculate accurately
+                    value = 0;
+                } else if (benefitStr.includes("Advertising")) {
+                    value = this.settings.advertisingValuePerDay * 0.10;
+                } else if (benefitStr.includes("Education")) {
+                    // WSU - Education time reduction is too variable to calculate accurately
+                    value = 0;
+                } else if (benefitStr.includes("Racing")) {
+                    // TCM - Racing skill boost is too variable to calculate accurately
+                    value = 0;
+                } else if (benefitStr.includes("Stock Profit")) {
+                    value = this.settings.stockProfitBaselineDaily * 0.10;
+                }
+            }
+
+            // Special access
+            else if (benefit.benefitKind === "access") {
+                if (benefitStr.includes("Firewall")) {
+                    value = this.settings.advancedFirewallValue;
+                } else if (benefitStr.includes("Private Jet")) {
+                    value = this.settings.privateJetValuePerDay;
+                }
+            }
+
+            // Property
+            else if (benefit.benefitKind === "property") {
+                value = this.settings.randomPropertyValue;
+            }
+
+            return value;
+        },
+
+        // Calculate metrics for a stock
+        calculateStockMetrics(acronym, stockData, portfolio) {
+            const benefit = STOCK_BENEFITS[acronym];
+            if (!benefit) return null;
+
+            // Torn API uses stock IDs, not acronyms
+            const stock = stockData[benefit.stockId];
+            if (!stock) return null;
+
+            const currentPrice = stock.current_price;
+            const sharesOwned = portfolio?.[benefit.stockId]?.total_shares || 0;
+            const totalValue = sharesOwned * currentPrice;
+
+            // Debug first 3 stocks to understand data structure
+            const stockIndex = Object.keys(STOCK_BENEFITS).indexOf(acronym);
+            if (stockIndex < 3) {
+                console.log(`📈 DEBUG Stock #${stockIndex + 1} (${acronym}, ID ${benefit.stockId}):`, {
+                    stockExists: !!stock,
+                    currentPrice,
+                    portfolioEntry: portfolio?.[benefit.stockId],
+                    sharesOwned,
+                    totalValue
+                });
+            }
+
+            // Calculate benefit value
+            const benefitValue = this.calculateBenefitValue(acronym);
+
+            // Daily benefit (for active perks) or daily value (for passive perks)
+            let benefitPerDay = 0;
+            if (benefit.type === "Active" && benefit.frequencyDays) {
+                benefitPerDay = benefitValue / benefit.frequencyDays;
+            } else {
+                // Passive perks - already calculated as daily
+                benefitPerDay = benefitValue;
+            }
+
+            // Per-share metrics
+            const benefitPerSharePerDay = benefitPerDay / benefit.sharesRequired;
+            const annualBenefitPerShare = benefitPerSharePerDay * 365;
+
+            // ROI
+            const roi = currentPrice > 0 ? (annualBenefitPerShare / currentPrice) * 100 : 0;
+
+            // Payback period
+            const paybackDays = benefitPerSharePerDay > 0 ? currentPrice / benefitPerSharePerDay : Infinity;
+
+            return {
+                acronym,
+                name: benefit.name,
+                currentPrice,
+                sharesOwned,
+                sharesRequired: benefit.sharesRequired,
+                totalValue,
+                benefitDescription: benefit.benefit,
+                benefitValue,
+                benefitPerDay,
+                benefitPerSharePerDay,
+                annualBenefitPerShare,
+                roi,
+                paybackDays,
+                type: benefit.type,
+                benefitKind: benefit.benefitKind,
+                priceChange: stock.change || {}
+            };
+        },
+
+        // Refresh data and update UI
+        async refreshData(forceRefresh = false) {
+            console.log("📈 Refreshing stock data...");
+
+            const contentEl = document.querySelector('.stock-content');
+            if (!contentEl) return;
+
+            try {
+                // Show loading
+                contentEl.innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: #888;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">📊</div>
+                        <div>Loading stock data...</div>
+                    </div>
+                `;
+
+                // Fetch data
+                const [stockData, portfolio] = await Promise.all([
+                    this.fetchStockData(forceRefresh),
+                    this.fetchPortfolio(forceRefresh)
+                ]);
+
+                // Calculate metrics for all stocks
+                const allMetrics = [];
+                for (const acronym in STOCK_BENEFITS) {
+                    const metrics = this.calculateStockMetrics(acronym, stockData, portfolio);
+                    if (metrics) {
+                        allMetrics.push(metrics);
+                    }
+                }
+
+                // Sort by ROI descending
+                allMetrics.sort((a, b) => b.roi - a.roi);
+
+                // Render UI
+                this.renderStockUI(allMetrics, portfolio);
+
+            } catch (error) {
+                console.error("Failed to refresh stock data:", error);
+                contentEl.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #f44336;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">⚠️</div>
+                        <div>Failed to load stock data</div>
+                        <div style="font-size: 12px; color: #888; margin-top: 10px;">${error.message}</div>
+                    </div>
+                `;
+            }
+        },
+
+        // Render stock UI
+        renderStockUI(metrics, portfolio) {
+            const contentEl = document.querySelector('.stock-content');
+            if (!contentEl) return;
+
+            // Handle empty metrics
+            if (!metrics || metrics.length === 0) {
+                contentEl.innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: #888;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">📊</div>
+                        <div>No stock data available</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Calculate portfolio summary
+            const totalValue = metrics.reduce((sum, m) => sum + m.totalValue, 0);
+            const totalDailyBenefit = metrics
+                .filter(m => m.sharesOwned >= m.sharesRequired)
+                .reduce((sum, m) => sum + m.benefitPerDay, 0);
+            const bestStock = metrics[0]; // Already sorted by ROI
+            const ownedCount = metrics.filter(m => m.sharesOwned > 0).length;
+
+            console.log("📈 Portfolio Summary:", {
+                totalValue,
+                totalDailyBenefit,
+                ownedCount,
+                sampleMetric: metrics[0]
+            });
+
+            contentEl.innerHTML = `
+                <div style="padding: 12px; border-bottom: 1px solid #444; background: #252525;">
+                    <div style="font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #2196F3;">Portfolio Summary</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
+                        <div>
+                            <span style="color: #888;">Total Value:</span>
+                            <span style="color: #4CAF50; font-weight: bold; margin-left: 4px;">$${totalValue.toLocaleString()}</span>
+                        </div>
+                        <div>
+                            <span style="color: #888;">Daily Benefits:</span>
+                            <span style="color: #2196F3; font-weight: bold; margin-left: 4px;">$${totalDailyBenefit.toLocaleString()}</span>
+                        </div>
+                        <div>
+                            <span style="color: #888;">Stocks Owned:</span>
+                            <span style="color: #fff; margin-left: 4px;">${ownedCount}/35</span>
+                        </div>
+                        <div>
+                            <span style="color: #888;">Best ROI:</span>
+                            <span style="color: #4CAF50; margin-left: 4px;">${bestStock.acronym} (${bestStock.roi.toFixed(2)}%)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="flex: 1; overflow-y: auto; padding: 10px; scrollbar-width: none; -ms-overflow-style: none;">
+                    <style>
+                        div[style*="flex: 1; overflow-y: auto; padding: 10px"]::-webkit-scrollbar {
+                            display: none;
+                        }
+                    </style>
+                    ${metrics.map(m => this.renderStockRow(m)).join('')}
+                </div>
+            `;
+        },
+
+        // Render individual stock row
+        renderStockRow(metrics) {
+            const {
+                acronym,
+                name,
+                currentPrice,
+                sharesOwned,
+                sharesRequired,
+                totalValue,
+                benefitDescription,
+                benefitPerDay,
+                roi,
+                paybackDays,
+                type
+            } = metrics;
+
+            const hasEnoughShares = sharesOwned >= sharesRequired;
+            const roiColor = roi >= 10 ? '#4CAF50' : roi >= 5 ? '#FF9800' : '#f44336';
+            const paybackText = paybackDays === Infinity ? '∞' : paybackDays > 365 ? `${(paybackDays / 365).toFixed(1)}y` : `${Math.round(paybackDays)}d`;
+
+            return `
+                <div style="
+                    background: #2a2a2a;
+                    border: 1px solid #444;
+                    border-radius: 4px;
+                    padding: 8px;
+                    margin-bottom: 6px;
+                    font-size: 11px;
+                    ${hasEnoughShares ? 'border-left: 3px solid #4CAF50;' : ''}
+                ">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <div style="font-weight: bold; font-size: 12px;">
+                            <span style="color: #2196F3;">${acronym}</span>
+                            <span style="color: #888; font-size: 10px; margin-left: 4px;">${name}</span>
+                        </div>
+                        <div style="font-weight: bold; color: ${roiColor};">${roi.toFixed(2)}%</div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; color: #ccc; font-size: 10px; margin-bottom: 4px;">
+                        <div>
+                            <span style="color: #666;">Price:</span> $${currentPrice.toLocaleString()}
+                        </div>
+                        <div>
+                            <span style="color: #666;">Owned:</span> ${sharesOwned.toLocaleString()}/${sharesRequired.toLocaleString()}
+                        </div>
+                        <div>
+                            <span style="color: #666;">Payback:</span> ${paybackText}
+                        </div>
+                    </div>
+                    
+                    <div style="font-size: 10px; color: #888; margin-bottom: 2px;">
+                        ${type}: ${benefitDescription}
+                    </div>
+                    
+                    <div style="font-size: 10px;">
+                        <span style="color: #666;">Daily:</span>
+                        <span style="color: #2196F3;">$${benefitPerDay.toLocaleString()}</span>
+                        ${hasEnoughShares ? '<span style="color: #4CAF50; margin-left: 8px;">✓ Qualified</span>' : ''}
+                    </div>
+                </div>
+            `;
+        },
+
+        // Show menu dropdown
+        showMenuDropdown(menuBtn) {
+            console.log("📈 Opening menu dropdown...");
+
+            // Remove existing menu if any
+            const existing = document.querySelector('.stock-menu-dropdown');
+            if (existing) {
+                existing.remove();
+                return;
+            }
+
+            const buttonRect = menuBtn.getBoundingClientRect();
+            const menu = document.createElement('div');
+            menu.className = 'stock-menu-dropdown';
+            menu.style.cssText = `
+                position: fixed;
+                top: ${buttonRect.bottom + 5}px;
+                right: ${window.innerWidth - buttonRect.right}px;
+                background: rgba(25, 25, 25, 0.98);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                border-radius: 6px;
+                padding: 4px;
+                z-index: 10001;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7);
+                backdrop-filter: blur(10px);
+                min-width: 120px;
+            `;
+
+            menu.innerHTML = `
+                <button class="menu-refresh" style="
+                    width: 100%;
+                    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+                    border: 1px solid rgba(255, 255, 255, 0.06);
+                    color: rgba(255, 255, 255, 0.92);
+                    padding: 8px 12px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    text-align: left;
+                    transition: all 0.2s;
+                    font-size: 12px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                ">
+                    <span>🔄</span> Refresh Data
+                </button>
+            `;
+
+            document.body.appendChild(menu);
+
+            // Hover effect
+            const refreshBtn = menu.querySelector('.menu-refresh');
+            refreshBtn.addEventListener('mouseenter', () => {
+                refreshBtn.style.background = 'linear-gradient(135deg, rgba(33, 150, 243, 0.3), rgba(33, 150, 243, 0.15))';
+                refreshBtn.style.borderColor = 'rgba(33, 150, 243, 0.4)';
+            });
+            refreshBtn.addEventListener('mouseleave', () => {
+                refreshBtn.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04))';
+                refreshBtn.style.borderColor = 'rgba(255,255,255,0.06)';
+            });
+
+            // Click handler
+            refreshBtn.addEventListener('click', () => {
+                menu.remove();
+                this.refreshData(true);
+            });
+
+            // Auto-close on outside click
+            setTimeout(() => {
+                const closeOnClickOutside = (e) => {
+                    if (!menu.contains(e.target) && e.target !== menuBtn) {
+                        menu.remove();
+                        document.removeEventListener('click', closeOnClickOutside);
+                    }
+                };
+                document.addEventListener('click', closeOnClickOutside);
+            }, 100);
+        }
+    };
+
+    // Export module
+    window.SidekickModules = window.SidekickModules || {};
+    window.SidekickModules.StockAdvisor = StockAdvisorModule;
+    console.log("✅ Stock Advisor Module loaded and ready");
+
+    // Wait for core then initialize
+    waitForCore().then(() => {
+        StockAdvisorModule.init();
+    });
+
+})();
