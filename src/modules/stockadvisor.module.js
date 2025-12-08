@@ -841,27 +841,34 @@
                 });
             }
 
+            // Get increment data from portfolio API
+            const portfolioEntry = portfolio?.[benefit.stockId];
+            const currentIncrements = portfolioEntry?.dividend?.increment || portfolioEntry?.benefit?.increment || 0;
+
+            // Calculate max possible increments based on shares owned
+            const maxIncrements = sharesOwned >= benefit.sharesRequired ? Math.floor(sharesOwned / benefit.sharesRequired) : 0;
+
             // Calculate benefit value
             const benefitValue = this.calculateBenefitValue(acronym);
 
-            // Daily benefit (for active perks) or daily value (for passive perks)
-            let benefitPerDay = 0;
+            // Daily benefit per single increment
+            let benefitPerIncrement = 0;
             if (benefit.type === "Active" && benefit.frequencyDays) {
-                benefitPerDay = benefitValue / benefit.frequencyDays;
+                benefitPerIncrement = benefitValue / benefit.frequencyDays;
             } else {
                 // Passive perks - already calculated as daily
-                benefitPerDay = benefitValue;
+                benefitPerIncrement = benefitValue;
             }
 
-            // Per-share metrics
-            const benefitPerSharePerDay = benefitPerDay / benefit.sharesRequired;
+            // ACTUAL daily income (only what user is currently earning)
+            const actualDailyIncome = benefitPerIncrement * currentIncrements;
+
+            // Per-share metrics (for ROI calculation)
+            const benefitPerSharePerDay = benefitPerIncrement / benefit.sharesRequired;
             const annualBenefitPerShare = benefitPerSharePerDay * 365;
 
             // ROI
             const roi = currentPrice > 0 ? (annualBenefitPerShare / currentPrice) * 100 : 0;
-
-            // Payback period
-            const paybackDays = benefitPerSharePerDay > 0 ? currentPrice / benefitPerSharePerDay : Infinity;
 
             return {
                 acronym,
@@ -872,11 +879,12 @@
                 totalValue,
                 benefitDescription: benefit.benefit,
                 benefitValue,
-                benefitPerDay,
+                benefitPerDay: actualDailyIncome, // ACTUAL daily income
+                currentIncrements, // What user has (from API)
+                maxIncrements, // What's possible with current shares
                 benefitPerSharePerDay,
                 annualBenefitPerShare,
                 roi,
-                paybackDays,
                 type: benefit.type,
                 benefitKind: benefit.benefitKind,
                 priceChange: stock.change || {}
@@ -1028,13 +1036,13 @@
                 benefitDescription,
                 benefitPerDay,
                 roi,
-                paybackDays,
+                currentIncrements,
+                maxIncrements,
                 type
             } = metrics;
 
             const hasEnoughShares = sharesOwned >= sharesRequired;
             const roiColor = roi >= 10 ? '#4CAF50' : roi >= 5 ? '#FF9800' : '#f44336';
-            const paybackText = paybackDays === Infinity ? '∞' : paybackDays > 365 ? `${(paybackDays / 365).toFixed(1)}y` : `${Math.round(paybackDays)}d`;
 
             return `
                 <div style="
@@ -1054,15 +1062,12 @@
                         <div style="font-weight: bold; color: ${roiColor};">${roi.toFixed(2)}%</div>
                     </div>
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; color: #ccc; font-size: 10px; margin-bottom: 4px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; color: #ccc; font-size: 10px; margin-bottom: 4px;">
                         <div>
                             <span style="color: #666;">Price:</span> $${currentPrice.toLocaleString()}
                         </div>
                         <div>
-                            <span style="color: #666;">Owned:</span> ${sharesOwned.toLocaleString()}/${sharesRequired.toLocaleString()}
-                        </div>
-                        <div>
-                            <span style="color: #666;">Payback:</span> ${paybackText}
+                            <span style="color: #666;">Owned:</span> ${sharesOwned.toLocaleString()}
                         </div>
                     </div>
                     
@@ -1073,7 +1078,7 @@
                     <div style="font-size: 10px;">
                         <span style="color: #666;">Daily:</span>
                         <span style="color: #2196F3;">$${benefitPerDay.toLocaleString()}</span>
-                        ${hasEnoughShares ? '<span style="color: #4CAF50; margin-left: 8px;">✓ Qualified</span>' : ''}
+                        ${currentIncrements > 0 ? `<span style="color: #4CAF50; margin-left: 8px;">✓ ${currentIncrements}/${maxIncrements}</span>` : ''}
                     </div>
                 </div>
             `;
