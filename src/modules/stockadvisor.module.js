@@ -72,8 +72,25 @@
         'IST', // Free Education - no income
         'WLT', // Private Jet - no income
         'IIL', // Virus Coding Time - utility
-        'ELT'  // Property Discount - saves money, not income
+        'ELT', // Property Discount - saves money, not income
+        'MCS', // Energy - too variable per player
+        'CBD', // Nerve - too variable per player
+        'EVL'  // Happy - too variable per player
     ]);
+
+    // Item IDs for market price fetching
+    const ITEM_IDS = {
+        BOX_OF_GRENADES: 364,
+        MEDICAL_SUPPLIES: 365,
+        EROTIC_DVD: 366,
+        HOTEL_COUPON: 367,
+        LAWYER_CARD: 368,
+        LOTTERY_VOUCHER: 369,
+        DRUG_PACK: 370,
+        CLOTHING_CACHE: 1057, // Using Gentleman Cache as default
+        SIX_PACK_ALCOHOL: 817,
+        SIX_PACK_ENERGY: 818
+    };
 
     // Default user settings for benefit conversion
     const DEFAULT_SETTINGS = {
@@ -117,6 +134,9 @@
         settings: { ...DEFAULT_SETTINGS },
         cachedStockData: null,
         cachedPortfolio: null,
+        cachedItemPrices: null,
+        cachedPointsPrice: null,
+        cachedBankBalance: null,
         lastCacheTime: 0,
         refreshInterval: null,
 
@@ -543,6 +563,138 @@
             }
         },
 
+        // Fetch item market prices from Torn API
+        async fetchItemMarketPrices(forceRefresh = false) {
+            const now = Date.now();
+            const cacheAge = now - this.lastCacheTime;
+            const CACHE_TTL = 5 * 60 * 1000;
+
+            if (!forceRefresh && this.cachedItemPrices && cacheAge < CACHE_TTL) {
+                console.log("📈 Using cached item prices");
+                return this.cachedItemPrices;
+            }
+
+            console.log("📈 Fetching item prices from market API...");
+
+            try {
+                const apiKey = await window.SidekickModules.Settings.getApiKey();
+                if (!apiKey) {
+                    throw new Error("API key not configured");
+                }
+
+                // Fetch all item prices in one call
+                const itemIds = Object.values(ITEM_IDS).join(',');
+                const response = await fetch(`https://api.torn.com/market/${itemIds}?selections=itemmarket&key=${apiKey}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error.error);
+                }
+
+                // Extract lowest market price for each item
+                const prices = {};
+                for (const [key, itemId] of Object.entries(ITEM_IDS)) {
+                    const itemData = data.itemmarket?.[itemId];
+                    if (itemData && itemData.length > 0) {
+                        // Get lowest price from market listings
+                        prices[key] = Math.min(...itemData.map(listing => listing.cost));
+                    } else {
+                        prices[key] = 0; // No market data available
+                    }
+                }
+
+                console.log("✅ Item prices fetched successfully:", prices);
+                this.cachedItemPrices = prices;
+                return this.cachedItemPrices;
+            } catch (error) {
+                console.error("❌ Failed to fetch item prices:", error);
+                // Return null to fall back to hardcoded values
+                return null;
+            }
+        },
+
+        // Fetch points market price
+        async fetchPointsMarketPrice(forceRefresh = false) {
+            const now = Date.now();
+            const cacheAge = now - this.lastCacheTime;
+            const CACHE_TTL = 5 * 60 * 1000;
+
+            if (!forceRefresh && this.cachedPointsPrice && cacheAge < CACHE_TTL) {
+                console.log("📈 Using cached points price");
+                return this.cachedPointsPrice;
+            }
+
+            console.log("📈 Fetching points market price...");
+
+            try {
+                const apiKey = await window.SidekickModules.Settings.getApiKey();
+                if (!apiKey) {
+                    throw new Error("API key not configured");
+                }
+
+                const response = await fetch(`https://api.torn.com/market/?selections=pointsmarket&key=${apiKey}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error.error);
+                }
+
+                // Calculate average points price from market offers
+                const offers = data.pointsmarket || [];
+                if (offers.length > 0) {
+                    const totalCost = offers.reduce((sum, offer) => sum + offer.total_cost, 0);
+                    const totalPoints = offers.reduce((sum, offer) => sum + offer.quantity, 0);
+                    const avgPrice = totalPoints > 0 ? totalCost / totalPoints : 50000;
+
+                    console.log(`✅ Points market price: $${avgPrice.toFixed(0)}/point`);
+                    this.cachedPointsPrice = avgPrice;
+                    return this.cachedPointsPrice;
+                } else {
+                    console.log("⚠️ No points market offers, using default $50,000");
+                    return 50000;
+                }
+            } catch (error) {
+                console.error("❌ Failed to fetch points price:", error);
+                return 50000; // Fall back to default
+            }
+        },
+
+        // Fetch user's bank balance for interest calculations
+        async fetchUserBankBalance(forceRefresh = false) {
+            const now = Date.now();
+            const cacheAge = now - this.lastCacheTime;
+            const CACHE_TTL = 5 * 60 * 1000;
+
+            if (!forceRefresh && this.cachedBankBalance && cacheAge < CACHE_TTL) {
+                console.log("📈 Using cached bank balance");
+                return this.cachedBankBalance;
+            }
+
+            console.log("📈 Fetching user bank balance...");
+
+            try {
+                const apiKey = await window.SidekickModules.Settings.getApiKey();
+                if (!apiKey) {
+                    throw new Error("API key not configured");
+                }
+
+                const response = await fetch(`https://api.torn.com/user/?selections=money&key=${apiKey}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error.error);
+                }
+
+                const bankBalance = data.city_bank?.amount || 0;
+                console.log(`✅ Bank balance: $${bankBalance.toLocaleString()}`);
+                this.cachedBankBalance = bankBalance;
+                return this.cachedBankBalance;
+            } catch (error) {
+                console.error("❌ Failed to fetch bank balance:", error);
+                return 1000000000; // Fall back to $1B default
+            }
+        },
+
         // Calculate benefit value in USD
         calculateBenefitValue(acronym) {
             const benefit = STOCK_BENEFITS[acronym];
@@ -583,31 +735,52 @@
                 }
             }
 
-            // Points
+            // Points - use live market price
             else if (benefit.benefitKind === "points") {
                 const match = benefitStr.match(/(\d+)\s+Points/);
                 if (match) {
-                    value = parseInt(match[1]) * this.settings.pointsValue;
+                    const pointsAmount = parseInt(match[1]);
+                    // Use live points price from API, fall back to hardcoded
+                    const pointsPrice = this.cachedPointsPrice || this.settings.pointsValue;
+                    value = pointsAmount * pointsPrice;
                 }
             }
 
-            // Items
+            // Items - use live market prices
             else if (benefit.benefitKind === "item") {
-                if (benefitStr.includes("Grenade")) value = this.settings.grenadeBoxValue;
-                else if (benefitStr.includes("Drug Pack")) value = this.settings.drugPackValue;
-                else if (benefitStr.includes("Clothing Cache")) value = this.settings.clothingCacheValue;
-                else if (benefitStr.includes("Hotel Coupon")) value = this.settings.hotelCouponValue;
-                else if (benefitStr.includes("Medical Supply")) value = this.settings.medicalSupplyBoxValue;
-                else if (benefitStr.includes("Ammunition")) value = this.settings.ammunitionBoxValue;
-                else if (benefitStr.includes("Alcohol")) value = this.settings.sixPackAlcoholValue;
-                else if (benefitStr.includes("Energy Drink")) value = this.settings.sixPackEnergyDrinkValue;
-                else if (benefitStr.includes("Lottery Voucher")) value = this.settings.lotteryVoucherValue;
+                const prices = this.cachedItemPrices;
+
+                if (benefitStr.includes("Grenade")) {
+                    value = prices?.BOX_OF_GRENADES || this.settings.grenadeBoxValue;
+                } else if (benefitStr.includes("Drug Pack")) {
+                    value = prices?.DRUG_PACK || this.settings.drugPackValue;
+                } else if (benefitStr.includes("Clothing Cache")) {
+                    value = prices?.CLOTHING_CACHE || this.settings.clothingCacheValue;
+                } else if (benefitStr.includes("Hotel Coupon")) {
+                    value = prices?.HOTEL_COUPON || this.settings.hotelCouponValue;
+                } else if (benefitStr.includes("Medical Supply")) {
+                    value = prices?.MEDICAL_SUPPLIES || this.settings.medicalSupplyBoxValue;
+                } else if (benefitStr.includes("Ammunition")) {
+                    value = prices?.BOX_OF_GRENADES || this.settings.ammunitionBoxValue; // Note: Using grenades as proxy
+                } else if (benefitStr.includes("Alcohol")) {
+                    value = prices?.SIX_PACK_ALCOHOL || this.settings.sixPackAlcoholValue;
+                } else if (benefitStr.includes("Energy Drink")) {
+                    value = prices?.SIX_PACK_ENERGY || this.settings.sixPackEnergyDrinkValue;
+                } else if (benefitStr.includes("Lottery Voucher")) {
+                    value = prices?.LOTTERY_VOUCHER || this.settings.lotteryVoucherValue;
+                } else if (benefitStr.includes("Erotic DVD")) {
+                    value = prices?.EROTIC_DVD || 100000;
+                } else if (benefitStr.includes("Lawyer")) {
+                    value = prices?.LAWYER_CARD || 50000;
+                }
             }
 
             // Percent-based passives
             else if (benefit.benefitKind === "percent") {
                 if (benefitStr.includes("Bank Interest")) {
-                    value = (this.settings.bankBaselineValue * 0.10) / 365;
+                    // Use actual bank balance from API
+                    const bankBalance = this.cachedBankBalance || this.settings.bankBaselineValue;
+                    value = (bankBalance * 0.10) / 365;
                 } else if (benefitStr.includes("Casino")) {
                     value = this.settings.casinoBaselineDaily * 0.25;
                 } else if (benefitStr.includes("Mission")) {
@@ -726,11 +899,16 @@
                     </div>
                 `;
 
-                // Fetch data
-                const [stockData, portfolio] = await Promise.all([
+                // Fetch all data in parallel
+                const [stockData, portfolio, itemPrices, pointsPrice, bankBalance] = await Promise.all([
                     this.fetchStockData(forceRefresh),
-                    this.fetchPortfolio(forceRefresh)
+                    this.fetchPortfolio(forceRefresh),
+                    this.fetchItemMarketPrices(forceRefresh),
+                    this.fetchPointsMarketPrice(forceRefresh),
+                    this.fetchUserBankBalance(forceRefresh)
                 ]);
+
+                console.log("📈 All API data fetched successfully");
 
                 // Calculate metrics for all stocks
                 const allMetrics = [];
@@ -811,7 +989,7 @@
                         </div>
                         <div>
                             <span style="color: #888;">Stocks Owned:</span>
-                            <span style="color: #fff; margin-left: 4px;">${ownedCount}/28</span>
+                            <span style="color: #fff; margin-left: 4px;">${ownedCount}/25</span>
                         </div>
                         <div>
                             <span style="color: #888;">Best ROI:</span>
