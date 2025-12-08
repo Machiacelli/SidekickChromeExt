@@ -899,17 +899,21 @@
             const menu = document.createElement('div');
             menu.className = 'stock-menu-dropdown';
 
-            // FIXED: Use left positioning instead of right
-            // Old calculation was putting dropdown at 2116px off-screen
+            // Get Stock Advisor window for relative positioning
+            const stockWindow = document.querySelector('.movable-stockadvisor');
+            const header = stockWindow?.querySelector('.stock-header');
+
+            // FIXED: Use absolute positioning within Stock Advisor window
+            // This prevents the sidebar's overflow:hidden from clipping the dropdown
             menu.style.cssText = `
-                position: fixed;
-                top: ${buttonRect.bottom + 5}px;
-                left: ${buttonRect.left - 100}px;
+                position: absolute;
+                top: ${header ? header.offsetHeight + 2 : 45}px;
+                right: 5px;
                 background: rgba(25, 25, 25, 0.98);
                 border: 1px solid rgba(255, 255, 255, 0.12);
                 border-radius: 6px;
                 padding: 4px;
-                z-index: 100000;
+                z-index: 10;
                 box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7);
                 backdrop-filter: blur(10px);
                 min-width: 120px;
@@ -935,7 +939,14 @@
                 </button>
             `;
 
-            document.body.appendChild(menu);
+            // Append to Stock Advisor window instead of body to avoid sidebar clip
+            if (stockWindow) {
+                stockWindow.appendChild(menu);
+                console.log("📈 Dropdown appended to Stock Advisor window");
+            } else {
+                document.body.appendChild(menu);
+                console.log("📈 WARNING: Appended to body (stockWindow not found)");
+            }
 
             // DEBUG: Verify dropdown is in DOM and visible
             console.log("📈 Dropdown appended to body");
