@@ -892,15 +892,19 @@
             console.log("📈 Button position:", {
                 bottom: buttonRect.bottom,
                 right: buttonRect.right,
+                left: buttonRect.left,
                 windowWidth: window.innerWidth
             });
 
             const menu = document.createElement('div');
             menu.className = 'stock-menu-dropdown';
+
+            // FIXED: Use left positioning instead of right
+            // Old calculation was putting dropdown at 2116px off-screen
             menu.style.cssText = `
                 position: fixed;
                 top: ${buttonRect.bottom + 5}px;
-                right: ${window.innerWidth - buttonRect.right}px;
+                left: ${buttonRect.left - 100}px;
                 background: rgba(25, 25, 25, 0.98);
                 border: 1px solid rgba(255, 255, 255, 0.12);
                 border-radius: 6px;
