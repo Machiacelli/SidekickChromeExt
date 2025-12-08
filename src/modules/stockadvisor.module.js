@@ -965,14 +965,21 @@
             const totalDailyBenefit = metrics
                 .filter(m => m.sharesOwned >= m.sharesRequired)
                 .reduce((sum, m) => sum + m.benefitPerDay, 0);
-            const bestStock = metrics[0]; // Already sorted by ROI
+
+            // Find best stock to buy next (prioritize stocks not fully qualified)
+            const unqualifiedStocks = metrics.filter(m => m.sharesOwned < m.sharesRequired);
+            const bestToBuy = unqualifiedStocks.length > 0 ? unqualifiedStocks[0] : metrics[0];
+            const isAlreadyQualified = bestToBuy.sharesOwned >= bestToBuy.sharesRequired;
+
             const ownedCount = metrics.filter(m => m.sharesOwned > 0).length;
 
             console.log("📈 Portfolio Summary:", {
                 totalValue,
                 totalDailyBenefit,
                 ownedCount,
-                sampleMetric: metrics[0]
+                bestToBuy: bestToBuy.acronym,
+                isAlreadyQualified,
+                unqualifiedCount: unqualifiedStocks.length
             });
 
             contentEl.innerHTML = `
@@ -992,8 +999,8 @@
                             <span style="color: #fff; margin-left: 4px;">${ownedCount}/25</span>
                         </div>
                         <div>
-                            <span style="color: #888;">Best ROI:</span>
-                            <span style="color: #4CAF50; margin-left: 4px;">${bestStock.acronym} (${bestStock.roi.toFixed(2)}%)</span>
+                            <span style="color: #888;">Buy Next:</span>
+                            <span style="color: #4CAF50; margin-left: 4px;">${bestToBuy.acronym} (${bestToBuy.roi.toFixed(2)}%)${isAlreadyQualified ? ' ✓' : ''}</span>
                         </div>
                     </div>
                 </div>
