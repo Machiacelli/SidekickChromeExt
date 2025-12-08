@@ -883,11 +883,18 @@
             // Remove existing menu if any
             const existing = document.querySelector('.stock-menu-dropdown');
             if (existing) {
+                console.log("📈 Dropdown already exists, removing it");
                 existing.remove();
                 return;
             }
 
             const buttonRect = menuBtn.getBoundingClientRect();
+            console.log("📈 Button position:", {
+                bottom: buttonRect.bottom,
+                right: buttonRect.right,
+                windowWidth: window.innerWidth
+            });
+
             const menu = document.createElement('div');
             menu.className = 'stock-menu-dropdown';
             menu.style.cssText = `
@@ -898,7 +905,7 @@
                 border: 1px solid rgba(255, 255, 255, 0.12);
                 border-radius: 6px;
                 padding: 4px;
-                z-index: 10001;
+                z-index: 100000;
                 box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7);
                 backdrop-filter: blur(10px);
                 min-width: 120px;
