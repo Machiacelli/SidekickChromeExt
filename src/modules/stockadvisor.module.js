@@ -879,6 +879,9 @@
             // ACTUAL daily income (only what user is currently earning)
             const actualDailyIncome = benefitPerIncrement * currentIncrements;
 
+            // POTENTIAL daily income (what they could earn with 1 increment)
+            const potentialDailyIncome = benefitPerIncrement;
+
             // Per-share metrics (for ROI calculation)
             const benefitPerSharePerDay = benefitPerIncrement / benefit.sharesRequired;
             const annualBenefitPerShare = benefitPerSharePerDay * 365;
@@ -896,6 +899,7 @@
                 benefitDescription: benefit.benefit,
                 benefitValue,
                 benefitPerDay: actualDailyIncome, // ACTUAL daily income
+                potentialBenefitPerDay: potentialDailyIncome, // POTENTIAL with 1 increment
                 currentIncrements, // What user has (from API)
                 maxIncrements, // What's possible with current shares
                 benefitPerSharePerDay,
@@ -1122,6 +1126,7 @@
                 totalValue,
                 benefitDescription,
                 benefitPerDay,
+                potentialBenefitPerDay,
                 roi,
                 currentIncrements,
                 maxIncrements,
@@ -1130,6 +1135,9 @@
 
             const hasEnoughShares = sharesOwned >= sharesRequired;
             const roiColor = roi >= 10 ? '#4CAF50' : roi >= 5 ? '#FF9800' : '#f44336';
+
+            // Display actual income if owned, potential if not owned
+            const displayIncome = sharesOwned > 0 ? benefitPerDay : potentialBenefitPerDay;
 
             return `
                 <div style="
@@ -1149,7 +1157,7 @@
                         <div style="text-align: right; min-width: 80px;">
                             <div style="font-size: 10px; color: #888; margin-bottom: 2px;">Daily Income</div>
                             <div style="font-weight: bold; color: ${sharesOwned > 0 ? '#4CAF50' : '#666'}; font-size: 11px;">
-                                ${sharesOwned > 0 ? '$' : '~$'}${benefitPerDay.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                                ${sharesOwned > 0 ? '$' : '~$'}${displayIncome.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                             </div>
                         </div>
                     </div>
@@ -1163,13 +1171,8 @@
                         </div>
                     </div>
                     
-                    <div style="font-size: 10px; color: #888; margin-bottom: 2px;">
+                    <div style="font-size: 10px; color: #888;">
                         ${type}: ${benefitDescription}
-                    </div>
-                    
-                    <div style="font-size: 10px;">
-                        <span style="color: #666;">Daily:</span>
-                        <span style="color: #2196F3;">$${benefitPerDay.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
                         ${currentIncrements > 0 ? `<span style="color: #4CAF50; margin-left: 8px;">✓ ${currentIncrements}/${maxIncrements}</span>` : ''}
                     </div>
                 </div>
