@@ -1132,6 +1132,61 @@
                     ${metrics.map(m => this.renderStockRow(m)).join('')}
                 </div>
             `;
+
+            // Set up dropdown event listeners AFTER elements are created
+            this.setupDropdownListeners();
+        },
+
+        // Setup dropdown event listeners (called after rendering)
+        setupDropdownListeners() {
+            const sortSelect = document.querySelector('.stock-sort-select');
+            const filterSelect = document.querySelector('.stock-filter-select');
+            const utilityToggle = document.querySelector('.stock-utility-toggle');
+
+            console.log("📈 Setting up dropdown listeners...", { sortSelect: !!sortSelect, filterSelect: !!filterSelect, utilityToggle: !!utilityToggle });
+
+            // Remove old listeners by cloning and replacing (prevents duplicates)
+            if (sortSelect) {
+                const newSortSelect = sortSelect.cloneNode(true);
+                sortSelect.parentNode.replaceChild(newSortSelect, sortSelect);
+
+                // Set current value
+                newSortSelect.value = this.currentSort || 'daily';
+
+                newSortSelect.addEventListener('change', (e) => {
+                    this.currentSort = e.target.value;
+                    console.log("📈 Sort changed to:", this.currentSort);
+                    this.refreshStockDisplay();
+                });
+            }
+
+            if (filterSelect) {
+                const newFilterSelect = filterSelect.cloneNode(true);
+                filterSelect.parentNode.replaceChild(newFilterSelect, filterSelect);
+
+                // Set current value
+                newFilterSelect.value = this.currentFilter || 'all';
+
+                newFilterSelect.addEventListener('change', (e) => {
+                    this.currentFilter = e.target.value;
+                    console.log("📈 Filter changed to:", this.currentFilter);
+                    this.refreshStockDisplay();
+                });
+            }
+
+            if (utilityToggle) {
+                const newUtilityToggle = utilityToggle.cloneNode(true);
+                utilityToggle.parentNode.replaceChild(newUtilityToggle, utilityToggle);
+
+                // Set current value
+                newUtilityToggle.checked = this.showUtilityStocks || false;
+
+                newUtilityToggle.addEventListener('change', (e) => {
+                    this.showUtilityStocks = e.target.checked;
+                    console.log("📈 Show utility stocks:", this.showUtilityStocks);
+                    this.refreshStockDisplay();
+                });
+            }
         },
 
         // Render individual stock row
