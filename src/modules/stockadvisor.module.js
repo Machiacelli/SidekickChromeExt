@@ -75,7 +75,8 @@
         'ELT', // Property Discount - saves money, not income
         'MCS', // Energy - too variable per player
         'CBD', // Nerve - too variable per player
-        'EVL'  // Happy - too variable per player
+        'EVL', // Happy - too variable per player
+        'BAG'  // Special Ammo - cannot be sold, no market value
     ]);
 
     // Item IDs for market price fetching
