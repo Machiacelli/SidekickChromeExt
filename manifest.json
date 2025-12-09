@@ -59,6 +59,16 @@
         "src/styles/main.css"
       ],
       "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "https://www.torn.com/calendar.php*",
+        "https://*.torn.com/calendar.php*"
+      ],
+      "js": [
+        "src/calendarScraper.js"
+      ],
+      "run_at": "document_idle"
     }
   ],
   "background": {
