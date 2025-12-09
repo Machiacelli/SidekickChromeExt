@@ -560,36 +560,53 @@
             this.updateTickerDisplay();
         },
 
-        // Check if a date is within an event's range
-        async isEventActive(event, now = new Date()) {
-            const currentYear = now.getFullYear();
-            const currentMonth = now.getMonth() + 1;
-            const currentDay = now.getDate();
+        // ===== UTC TIMING HELPERS =====
+
+        // Get current time in UTC (Torn uses UTC/TCT)
+        getCurrentUTC() {
+            const now = new Date();
+            return new Date(Date.UTC(
+                now.getUTCFullYear(),
+                now.getUTCMonth(),
+                now.getUTCDate(),
+                now.getUTCHours(),
+                now.getUTCMinutes(),
+                now.getUTCSeconds()
+            ));
+        },
+
+        // Check if a date is within an event's range (UTC-based)
+        async isEventActive(event, now = null) {
+            // Use UTC if no time provided
+            if (!now) {
+                now = this.getCurrentUTC();
+            }
+
+            const currentYear = now.getUTCFullYear();
+            const currentMonth = now.getUTCMonth() + 1;
+            const currentDay = now.getUTCDate();
 
             // Get merged dates (calendar override + hardcoded fallback)
             const dates = await this.getEventDates(event);
 
-            let startDate = new Date(currentYear, dates.startMonth - 1, dates.startDay);
-            let endDate = new Date(currentYear, dates.endMonth - 1, dates.endDay);
+            // Create UTC dates for comparison
+            let startDate = new Date(Date.UTC(currentYear, dates.startMonth - 1, dates.startDay, 0, 0, 0));
+            let endDate = new Date(Date.UTC(currentYear, dates.endMonth - 1, dates.endDay, 0, 0, 0));
 
             // Handle events that span year boundary
             if (dates.endMonth < dates.startMonth) {
                 if (currentMonth >= dates.startMonth) {
-                    endDate = new Date(currentYear + 1, dates.endMonth - 1, dates.endDay);
+                    endDate = new Date(Date.UTC(currentYear + 1, dates.endMonth - 1, dates.endDay, 0, 0, 0));
                 } else {
-                    startDate = new Date(currentYear - 1, dates.startMonth - 1, dates.startDay);
+                    startDate = new Date(Date.UTC(currentYear - 1, dates.startMonth - 1, dates.startDay, 0, 0, 0));
                 }
             }
-
-            startDate.setHours(0, 0, 0, 0);
-            endDate.setHours(0, 0, 0, 0); // End at 00:00 on the end date (not 23:59)
-            now.setHours(0, 0, 0, 0);
 
             return now >= startDate && now < endDate; // Use < instead of <= for end date
         },
 
         async getActiveEvents() {
-            const now = new Date();
+            const now = this.getCurrentUTC(); // Use UTC for consistency
 
             // Filter active events with async isEventActive
             const activeEvents = [];
