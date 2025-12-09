@@ -165,6 +165,26 @@
                                                                  background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;">
                                 Enter your API key and click Save
                             </div>
+                            
+                            <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 25px 0;">
+                            
+                            <!-- Calendar Refresh Section -->
+                            <div style="background: rgba(33, 150, 243, 0.1); border-left: 3px solid #2196F3; padding: 12px; border-radius: 5px; margin-bottom: 15px;">
+                                <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                                    📅 <strong>Event Calendar:</strong> Automatically updates yearly. Use refresh to force update event dates (e.g., Christmas Town).
+                                </div>
+                            </div>
+                            
+                            <button id="sidekick-refresh-calendar" style="width: 100%; padding: 10px; background: #2196F3; 
+                                                                           border: none; color: white; border-radius: 5px; 
+                                                                           font-weight: bold; cursor: pointer; margin-bottom: 15px;">
+                                🔄 Refresh Event Calendar
+                            </button>
+                            
+                            <div id="sidekick-calendar-status" style="text-align: center; padding: 10px; border-radius: 5px; 
+                                                                     background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;">
+                                Last updated: <span id="calendar-last-year">Never</span>
+                            </div>
                         </div>
                         
                         <!-- MODULES TAB -->
@@ -620,6 +640,59 @@
                     this.showStatus(statusDiv, 'API test failed - check your connection', 'error');
                 }
             });
+
+            // Calendar Refresh Button
+            const refreshCalendarBtn = panel.querySelector('#sidekick-refresh-calendar');
+            const calendarStatusDiv = panel.querySelector('#sidekick-calendar-status');
+            const calendarLastYearSpan = panel.querySelector('#calendar-last-year');
+
+            if (refreshCalendarBtn && window.SidekickModules?.EventTicker) {
+                // Load last scraped year
+                (async () => {
+                    try {
+                        const storage = await window.SidekickModules.Core.ChromeStorage.get('calendar_last_scraped_year');
+                        const lastYear = storage?.calendar_last_scraped_year;
+                        if (lastYear && calendarLastYearSpan) {
+                            calendarLastYearSpan.textContent = lastYear;
+                        }
+                    } catch (error) {
+                        console.error('Failed to load last scraped year:', error);
+                    }
+                })();
+
+                refreshCalendarBtn.addEventListener('click', async () => {
+                    refreshCalendarBtn.disabled = true;
+                    refreshCalendarBtn.textContent = '🔄 Refreshing...';
+
+                    try {
+                        console.log('📅 Manual calendar refresh triggered from settings');
+                        await window.SidekickModules.EventTicker.scrapeCalendarPage(true); // Force refresh
+
+                        // Update last year display
+                        const currentYear = new Date().getFullYear();
+                        if (calendarLastYearSpan) {
+                            calendarLastYearSpan.textContent = currentYear;
+                        }
+
+                        this.showStatus(calendarStatusDiv, 'Calendar refreshed successfully!', 'success');
+
+                        if (window.SidekickModules.Core.NotificationSystem) {
+                            window.SidekickModules.Core.NotificationSystem.show(
+                                'Calendar Updated',
+                                'Event calendar has been refreshed',
+                                'success',
+                                3000
+                            );
+                        }
+                    } catch (error) {
+                        console.error('❌ Calendar refresh failed:', error);
+                        this.showStatus(calendarStatusDiv, 'Failed to refresh calendar', 'error');
+                    } finally {
+                        refreshCalendarBtn.disabled = false;
+                        refreshCalendarBtn.textContent = '🔄 Refresh Event Calendar';
+                    }
+                });
+            }
         },
 
         // Modules Tab listeners
