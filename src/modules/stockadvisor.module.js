@@ -383,6 +383,14 @@
                 this.refreshStockDisplay();
             });
 
+            // Utility toggle
+            const utilityToggle = windowElement.querySelector('.stock-utility-toggle');
+            utilityToggle?.addEventListener('change', (e) => {
+                this.showUtilityStocks = e.target.checked;
+                console.log("📈 Show utility stocks:", this.showUtilityStocks);
+                this.refreshStockDisplay();
+            });
+
             // Make draggable
             this.makeWindowDraggable(windowElement, header);
 
@@ -941,13 +949,15 @@
                 // Calculate metrics for all stocks
                 const allMetrics = [];
                 for (const acronym in STOCK_BENEFITS) {
-                    // Skip utility/access stocks that don't generate income
-                    if (EXCLUDED_STOCKS.has(acronym)) {
+                    // Skip utility/access stocks unless user wants to see them
+                    const isUtility = EXCLUDED_STOCKS.has(acronym);
+                    if (isUtility && !this.showUtilityStocks) {
                         continue;
                     }
 
                     const metrics = this.calculateStockMetrics(acronym, stockData, portfolio);
                     if (metrics) {
+                        metrics.isUtility = isUtility; // Mark utility stocks
                         allMetrics.push(metrics);
                     }
                 }
@@ -1063,7 +1073,7 @@
             background: #1f1f1f;
             padding: 8px 12px;
             display: flex;
-            gap: 8px;
+            gap: 12px;
             align-items: center;
             border-bottom: 1px solid #333;
             flex-wrap: wrap;
@@ -1101,6 +1111,11 @@
                     <option value="owned">Owned Only</option>
                     <option value="not-owned">Not Owned</option>
                 </select>
+            </div>
+            
+            <div style="display: flex; gap: 4px; align-items: center;">
+                <input type="checkbox" class="stock-utility-toggle" id="stock-utility-toggle" style="cursor: pointer;">
+                <label for="stock-utility-toggle" style="font-size: 10px; color: #888; cursor: pointer;">Show Utility Stocks</label>
             </div>
         </div>
         
@@ -1153,6 +1168,7 @@
                         <div style="font-weight: bold; font-size: 12px;">
                             <span style="color: #2196F3;">${acronym}</span>
                             <span style="color: #888; font-size: 10px; margin-left: 4px;">${name}</span>
+                            ${metrics.isUtility ? '<span style="background: #444; color: #888; padding: 2px 4px; border-radius: 3px; font-size: 9px; margin-left: 4px;">UTILITY</span>' : ''}
                         </div>
                         <div style="text-align: right; min-width: 80px;">
                             <div style="font-size: 10px; color: #888; margin-bottom: 2px;">Daily Income</div>
