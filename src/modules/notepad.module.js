@@ -533,15 +533,13 @@
                     this.saveNotepads();
                 });
 
-                // Focus effects
+                // Focus effects - removed border styling per user feedback
                 textarea.addEventListener('focus', () => {
-                    notepadElement.style.borderColor = '#66BB6A';
-                    notepadElement.style.boxShadow = '0 0 0 2px rgba(102, 187, 106, 0.2)';
+                    // No visual change on focus
                 });
 
                 textarea.addEventListener('blur', () => {
-                    notepadElement.style.borderColor = '#444';
-                    notepadElement.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                    // No visual change on blur
                 });
             }
 
