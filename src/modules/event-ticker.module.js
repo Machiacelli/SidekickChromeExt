@@ -164,7 +164,7 @@
                 notification: "Slash Wednesday live: ER now with a fast lane."
             },
             {
-                startMonth: 12, startDay: 15,
+                startMonth: 12, startDay: 19,
                 endMonth: 12, endDay: 31,
                 name: "Christmas Town",
                 feature: "Seasonal map-based event with treasure",
