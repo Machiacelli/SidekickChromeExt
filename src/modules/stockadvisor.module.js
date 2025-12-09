@@ -140,6 +140,9 @@
         cachedBankBalance: null,
         lastCacheTime: 0,
         refreshInterval: null,
+        currentSort: 'daily',        // Default sort by daily income
+        currentFilter: 'all',        // Default show all stocks
+        showUtilityStocks: false,    // Default hide utility stocks
 
         // Initialize module
         async init() {

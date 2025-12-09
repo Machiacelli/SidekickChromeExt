@@ -385,15 +385,13 @@
                             " title="Options">⚙️</button>
                             <div class="dropdown-content" style="
                                 display: none;
-                                position: absolute;
+                                position: fixed;
                                 background: #333;
                                 min-width: 120px;
                                 box-shadow: 0px 8px 16px rgba(0,0,0,0.3);
                                 z-index: 10001;
                                 border-radius: 4px;
                                 border: 1px solid #555;
-                                top: 100%;
-                                right: 0;
                             ">
                                 <button class="pin-btn" style="
                                     background: none;
@@ -567,21 +565,31 @@
                     // Smart positioning: prevent clipping at edges
                     if (!isVisible) {
                         setTimeout(() => {
-                            const dropdownRect = dropdownContent.getBoundingClientRect();
-                            const notepadRect = notepadElement.getBoundingClientRect();
+                            const buttonRect = dropdownBtn.getBoundingClientRect();
                             const viewportWidth = window.innerWidth;
+                            const viewportHeight = window.innerHeight;
+
+                            // Position below the button
+                            let top = buttonRect.bottom + 2;
+                            let left = buttonRect.right - 120; // Align right edge with button
 
                             // Check if dropdown clips on the right
-                            if (dropdownRect.right > viewportWidth) {
-                                dropdownContent.style.right = '0';
-                                dropdownContent.style.left = 'auto';
+                            if (left + 120 > viewportWidth) {
+                                left = viewportWidth - 120 - 5;
                             }
 
                             // Check if dropdown clips on the left
-                            if (dropdownRect.left < 0) {
-                                dropdownContent.style.left = '0';
-                                dropdownContent.style.right = 'auto';
+                            if (left < 5) {
+                                left = 5;
                             }
+
+                            // Check if clips on bottom
+                            if (top + 100 > viewportHeight) {
+                                top = buttonRect.top - 100 - 2; // Position above button
+                            }
+
+                            dropdownContent.style.top = `${top}px`;
+                            dropdownContent.style.left = `${left}px`;
                         }, 0);
                     }
                 });
