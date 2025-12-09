@@ -686,7 +686,7 @@
                 }
 
                 const bankBalance = data.city_bank?.amount || 0;
-                console.log(`✅ Bank balance: $${bankBalance.toLocaleString('en-US')}`);
+                console.log(`✅ Bank balance: $${bankBalance.toLocaleString('en-US', { maximumFractionDigits: 0 })}`);
                 this.cachedBankBalance = bankBalance;
                 return this.cachedBankBalance;
             } catch (error) {
@@ -996,11 +996,11 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
                         <div>
                             <span style="color: #888;">Total Value:</span>
-                            <span style="color: #4CAF50; font-weight: bold; margin-left: 4px;">$${totalValue.toLocaleString('en-US')}</span>
+                            <span style="color: #4CAF50; font-weight: bold; margin-left: 4px;">$${totalValue.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
                         </div>
                         <div>
                             <span style="color: #888;">Daily Benefits:</span>
-                            <span style="color: #2196F3; font-weight: bold; margin-left: 4px;">$${totalDailyBenefit.toLocaleString('en-US')}</span>
+                            <span style="color: #2196F3; font-weight: bold; margin-left: 4px;">$${totalDailyBenefit.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
                         </div>
                         <div>
                             <span style="color: #888;">Stocks Owned:</span>
@@ -1064,10 +1064,10 @@
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; color: #ccc; font-size: 10px; margin-bottom: 4px;">
                         <div>
-                            <span style="color: #666;">Price:</span> $${currentPrice.toLocaleString('en-US')}
+                            <span style="color: #666;">Price:</span> $${currentPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                         </div>
                         <div>
-                            <span style="color: #666;">Owned:</span> ${sharesOwned.toLocaleString('en-US')}
+                            <span style="color: #666;">Owned:</span> ${sharesOwned.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                         </div>
                     </div>
                     
@@ -1077,7 +1077,7 @@
                     
                     <div style="font-size: 10px;">
                         <span style="color: #666;">Daily:</span>
-                        <span style="color: #2196F3;">$${benefitPerDay.toLocaleString('en-US')}</span>
+                        <span style="color: #2196F3;">$${benefitPerDay.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
                         ${currentIncrements > 0 ? `<span style="color: #4CAF50; margin-left: 8px;">✓ ${currentIncrements}/${maxIncrements}</span>` : ''}
                     </div>
                 </div>
