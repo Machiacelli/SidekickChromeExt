@@ -1059,7 +1059,12 @@
                             <span style="color: #2196F3;">${acronym}</span>
                             <span style="color: #888; font-size: 10px; margin-left: 4px;">${name}</span>
                         </div>
-                        <div style="font-weight: bold; color: ${roiColor};">${roi.toFixed(2)}%</div>
+                        <div style="text-align: right; min-width: 80px;">
+                            <div style="font-size: 10px; color: #888; margin-bottom: 2px;">Daily Income</div>
+                            <div style="font-weight: bold; color: #4CAF50; font-size: 11px;">
+                                $${benefitPerDay.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                            </div>
+                        </div>
                     </div>
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; color: #ccc; font-size: 10px; margin-bottom: 4px;">
