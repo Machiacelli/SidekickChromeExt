@@ -295,52 +295,6 @@
                     </div>
                 </div>
                 
-                <!-- Filter and Sort Controls -->
-                <div class="stock-controls" style="
-                    background: #252525;
-                    padding: 8px 12px;
-                    display: flex;
-                    gap: 8px;
-                    align-items: center;
-                    border-bottom: 1px solid #333;
-                    flex-wrap: wrap;
-                ">
-                    <div style="display: flex; gap: 4px; align-items: center;">
-                        <span style="font-size: 10px; color: #888;">Sort:</span>
-                        <select class="stock-sort-select" style="
-                            background: #1f1f1f;
-                            border: 1px solid #444;
-                            color: #fff;
-                            padding: 4px 8px;
-                            border-radius: 4px;
-                            font-size: 10px;
-                            cursor: pointer;
-                        ">
-                            <option value="daily">Daily Income</option>
-                            <option value="roi">ROI %</option>
-                            <option value="price">Price</option>
-                            <option value="owned">Shares Owned</option>
-                        </select>
-                    </div>
-                    
-                    <div style="display: flex; gap: 4px; align-items: center;">
-                        <span style="font-size: 10px; color: #888;">Filter:</span>
-                        <select class="stock-filter-select" style="
-                            background: #1f1f1f;
-                            border: 1px solid #444;
-                            color: #fff;
-                            padding: 4px 8px;
-                            border-radius: 4px;
-                            font-size: 10px;
-                            cursor: pointer;
-                        ">
-                            <option value="all">All Stocks</option>
-                            <option value="owned">Owned Only</option>
-                            <option value="not-owned">Not Owned</option>
-                        </select>
-                    </div>
-                </div>
-                
                 <div class="stock-content" style="
                     flex: 1;
                     overflow-y: auto;
@@ -1098,8 +1052,55 @@
                         </div>
                     </div>
                 </div>
-                
-                <div style="flex: 1; overflow-y: auto; padding: 10px; scrollbar-width: none; -ms-overflow-style: none;">
+        </div>
+        
+        <!-- Filter and Sort Controls -->
+        <div class="stock-controls" style="
+            background: #1f1f1f;
+            padding: 8px 12px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            flex-wrap: wrap;
+        ">
+            <div style="display: flex; gap: 4px; align-items: center;">
+                <span style="font-size: 10px; color: #888;">Sort:</span>
+                <select class="stock-sort-select" style="
+                    background: #252525;
+                    border: 1px solid #444;
+                    color: #fff;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 10px;
+                    cursor: pointer;
+                ">
+                    <option value="daily">Daily Income</option>
+                    <option value="roi">ROI %</option>
+                    <option value="price">Price</option>
+                    <option value="owned">Shares Owned</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 4px; align-items: center;">
+                <span style="font-size: 10px; color: #888;">Filter:</span>
+                <select class="stock-filter-select" style="
+                    background: #252525;
+                    border: 1px solid #444;
+                    color: #fff;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 10px;
+                    cursor: pointer;
+                ">
+                    <option value="all">All Stocks</option>
+                    <option value="owned">Owned Only</option>
+                    <option value="not-owned">Not Owned</option>
+                </select>
+            </div>
+        </div>
+        
+        <div style="flex: 1; overflow-y: auto; padding: 10px; scrollbar-width: none; -ms-overflow-style: none;">
                     <style>
                         div[style*="flex: 1; overflow-y: auto; padding: 10px"]::-webkit-scrollbar {
                             display: none;
@@ -1147,8 +1148,8 @@
                         </div>
                         <div style="text-align: right; min-width: 80px;">
                             <div style="font-size: 10px; color: #888; margin-bottom: 2px;">Daily Income</div>
-                            <div style="font-weight: bold; color: #4CAF50; font-size: 11px;">
-                                $${benefitPerDay.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                            <div style="font-weight: bold; color: ${sharesOwned > 0 ? '#4CAF50' : '#666'}; font-size: 11px;">
+                                ${sharesOwned > 0 ? '$' : '~$'}${benefitPerDay.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                             </div>
                         </div>
                     </div>
