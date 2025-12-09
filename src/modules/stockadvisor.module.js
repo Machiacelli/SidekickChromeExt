@@ -295,6 +295,52 @@
                     </div>
                 </div>
                 
+                <!-- Filter and Sort Controls -->
+                <div class="stock-controls" style="
+                    background: #252525;
+                    padding: 8px 12px;
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    border-bottom: 1px solid #333;
+                    flex-wrap: wrap;
+                ">
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                        <span style="font-size: 10px; color: #888;">Sort:</span>
+                        <select class="stock-sort-select" style="
+                            background: #1f1f1f;
+                            border: 1px solid #444;
+                            color: #fff;
+                            padding: 4px 8px;
+                            border-radius: 4px;
+                            font-size: 10px;
+                            cursor: pointer;
+                        ">
+                            <option value="daily">Daily Income</option>
+                            <option value="roi">ROI %</option>
+                            <option value="price">Price</option>
+                            <option value="owned">Shares Owned</option>
+                        </select>
+                    </div>
+                    
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                        <span style="font-size: 10px; color: #888;">Filter:</span>
+                        <select class="stock-filter-select" style="
+                            background: #1f1f1f;
+                            border: 1px solid #444;
+                            color: #fff;
+                            padding: 4px 8px;
+                            border-radius: 4px;
+                            font-size: 10px;
+                            cursor: pointer;
+                        ">
+                            <option value="all">All Stocks</option>
+                            <option value="owned">Owned Only</option>
+                            <option value="not-owned">Not Owned</option>
+                        </select>
+                    </div>
+                </div>
+                
                 <div class="stock-content" style="
                     flex: 1;
                     overflow-y: auto;
@@ -339,6 +385,8 @@
             const header = windowElement.querySelector('.stock-header');
             const closeBtn = windowElement.querySelector('.stock-close-btn');
             const menuBtn = windowElement.querySelector('.stock-menu-btn');
+            const sortSelect = windowElement.querySelector('.stock-sort-select');
+            const filterSelect = windowElement.querySelector('.stock-filter-select');
 
             // Close button
             closeBtn?.addEventListener('click', async () => {
@@ -365,6 +413,20 @@
                 e.stopPropagation();
                 console.log("📈 Menu button clicked");
                 this.showMenuDropdown(menuBtn);
+            });
+
+            // Sort dropdown
+            sortSelect?.addEventListener('change', (e) => {
+                this.currentSort = e.target.value;
+                console.log("📈 Sort changed to:", this.currentSort);
+                this.refreshStockDisplay();
+            });
+
+            // Filter dropdown
+            filterSelect?.addEventListener('change', (e) => {
+                this.currentFilter = e.target.value;
+                console.log("📈 Filter changed to:", this.currentFilter);
+                this.refreshStockDisplay();
             });
 
             // Make draggable
@@ -934,24 +996,48 @@
 
                 console.log(`📈 Filtered to ${allMetrics.length} income-generating stocks (excluded ${EXCLUDED_STOCKS.size} utility stocks)`);
 
-                // Sort by ROI descending
-                allMetrics.sort((a, b) => b.roi - a.roi);
+                // Apply filtering
+                let filteredMetrics = allMetrics;
+                if (this.currentFilter === 'owned') {
+                    filteredMetrics = allMetrics.filter(m => m.sharesOwned > 0);
+                } else if (this.currentFilter === 'not-owned') {
+                    filteredMetrics = allMetrics.filter(m => m.sharesOwned === 0);
+                }
+
+                // Apply sorting
+                const sortBy = this.currentSort || 'daily';
+                if (sortBy === 'daily') {
+                    filteredMetrics.sort((a, b) => b.benefitPerDay - a.benefitPerDay);
+                } else if (sortBy === 'roi') {
+                    filteredMetrics.sort((a, b) => b.roi - a.roi);
+                } else if (sortBy === 'price') {
+                    filteredMetrics.sort((a, b) => a.currentPrice - b.currentPrice);
+                } else if (sortBy === 'owned') {
+                    filteredMetrics.sort((a, b) => b.sharesOwned - a.sharesOwned);
+                }
+
+                console.log(`📈 Displaying ${filteredMetrics.length} stocks (filter: ${this.currentFilter || 'all'}, sort: ${sortBy})`);
 
                 // Render UI
-                this.renderStockUI(allMetrics, portfolio);
+                this.renderStockUI(filteredMetrics, portfolio);
 
             } catch (error) {
                 console.error("Failed to refresh stock data:", error);
                 contentEl.innerHTML = `
-                    <div style="padding: 20px; text-align: center; color: #f44336;">
-                        <div style="font-size: 32px; margin-bottom: 10px;">⚠️</div>
-                        <div>Failed to load stock data</div>
-                        <div style="font-size: 12px; color: #888; margin-top: 10px;">${error.message}</div>
-                    </div>
-                `;
+            <div style="padding: 20px; text-align: center; color: #f44336;">
+                <div style="font-size: 32px; margin-bottom: 10px;">⚠️</div>
+                <div>Failed to load stock data</div>
+                <div style="font-size: 12px; color: #888; margin-top: 10px;">${error.message}</div>
+            </div>
+        `;
             }
         },
 
+        // Refresh display with current data (re-applies sort/filter)
+        async refreshStockDisplay() {
+            // Re-run refresh with cached data
+            await this.refreshData(false);
+        },
         // Render stock UI
         renderStockUI(metrics, portfolio) {
             const contentEl = document.querySelector('.stock-content');
