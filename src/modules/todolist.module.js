@@ -2032,6 +2032,27 @@
                     dropdownContent.style.display = isVisible ? 'none' : 'block';
 
                     console.log('🔧 Dropdown toggled to:', dropdownContent.style.display);
+
+                    // Smart positioning: prevent clipping at edges
+                    if (!isVisible) {
+                        setTimeout(() => {
+                            const dropdownRect = dropdownContent.getBoundingClientRect();
+                            const todoRect = element.getBoundingClientRect();
+                            const viewportWidth = window.innerWidth;
+
+                            // Check if dropdown clips on the right
+                            if (dropdownRect.right > viewportWidth) {
+                                dropdownContent.style.right = '0';
+                                dropdownContent.style.left = 'auto';
+                            }
+
+                            // Check if dropdown clips on the left
+                            if (dropdownRect.left < 0) {
+                                dropdownContent.style.left = '0';
+                                dropdownContent.style.right = 'auto';
+                            }
+                        }, 0);
+                    }
                 });
 
                 // Handle option clicks
