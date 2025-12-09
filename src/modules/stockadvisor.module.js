@@ -1263,6 +1263,29 @@
             if (stockWindow) {
                 stockWindow.appendChild(menu);
                 console.log("📈 Dropdown appended to Stock Advisor window");
+
+                // Smart positioning: check if menu would clip outside window bounds
+                setTimeout(() => {
+                    const menuRect = menu.getBoundingClientRect();
+                    const stockRect = stockWindow.getBoundingClientRect();
+                    const viewportWidth = window.innerWidth;
+
+                    // Check if menu clips on the right side
+                    if (menuRect.right > viewportWidth || menuRect.right > stockRect.right) {
+                        // Position from left instead of right
+                        const leftPos = Math.max(5, stockRect.width - menuRect.width - 5);
+                        menu.style.right = 'auto';
+                        menu.style.left = `${leftPos}px`;
+                        console.log("📈 Repositioned menu to left:", leftPos);
+                    }
+
+                    // Check if menu clips on the left side  
+                    if (menuRect.left < 0 || menuRect.left < stockRect.left) {
+                        menu.style.left = '5px';
+                        menu.style.right = 'auto';
+                        console.log("📈 Repositioned menu to avoid left clip");
+                    }
+                }, 0);
             } else {
                 document.body.appendChild(menu);
                 console.log("📈 WARNING: Appended to body (stockWindow not found)");
