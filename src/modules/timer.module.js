@@ -1257,7 +1257,7 @@
                                 background: #333;
                                 min-width: 120px;
                                 box-shadow: 0px 8px 16px rgba(0,0,0,0.3);
-                                z-index: 1001;
+                                z-index: 10001;
                                 border-radius: 4px;
                                 border: 1px solid #555;
                                 top: 100%;

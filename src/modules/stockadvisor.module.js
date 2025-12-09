@@ -1233,7 +1233,7 @@
                 border: 1px solid rgba(255, 255, 255, 0.12);
                 border-radius: 6px;
                 padding: 4px;
-                z-index: 10;
+                z-index: 10001;
                 box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7);
                 backdrop-filter: blur(10px);
                 min-width: 120px;
