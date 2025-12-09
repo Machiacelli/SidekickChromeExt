@@ -311,11 +311,69 @@
                     await window.SidekickModules.Core.ChromeStorage.set('torn_events', events);
                     await window.SidekickModules.Core.ChromeStorage.set('torn_events_update', currentTime);
 
+                    // AUTO-CORRECT hardcoded dates using API data
+                    await this.autoCorrectEventDates(events);
+
                     console.log(`✅ Event Ticker: Fetched ${events.length} Torn events`);
                     this.calculateNearestEvent();
                 }
             } catch (error) {
                 console.error('❌ Event Ticker: Failed to fetch calendar:', error);
+            }
+        },
+
+        // Auto-correct hardcoded dates when API provides better data
+        async autoCorrectEventDates(apiEvents) {
+            try {
+                const storage = await window.SidekickModules.Core.ChromeStorage.get('event_calendar_overrides');
+                const overrides = storage?.event_calendar_overrides || {};
+                let correctionsMade = 0;
+
+                for (const apiEvent of apiEvents) {
+                    if (!apiEvent.title || !apiEvent.start) continue;
+
+                    const normalizedApiName = this.normalizeEventName(apiEvent.title);
+
+                    // Find matching hardcoded event
+                    const hardcodedEvent = this.events.find(e =>
+                        this.normalizeEventName(e.name) === normalizedApiName
+                    );
+
+                    if (hardcodedEvent) {
+                        // Convert API timestamps to month/day
+                        const apiStartDate = new Date(apiEvent.start * 1000);
+                        const apiEndDate = apiEvent.end ? new Date(apiEvent.end * 1000) : apiStartDate;
+
+                        const apiDates = {
+                            startMonth: apiStartDate.getUTCMonth() + 1,
+                            startDay: apiStartDate.getUTCDate(),
+                            endMonth: apiEndDate.getUTCMonth() + 1,
+                            endDay: apiEndDate.getUTCDate()
+                        };
+
+                        // Check if dates differ from hardcoded
+                        const datesDiffer =
+                            apiDates.startMonth !== hardcodedEvent.startMonth ||
+                            apiDates.startDay !== hardcodedEvent.startDay ||
+                            apiDates.endMonth !== hardcodedEvent.endMonth ||
+                            apiDates.endDay !== hardcodedEvent.endDay;
+
+                        if (datesDiffer) {
+                            overrides[normalizedApiName] = apiDates;
+                            correctionsMade++;
+
+                            console.log(`📅 AUTO-CORRECTED "${hardcodedEvent.name}": ${hardcodedEvent.startMonth}/${hardcodedEvent.startDay} → ${apiDates.startMonth}/${apiDates.startDay}`);
+                        }
+                    }
+                }
+
+                if (correctionsMade > 0) {
+                    await window.SidekickModules.Core.ChromeStorage.set('event_calendar_overrides', overrides);
+                    console.log(`✅ Auto-corrected ${correctionsMade} event date(s) from API`);
+                }
+
+            } catch (error) {
+                console.error('❌ Failed to auto-correct event dates:', error);
             }
         },
 
