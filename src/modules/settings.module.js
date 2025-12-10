@@ -908,6 +908,16 @@
                 console.error('🔊 Notification sound toggle not found!');
             }
 
+            // Load other notification settings
+            if (notifAutoDismissCheckbox) {
+                notifAutoDismissCheckbox.checked = notifSettings.autoDismiss !== false;
+            }
+            if (notifDurationSlider) {
+                const duration = (notifSettings.duration || 5000) / 1000;
+                notifDurationSlider.value = duration;
+                notifDurationDisplay.textContent = `${duration}s`;
+            }
+
             if (notifDurationSlider) {
                 notifDurationSlider.addEventListener('input', () => {
                     notifDurationDisplay.textContent = `${notifDurationSlider.value}s`;
