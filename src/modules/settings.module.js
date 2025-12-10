@@ -895,10 +895,11 @@
                         await window.SidekickModules.Core.ChromeStorage.set('sidekick_notifications', settings);
                         this.showStatus(notifStatusDiv, 'Notification settings saved!', 'success');
 
+                        // Show notification (which will play sound if enabled)
                         if (window.SidekickModules.Core.NotificationSystem) {
                             window.SidekickModules.Core.NotificationSystem.show(
-                                'Notification Settings',
-                                'Settings saved successfully',
+                                'Settings Saved',
+                                'Notification settings updated successfully!',
                                 'success',
                                 3000
                             );
@@ -1026,7 +1027,11 @@
 
                 if (notifSoundToggle) {
                     const isEnabled = notifSettings.soundEnabled || false;
-                    notifSoundToggle.dataset.active = isEnabled;
+                    if (isEnabled) {
+                        notifSoundToggle.classList.add('active');
+                    } else {
+                        notifSoundToggle.classList.remove('active');
+                    }
                     const track = notifSoundToggle.querySelector('.toggle-track');
                     const thumb = notifSoundToggle.querySelector('.toggle-thumb');
                     this.updateToggleVisual(track, thumb, isEnabled);
