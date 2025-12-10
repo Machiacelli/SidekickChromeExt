@@ -133,24 +133,21 @@
                     return null;
                 }
 
-                const response = await window.SidekickModules.Core.SafeMessageSender.sendToBackground({
-                    action: 'apiRequest',
-                    endpoint: 'user',
-                    selections: 'battlestats',
-                    key: apiKey
-                });
+                // Direct fetch to Torn API
+                const response = await fetch(`https://api.torn.com/user/?selections=battlestats&key=${apiKey}`);
+                const data = await response.json();
 
-                if (response.error) {
-                    console.error("📊 API error:", response.error);
+                if (data.error) {
+                    console.error("📊 API error:", data.error);
                     return null;
                 }
 
                 return {
-                    strength: response.strength || 0,
-                    speed: response.speed || 0,
-                    defense: response.defense || 0,
-                    dexterity: response.dexterity || 0,
-                    total: response.total || 0
+                    strength: data.strength || 0,
+                    speed: data.speed || 0,
+                    defense: data.defense || 0,
+                    dexterity: data.dexterity || 0,
+                    total: data.total || 0
                 };
             } catch (error) {
                 console.error("📊 Error fetching stats:", error);
