@@ -17,7 +17,7 @@
         hawaii: { x: 32.8, y: 52.2 },          // ✅ Fine-tuned (up)
         uk: { x: 74.4, y: 35.0 },              // ✅ Fine-tuned (down)
         argentina: { x: 58.2, y: 73.5 },       // ✅ Fine-tuned (up 5cm total)
-        switzerland: { x: 77.3, y: 39.0 },     // ✅ Fine-tuned (down 1cm)
+        switzerland: { x: 77.3, y: 37.0 },     // ✅ Fine-tuned (adjusted up)
         japan: { x: 15.1, y: 44.3 },           // ✅ User clicked
         china: { x: 8.4, y: 42.8 },            // ✅ Fine-tuned (down)
         uae: { x: 90.1, y: 50.9 },             // ✅ User clicked
