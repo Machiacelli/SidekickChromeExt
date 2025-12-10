@@ -281,7 +281,10 @@
             `;
             header.innerHTML = `
                 <span>📊 Stats Tracker</span>
-                <button class="close-btn" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0 5px;">×</button>
+                <div style="display: flex; gap: 5px;">
+                    <button class="cog-btn" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 16px; cursor: pointer; padding: 2px 6px; border-radius: 3px; position: relative;">⚙️</button>
+                    <button class="close-btn" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0 5px;">×</button>
+                </div>
             `;
 
             // Content area
@@ -305,6 +308,93 @@
             // Close button
             header.querySelector('.close-btn').addEventListener('click', () => {
                 this.disable();
+            });
+
+            // Cogwheel dropdown menu
+            const cogBtn = header.querySelector('.cog-btn');
+            cogBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+
+                // Remove existing dropdown if present
+                const existingDropdown = this.window.querySelector('.stats-dropdown');
+                if (existingDropdown) {
+                    existingDropdown.remove();
+                    return;
+                }
+
+                // Create dropdown menu
+                const dropdown = document.createElement('div');
+                dropdown.className = 'stats-dropdown';
+                dropdown.style.cssText = `
+                    position: absolute;
+                    top: 40px;
+                    right: 35px;
+                    background: #1a1a1a;
+                    border: 1px solid #444;
+                    border-radius: 4px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+                    z-index: 10000;
+                    min-width: 120px;
+                `;
+
+                dropdown.innerHTML = `
+                    <button class="dropdown-option" data-action="refresh" style="
+                        width: 100%;
+                        padding: 8px 12px;
+                        background: none;
+                        border: none;
+                        color: #fff;
+                        text-align: left;
+                        cursor: pointer;
+                        font-size: 12px;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                    ">
+                        <span>🔄</span> Refresh Stats
+                    </button>
+                `;
+
+                this.window.appendChild(dropdown);
+
+                // Add hover effect
+                const options = dropdown.querySelectorAll('.dropdown-option');
+                options.forEach(option => {
+                    option.addEventListener('mouseenter', () => {
+                        option.style.background = 'rgba(76, 175, 80, 0.2)';
+                    });
+                    option.addEventListener('mouseleave', () => {
+                        option.style.background = 'none';
+                    });
+                    option.addEventListener('click', async (e) => {
+                        const action = option.dataset.action;
+                        dropdown.remove();
+
+                        if (action === 'refresh') {
+                            console.log('📊 Manually refreshing stats...');
+                            await this.updateStats();
+                            if (window.SidekickModules?.Core?.NotificationSystem) {
+                                window.SidekickModules.Core.NotificationSystem.show(
+                                    'Stats Refreshed',
+                                    'Battle stats updated successfully',
+                                    'success',
+                                    2000
+                                );
+                            }
+                        }
+                    });
+                });
+
+                // Close dropdown when clicking outside
+                setTimeout(() => {
+                    const closeDropdown = (e) => {
+                        if (!dropdown.contains(e.target) && e.target !== cogBtn) {
+                            dropdown.remove();
+                            document.removeEventListener('click', closeDropdown);
+                        }
+                    };
+                    document.addEventListener('click', closeDropdown);
+                }, 0);
             });
 
             // Track resize
