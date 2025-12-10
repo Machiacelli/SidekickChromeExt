@@ -8,19 +8,20 @@
     console.log('✈️ Loading TravelArc Module...');
 
     // Map coordinates as percentages (x%, y%) on the map image
+    // Coordinates obtained by clicking on map locations
     const COORDS = {
-        torn: { x: 38.0, y: 17.0 },
-        mexico: { x: 35.0, y: 16.7 },
-        cayman: { x: 40.8, y: 19.4 },
-        canada: { x: 41.0, y: 13.4 },
-        hawaii: { x: 24.8, y: 19.1 },
-        uk: { x: 57.6, y: 11.3 },
-        argentina: { x: 45.4, y: 31.1 },
-        switzerland: { x: 59.7, y: 12.6 },
-        japan: { x: 10.9, y: 15.4 },
-        china: { x: 6.1, y: 14.2 },
-        uae: { x: 69.4, y: 18.0 },
-        south_africa: { x: 63.9, y: 29.3 }
+        torn: { x: 50.4, y: 45.6 },            // ✅ User clicked
+        mexico: { x: 35.0, y: 16.7 },          // ⚠️ Estimate - needs update
+        cayman: { x: 40.8, y: 19.4 },          // ⚠️ Estimate - needs update
+        canada: { x: 41.0, y: 13.4 },          // ⚠️ Estimate - needs update
+        hawaii: { x: 24.8, y: 19.1 },          // ⚠️ Estimate - needs update
+        uk: { x: 57.6, y: 11.3 },              // ⚠️ Estimate - needs update
+        argentina: { x: 45.4, y: 31.1 },       // ⚠️ Estimate - needs update
+        switzerland: { x: 77.3, y: 38.8 },     // ✅ User clicked
+        japan: { x: 10.9, y: 15.4 },           // ⚠️ Estimate - needs update
+        china: { x: 6.1, y: 14.2 },            // ⚠️ Estimate - needs update
+        uae: { x: 69.4, y: 18.0 },             // ⚠️ Estimate - needs update
+        south_africa: { x: 63.9, y: 29.3 }     // ⚠️ Estimate - needs update
     };
 
     // Map destination names to coordinate keys
