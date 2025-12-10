@@ -877,16 +877,21 @@
             const saveNotifBtn = panel.querySelector('#sidekick-save-notif-settings');
             const notifStatusDiv = panel.querySelector('#sidekick-notif-status');
 
-            // Setup notification sound toggle interaction (MISSING - THIS IS THE BUG!)
+            // Setup notification sound toggle interaction
             if (notifSoundToggle) {
+                console.log('🔊 Setting up notification sound toggle click handler');
                 notifSoundToggle.addEventListener('click', () => {
+                    console.log('🔊 Toggle clicked!');
                     const track = notifSoundToggle.querySelector('.toggle-track');
                     const thumb = notifSoundToggle.querySelector('.toggle-thumb');
                     const isActive = notifSoundToggle.dataset.active === 'true';
+                    console.log('🔊 Current state:', isActive, '→ New state:', !isActive);
 
                     notifSoundToggle.dataset.active = !isActive;
                     this.updateToggleVisual(track, thumb, !isActive);
                 });
+            } else {
+                console.error('🔊 Notification sound toggle not found!');
             }
 
             if (notifDurationSlider) {
