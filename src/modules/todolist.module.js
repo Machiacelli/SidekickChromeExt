@@ -249,38 +249,12 @@
 
         // Reset daily tasks data only (no UI refresh)
         async resetDailyTasksData() {
-            console.log("🔄 Resetting daily tasks data only");
+            console.log("🔄 Resetting daily tasks data");
 
-            // CRITICAL FIX: Update xantaken baseline to current API value at midnight
-            // The lifetime xantaken stat is cumulative (never resets in Torn)
-            // We need to fetch the CURRENT value and set it as today's baseline
-            // This way, any xanax used today will be: current - baseline
-            let newXantakenBaseline = this.apiBaselines.xantaken; // Fallback to old value
-
-            // Try to get the current xantaken value from the API to use as the new baseline
-            try {
-                console.log('💊 Fetching current xantaken value for new baseline...');
-                const apiKey = await window.SidekickModules?.Settings?.getApiKey();
-                if (apiKey && window.SidekickModules?.Core?.SafeMessageSender?.isExtensionContextValid()) {
-                    const response = await window.SidekickModules.Core.SafeMessageSender.sendToBackground({
-                        action: 'fetchTornApi',
-                        apiKey: apiKey,
-                        selections: ['personalstats']
-                    });
-                    if (response.success && response.personalstats?.xantaken !== undefined) {
-                        newXantakenBaseline = response.personalstats.xantaken;
-                        console.log('✅ Fetched new xantaken baseline from API:', newXantakenBaseline);
-                    }
-                }
-            } catch (error) {
-                console.warn('⚠️ Could not fetch current xantaken for baseline update:', error.message);
-                console.warn('⚠️ Using preserved value as fallback');
-            }
-
+            // Force reset ALL tasks to incomplete state
             for (const taskKey in this.dailyTasks) {
                 const task = this.dailyTasks[taskKey];
 
-                // Force reset for all daily tasks
                 console.log(`🔄 Resetting task: ${task.name} (was completed: ${task.completed})`);
                 task.completed = false;
 
@@ -292,23 +266,18 @@
                 }
             }
 
-            // Clear all API baselines
+            // Clear ALL API baselines - will be re-established on next API check
             this.apiBaselines = {};
-
-            // Set the NEW xantaken baseline (today's starting point)
-            if (newXantakenBaseline !== undefined && newXantakenBaseline !== null) {
-                this.apiBaselines.xantaken = newXantakenBaseline;
-                console.log('✅ Xantaken baseline set for new day:', newXantakenBaseline);
-            } else {
-                console.log('ℹ️ No xantaken baseline available (will be set on next API check)');
-            }
+            console.log("🧹 Cleared all API baselines - will be re-established on next API check");
 
             // Set last reset date to current UTC date (not time)
             const now = new Date();
             this.lastResetDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
             console.log("✅ Daily tasks data reset complete for:", this.lastResetDate.toISOString());
-            console.log("🔄 All daily tasks reset to incomplete state");
+            console.log("🔄 All daily tasks reset to incomplete state (0/max)");
+
+            await this.saveDailyTasks();
         },
 
 
@@ -831,22 +800,15 @@
             });
 
             // 🆕 PRIORITY: Initialize xantaken baseline if not set
-            if (personalstats && personalstats.xantaken !== undefined) {
-                if (this.apiBaselines.xantaken === undefined || this.apiBaselines.xantaken === null) {
-                    this.apiBaselines.xantaken = personalstats.xantaken;
-                    console.log('💊 Initialized Xanax baseline:', this.apiBaselines.xantaken);
-                    // Save the baseline immediately
-                    this.saveDailyTasks();
-                }
-            }
-
-            // 🆕 PRIORITY: Update Xanax count from xantaken (instant updates)
-            if (personalstats && personalstats.xantaken !== undefined) {
+            // 🆕 CRITICAL: Xanax tracking via lifetime xantaken stat
+            // xantaken is a CUMULATIVE stat that never resets in Torn
+            // We track daily usage by comparing current value to baseline (set at midnight)
+            if (typeof personalstats?.xantaken === 'number') {
                 const currentXan = personalstats.xantaken;
 
-                // CRITICAL: If baseline is missing, initialize it NOW instead of using current value
-                if (this.apiBaselines.xantaken === undefined || this.apiBaselines.xantaken === null) {
-                    console.warn('⚠️ Xanax baseline was missing during update! Initializing to current value.');
+                // If no baseline exists (after reset), establish it now
+                if (this.apiBaselines.xantaken === undefined) {
+                    console.log('💊 Establishing new xantaken baseline:', currentXan);
                     this.apiBaselines.xantaken = currentXan;
                     this.saveDailyTasks();
                 }
@@ -856,11 +818,14 @@
                 const xanClamped = Math.min(3, xanUsedToday);
 
                 const xanTask = this.dailyTasks.xanaxDose;
+
+                console.log(`💊 Xanax calculation: current=${currentXan}, baseline=${baselineXan}, used today=${xanUsedToday}, clamped=${xanClamped}`);
+
                 if (xanTask.currentCount !== xanClamped || xanTask.completed !== (xanClamped >= 3)) {
                     xanTask.currentCount = xanClamped;
                     xanTask.completed = xanClamped >= 3;
                     hasUpdates = true;
-                    console.log(`💊 Updated Xanax from xantaken: ${xanClamped}/3 (total lifetime: ${currentXan}, baseline: ${baselineXan}, used today: ${xanUsedToday})`);
+                    console.log(`💊 Updated Xanax: ${xanClamped}/3 (total lifetime: ${currentXan}, baseline: ${baselineXan}, used today: ${xanUsedToday})`);
                 } else {
                     console.log(`💊 Xanax status confirmed: ${xanClamped}/3 (lifetime: ${currentXan}, baseline: ${baselineXan})`);
                 }
