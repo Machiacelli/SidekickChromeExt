@@ -202,6 +202,7 @@
                 console.warn("⚠️ Flight Tracker module not available");
             }
 
+
             // Initialize TravelArc Module
             console.log("🌍 Sidekick: Initializing TravelArc...");
             if (window.SidekickModules.TravelArc?.init) {
@@ -209,6 +210,15 @@
                 console.log("✅ Sidekick: TravelArc initialized");
             } else {
                 console.warn("⚠️ TravelArc module not available");
+            }
+
+            // Initialize Stats Tracker Module
+            console.log("📊 Sidekick: Initializing Stats Tracker...");
+            if (window.SidekickModules.StatsTracker?.init) {
+                await window.SidekickModules.StatsTracker.init();
+                console.log("✅ Sidekick: Stats Tracker initialized");
+            } else {
+                console.warn("⚠️ Stats Tracker module not available");
             }
 
             // Initialize Premium Module
@@ -493,6 +503,10 @@
                 case 'chainTimer':
                     module = window.SidekickModules?.ChainTimer;
                     displayName = 'Chain Timer';
+                    break;
+                case 'statsTracker':
+                    module = window.SidekickModules?.StatsTracker;
+                    displayName = 'Stats Tracker';
                     break;
                 default:
                     console.warn('⚠️ Unknown module type:', moduleType);
