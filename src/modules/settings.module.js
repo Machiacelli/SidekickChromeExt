@@ -701,14 +701,17 @@
             const statusDiv = panel.querySelector('#sidekick-module-status');
             const toggleSwitches = panel.querySelectorAll('.toggle-switch[data-module]');
 
-            // Setup toggle interactions
+            // Setup toggle interactions (EXCLUDE notif-sound which has its own handler!)
             toggleSwitches.forEach(toggle => {
+                // Skip notif-sound toggle - it has specialized handling in attachNotificationsTabListeners
+                if (toggle.dataset.module === 'notif-sound') return;
+
                 toggle.addEventListener('click', () => {
                     const track = toggle.querySelector('.toggle-track');
                     const thumb = toggle.querySelector('.toggle-thumb');
                     const isActive = toggle.dataset.active === 'true';
 
-                    toggle.dataset.active = !isActive;
+                    toggle.dataset.active = (!isActive).toString(); // Convert to STRING!
                     this.updateToggleVisual(track, thumb, !isActive);
                 });
             });
