@@ -877,6 +877,18 @@
             const saveNotifBtn = panel.querySelector('#sidekick-save-notif-settings');
             const notifStatusDiv = panel.querySelector('#sidekick-notif-status');
 
+            // Setup notification sound toggle interaction (MISSING - THIS IS THE BUG!)
+            if (notifSoundToggle) {
+                notifSoundToggle.addEventListener('click', () => {
+                    const track = notifSoundToggle.querySelector('.toggle-track');
+                    const thumb = notifSoundToggle.querySelector('.toggle-thumb');
+                    const isActive = notifSoundToggle.dataset.active === 'true';
+
+                    notifSoundToggle.dataset.active = !isActive;
+                    this.updateToggleVisual(track, thumb, !isActive);
+                });
+            }
+
             if (notifDurationSlider) {
                 notifDurationSlider.addEventListener('input', () => {
                     notifDurationDisplay.textContent = `${notifDurationSlider.value}s`;
@@ -886,7 +898,7 @@
             if (saveNotifBtn) {
                 saveNotifBtn.addEventListener('click', async () => {
                     const settings = {
-                        soundEnabled: notifSoundToggle?.classList.contains('active') || false,
+                        soundEnabled: notifSoundToggle?.dataset.active === 'true',
                         autoDismiss: notifAutoDismissCheckbox.checked,
                         duration: parseInt(notifDurationSlider.value) * 1000
                     };
@@ -1027,11 +1039,7 @@
 
                 if (notifSoundToggle) {
                     const isEnabled = notifSettings.soundEnabled || false;
-                    if (isEnabled) {
-                        notifSoundToggle.classList.add('active');
-                    } else {
-                        notifSoundToggle.classList.remove('active');
-                    }
+                    notifSoundToggle.dataset.active = isEnabled;
                     const track = notifSoundToggle.querySelector('.toggle-track');
                     const thumb = notifSoundToggle.querySelector('.toggle-thumb');
                     this.updateToggleVisual(track, thumb, isEnabled);
