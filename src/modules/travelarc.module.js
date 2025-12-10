@@ -170,10 +170,16 @@
             stop2.setAttribute('offset', '100%');
             stop2.setAttribute('style', 'stop-color:#ffad5a;stop-opacity:1');
 
-            gradient.appendChild(stop1);
-            gradient.appendChild(stop2);
+            this.svgOverlay.appendChild(defs);
+            this.svgOverlay.appendChild(gradient);
             defs.appendChild(gradient);
             this.svgOverlay.appendChild(defs);
+
+            // CRITICAL: Double-check we're still on travel page before modifying DOM
+            if (!this.checkIfTravelPage()) {
+                console.warn('⚠️ Page changed - aborting TravelArc setup');
+                return;
+            }
 
             // Ensure map container is positioned for absolute children
             const mapStyle = getComputedStyle(this.mapContainer);
