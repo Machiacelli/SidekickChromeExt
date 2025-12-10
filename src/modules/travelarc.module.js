@@ -8,20 +8,20 @@
     console.log('✈️ Loading TravelArc Module...');
 
     // Map coordinates as percentages (x%, y%) on the map image
-    // All coordinates obtained by user clicking on map locations
+    // All coordinates obtained by user clicking on map locations + fine-tuned
     const COORDS = {
         torn: { x: 50.4, y: 45.6 },            // ✅ User clicked
         mexico: { x: 46.0, y: 47.6 },          // ✅ User clicked
-        cayman: { x: 53.1, y: 53.9 },          // ✅ User clicked
+        cayman: { x: 53.1, y: 51.9 },          // ✅ Fine-tuned (up)
         canada: { x: 53.4, y: 38.0 },          // ✅ User clicked
-        hawaii: { x: 32.8, y: 54.2 },          // ✅ User clicked
-        uk: { x: 74.4, y: 33.0 },              // ✅ User clicked
-        argentina: { x: 58.2, y: 87.5 },       // ✅ User clicked
-        switzerland: { x: 77.3, y: 36.0 },     // ✅ User clicked (moved up 3px)
+        hawaii: { x: 32.8, y: 52.2 },          // ✅ Fine-tuned (up)
+        uk: { x: 74.4, y: 35.0 },              // ✅ Fine-tuned (down)
+        argentina: { x: 58.2, y: 79.5 },       // ✅ Fine-tuned (up 3cm)
+        switzerland: { x: 77.3, y: 39.0 },     // ✅ Fine-tuned (down 1cm)
         japan: { x: 15.1, y: 44.3 },           // ✅ User clicked
-        china: { x: 8.4, y: 40.8 },            // ✅ User clicked
+        china: { x: 8.4, y: 42.8 },            // ✅ Fine-tuned (down)
         uae: { x: 90.1, y: 50.9 },             // ✅ User clicked
-        south_africa: { x: 82.4, y: 79.9 }     // ✅ User clicked
+        south_africa: { x: 82.4, y: 76.9 }     // ✅ Fine-tuned (up 1cm)
     };
 
     // Map destination names to coordinate keys
