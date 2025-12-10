@@ -869,7 +869,7 @@
         },
 
         // Notifications Tab listeners
-        attachNotificationsTabListeners(panel) {
+        async attachNotificationsTabListeners(panel) {
             const notifSoundToggle = panel.querySelector('.toggle-switch[data-module="notif-sound"]');
             const notifAutoDismissCheckbox = panel.querySelector('#sidekick-notif-auto-dismiss');
             const notifDurationSlider = panel.querySelector('#sidekick-notif-duration');
@@ -877,13 +877,23 @@
             const saveNotifBtn = panel.querySelector('#sidekick-save-notif-settings');
             const notifStatusDiv = panel.querySelector('#sidekick-notif-status');
 
+            // CRITICAL: Load settings FIRST to initialize dataset.active BEFORE attaching click handler!
+            const notifSettings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_notifications') || {};
+
             // Setup notification sound toggle interaction
             if (notifSoundToggle) {
-                console.log('🔊 Setting up notification sound toggle click handler');
+                // Initialize state from loaded settings
+                const initialState = notifSettings.soundEnabled || false;
+                notifSoundToggle.dataset.active = initialState ? 'true' : 'false';
+                const track = notifSoundToggle.querySelector('.toggle-track');
+                const thumb = notifSoundToggle.querySelector('.toggle-thumb');
+                this.updateToggleVisual(track, thumb, initialState);
+
+                console.log('🔊 Toggle initialized with state:', notifSoundToggle.dataset.active);
+
+                // NOW attach click handler with properly initialized state
                 notifSoundToggle.addEventListener('click', () => {
                     console.log('🔊 Toggle clicked!');
-                    const track = notifSoundToggle.querySelector('.toggle-track');
-                    const thumb = notifSoundToggle.querySelector('.toggle-thumb');
                     const isActive = notifSoundToggle.dataset.active === 'true';
                     console.log('🔊 Current state:', isActive, '→ New state:', !isActive);
 
@@ -1036,29 +1046,8 @@
                     chainFlashCheckbox.checked = chainSettings.screenFlashEnabled !== false;
                 }
 
-                // Load Notification settings
-                const notifSettings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_notifications') || {};
-                const notifSoundToggle = document.querySelector('.toggle-switch[data-module="notif-sound"]');
-                const notifAutoDismissCheckbox = document.querySelector('#sidekick-notif-auto-dismiss');
-                const notifDurationSlider = document.querySelector('#sidekick-notif-duration');
-                const notifDurationDisplay = document.querySelector('#sidekick-notif-duration-display');
-
-                if (notifSoundToggle) {
-                    const isEnabled = notifSettings.soundEnabled || false;
-                    // CRITICAL: dataset values must be STRINGS!
-                    notifSoundToggle.dataset.active = isEnabled ? 'true' : 'false';
-                    const track = notifSoundToggle.querySelector('.toggle-track');
-                    const thumb = notifSoundToggle.querySelector('.toggle-thumb');
-                    this.updateToggleVisual(track, thumb, isEnabled);
-                }
-                if (notifAutoDismissCheckbox) {
-                    notifAutoDismissCheckbox.checked = notifSettings.autoDismiss !== false;
-                }
-                if (notifDurationSlider) {
-                    const duration = (notifSettings.duration || 5000) / 1000;
-                    notifDurationSlider.value = duration;
-                    notifDurationDisplay.textContent = `${duration}s`;
-                }
+                // NOTE: Notification settings are now loaded in attachNotificationsTabListeners()
+                // to ensure proper initialization before click handler is attached
 
             } catch (error) {
                 console.error('Failed to load settings:', error);
