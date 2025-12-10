@@ -592,6 +592,24 @@
                     ">
                         <span style="font-size: 13px; filter: grayscale(0.2);">💰</span> Debt Tracker
                     </button>
+                    <button class="module-option" data-module="statstracker" style="
+                        background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+                        border: 1px solid rgba(255,255,255,0.06);
+                        color: rgba(255,255,255,0.92);
+                        padding: 10px 12px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        text-align: left;
+                        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                        font-size: 11px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-weight: 500;
+                        letter-spacing: 0.3px;
+                    ">
+                        <span style="font-size: 13px; filter: grayscale(0.2);">📊</span> Stats Tracker
+                    </button>
                 </div>
             `;
 
@@ -664,6 +682,9 @@
                     break;
                 case 'debttracker':
                     this.createNewDebtTracker();
+                    break;
+                case 'statstracker':
+                    this.createStatsTracker();
                     break;
                 default:
                     this.showNotification('Unknown Module', 'Module type not recognized', 'error');
@@ -817,6 +838,32 @@
             } catch (error) {
                 console.error('Failed to create stock advisor:', error);
                 this.showNotification('Stock Advisor Error', 'Failed to open stock advisor', 'error');
+            }
+        },
+
+        // Create Stats Tracker window
+        async createStatsTracker() {
+            try {
+                if (!window.SidekickModules?.StatsTracker) {
+                    this.showNotification('Stats Tracker Error', 'Stats Tracker module not loaded', 'error');
+                    return;
+                }
+
+                // Initialize if not already done
+                if (!window.SidekickModules.StatsTracker.isInitialized) {
+                    await window.SidekickModules.StatsTracker.init();
+                }
+
+                // Enable stats tracker (creates window)
+                if (!window.SidekickModules.StatsTracker.isEnabled) {
+                    window.SidekickModules.StatsTracker.enable();
+                    this.showNotification('Stats Tracker', 'Stats tracker window opened', 'info');
+                } else {
+                    this.showNotification('Stats Tracker', 'Stats tracker already open', 'info');
+                }
+            } catch (error) {
+                console.error('Failed to create stats tracker:', error);
+                this.showNotification('Stats Tracker Error', 'Failed to open stats tracker', 'error');
             }
         },
 
