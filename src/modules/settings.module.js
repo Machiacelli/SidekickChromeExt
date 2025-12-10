@@ -936,13 +936,13 @@
                         await window.SidekickModules.Core.ChromeStorage.set('sidekick_notifications', settings);
                         this.showStatus(notifStatusDiv, 'Notification settings saved!', 'success');
 
-                        // Show notification (which will play sound if enabled)
+                        // Show notification (which will play sound if enabled and use saved duration)
                         if (window.SidekickModules.Core.NotificationSystem) {
                             window.SidekickModules.Core.NotificationSystem.show(
                                 'Settings Saved',
                                 'Notification settings updated successfully!',
                                 'success',
-                                3000
+                                settings.duration // Use the actual saved duration!
                             );
                         }
                     } catch (error) {
