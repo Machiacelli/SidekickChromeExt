@@ -184,12 +184,12 @@
 
             await this.saveHistory();
 
-            // Refresh UI if window is open
+            console.log("📊 Stats updated for", today);
+
+            // Refresh UI if window is open (AFTER logging)
             if (this.window) {
                 this.refreshDisplay();
             }
-
-            console.log("📊 Stats updated for", today);
         },
 
         // Get today's gains
@@ -282,7 +282,7 @@
             header.innerHTML = `
                 <span>📊 Stats Tracker</span>
                 <div style="display: flex; gap: 5px;">
-                    <button class="cog-btn" style="background: none; border: none; color: white; font-size: 14px; cursor: pointer; padding: 0; opacity: 0.8;">⚙️</button>
+                    <button class="cog-btn" style="background: none; border: none; color: white; font-size: 12px; cursor: pointer; padding: 0; opacity: 0.8;">⚙️</button>
                     <button class="close-btn" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0 5px;">×</button>
                 </div>
             `;
