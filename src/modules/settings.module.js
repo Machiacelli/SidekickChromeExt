@@ -887,7 +887,8 @@
                     const isActive = notifSoundToggle.dataset.active === 'true';
                     console.log('🔊 Current state:', isActive, '→ New state:', !isActive);
 
-                    notifSoundToggle.dataset.active = !isActive;
+                    // CRITICAL: dataset values are STRINGS, not booleans!
+                    notifSoundToggle.dataset.active = !isActive ? 'true' : 'false';
                     this.updateToggleVisual(track, thumb, !isActive);
                 });
             } else {
