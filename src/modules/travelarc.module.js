@@ -1,15 +1,17 @@
 // travelarc.module.js
-// Simplified Travel Arc module - shows animated flight path while flying
-// Based on working console test - simplified to just what works
+// Travel Arc module - shows animated flight path while flying
+// Auto-detects destination and animates plane based on flight progress
 
 (function () {
     'use strict';
 
     console.log('✈️ Loading TravelArc Module...');
 
+    // Map coordinates as percentages (x%, y%) on the map image
     const COORDS = {
+        torn: { x: 38.0, y: 17.0 },
         mexico: { x: 35.0, y: 16.7 },
-        cayman_islands: { x: 40.8, y: 19.4 },
+        cayman: { x: 40.8, y: 19.4 },
         canada: { x: 41.0, y: 13.4 },
         hawaii: { x: 24.8, y: 19.1 },
         uk: { x: 57.6, y: 11.3 },
@@ -18,14 +20,103 @@
         japan: { x: 10.9, y: 15.4 },
         china: { x: 6.1, y: 14.2 },
         uae: { x: 69.4, y: 18.0 },
-        south_africa: { x: 63.9, y: 29.3 },
-        torncity: { x: 38.0, y: 17.0 }
+        south_africa: { x: 63.9, y: 29.3 }
     };
+
+    // Map destination names to coordinate keys
+    const DEST_MAP = {
+        'torn': 'torn',
+        'mexico': 'mexico',
+        'cayman': 'cayman',
+        'cayman islands': 'cayman',
+        'canada': 'canada',
+        'hawaii': 'hawaii',
+        'uk': 'uk',
+        'united kingdom': 'uk',
+        'london': 'uk',
+        'argentina': 'argentina',
+        'switzerland': 'switzerland',
+        'zurich': 'switzerland',
+        'japan': 'japan',
+        'tokyo': 'japan',
+        'china': 'china',
+        'uae': 'uae',
+        'dubai': 'uae',
+        'south africa': 'south_africa',
+        'south_africa': 'south_africa',
+        'cape town': 'south_africa'
+    };
+
+    let animationFrame = null;
+
+    function detectDestination() {
+        // Try to find "Torn to Zurich" text
+        const progressText = document.querySelector('.progressText___qJFfY, [class*="progressText"]');
+        if (progressText) {
+            const text = progressText.textContent || '';
+            console.log('✈️ TravelArc: Progress text found:', text);
+
+            // Parse "Torn to Zurich" or "Zurich to Torn"
+            const match = text.match(/(Torn|torn)\s+to\s+([A-Za-z\s]+)/i) ||
+                text.match(/([A-Za-z\s]+)\s+to\s+(Torn|torn)/i);
+
+            if (match) {
+                let dest = match[2].toLowerCase().trim();
+                // Remove trailing punctuation
+                dest = dest.replace(/[.,;:]$/, '');
+                console.log('✈️ TravelArc: Detected destination:', dest);
+                return { origin: 'torn', destination: dest, returning: match[1].toLowerCase() !== 'torn' };
+            }
+        }
+
+        // Fallback: look for flag images
+        const flags = document.querySelectorAll('img[src*="/flags/fl_"]');
+        if (flags.length >= 2) {
+            const destFlag = flags[1].src;
+            const match = destFlag.match(/fl_([a-z_]+)\.svg/);
+            if (match) {
+                const dest = match[1].replace(/_/g, ' ');
+                console.log('✈️ TravelArc: Detected from flag:', dest);
+                return { origin: 'torn', destination: dest, returning: false };
+            }
+        }
+
+        console.warn('⚠️ TravelArc: Could not detect destination');
+        return { origin: 'torn', destination: 'china', returning: false }; // fallback
+    }
+
+    function detectProgress() {
+        // Try to find progress percentage from aria-valuenow
+        const progressBar = document.querySelector('[role="progressbar"][aria-valuenow]');
+        if (progressBar) {
+            const progress = parseFloat(progressBar.getAttribute('aria-valuenow'));
+            console.log('✈️ TravelArc: Progress:', progress + '%');
+            return progress / 100; // 0.0 to 1.0
+        }
+
+        // Fallback: parse from style
+        const fill = document.querySelector('.fill___Tn02w, [class*="fill"]');
+        if (fill) {
+            const style = fill.getAttribute('style') || '';
+            const match = style.match(/width:\s*([\d.]+)%/);
+            if (match) {
+                const progress = parseFloat(match[1]);
+                console.log('✈️ TravelArc: Progress from style:', progress + '%');
+                return progress / 100;
+            }
+        }
+
+        return 0.5; // default to 50%
+    }
+
+    function getCoordKey(destName) {
+        const normalized = destName.toLowerCase().trim();
+        return DEST_MAP[normalized] || 'china'; // fallback to china
+    }
 
     function mountTravelArc() {
         console.log('✈️ TravelArc: Attempting to mount...');
 
-        // Find the flying container
         const figure = document.querySelector('figure[class*="airspaceScene"]');
         if (!figure) {
             console.log('✈️ TravelArc: No flying container found');
@@ -56,13 +147,11 @@
         figure.insertBefore(mapImg, figure.firstChild);
         console.log('✅ TravelArc: Map inserted');
 
-        // Wait for map to load, then add arc
         mapImg.onload = function () {
             console.log('✅ TravelArc: Map loaded, adding arc...');
             addArcToMap(mapImg, figure);
         };
 
-        // If already loaded, trigger immediately
         if (mapImg.complete) {
             mapImg.onload();
         }
@@ -71,11 +160,15 @@
     }
 
     function addArcToMap(mapImg, figure) {
-        // Detect destination (hardcoded to China for now - you can enhance this later)
-        const originPct = COORDS.torncity;
-        const destPct = COORDS.china;
+        // Detect destination and progress
+        const flightInfo = detectDestination();
+        const originKey = flightInfo.returning ? getCoordKey(flightInfo.destination) : 'torn';
+        const destKey = flightInfo.returning ? 'torn' : getCoordKey(flightInfo.destination);
 
-        console.log('✈️ TravelArc: Creating arc overlay...');
+        const originPct = COORDS[originKey] || COORDS.torn;
+        const destPct = COORDS[destKey] || COORDS.china;
+
+        console.log(`✈️ TravelArc: Creating arc from ${originKey} to ${destKey}`);
 
         figure.style.position = 'relative';
 
@@ -110,12 +203,46 @@
         path.setAttribute('stroke-width', '3');
         path.setAttribute('fill', 'none');
         path.setAttribute('stroke-dasharray', '6 6');
+        path.setAttribute('id', 'flight-path');
+
+        // Create plane marker (circle with glow)
+        const plane = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        plane.setAttribute('r', '6');
+        plane.setAttribute('fill', '#fff');
+        plane.setAttribute('stroke', '#0af');
+        plane.setAttribute('stroke-width', '2');
+        plane.setAttribute('id', 'flight-plane');
+        plane.style.filter = 'drop-shadow(0 0 4px rgba(0, 175, 255, 0.8))';
 
         svg.appendChild(path);
+        svg.appendChild(plane);
         wrapper.appendChild(svg);
         figure.appendChild(wrapper);
 
         console.log('✅ TravelArc: Arc added successfully!');
+
+        // Start animation loop
+        startAnimation(path, plane);
+    }
+
+    function startAnimation(pathEl, planeEl) {
+        if (animationFrame) {
+            cancelAnimationFrame(animationFrame);
+        }
+
+        function animate() {
+            const progress = detectProgress();
+            const pathLength = pathEl.getTotalLength();
+            const point = pathEl.getPointAtLength(pathLength * progress);
+
+            planeEl.setAttribute('cx', point.x);
+            planeEl.setAttribute('cy', point.y);
+
+            animationFrame = requestAnimationFrame(animate);
+        }
+
+        animate();
+        console.log('✅ TravelArc: Animation started');
     }
 
     function init() {
@@ -128,7 +255,7 @@
             }
         }, 1000);
 
-        // Watch for flying page appearing (React SPA navigation)
+        // Watch for flying page appearing
         const observer = new MutationObserver(() => {
             const figure = document.querySelector('figure[class*="airspaceScene"]');
             if (figure && !figure.querySelector('.travelarc-overlay')) {
