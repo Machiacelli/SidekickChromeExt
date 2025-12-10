@@ -8,20 +8,20 @@
     console.log('✈️ Loading TravelArc Module...');
 
     // Map coordinates as percentages (x%, y%) on the map image
-    // Coordinates obtained by clicking on map locations
+    // All coordinates obtained by user clicking on map locations
     const COORDS = {
         torn: { x: 50.4, y: 45.6 },            // ✅ User clicked
-        mexico: { x: 35.0, y: 16.7 },          // ⚠️ Estimate - needs update
-        cayman: { x: 40.8, y: 19.4 },          // ⚠️ Estimate - needs update
-        canada: { x: 41.0, y: 13.4 },          // ⚠️ Estimate - needs update
-        hawaii: { x: 24.8, y: 19.1 },          // ⚠️ Estimate - needs update
-        uk: { x: 57.6, y: 11.3 },              // ⚠️ Estimate - needs update
-        argentina: { x: 45.4, y: 31.1 },       // ⚠️ Estimate - needs update
-        switzerland: { x: 77.3, y: 38.8 },     // ✅ User clicked
-        japan: { x: 10.9, y: 15.4 },           // ⚠️ Estimate - needs update
-        china: { x: 6.1, y: 14.2 },            // ⚠️ Estimate - needs update
-        uae: { x: 69.4, y: 18.0 },             // ⚠️ Estimate - needs update
-        south_africa: { x: 63.9, y: 29.3 }     // ⚠️ Estimate - needs update
+        mexico: { x: 46.0, y: 47.6 },          // ✅ User clicked
+        cayman: { x: 53.1, y: 53.9 },          // ✅ User clicked
+        canada: { x: 53.4, y: 38.0 },          // ✅ User clicked
+        hawaii: { x: 32.8, y: 54.2 },          // ✅ User clicked
+        uk: { x: 74.4, y: 33.0 },              // ✅ User clicked
+        argentina: { x: 58.2, y: 87.5 },       // ✅ User clicked
+        switzerland: { x: 77.3, y: 36.0 },     // ✅ User clicked (moved up 3px)
+        japan: { x: 15.1, y: 44.3 },           // ✅ User clicked
+        china: { x: 8.4, y: 40.8 },            // ✅ User clicked
+        uae: { x: 90.1, y: 50.9 },             // ✅ User clicked
+        south_africa: { x: 82.4, y: 79.9 }     // ✅ User clicked
     };
 
     // Map destination names to coordinate keys
