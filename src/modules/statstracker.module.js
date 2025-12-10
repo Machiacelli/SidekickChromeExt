@@ -282,7 +282,7 @@
             header.innerHTML = `
                 <span>📊 Stats Tracker</span>
                 <div style="display: flex; gap: 5px;">
-                    <button class="cog-btn" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 16px; cursor: pointer; padding: 2px 6px; border-radius: 3px; position: relative;">⚙️</button>
+                    <button class="cog-btn" style="background: none; border: none; color: white; font-size: 14px; cursor: pointer; padding: 0; opacity: 0.8;">⚙️</button>
                     <button class="close-btn" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0 5px;">×</button>
                 </div>
             `;
