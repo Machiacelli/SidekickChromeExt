@@ -936,6 +936,9 @@
                         await window.SidekickModules.Core.ChromeStorage.set('sidekick_notifications', settings);
                         this.showStatus(notifStatusDiv, 'Notification settings saved!', 'success');
 
+                        console.log('🔊 Notification settings saved:', settings);
+                        console.log('🔊 Test notification will display for:', settings.duration, 'ms (', settings.duration / 1000, 'seconds)');
+
                         // Show notification (which will play sound if enabled and use saved duration)
                         if (window.SidekickModules.Core.NotificationSystem) {
                             window.SidekickModules.Core.NotificationSystem.show(
