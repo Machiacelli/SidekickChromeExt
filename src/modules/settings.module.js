@@ -1045,7 +1045,8 @@
 
                 if (notifSoundToggle) {
                     const isEnabled = notifSettings.soundEnabled || false;
-                    notifSoundToggle.dataset.active = isEnabled;
+                    // CRITICAL: dataset values must be STRINGS!
+                    notifSoundToggle.dataset.active = isEnabled ? 'true' : 'false';
                     const track = notifSoundToggle.querySelector('.toggle-track');
                     const thumb = notifSoundToggle.querySelector('.toggle-thumb');
                     this.updateToggleVisual(track, thumb, isEnabled);
