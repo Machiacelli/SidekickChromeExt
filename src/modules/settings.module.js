@@ -448,7 +448,7 @@
                     <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Mug Merits (0-10):</label>
                     <input type="number" id="mugMeritsInput" min="0" max="10" placeholder="0 to 10"
                            style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
-                                  border-radius: 5px; color: white; font-size: 14px;">
+                                  border-radius: 5px; color: white; font-size: 14px; box-sizing: border-box;">
                     <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
                         Enter your total mug merits from 0 to 10
                     </div>
@@ -458,7 +458,7 @@
                     <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Plunder % (20% to 49%):</label>
                     <input type="number" id="plunderInput" min="20" max="49" step="0.01" placeholder="Plunder %"
                            style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
-                                  border-radius: 5px; color: white; font-size: 14px;">
+                                  border-radius: 5px; color: white; font-size: 14px; box-sizing: border-box;">
                     <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
                         Enter your plunder percentage (based on your stats and bonuses)
                     </div>
@@ -468,7 +468,7 @@
                     <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Minimum Threshold ($):</label>
                     <input type="number" id="thresholdInput" min="0" placeholder="Minimum Threshold"
                            style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
-                                  border-radius: 5px; color: white; font-size: 14px;">
+                                  border-radius: 5px; color: white; font-size: 14px; box-sizing: border-box;">
                     <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
                         Only show info icon when total listing value exceeds this amount
                     </div>
