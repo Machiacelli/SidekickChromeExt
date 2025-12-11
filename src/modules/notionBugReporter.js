@@ -35,7 +35,7 @@
                 return;
             }
 
-            this.createModal();
+            this.create Modal();
         },
 
         // Create the bug reporter modal
@@ -247,6 +247,38 @@
 
             submitButton.addEventListener('click', () => this.handleSubmit(modal));
 
+            // Screenshot preview functionality
+            const screenshotInput = modal.querySelector('#bug-screenshot');
+            const screenshotPreview = modal.querySelector('#screenshot-preview');
+
+            if (screenshotInput && screenshotPreview) {
+                screenshotInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                            alert('Image too large. Please select an image under 5MB.');
+                            screenshotInput.value = '';
+                            return;
+                        }
+
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            screenshotPreview.innerHTML = `
+                                <img src="${e.target.result}" alt="Screenshot preview">
+                                <button type="button" class="remove-screenshot">Remove</button>
+                            `;
+
+                            // Remove button handler
+                            screenshotPreview.querySelector('.remove-screenshot').addEventListener('click', () => {
+                                screenshotInput.value = '';
+                                screenshotPreview.innerHTML = '';
+                            });
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+
             // Focus the title input
             modal.querySelector('#bug-title').focus();
         },
@@ -256,11 +288,12 @@
             const titleInput = modal.querySelector('#bug-title');
             const descriptionInput = modal.querySelector('#bug-description');
             const priorityInput = modal.querySelector('#bug-priority');
+            const screenshotInput = modal.querySelector('#bug-screenshot');
             const submitButton = modal.querySelector('.btn-submit');
 
-            const title = titleInput.value.trim();
-            const description = descriptionInput.value.trim();
-            const priority = priorityInput.value;
+            const title = titleInput?.value.trim();
+            const description = descriptionInput?.value.trim();
+            const priority = priorityInput?.value;
 
             if (!title || !description) {
                 alert('Please fill in all required fields');
@@ -274,15 +307,24 @@
             try {
                 console.log('🐛 Starting bug report submission...');
 
+                // Convert screenshot to base64 if present (strip data URL prefix)
+                let screenshotBase64 = null;
+                if (screenshotInput && screenshotInput.files[0]) {
+                    console.log('📸 Converting screenshot to base64...');
+                    screenshotBase64 = await this.fileToBase64(screenshotInput.files[0]);
+                }
+
                 const result = await this.reportBug({
                     title,
                     description,
                     priority,
+                    screenshot: screenshotBase64,
                     metadata: {
                         reportedVia: 'Popup Modal',
                         module: 'NotionBugReporter',
                         extensionVersion: '1.0.0',
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
+                        hasScreenshot: !!screenshotBase64
                     }
                 });
 
@@ -318,8 +360,22 @@
             }
         },
 
+        // Convert file to base64 (strips "data:image/png;base64," prefix)
+        fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    // Split to get just the base64 part, not the data URL prefix
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        },
+
         // Main function to report a bug to Notion
-        async reportBug({ title, description, priority = 'Medium', metadata = {} }) {
+        async reportBug({ title, description, priority = 'Medium', screenshot = null, metadata = {} }) {
             try {
                 console.log('🐛 Reporting bug:', title);
 
