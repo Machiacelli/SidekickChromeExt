@@ -327,6 +327,12 @@
             `;
 
             contentArea.appendChild(windowElement);
+
+            // Register window for click-to-front behavior
+            if (window.SidekickModules?.Core?.WindowManager) {
+                window.SidekickModules.Core.WindowManager.registerWindow(windowElement, 'Stock Advisor');
+            }
+
             this.isWindowOpen = true;
 
             // Set up event handlers
