@@ -35,7 +35,7 @@
                 return;
             }
 
-            this.create Modal();
+            this.createModal();
         },
 
         // Create the bug reporter modal
