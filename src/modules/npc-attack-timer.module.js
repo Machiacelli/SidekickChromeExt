@@ -74,7 +74,7 @@
                 if (saved) {
                     this.isEnabled = saved.isEnabled === true;
                 } else {
-                    this.isEnabled = true; // Default ENABLED
+                    this.isEnabled = false; // Default DISABLED
                 }
                 console.log('⚔️ NPC Attack Timer settings loaded:', { enabled: this.isEnabled });
             } catch (error) {
