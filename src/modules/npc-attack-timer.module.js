@@ -113,8 +113,13 @@
         startMonitoring() {
             console.log('🎯 NPC Attack Timer: Starting monitoring...');
             this.stopMonitoring(); // Clean up any existing monitoring
+
+            // Fetch NPC schedule first
             this.fetchNpcSchedule().then(() => {
-                this.setupFetchInterceptor();
+                // Delay setup to ensure TornTools has finished loading
+                setTimeout(() => {
+                    this.setupFetchInterceptor();
+                }, 1000); // Wait 1 second for TornTools to finish
             });
         },
 
@@ -161,9 +166,10 @@
         setupFetchInterceptor() {
             const self = this;
 
-            // Store original fetch if not already stored
+            // Store whatever fetch is currently assigned (could be TornTools' or native)
             if (!this.originalFetch) {
                 this.originalFetch = window.fetch;
+                console.log('🔧 Storing current fetch interceptor (might be TornTools)');
             }
 
             console.log('🔧 Setting up fetch interceptor for news ticker...');
