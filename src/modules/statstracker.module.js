@@ -260,7 +260,6 @@
                 flex-direction: column;
                 min-width: 200px;
                 min-height: 200px;
-                z-index: 1000;
                 resize: both;
                 overflow: hidden;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.4);
