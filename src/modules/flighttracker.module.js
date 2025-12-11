@@ -141,14 +141,17 @@
                 // Find a good container to insert our button
                 let targetContainer = statusContainer?.parentElement;
 
-                // Create button container that flows with the page
+                // Create button container with fixed positioning
                 const buttonContainer = document.createElement('div');
                 buttonContainer.className = 'sidekick-flight-tracker-container';
                 buttonContainer.id = `flight-tracker-btn-${playerId}`;
                 buttonContainer.style.cssText = `
-                    margin: 10px 0;
-                    width: 100%;
-                    max-width: 250px;
+                    position: fixed;
+                    left: 688px;
+                    top: 507px;
+                    width: 380px;
+                    height: 116px;
+                    z-index: 9999;
                 `;
 
                 // Create track button
@@ -162,7 +165,7 @@
                     padding: 10px 16px;
                     border-radius: 6px;
                     cursor: pointer;
-                    font-size: 12px;
+                    font-size: 14px;
                     font-weight: 600;
                     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
                     transition: all 0.3s ease;
@@ -188,12 +191,11 @@
 
                 buttonContainer.appendChild(button);
 
-                if (targetContainer) {
-                    targetContainer.appendChild(buttonContainer);
-                }
+                // Append to body for fixed positioning
+                document.body.appendChild(buttonContainer);
 
                 // Create info panel
-                this.createInfoPanel(playerId, targetContainer);
+                this.createInfoPanel(playerId);
 
             } catch (error) {
                 console.error('❌ Error creating flight tracker button:', error);
@@ -389,7 +391,7 @@
         },
 
         // Create info panel
-        createInfoPanel(playerId, targetContainer) {
+        createInfoPanel(playerId) {
             // Remove existing panel
             const existing = document.querySelector('.sidekick-flight-info-panel');
             if (existing) {
@@ -400,9 +402,11 @@
             panel.className = 'sidekick-flight-info-panel';
             panel.dataset.playerId = playerId; // Store which player this panel is for
             panel.style.cssText = `
-                margin-top: 10px;
-                width: 100%;
-                max-width: 250px;
+                position: fixed;
+                left: 978px;
+                top: 508px;
+                width: 378px;
+                height: 119px;
                 background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(30,30,30,0.9));
                 padding: 12px 16px;
                 border-radius: 8px;
@@ -410,11 +414,12 @@
                 color: #fff;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.3);
                 border: 1px solid rgba(255,255,255,0.1);
+                z-index: 9999;
+                overflow: hidden;
             `;
 
-            if (targetContainer) {
-                targetContainer.appendChild(panel);
-            }
+            // Append to body for fixed positioning
+            document.body.appendChild(panel);
 
             this.updateInfoPanel(playerId);
         },
