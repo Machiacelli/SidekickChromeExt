@@ -438,56 +438,35 @@
 
             if (!player) {
                 panel.innerHTML = `
-                    <div style="opacity: 0.6; text-align: center;">Not tracking</div>
+                    <div style="opacity: 0.6; text-align: center; font-size: 11px;">Not tracking</div>
                 `;
                 return;
             }
 
-            // Build status display
-            let statusHTML = `
-                <div style="font-weight: bold; color: #FFC107; margin-bottom: 8px;">
-                    ✈️ Flight Tracker
-                </div>
-            `;
+            // Build compact status display
+            let statusHTML = '';
 
             if (player.currentCountry) {
-                // Show waiting for departure status
+                // Show status and country
                 const statusText = player.currentStatus === 'returning'
-                    ? 'Returning to Torn from'
+                    ? 'Returning from'
                     : player.currentStatus === 'traveling'
                         ? 'Traveling to'
                         : 'In';
 
                 statusHTML += `
-                    <div style="margin-bottom: 6px;">
-                        <span style="color: #FF9800;">📍 ${statusText} ${player.currentCountry}</span>
+                    <div style="font-size: 11px; margin-bottom: 4px;">
+                        📍 ${statusText} <b>${player.currentCountry}</b>
                     </div>
                 `;
 
-                // Always show detected plane type if available
+                // Show plane type if detected
                 if (player.detectedPlaneType) {
                     const planeIcon = player.detectedPlaneType === 'airstrip' ? '🛩️' : '✈️';
                     const planeLabel = player.detectedPlaneType === 'airstrip' ? 'Airstrip' : 'Commercial';
                     statusHTML += `
-                        <div style="margin-bottom: 6px; font-size: 11px;">
-                            ${planeIcon} Detected: <span style="color: #4CAF50; font-weight: bold;">${planeLabel}</span>
-                        </div>
-                    `;
-                } else {
-                    // Show detecting message if not detected yet
-                    statusHTML += `
-                        <div style="margin-bottom: 6px; font-size: 11px; opacity: 0.6;">
-                            🔍 Detecting plane type...
-                        </div>
-                    `;
-                }
-
-                // Show WLT benefit if applicable (only when returning)
-                if (player.hasWLTBenefit && player.currentStatus === 'returning') {
-                    statusHTML += `
-                        <div style="margin-bottom: 6px; font-size: 11px;">
-                            ⚡ <span style="color: #FFD700; font-weight: bold;">WLT Benefit Active</span>
-                            <div style="font-size: 10px; color: #aaa; margin-left: 14px;">10★ Lingerie Store</div>
+                        <div style="font-size: 10px; margin-bottom: 4px;">
+                            ${planeIcon} ${planeLabel}${player.hasWLTBenefit && player.currentStatus === 'returning' ? ' <span style="color: #FFD700;">+WLT</span>' : ''}
                         </div>
                     `;
                 }
@@ -501,16 +480,16 @@
                     let timerColor = '#4CAF50'; // Green
                     let timerIcon = '⏱️';
                     if (timeLeft <= 60) {
-                        timerColor = '#f44336'; // Red - less than 1 min
+                        timerColor = '#f44336'; // Red
                         timerIcon = '🚨';
                     } else if (timeLeft <= 300) {
-                        timerColor = '#FF9800'; // Orange - less than 5 min
+                        timerColor = '#FF9800'; // Orange
                         timerIcon = '⚠️';
                     }
 
                     statusHTML += `
-                        <div style="font-size: 14px; font-weight: bold; color: ${timerColor}; margin-top: 8px;">
-                            ${timerIcon} Landing in: ${timeStr}
+                        <div style="font-size: 13px; font-weight: bold; color: ${timerColor}; margin-top: 4px;">
+                            ${timerIcon} ${timeStr}
                         </div>
                     `;
 
@@ -525,7 +504,7 @@
                 }
             } else {
                 statusHTML += `
-                    <div style="opacity: 0.7; font-size: 11px;">
+                    <div style="opacity: 0.7; font-size: 10px;">
                         ${player.currentStatus}
                     </div>
                 `;
