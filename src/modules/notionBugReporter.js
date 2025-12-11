@@ -5,39 +5,39 @@
  * Author: Machiacelli
  */
 
-(function() {
+(function () {
     'use strict';
 
     console.log("🐛 Loading Sidekick Notion Bug Reporter Module...");
 
     // Bug Reporter Module Implementation
     const NotionBugReporter = {
-        
+
         // Initialize the bug reporter
         init() {
             console.log('🐛 NotionBugReporter module initializing...');
-            
+
             // Add keyboard shortcut for quick access (Ctrl+Shift+B)
-            document.addEventListener('keydown', function(e) {
+            document.addEventListener('keydown', function (e) {
                 if (e.ctrlKey && e.shiftKey && e.key === 'B') {
                     e.preventDefault();
                     NotionBugReporter.openReporter();
                 }
             });
-            
+
             console.log('✅ NotionBugReporter module initialized (Ctrl+Shift+B to open)');
         },
-        
+
         // Open the bug reporter modal
         openReporter() {
             // Check if modal already exists
             if (document.getElementById('sidekick-bug-reporter')) {
                 return;
             }
-            
+
             this.createModal();
         },
-        
+
         // Create the bug reporter modal
         createModal() {
             const modal = document.createElement('div');
@@ -66,6 +66,11 @@
                                     <option value="High">High</option>
                                 </select>
                             </div>
+                            <div class="form-group">
+                                <label for="bug-screenshot">Screenshot (optional)</label>
+                                <input type="file" id="bug-screenshot" accept="image/*">
+                                <div class="screenshot-preview" id="screenshot-preview"></div>
+                            </div>
                             <div class="bug-reporter-footer">
                                 <button type="button" class="btn btn-cancel">Cancel</button>
                                 <button type="button" class="btn btn-submit">Submit Report</button>
@@ -74,7 +79,7 @@
                     </div>
                 </div>
             `;
-            
+
             // Add styles
             modal.innerHTML += `
                 <style>
@@ -190,54 +195,85 @@
                         background: #666;
                         cursor: not-allowed;
                     }
+                    .form-group input[type="file"] {
+                        padding: 8px;
+                        background: rgba(255,255,255,0.05);
+                        cursor: pointer;
+                    }
+                    .screenshot-preview {
+                        margin-top: 8px;
+                        position: relative;
+                    }
+                    .screenshot-preview img {
+                        max-width: 100%;
+                        max-height: 200px;
+                        border-radius: 4px;
+                        border: 1px solid rgba(255,255,255,0.2);
+                        display: block;
+                    }
+                    .screenshot-preview .remove-screenshot {
+                        position: absolute;
+                        top: 8px;
+                        right: 8px;
+                        background: rgba(220, 53, 69, 0.9);
+                        border: none;
+                        color: white;
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 11px;
+                    }
+                    .screenshot-preview .remove-screenshot:hover {
+                        background: #dc3545;
+                    }
                 </style>
             `;
-            
+
             document.body.appendChild(modal);
-            
+
             // Add event listeners
             const closeButton = modal.querySelector('.bug-reporter-close');
             const cancelButton = modal.querySelector('.btn-cancel');
             const submitButton = modal.querySelector('.btn-submit');
             const overlay = modal.querySelector('.bug-reporter-overlay');
-            
+
             const closeModal = () => modal.remove();
-            
+
             closeButton.addEventListener('click', closeModal);
             cancelButton.addEventListener('click', closeModal);
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) closeModal();
             });
-            
+
             submitButton.addEventListener('click', () => this.handleSubmit(modal));
-            
+
             // Focus the title input
             modal.querySelector('#bug-title').focus();
         },
-        
+
         // Handle form submission
         async handleSubmit(modal) {
             const titleInput = modal.querySelector('#bug-title');
             const descriptionInput = modal.querySelector('#bug-description');
             const priorityInput = modal.querySelector('#bug-priority');
             const submitButton = modal.querySelector('.btn-submit');
-            
+
             const title = titleInput.value.trim();
             const description = descriptionInput.value.trim();
             const priority = priorityInput.value;
-            
+
             if (!title || !description) {
                 alert('Please fill in all required fields');
                 return;
             }
-            
+
             // Disable submit button and show loading
             submitButton.disabled = true;
             submitButton.textContent = 'Submitting...';
-            
+
             try {
                 console.log('🐛 Starting bug report submission...');
-                
+
                 const result = await this.reportBug({
                     title,
                     description,
@@ -249,16 +285,16 @@
                         timestamp: new Date().toISOString()
                     }
                 });
-                
+
                 console.log('🐛 Bug report result:', result);
-                
+
                 if (result.success) {
                     alert('Bug report submitted successfully!');
                     modal.remove();
                 } else {
                     console.error('🐛 Bug report failed:', result.error);
                     let errorMessage = 'Failed to submit bug report: ' + result.error;
-                    
+
                     // Check for Notion not configured error
                     if (result.error === 'NOTION_NOT_CONFIGURED') {
                         errorMessage = result.message || 'Notion API not configured. Please add your Notion API key and database ID in background.js to enable bug reporting.';
@@ -269,7 +305,7 @@
                     } else if (result.error.includes('404')) {
                         errorMessage = 'Database not found: The Notion database ID may be incorrect.';
                     }
-                    
+
                     alert(errorMessage);
                     submitButton.disabled = false;
                     submitButton.textContent = 'Submit Report';
@@ -281,22 +317,23 @@
                 submitButton.textContent = 'Submit Report';
             }
         },
-        
+
         // Main function to report a bug to Notion
         async reportBug({ title, description, priority = 'Medium', metadata = {} }) {
             try {
                 console.log('🐛 Reporting bug:', title);
-                
+
                 // Validate required parameters
                 if (!title || !description) {
                     throw new Error('Title and description are required');
                 }
-                
+
                 // Prepare data for background script
                 const bugData = {
                     title: title.trim(),
                     description: description.trim(),
                     priority: priority || 'Medium',
+                    screenshot: screenshot,
                     metadata: {
                         timestamp: new Date().toISOString(),
                         url: window.location.href,
@@ -304,13 +341,13 @@
                         ...metadata
                     }
                 };
-                
+
                 // Send message to background script
                 const response = await chrome.runtime.sendMessage({
                     action: 'reportBug',
                     data: bugData
                 });
-                
+
                 if (response && response.success) {
                     console.log('✅ Bug reported successfully to Notion');
                     return { success: true, data: response.data };
@@ -321,7 +358,7 @@
                     console.error('❌ No response from background script - extension context may be invalidated');
                     return { success: false, error: 'EXTENSION_CONTEXT_INVALIDATED', message: 'Extension context invalidated. Please reload the extension and try again.' };
                 }
-                
+
             } catch (error) {
                 console.error('❌ Error reporting bug:', error);
                 return { success: false, error: error.message };
@@ -335,10 +372,10 @@
 
         // Helper for high priority bugs
         async reportCritical(title, description, metadata = {}) {
-            return await this.reportBug({ 
-                title, 
-                description, 
-                priority: 'High', 
+            return await this.reportBug({
+                title,
+                description,
+                priority: 'High',
                 metadata: { ...metadata, severity: 'critical' }
             });
         }

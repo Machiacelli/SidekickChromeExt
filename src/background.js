@@ -7,23 +7,23 @@
 // Extension installation/update handler
 chrome.runtime.onInstalled.addListener((details) => {
     console.log('🚀 Sidekick Extension installed/updated:', details.reason);
-    
+
     if (details.reason === 'install') {
         // First installation
         console.log('🎉 Welcome to Sidekick! Extension installed successfully.');
-        
+
         // Set default settings
         chrome.storage.local.set({
             'sidekick_first_install': true,
             'sidekick_version': '1.0.0',
             'sidekick_install_date': new Date().toISOString()
         });
-        
+
     } else if (details.reason === 'update') {
         // Extension updated
         const previousVersion = details.previousVersion;
         console.log(`🔄 Sidekick updated from v${previousVersion} to v1.0.0`);
-        
+
         chrome.storage.local.set({
             'sidekick_last_update': new Date().toISOString(),
             'sidekick_previous_version': previousVersion,
@@ -40,54 +40,54 @@ chrome.runtime.onStartup.addListener(() => {
 // Handle messages from content scripts
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('📨 Background received message:', request);
-    
+
     switch (request.action) {
         case 'ping':
             // Simple ping test for debugging
             sendResponse({ success: true, message: 'Background script is alive', timestamp: Date.now() });
             break;
-            
+
         case 'fetchTornApi':
             // Handle Torn API calls from content scripts (avoids CORS)
             handleTornApiCall(request)
                 .then(result => sendResponse(result))
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true; // Keep message channel open for async response
-            
+
         case 'reportBug':
             // Handle Notion bug reporting
             handleBugReport(request.data)
                 .then(result => sendResponse(result))
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true; // Keep message channel open for async response
-            
+
         case 'getStorageData':
             // Helper for content scripts to access storage
             chrome.storage.local.get(request.keys, (result) => {
                 sendResponse({ success: true, data: result });
             });
             return true; // Keep message channel open for async response
-            
+
         case 'setStorageData':
             // Helper for content scripts to set storage
             chrome.storage.local.set(request.data, () => {
                 sendResponse({ success: true });
             });
             return true;
-            
+
         case 'clearStorageData':
             // Helper for content scripts to clear storage
             chrome.storage.local.clear(() => {
                 sendResponse({ success: true });
             });
             return true;
-            
+
         case 'openOptionsPage':
             // Open the extension options/settings page
             chrome.runtime.openOptionsPage();
             sendResponse({ success: true });
             break;
-            
+
         case 'notification':
             // Create native Chrome notifications
             chrome.notifications.create({
@@ -98,7 +98,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             });
             sendResponse({ success: true });
             break;
-            
+
         default:
             console.warn('Unknown action:', request.action);
             sendResponse({ success: false, error: 'Unknown action' });
@@ -112,17 +112,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function handleTornApiCall(request) {
     try {
         console.log('🔍 Background: Making Torn API call:', request.selections);
-        
+
         const { apiKey, selections, userId, endpoint: requestEndpoint } = request;
-        
+
         if (!apiKey) {
             throw new Error('No API key provided');
         }
-        
+
         // Determine the API endpoint based on request
         let endpoint = requestEndpoint || (userId ? `user/${userId}` : 'user');
         console.log(`🔍 Background: Using endpoint: ${endpoint}`);
-        
+
         // Prepare results object
         const results = {
             success: true,
@@ -136,7 +136,7 @@ async function handleTornApiCall(request) {
             company: null,
             money: null
         };
-        
+
         // Fetch personal stats if requested
         if (selections.includes('personalstats')) {
             console.log('📊 Background: Fetching personal stats...');
@@ -147,26 +147,26 @@ async function handleTornApiCall(request) {
                         'User-Agent': 'Sidekick Chrome Extension Background'
                     }
                 });
-                
+
                 if (!statsResponse.ok) {
                     throw new Error(`Personal stats fetch failed: ${statsResponse.status}`);
                 }
-                
+
                 const statsData = await statsResponse.json();
-                
+
                 if (statsData.error) {
                     throw new Error(`API Error: ${statsData.error.error} (${statsData.error.code})`);
                 }
-                
+
                 results.personalstats = statsData.personalstats;
                 console.log('✅ Background: Personal stats retrieved successfully');
-                
+
             } catch (error) {
                 console.error('❌ Background: Personal stats fetch failed:', error);
                 throw error;
             }
         }
-        
+
         // Fetch cooldowns if requested
         if (selections.includes('cooldowns')) {
             console.log('⏰ Background: Fetching cooldowns...');
@@ -177,13 +177,13 @@ async function handleTornApiCall(request) {
                         'User-Agent': 'Sidekick Chrome Extension Background'
                     }
                 });
-                
+
                 if (!cooldownResponse.ok) {
                     console.warn('⚠️ Background: Cooldown fetch failed:', cooldownResponse.status);
                     // Don't throw here, cooldowns are optional
                 } else {
                     const cooldownData = await cooldownResponse.json();
-                    
+
                     if (cooldownData.error) {
                         console.warn('⚠️ Background: Cooldown API error:', cooldownData.error);
                         // Don't throw here, cooldowns are optional
@@ -192,7 +192,7 @@ async function handleTornApiCall(request) {
                         console.log('✅ Background: Cooldowns retrieved successfully');
                     }
                 }
-                
+
             } catch (error) {
                 console.warn('⚠️ Background: Cooldown fetch failed (non-fatal):', error);
                 // Continue without cooldowns
@@ -209,13 +209,13 @@ async function handleTornApiCall(request) {
                         'User-Agent': 'Sidekick Chrome Extension Background'
                     }
                 });
-                
+
                 if (!moneyResponse.ok) {
                     console.warn('⚠️ Background: Money fetch failed:', moneyResponse.status);
                     // Don't throw here, money is optional
                 } else {
                     const moneyData = await moneyResponse.json();
-                    
+
                     if (moneyData.error) {
                         console.warn('⚠️ Background: Money API error:', moneyData.error);
                         // Don't throw here, money is optional
@@ -224,7 +224,7 @@ async function handleTornApiCall(request) {
                         console.log('✅ Background: Money data retrieved successfully:', moneyData);
                     }
                 }
-                
+
             } catch (error) {
                 console.warn('⚠️ Background: Money fetch failed (non-fatal):', error);
                 // Continue without money data
@@ -241,13 +241,13 @@ async function handleTornApiCall(request) {
                         'User-Agent': 'Sidekick Chrome Extension Background'
                     }
                 });
-                
+
                 if (!barsResponse.ok) {
                     console.warn('⚠️ Background: Bars fetch failed:', barsResponse.status);
                     // Don't throw here, bars are optional
                 } else {
                     const barsData = await barsResponse.json();
-                    
+
                     if (barsData.error) {
                         console.warn('⚠️ Background: Bars API error:', barsData.error);
                         // Don't throw here, bars are optional
@@ -256,7 +256,7 @@ async function handleTornApiCall(request) {
                         console.log('✅ Background: Bars retrieved successfully');
                     }
                 }
-                
+
             } catch (error) {
                 console.warn('⚠️ Background: Bars fetch failed (non-fatal):', error);
                 // Continue without bars
@@ -273,13 +273,13 @@ async function handleTornApiCall(request) {
                         'User-Agent': 'Sidekick Chrome Extension Background'
                     }
                 });
-                
+
                 if (!logResponse.ok) {
                     console.warn('⚠️ Background: Log fetch failed:', logResponse.status);
                     // Don't throw here, logs are optional
                 } else {
                     const logData = await logResponse.json();
-                    
+
                     if (logData.error) {
                         console.warn('⚠️ Background: Log API error:', logData.error);
                         // Don't throw here, logs are optional
@@ -288,13 +288,13 @@ async function handleTornApiCall(request) {
                         console.log('✅ Background: Logs retrieved successfully');
                     }
                 }
-                
+
             } catch (error) {
                 console.warn('⚠️ Background: Log fetch failed (non-fatal):', error);
                 // Continue without logs
             }
         }
-        
+
         // 🆕 Fetch refills if requested (MOST IMPORTANT for daily task detection!)
         if (selections.includes('refills')) {
             console.log('💊 Background: Fetching refills...');
@@ -305,13 +305,13 @@ async function handleTornApiCall(request) {
                         'User-Agent': 'Sidekick Chrome Extension Background'
                     }
                 });
-                
+
                 if (!refillsResponse.ok) {
                     console.warn('⚠️ Background: Refills fetch failed:', refillsResponse.status);
                     // Don't throw here, refills are optional
                 } else {
                     const refillsData = await refillsResponse.json();
-                    
+
                     if (refillsData.error) {
                         console.warn('⚠️ Background: Refills API error:', refillsData.error);
                         // Don't throw here, refills are optional
@@ -320,13 +320,13 @@ async function handleTornApiCall(request) {
                         console.log('✅ Background: Refills retrieved successfully:', refillsData.refills);
                     }
                 }
-                
+
             } catch (error) {
                 console.warn('⚠️ Background: Refills fetch failed (non-fatal):', error);
                 // Continue without refills
             }
         }
-        
+
         // Fetch items from torn endpoint if requested
         if (selections.includes('items')) {
             console.log('📦 Background: Fetching items from torn endpoint...');
@@ -337,12 +337,12 @@ async function handleTornApiCall(request) {
                         'User-Agent': 'Sidekick Chrome Extension Background'
                     }
                 });
-                
+
                 if (!itemsResponse.ok) {
                     console.warn('⚠️ Background: Items fetch failed:', itemsResponse.status);
                 } else {
                     const itemsData = await itemsResponse.json();
-                    
+
                     if (itemsData.error) {
                         console.warn('⚠️ Background: Items API error:', itemsData.error);
                     } else {
@@ -350,12 +350,12 @@ async function handleTornApiCall(request) {
                         console.log('✅ Background: Items retrieved successfully');
                     }
                 }
-                
+
             } catch (error) {
                 console.warn('⚠️ Background: Items fetch failed (non-fatal):', error);
             }
         }
-        
+
         // Fetch profile if requested (for mug calculator)
         if (selections.includes('profile')) {
             console.log('👤 Background: Fetching profile...');
@@ -366,27 +366,27 @@ async function handleTornApiCall(request) {
                         'User-Agent': 'Sidekick Chrome Extension Background'
                     }
                 });
-                
+
                 if (!profileResponse.ok) {
                     throw new Error(`Profile fetch failed: ${profileResponse.status}`);
                 }
-                
+
                 const profileData = await profileResponse.json();
-                
+
                 if (profileData.error) {
                     throw new Error(`API Error: ${profileData.error.error} (${profileData.error.code})`);
                 }
-                
+
                 // Store the complete profile data
                 results.profile = profileData;
                 console.log('✅ Background: Profile retrieved successfully');
-                
+
             } catch (error) {
                 console.error('❌ Background: Profile fetch failed:', error);
                 throw error;
             }
         }
-        
+
         // Fetch company data if endpoint is company/* (for mug calculator clothing store check)
         if (endpoint.startsWith('company/')) {
             console.log('🏢 Background: Fetching company data...');
@@ -397,30 +397,30 @@ async function handleTornApiCall(request) {
                         'User-Agent': 'Sidekick Chrome Extension Background'
                     }
                 });
-                
+
                 if (!companyResponse.ok) {
                     throw new Error(`Company fetch failed: ${companyResponse.status}`);
                 }
-                
+
                 const companyData = await companyResponse.json();
-                
+
                 if (companyData.error) {
                     throw new Error(`API Error: ${companyData.error.error} (${companyData.error.code})`);
                 }
-                
+
                 // Store company data
                 results.company = companyData;
                 console.log('✅ Background: Company data retrieved successfully');
-                
+
             } catch (error) {
                 console.error('❌ Background: Company fetch failed:', error);
                 throw error;
             }
         }
-        
+
         console.log('🎯 Background: API call completed successfully');
         return results;
-        
+
     } catch (error) {
         console.error('❌ Background: Torn API call failed:', error);
         return {
@@ -434,20 +434,21 @@ async function handleTornApiCall(request) {
 async function handleBugReport(bugData) {
     try {
         console.log('🐛 Sending bug report via secure worker:', bugData);
-        
+
         // Prepare payload for Cloudflare Worker
         const payload = {
             title: bugData.title || 'Bug Report',
             description: bugData.description || 'No description provided',
             priority: bugData.priority || 'Medium',
+            screenshot: bugData.screenshot || null,
             metadata: bugData.metadata || {
                 timestamp: new Date().toISOString(),
                 extensionVersion: chrome.runtime.getManifest().version
             }
         };
-        
+
         console.log('📦 Sending payload to worker:', JSON.stringify(payload, null, 2));
-        
+
         // Send to Cloudflare Worker (handles Notion API securely)
         const response = await fetch('https://notionbugreport.akaffebtd.workers.dev/', {
             method: 'POST',
@@ -456,13 +457,13 @@ async function handleBugReport(bugData) {
             },
             body: JSON.stringify(payload)
         });
-        
+
         console.log('📡 Worker response status:', response.status);
-        
+
         if (!response.ok) {
             const errorText = await response.text();
             console.error('❌ Bug report failed:', errorText);
-            
+
             // Try to parse error details if JSON
             let errorDetails = errorText;
             try {
@@ -472,17 +473,17 @@ async function handleBugReport(bugData) {
             } catch (e) {
                 // Not JSON, use raw text
             }
-            
+
             return {
                 success: false,
                 error: `Worker error: ${response.status}`,
                 message: `Failed to submit bug report (${response.status}):\n\n${errorDetails}\n\nPlease check that your Cloudflare Worker has the correct Notion API credentials configured.`
             };
         }
-        
+
         const result = await response.json();
         console.log('✅ Bug report sent successfully:', result);
-        
+
         return {
             success: true,
             data: {
@@ -490,13 +491,13 @@ async function handleBugReport(bugData) {
                 url: result.url
             }
         };
-        
+
     } catch (error) {
         console.error('❌ Failed to send bug report to Notion:', error);
         console.error('❌ Error stack:', error.stack);
         console.error('❌ Error name:', error.name);
         console.error('❌ Error message:', error.message);
-        
+
         // Check if it's a network error
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
             return {
@@ -504,7 +505,7 @@ async function handleBugReport(bugData) {
                 error: 'Network error: Unable to connect to Notion API. Please check your internet connection and extension permissions.'
             };
         }
-        
+
         return {
             success: false,
             error: error.message
@@ -521,7 +522,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (changeInfo.status === 'complete' && tab.url && tab.url.includes('torn.com')) {
         console.log('🔄 Torn.com tab updated:', tab.url);
-        
+
         // Send message to content script that page is ready
         chrome.tabs.sendMessage(tabId, {
             action: 'pageReady',
@@ -537,7 +538,7 @@ let keepAlive;
 
 function startKeepAlive() {
     if (keepAlive) return;
-    
+
     keepAlive = setInterval(() => {
         chrome.storage.local.get('sidekick_keepalive', () => {
             if (chrome.runtime.lastError) {
