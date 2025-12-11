@@ -1808,7 +1808,19 @@
                 contentArea.innerHTML = '';
 
                 // Add new content based on timer type
-                if (timer.cooldowns && Object.keys(timer.cooldowns).length > 1) {
+                if (timer.cooldowns && Object.keys(timer.cooldowns).length === 0) {
+                    // Empty cooldown timer - show "No active cooldowns"
+                    const emptyDiv = document.createElement('div');
+                    emptyDiv.style.cssText = `
+                        color: #888;
+                        font-size: 12px;
+                        text-align: center;
+                        padding: 20px;
+                        font-style: italic;
+                    `;
+                    emptyDiv.textContent = 'No active cooldowns';
+                    contentArea.appendChild(emptyDiv);
+                } else if (timer.cooldowns && Object.keys(timer.cooldowns).length > 1) {
                     // Multi-cooldown display
                     const cooldownNames = {
                         'drug': 'Drug',
@@ -2413,11 +2425,11 @@
                         hasUpdates = true;
                     }
                 } else {
-                    // Check if we should create a new timer or add to existing multi-cooldown timer
+                    // Check if we should add to existing multi-cooldown timer (including empty ones)
                     let targetTimer = this.timers.find(timer =>
                         timer.isApiTimer &&
-                        timer.cooldowns &&
-                        Object.keys(timer.cooldowns).length < 3 // Max 3 cooldowns per timer
+                        timer.cooldowns !== undefined &&
+                        Object.keys(timer.cooldowns).length < 3 // Max 3 cooldowns per timer (0-2)
                     );
 
                     if (targetTimer) {
@@ -2454,8 +2466,11 @@
 
                             // Check if timer is now empty
                             if (Object.keys(timer.cooldowns).length === 0) {
-                                console.log(`🗑️ Timer ${timer.id} has no cooldowns left, removing`);
-                                this.deleteTimer(timer.id);
+                                console.log(`📭 Timer ${timer.id} now has no active cooldowns - keeping alive for future cooldowns`);
+                                // Don't delete - keep timer alive for future cooldowns
+                                timer.remainingTime = 0;
+                                timer.name = 'Cooldowns';
+                                this.updateTimerDisplay(timer.id);
                             } else {
                                 timer.remainingTime = Math.max(...Object.values(timer.cooldowns));
                                 this.updateTimerDisplay(timer.id);
