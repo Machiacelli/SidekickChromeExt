@@ -309,6 +309,11 @@
             this.window.appendChild(content);
             contentArea.appendChild(this.window);
 
+            // Register window for click-to-front behavior
+            if (window.SidekickModules?.Core?.WindowManager) {
+                window.SidekickModules.Core.WindowManager.registerWindow(this.window, 'Stats Tracker');
+            }
+
             // Make draggable
             this.makeDraggable(header);
 

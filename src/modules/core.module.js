@@ -712,6 +712,36 @@
         }
     };
 
+    // === WINDOW MANAGER ===
+    const WindowManager = {
+        currentZIndex: 1000,
+
+        // Bring window to front by incrementing z-index
+        bringToFront(element) {
+            if (!element) return;
+            this.currentZIndex++;
+            element.style.zIndex = this.currentZIndex;
+            console.log(`🔝 Brought window to front: z-index ${this.currentZIndex}`);
+        },
+
+        // Register a window for click-to-front behavior
+        registerWindow(element, moduleName = 'Unknown') {
+            if (!element) {
+                console.warn('⚠️ WindowManager: Cannot register null element');
+                return;
+            }
+
+            element.addEventListener('mousedown', (e) => {
+                // Don't interfere with buttons or inputs
+                if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+
+                this.bringToFront(element);
+            });
+
+            console.log(`✅ WindowManager: Registered ${moduleName} window`);
+        }
+    };
+
     // === CORE MODULE EXPORT ===
     const CoreModule = {
         STORAGE_KEYS,
@@ -719,6 +749,7 @@
         ChromeStorage,
         SafeMessageSender,
         ExtensionContextMonitor,
+        WindowManager,
 
         // Initialize core functionality
         async init() {

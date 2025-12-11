@@ -1448,6 +1448,12 @@
 
             try {
                 contentArea.appendChild(timerElement);
+
+                // Register window for click-to-front behavior
+                if (window.SidekickModules?.Core?.WindowManager) {
+                    window.SidekickModules.Core.WindowManager.registerWindow(timerElement, 'Timer');
+                }
+
                 console.log(`🔍 appendChild() completed without error`);
             } catch (error) {
                 console.error(`🚨 appendChild() failed with error:`, error);

@@ -491,6 +491,12 @@
             this.setupNotepadHandlers(notepadElement, notepad);
 
             contentArea.appendChild(notepadElement);
+
+            // Register window for click-to-front behavior
+            if (window.SidekickModules?.Core?.WindowManager) {
+                window.SidekickModules.Core.WindowManager.registerWindow(notepadElement, 'Notepad');
+            }
+
             console.log('📝 Rendered notepad window:', notepad.title);
         },
 
