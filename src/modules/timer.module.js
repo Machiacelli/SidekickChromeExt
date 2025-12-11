@@ -2435,12 +2435,12 @@
                     let targetTimer = this.timers.find(timer =>
                         timer.isApiTimer &&
                         timer.cooldowns !== undefined &&
-                        Object.keys(timer.cooldowns).length < 3 // Max 3 cooldowns per timer (0-2)
+                        Object.keys(timer.cooldowns).length <= 2 // Max 3 cooldowns per timer (0-2), includes empty timers
                     );
 
                     if (targetTimer) {
-                        // Add to existing multi-cooldown timer
-                        console.log(`➕ Adding ${cooldownType} to existing timer: ${targetTimer.id}`);
+                        // Add to existing multi-cooldown timer (including empty ones)
+                        console.log(`➕ Adding ${cooldownType} to existing timer: ${targetTimer.id} (currently has ${Object.keys(targetTimer.cooldowns).length} cooldowns)`);
                         targetTimer.cooldowns[cooldownType] = apiCooldown;
                         targetTimer.remainingTime = Math.max(...Object.values(targetTimer.cooldowns));
                         targetTimer.name = 'Cooldowns';
@@ -2448,8 +2448,8 @@
                         this.updateTimerDisplay(targetTimer.id);
                         hasUpdates = true;
                     } else {
-                        // Create new timer for this cooldown
-                        console.log(`🆕 Creating new timer for ${cooldownType}`);
+                        // Only create new timer if no existing timer can accommodate it
+                        console.log(`🆕 Creating new timer for ${cooldownType} (no existing timer available)`);
                         this.createApiCooldownTimer(cooldownType, apiCooldown);
                         hasUpdates = true;
                     }
