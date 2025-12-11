@@ -397,11 +397,29 @@
                 }, 0);
             });
 
-            // Track resize
-            const resizeObserver = new ResizeObserver(() => {
-                this.windowState.width = this.window.offsetWidth;
-                this.windowState.height = this.window.offsetHeight;
-                this.saveSettings();
+            // Track resize - use contentRect to avoid including borders/padding
+            let isInitializing = true;
+            setTimeout(() => {
+                isInitializing = false;
+            }, 500);
+
+            const resizeObserver = new ResizeObserver((entries) => {
+                for (let entry of entries) {
+                    const { width, height } = entry.contentRect;
+
+                    // Don't save during initial layout phase
+                    if (isInitializing) {
+                        return;
+                    }
+
+                    // Debounced save to avoid too frequent saves during resize
+                    clearTimeout(this.window._resizeTimeout);
+                    this.window._resizeTimeout = setTimeout(() => {
+                        this.windowState.width = Math.round(width);
+                        this.windowState.height = Math.round(height);
+                        this.saveSettings();
+                    }, 500);
+                }
             });
             resizeObserver.observe(this.window);
 
