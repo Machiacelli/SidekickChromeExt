@@ -2,7 +2,7 @@
  * Sidekick Chrome Extension - NPC Attack Timer Module
  * Display upcoming NPC attacks in Torn's news ticker
  * Based on Loot Rangers API
- * Version: 3.0.0 - DOM-based approach
+ * Version: 4.0.0 - Direct DOM slide injection
  * Author: Machiacelli / Robin
  */
 
@@ -15,7 +15,7 @@
     const CONFIG = {
         tickerColor: "#8abeef",  // Color for NPC message
         timeFormat24h: true,      // true = 24h, false = 12h
-        checkInterval: 5000       // Check every 5 seconds
+        updateInterval: 30000     // Update every 30 seconds
     };
 
     // Wait for Core module to be available
@@ -39,6 +39,7 @@
         npcData: null,
         updateInterval: null,
         observer: null,
+        npcSlideInjected: false,
 
         // Initialize the module
         async init() {
@@ -74,7 +75,7 @@
                 if (saved) {
                     this.isEnabled = saved.isEnabled === true;
                 } else {
-                    this.isEnabled = true; // Default ENABLED now
+                    this.isEnabled = true; // Default ENABLED
                 }
                 console.log('⚔️ NPC Attack Timer settings loaded:', { enabled: this.isEnabled });
             } catch (error) {
@@ -106,6 +107,7 @@
             } else {
                 console.log('⏸️ NPC Attack Timer: Disabled');
                 this.stopMonitoring();
+                this.removeNPCSlide();
             }
         },
 
@@ -116,13 +118,15 @@
 
             // Fetch NPC schedule
             this.fetchNpcSchedule().then(() => {
-                // Wait for news ticker to exist, then inject
-                this.waitForNewsTicker();
+                // Wait for news ticker and inject
+                this.waitForNewsTickerAndInject();
 
-                // Update every 5 seconds
+                // Periodic updates
                 this.updateInterval = setInterval(() => {
-                    this.updateTickerIfNeeded();
-                }, CONFIG.checkInterval);
+                    this.fetchNpcSchedule().then(() => {
+                        this.updateNPCSlide();
+                    });
+                }, CONFIG.updateInterval);
             });
         },
 
@@ -132,6 +136,10 @@
             if (this.updateInterval) {
                 clearInterval(this.updateInterval);
                 this.updateInterval = null;
+            }
+            if (this.observer) {
+                this.observer.disconnect();
+                this.observer = null;
             }
         },
 
@@ -147,13 +155,14 @@
             }
         },
 
-        // Wait for news ticker element to exist
-        waitForNewsTicker() {
+        // Wait for news ticker and inject our slide
+        waitForNewsTickerAndInject() {
             const checkTicker = () => {
-                const ticker = document.querySelector('.news-ticker-slider-wrapper');
-                if (ticker) {
-                    console.log('✅ News ticker found, injecting NPC data...');
-                    this.injectNPCIntoTicker();
+                const sliderWrapper = document.querySelector('.news-ticker-slider-wrapper');
+                if (sliderWrapper) {
+                    console.log('✅ News ticker found, injecting NPC slide...');
+                    this.injectNPCSlide();
+                    this.setupMutationObserver();
                 } else {
                     setTimeout(checkTicker, 500);
                 }
@@ -161,99 +170,81 @@
             checkTicker();
         },
 
-        // Update ticker if needed (refetch data periodically)
-        updateTickerIfNeeded() {
-            // Refetch every 5 minutes
-            if (!this.npcData || (Date.now() - this.npcData.lastFetch) > 300000) {
-                this.fetchNpcSchedule().then(() => {
-                    this.injectNPCIntoTicker();
-                });
-            }
-        },
+        // Setup mutation observer to watch for ticker changes
+        setupMutationObserver() {
+            const sliderWrapper = document.querySelector('.news-ticker-slider-wrapper');
+            if (!sliderWrapper) return;
 
-        //Inject NPC item directly into the news ticker DOM
-        injectNPCIntoTicker() {
-            if (!this.npcData) {
-                console.log('⚠️ No NPC data to inject');
-                return;
-            }
-
-            // Find the news ticker React component data
-            const ticker = document.querySelector('.news-ticker');
-            if (!ticker) {
-                console.log('⚠️ News ticker not found');
-                return;
-            }
-
-            // Try to find React internal instance
-            const reactKey = Object.keys(ticker).find(key => key.startsWith('__reactInternalInstance') || key.startsWith('__reactFiber'));
-
-            if (reactKey) {
-                console.log('✅ Found React instance, attempting to inject NPC data');
-
-                //Get the React component
-                let fiber = ticker[reactKey];
-
-                // Try to find the component that has the headlines state
-                while (fiber) {
-                    if (fiber.memoizedState?.headlines || fiber.memoizedProps?.headlines) {
-                        console.log('✅ Found headlines in React state/props');
-
-                        // Create NPC news item
-                        const npcItem = this.createNPCNewsItem(this.npcData);
-
-                        if (fiber.memoizedState?.headlines) {
-                            // Inject into state
-                            const headlines = [...fiber.memoizedState.headlines];
-                            if (!headlines.find(h => h.ID === 0)) {
-                                headlines.unshift(npcItem);
-                                fiber.memoizedState.headlines = headlines;
-                                console.log('✅ NPC item injected into React state');
-                            }
-                        } else if (fiber.memoizedProps?.headlines) {
-                            // Inject into props
-                            const headlines = [...fiber.memoizedProps.headlines];
-                            if (!headlines.find(h => h.ID === 0)) {
-                                headlines.unshift(npcItem);
-                                fiber.memoizedProps.headlines = headlines;
-                                console.log('✅ NPC item injected into React props');
-                            }
-                        }
-
-                        // Force update
-                        if (fiber.stateNode && typeof fiber.stateNode.forceUpdate === 'function') {
-                            fiber.stateNode.forceUpdate();
-                        }
-                        break;
-                    }
-                    fiber = fiber.return;
+            this.observer = new MutationObserver((mutations) => {
+                // Re-inject if our slide was removed
+                if (!this.hasNPCSlide()) {
+                    console.log('🔄 NPC slide removed, re-injecting...');
+                    this.injectNPCSlide();
                 }
-            } else {
-                console.log('⚠️ Could not find React instance on news ticker');
-            }
+            });
+
+            this.observer.observe(sliderWrapper, {
+                childList: true,
+                subtree: true
+            });
+
+            console.log('👀 MutationObserver set up for news ticker');
         },
 
-        // Create NPC news item object
-        createNPCNewsItem(data) {
-            const time = data.time || {};
-            let attackString = '';
-            let attackLink = '';
-            let attackTarget = 0;
+        // Check if our NPC slide exists
+        hasNPCSlide() {
+            return !!document.querySelector('.news-ticker-slide[data-sidekick-npc="true"]');
+        },
 
-            // If there's no clear time set
+        // Inject NPC slide into the carousel
+        injectNPCSlide() {
+            if (!this.npcData) {
+                console.log('⚠️ No NPC data available');
+                return;
+            }
+
+            const sliderWrapper = document.querySelector('.news-ticker-slider-wrapper');
+            if (!sliderWrapper) {
+                console.log('⚠️ News ticker slider wrapper not found');
+                return;
+            }
+
+            // Remove existing NPC slide if present
+            this.removeNPCSlide();
+
+            // Create NPC slide
+            const npcSlide = this.createNPCSlide();
+
+            // Insert as first slide
+            sliderWrapper.insertBefore(npcSlide, sliderWrapper.firstChild);
+
+            this.npcSlideInjected = true;
+            console.log('✅ NPC slide injected into news ticker');
+        },
+
+        // Create the NPC slide element
+        createNPCSlide() {
+            const slide = document.createElement('div');
+            slide.className = 'news-ticker-slide';
+            slide.setAttribute('data-sidekick-npc', 'true');
+
+            const time = this.npcData.time || {};
+            let message = '';
+            let linkHref = '';
+
+            // Build message
             if (time.clear === 0 && time.attack === false) {
-                attackString = time.reason ?
+                message = time.reason ?
                     `NPC attacking will resume after ${time.reason}` :
                     'No attack currently set.';
             } else {
-                // Build the attack order
+                const order = this.npcData.order || [];
+                const npcs = this.npcData.npcs || {};
                 let attackOrder = '';
-                const order = data.order || [];
-                const npcs = data.npcs || {};
+                let attackTarget = 0;
 
                 order.forEach((npcId) => {
                     if (npcs[npcId]?.next) {
-                        // If there's an attack happening right now
                         if (time.attack === true) {
                             if (npcs[npcId].hosp_out >= time.current) {
                                 attackOrder += `<span style="text-decoration: line-through">${npcs[npcId].name}</span>, `;
@@ -265,43 +256,55 @@
                         }
                     }
 
-                    // Set attack target
-                    if (time.attack === true) {
-                        if (npcs[npcId].hosp_out <= time.current && attackTarget === 0) {
-                            attackTarget = npcId;
-                        }
+                    if (time.attack === true && npcs[npcId].hosp_out <= time.current && attackTarget === 0) {
+                        attackTarget = npcId;
                     }
                 });
 
-                // Default to first in order
                 if (attackTarget === 0 && order.length > 0) {
                     attackTarget = order[0];
                 }
 
-                // Clean up attack order
                 attackOrder = attackOrder.slice(0, -2) + '.';
 
-                // Set message based on attack status
                 if (time.attack === true) {
-                    attackString = 'NPC attack is underway! Get in there and get some loot!';
-                    attackLink = `loader.php?sid=attack&user2ID=${attackTarget}`;
+                    message = 'NPC attack is underway! Get in there and get some loot!';
+                    linkHref = `loader.php?sid=attack&user2ID=${attackTarget}`;
                 } else {
                     const timeStr = this.formatTime(time.clear);
-                    attackString = `NPC attack set for ${timeStr}. Order is: ${attackOrder}`;
-                    attackLink = `loader.php?sid=attack&user2ID=${attackTarget}`;
+                    message = `NPC attack set for ${timeStr}. Order is: ${attackOrder}`;
+                    linkHref = `loader.php?sid=attack&user2ID=${attackTarget}`;
                 }
             }
 
-            // Return news item object
-            return {
-                ID: 0,
-                headline: `<span style="color:${CONFIG.tickerColor}; font-weight: bold;" id="sidekick-npc-timer">${attackString}</span>`,
-                countdown: time.clear > 0,
-                endTime: time.clear,
-                link: attackLink,
-                isGlobal: true,
-                type: 'generalMessage'
-            };
+            // Create link
+            const link = document.createElement('a');
+            link.href = linkHref || '#';
+            link.innerHTML = `<span style="color:${CONFIG.tickerColor}; font-weight: bold;">${message}</span>`;
+
+            slide.appendChild(link);
+
+            return slide;
+        },
+
+        // Update existing NPC slide
+        updateNPCSlide() {
+            if (!this.hasNPCSlide()) {
+                this.injectNPCSlide();
+            } else {
+                this.removeNPCSlide();
+                this.injectNPCSlide();
+            }
+        },
+
+        // Remove NPC slide
+        removeNPCSlide() {
+            const existingSlide = document.querySelector('.news-ticker-slide[data-sidekick-npc="true"]');
+            if (existingSlide) {
+                existingSlide.remove();
+                this.npcSlideInjected = false;
+                console.log('🗑️ NPC slide removed');
+            }
         },
 
         // Format timestamp to readable time
@@ -324,6 +327,7 @@
             return {
                 isEnabled: this.isEnabled,
                 hasData: !!this.npcData,
+                slideInjected: this.npcSlideInjected,
                 npcData: this.npcData
             };
         }
