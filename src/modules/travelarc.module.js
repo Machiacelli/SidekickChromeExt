@@ -195,7 +195,7 @@
         const destY = (destPct.y / 100) * mapImg.offsetHeight;
 
         const midX = (originX + destX) / 2;
-        const midY = Math.min(originY, destY) - 60;
+        const midY = (originY + destY) / 2 - 60;
 
         // Create arc path
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
