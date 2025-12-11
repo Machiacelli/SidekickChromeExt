@@ -404,7 +404,7 @@
             panel.style.cssText = `
                 position: absolute;
                 left: 1150px;
-                top: 508px;
+                top: 507px;
                 width: 190px;
                 height: 32px;
                 background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(30,30,30,0.9));
