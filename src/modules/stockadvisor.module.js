@@ -500,15 +500,18 @@
         // Save window state
         async saveWindowState(windowElement) {
             try {
+                // Only save if window still exists in DOM (not being closed)
+                const isOpen = windowElement && document.body.contains(windowElement);
+
                 const state = {
-                    isOpen: true,
+                    isOpen: isOpen,
                     x: parseInt(windowElement.style.left) || 10,
                     y: parseInt(windowElement.style.top) || 10,
                     width: windowElement.offsetWidth,
                     height: windowElement.offsetHeight
                 };
                 await window.SidekickModules.Core.ChromeStorage.set('sidekick_stockadvisor_window', state);
-                console.log("📈 Window state saved:", state);
+                console.log("📈 Window state saved (shared across tabs):", state);
             } catch (error) {
                 console.error("Failed to save window state:", error);
             }
