@@ -172,6 +172,11 @@
             window.fetch = async function (...args) {
                 const response = await self.originalFetch.apply(this, args);
 
+                // Log all Torn API requests to find news ticker
+                if (response.url && response.url.includes('torn.com')) {
+                    console.log('🌐 Fetch URL:', response.url);
+                }
+
                 // Only intercept news ticker requests
                 if (!response.url || response.url.indexOf('?sid=newsTicker') === -1) {
                     return response;
