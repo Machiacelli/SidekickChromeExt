@@ -1424,6 +1424,11 @@
 
             contentArea.appendChild(trackerElement);
 
+            // Register window for click-to-front behavior
+            if (window.SidekickModules?.Core?.WindowManager) {
+                window.SidekickModules.Core.WindowManager.registerWindow(trackerElement, 'Debt Tracker');
+            }
+
             this.isDebtTrackerOpen = true;
             this.startAlertMonitoring();
 
