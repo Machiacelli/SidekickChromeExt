@@ -147,9 +147,9 @@
                 buttonContainer.id = `flight-tracker-btn-${playerId}`;
                 buttonContainer.style.cssText = `
                     position: absolute;
-                    left: 984px;
-                    top: 462px;
-                    width: 373px;
+                    left: 1171px;
+                    top: 507px;
+                    width: 185px;
                     height: 40px;
                     z-index: 9999;
                 `;
@@ -405,7 +405,7 @@
                 position: absolute;
                 left: 981px;
                 top: 507px;
-                width: 373px;
+                width: 180px;
                 height: 40px;
                 background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(30,30,30,0.9));
                 padding: 6px 10px;
@@ -418,7 +418,7 @@
                 overflow: hidden;
                 display: flex;
                 align-items: center;
-                gap: 8px;
+                gap: 6px;
             `;
 
             // Append to body for absolute positioning
