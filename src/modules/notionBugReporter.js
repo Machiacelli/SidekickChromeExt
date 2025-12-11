@@ -312,6 +312,8 @@
                 if (screenshotInput && screenshotInput.files[0]) {
                     console.log('📸 Converting screenshot to base64...');
                     screenshotBase64 = await this.fileToBase64(screenshotInput.files[0]);
+                    console.log('📸 Screenshot captured! Length:', screenshotBase64?.length || 0);
+                    console.log('📸 First 50 chars:', screenshotBase64?.substring(0, 50));
                 }
 
                 const result = await this.reportBug({
@@ -397,6 +399,14 @@
                         ...metadata
                     }
                 };
+
+                console.log('🐛 Bug data prepared:', {
+                    title: bugData.title,
+                    description: bugData.description.substring(0, 50) + '...',
+                    priority: bugData.priority,
+                    hasScreenshot: !!bugData.screenshot,
+                    screenshotLength: bugData.screenshot?.length || 0
+                });
 
                 // Send message to background script
                 const response = await chrome.runtime.sendMessage({
