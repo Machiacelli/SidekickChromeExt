@@ -296,7 +296,14 @@
                 overflow-y: auto;
                 color: #fff;
                 font-size: 13px;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
             `;
+
+            // Hide webkit scrollbar
+            const style = document.createElement('style');
+            style.textContent = `.stats-content::-webkit-scrollbar { display: none; }`;
+            document.head.appendChild(style);
 
             this.window.appendChild(header);
             this.window.appendChild(content);
