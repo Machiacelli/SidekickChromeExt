@@ -148,7 +148,7 @@
                 buttonContainer.style.cssText = `
                     position: absolute;
                     left: 984px;
-                    top: 402px;
+                    top: 462px;
                     width: 373px;
                     height: 40px;
                     z-index: 9999;
@@ -404,7 +404,7 @@
             panel.style.cssText = `
                 position: absolute;
                 left: 981px;
-                top: 447px;
+                top: 507px;
                 width: 373px;
                 height: 40px;
                 background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(30,30,30,0.9));
