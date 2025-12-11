@@ -141,16 +141,16 @@
                 // Find a good container to insert our button
                 let targetContainer = statusContainer?.parentElement;
 
-                // Create button container with fixed positioning
+                // Create button container with absolute positioning
                 const buttonContainer = document.createElement('div');
                 buttonContainer.className = 'sidekick-flight-tracker-container';
                 buttonContainer.id = `flight-tracker-btn-${playerId}`;
                 buttonContainer.style.cssText = `
-                    position: fixed;
-                    left: 688px;
-                    top: 507px;
-                    width: 380px;
-                    height: 116px;
+                    position: absolute;
+                    left: 984px;
+                    top: 402px;
+                    width: 373px;
+                    height: 40px;
                     z-index: 9999;
                 `;
 
@@ -402,23 +402,26 @@
             panel.className = 'sidekick-flight-info-panel';
             panel.dataset.playerId = playerId; // Store which player this panel is for
             panel.style.cssText = `
-                position: fixed;
-                left: 978px;
-                top: 508px;
-                width: 378px;
-                height: 119px;
+                position: absolute;
+                left: 981px;
+                top: 447px;
+                width: 373px;
+                height: 40px;
                 background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(30,30,30,0.9));
-                padding: 12px 16px;
-                border-radius: 8px;
-                font-size: 12px;
+                padding: 6px 10px;
+                border-radius: 6px;
+                font-size: 11px;
                 color: #fff;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.3);
                 border: 1px solid rgba(255,255,255,0.1);
                 z-index: 9999;
                 overflow: hidden;
+                display: flex;
+                align-items: center;
+                gap: 8px;
             `;
 
-            // Append to body for fixed positioning
+            // Append to body for absolute positioning
             document.body.appendChild(panel);
 
             this.updateInfoPanel(playerId);
@@ -437,61 +440,46 @@
             const player = this.trackedPlayers.get(playerId.toString());
 
             if (!player) {
-                panel.innerHTML = `
-                    <div style="opacity: 0.6; text-align: center; font-size: 11px;">Not tracking</div>
-                `;
+                panel.innerHTML = `<span style="opacity: 0.6; font-size: 10px;">Not tracking</span>`;
                 return;
             }
 
-            // Build compact status display
+            // Build compact single-line status
             let statusHTML = '';
 
             if (player.currentCountry) {
-                // Show status and country
-                const statusText = player.currentStatus === 'returning'
-                    ? 'Returning from'
-                    : player.currentStatus === 'traveling'
-                        ? 'Traveling to'
-                        : 'In';
+                const statusText = player.currentStatus === 'returning' ? '←' : '→';
 
-                statusHTML += `
-                    <div style="font-size: 11px; margin-bottom: 4px;">
-                        📍 ${statusText} <b>${player.currentCountry}</b>
-                    </div>
-                `;
+                // Country and direction
+                statusHTML += `<span style="font-size: 11px;">${statusText} <b>${player.currentCountry}</b></span>`;
 
-                // Show plane type if detected
+                // Plane type
                 if (player.detectedPlaneType) {
                     const planeIcon = player.detectedPlaneType === 'airstrip' ? '🛩️' : '✈️';
-                    const planeLabel = player.detectedPlaneType === 'airstrip' ? 'Airstrip' : 'Commercial';
-                    statusHTML += `
-                        <div style="font-size: 10px; margin-bottom: 4px;">
-                            ${planeIcon} ${planeLabel}${player.hasWLTBenefit && player.currentStatus === 'returning' ? ' <span style="color: #FFD700;">+WLT</span>' : ''}
-                        </div>
-                    `;
+                    statusHTML += `<span style="font-size: 10px;">${planeIcon}</span>`;
                 }
 
-                // Show countdown if returning
+                // WLT if applicable
+                if (player.hasWLTBenefit && player.currentStatus === 'returning') {
+                    statusHTML += `<span style="color: #FFD700; font-size: 10px;">⚡WLT</span>`;
+                }
+
+                // Countdown timer
                 if (player.landingTime && player.currentStatus === 'returning') {
                     const timeLeft = Math.max(0, Math.floor((player.landingTime - Date.now()) / 1000));
                     const timeStr = window.TravelTimesData?.formatTravelTime(timeLeft) || `${timeLeft}s`;
 
-                    // Visual alert colors based on time remaining
-                    let timerColor = '#4CAF50'; // Green
+                    let timerColor = '#4CAF50';
                     let timerIcon = '⏱️';
                     if (timeLeft <= 60) {
-                        timerColor = '#f44336'; // Red
+                        timerColor = '#f44336';
                         timerIcon = '🚨';
                     } else if (timeLeft <= 300) {
-                        timerColor = '#FF9800'; // Orange
+                        timerColor = '#FF9800';
                         timerIcon = '⚠️';
                     }
 
-                    statusHTML += `
-                        <div style="font-size: 13px; font-weight: bold; color: ${timerColor}; margin-top: 4px;">
-                            ${timerIcon} ${timeStr}
-                        </div>
-                    `;
+                    statusHTML += `<span style="font-size: 12px; font-weight: bold; color: ${timerColor}; margin-left: auto;">${timerIcon} ${timeStr}</span>`;
 
                     // Flash animation for imminent landing
                     if (timeLeft <= 60 && timeLeft > 0) {
@@ -503,11 +491,7 @@
                     }
                 }
             } else {
-                statusHTML += `
-                    <div style="opacity: 0.7; font-size: 10px;">
-                        ${player.currentStatus}
-                    </div>
-                `;
+                statusHTML += `<span style="opacity: 0.7; font-size: 10px;">${player.currentStatus}</span>`;
             }
 
             panel.innerHTML = statusHTML;
@@ -517,31 +501,6 @@
         async updatePlayerStatus(playerId) {
             const player = this.trackedPlayers.get(playerId.toString());
             if (!player) return;
-
-            // Get text from selected area
-            const statusText = this.getTextFromArea(player.selectedArea);
-
-            // Parse status
-            const parsedStatus = this.parseStatusText(statusText);
-
-            if (parsedStatus.country) {
-                player.currentCountry = parsedStatus.country;
-                player.currentStatus = parsedStatus.status;
-
-                // Detect plane type from image
-                const planeType = await this.detectPlaneType(player.selectedArea);
-                if (planeType) {
-                    player.detectedPlaneType = planeType;
-                }
-
-                // If returning, start countdown
-                if (parsedStatus.status === 'returning' && !player.landingTime) {
-                    await this.startCountdown(player);
-                }
-            }
-
-            await this.saveTrackedPlayers();
-            this.updateInfoPanel(playerId);
         },
 
         // Get text from selected area
