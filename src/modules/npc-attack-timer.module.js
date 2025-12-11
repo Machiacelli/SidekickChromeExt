@@ -2,7 +2,7 @@
  * Sidekick Chrome Extension - NPC Attack Timer Module
  * Display upcoming NPC attacks in Torn's news ticker
  * Based on Loot Rangers API
- * Version: 2.0.0
+ * Version: 3.0.0 - DOM-based approach
  * Author: Machiacelli / Robin
  */
 
@@ -14,7 +14,8 @@
     // Configuration settings
     const CONFIG = {
         tickerColor: "#8abeef",  // Color for NPC message
-        timeFormat24h: true      // true = 24h, false = 12h
+        timeFormat24h: true,      // true = 24h, false = 12h
+        checkInterval: 5000       // Check every 5 seconds
     };
 
     // Wait for Core module to be available
@@ -36,7 +37,8 @@
         isInitialized: false,
         isEnabled: false,
         npcData: null,
-        originalFetch: null,
+        updateInterval: null,
+        observer: null,
 
         // Initialize the module
         async init() {
@@ -72,7 +74,7 @@
                 if (saved) {
                     this.isEnabled = saved.isEnabled === true;
                 } else {
-                    this.isEnabled = false; // Default disabled
+                    this.isEnabled = true; // Default ENABLED now
                 }
                 console.log('⚔️ NPC Attack Timer settings loaded:', { enabled: this.isEnabled });
             } catch (error) {
@@ -93,7 +95,7 @@
             }
         },
 
-        // Toggle enabled state
+        // Toggle the timer on/off
         async toggle() {
             this.isEnabled = !this.isEnabled;
             await this.saveSettings();
@@ -105,8 +107,6 @@
                 console.log('⏸️ NPC Attack Timer: Disabled');
                 this.stopMonitoring();
             }
-
-            return this.isEnabled;
         },
 
         // Start monitoring for news ticker
@@ -114,168 +114,232 @@
             console.log('🎯 NPC Attack Timer: Starting monitoring...');
             this.stopMonitoring(); // Clean up any existing monitoring
 
-            // Fetch NPC schedule first
+            // Fetch NPC schedule
             this.fetchNpcSchedule().then(() => {
-                // Delay setup to ensure TornTools has finished loading
-                setTimeout(() => {
-                    this.setupFetchInterceptor();
-                }, 1000); // Wait 1 second for TornTools to finish
+                // Wait for news ticker to exist, then inject
+                this.waitForNewsTicker();
+
+                // Update every 5 seconds
+                this.updateInterval = setInterval(() => {
+                    this.updateTickerIfNeeded();
+                }, CONFIG.checkInterval);
             });
         },
 
         // Stop monitoring
         stopMonitoring() {
-            this.restoreFetch();
             console.log('⏹️ NPC Attack Timer: Monitoring stopped');
+            if (this.updateInterval) {
+                clearInterval(this.updateInterval);
+                this.updateInterval = null;
+            }
         },
 
         // Fetch NPC schedule from Loot Rangers
         async fetchNpcSchedule() {
+            console.log('📡 Fetching NPC schedule from Loot Rangers...');
             try {
-                console.log('📡 Fetching NPC schedule from Loot Rangers...');
-
-                const response = await fetch('https://api.lzpt.io/loot', {
-                    method: 'GET',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
+                const response = await fetch('https://api.lzpt.io/loot');
                 this.npcData = await response.json();
                 console.log('✅ NPC schedule loaded:', this.npcData);
-                return this.npcData;
             } catch (error) {
-                console.error('Failed to fetch NPC schedule:', error);
-                this.npcData = null;
-                return null;
+                console.error('❌ Failed to fetch NPC schedule:', error);
             }
         },
 
-        // Format UNIX timestamp into readable string
-        formatTime(unixSeconds) {
-            const d = new Date(unixSeconds * 1000);
-            let hours = CONFIG.timeFormat24h ? d.getUTCHours() : (d.getUTCHours() % 12 || 12);
-            let minutes = d.getUTCMinutes().toString().padStart(2, '0');
-            let suffix = CONFIG.timeFormat24h ? ' TCT' : (d.getUTCHours() >= 12 ? ' PM' : ' AM');
-            return `${hours}:${minutes}${suffix}`;
+        // Wait for news ticker element to exist
+        waitForNewsTicker() {
+            const checkTicker = () => {
+                const ticker = document.querySelector('.news-ticker-slider-wrapper');
+                if (ticker) {
+                    console.log('✅ News ticker found, injecting NPC data...');
+                    this.injectNPCIntoTicker();
+                } else {
+                    setTimeout(checkTicker, 500);
+                }
+            };
+            checkTicker();
         },
 
-        // Set up fetch interceptor to inject NPC data into news ticker
-        setupFetchInterceptor() {
-            const self = this;
-
-            // Store whatever fetch is currently assigned (could be TornTools' or native)
-            if (!this.originalFetch) {
-                this.originalFetch = window.fetch;
-                console.log('🔧 Storing current fetch interceptor (might be TornTools)');
-            }
-
-            console.log('🔧 Setting up fetch interceptor for news ticker...');
-
-            // Override fetch to inject NPC data into news ticker
-            window.fetch = async function (...args) {
-                const response = await self.originalFetch.apply(this, args);
-
-                // Log all Torn API requests to find news ticker
-                if (response.url && response.url.includes('torn.com')) {
-                    console.log('🌐 Fetch URL:', response.url);
-                }
-
-                // Only intercept news ticker requests
-                if (!response.url || response.url.indexOf('?sid=newsTicker') === -1) {
-                    return response;
-                }
-
-                console.log('🔄 Intercepted news ticker request');
-
-                // Clone and modify the response
-                const clonedResponse = response.clone();
-                const data = await clonedResponse.json();
-
-                // Inject NPC data if available
-                if (self.npcData) {
-                    const npcItem = self.createNPCNewsItem(self.npcData);
-                    if (npcItem) {
-                        data.headlines.unshift(npcItem);
-                        console.log('✅ NPC item injected into news ticker pool');
-                    }
-                }
-
-                // Return modified response
-                return new Response(JSON.stringify(data), {
-                    status: response.status,
-                    statusText: response.statusText,
-                    headers: response.headers
+        // Update ticker if needed (refetch data periodically)
+        updateTickerIfNeeded() {
+            // Refetch every 5 minutes
+            if (!this.npcData || (Date.now() - this.npcData.lastFetch) > 300000) {
+                this.fetchNpcSchedule().then(() => {
+                    this.injectNPCIntoTicker();
                 });
+            }
+        },
+
+        //Inject NPC item directly into the news ticker DOM
+        injectNPCIntoTicker() {
+            if (!this.npcData) {
+                console.log('⚠️ No NPC data to inject');
+                return;
+            }
+
+            // Find the news ticker React component data
+            const ticker = document.querySelector('.news-ticker');
+            if (!ticker) {
+                console.log('⚠️ News ticker not found');
+                return;
+            }
+
+            // Try to find React internal instance
+            const reactKey = Object.keys(ticker).find(key => key.startsWith('__reactInternalInstance') || key.startsWith('__reactFiber'));
+
+            if (reactKey) {
+                console.log('✅ Found React instance, attempting to inject NPC data');
+
+                //Get the React component
+                let fiber = ticker[reactKey];
+
+                // Try to find the component that has the headlines state
+                while (fiber) {
+                    if (fiber.memoizedState?.headlines || fiber.memoizedProps?.headlines) {
+                        console.log('✅ Found headlines in React state/props');
+
+                        // Create NPC news item
+                        const npcItem = this.createNPCNewsItem(this.npcData);
+
+                        if (fiber.memoizedState?.headlines) {
+                            // Inject into state
+                            const headlines = [...fiber.memoizedState.headlines];
+                            if (!headlines.find(h => h.ID === 0)) {
+                                headlines.unshift(npcItem);
+                                fiber.memoizedState.headlines = headlines;
+                                console.log('✅ NPC item injected into React state');
+                            }
+                        } else if (fiber.memoizedProps?.headlines) {
+                            // Inject into props
+                            const headlines = [...fiber.memoizedProps.headlines];
+                            if (!headlines.find(h => h.ID === 0)) {
+                                headlines.unshift(npcItem);
+                                fiber.memoizedProps.headlines = headlines;
+                                console.log('✅ NPC item injected into React props');
+                            }
+                        }
+
+                        // Force update
+                        if (fiber.stateNode && typeof fiber.stateNode.forceUpdate === 'function') {
+                            fiber.stateNode.forceUpdate();
+                        }
+                        break;
+                    }
+                    fiber = fiber.return;
+                }
+            } else {
+                console.log('⚠️ Could not find React instance on news ticker');
+            }
+        },
+
+        // Create NPC news item object
+        createNPCNewsItem(data) {
+            const time = data.time || {};
+            let attackString = '';
+            let attackLink = '';
+            let attackTarget = 0;
+
+            // If there's no clear time set
+            if (time.clear === 0 && time.attack === false) {
+                attackString = time.reason ?
+                    `NPC attacking will resume after ${time.reason}` :
+                    'No attack currently set.';
+            } else {
+                // Build the attack order
+                let attackOrder = '';
+                const order = data.order || [];
+                const npcs = data.npcs || {};
+
+                order.forEach((npcId) => {
+                    if (npcs[npcId]?.next) {
+                        // If there's an attack happening right now
+                        if (time.attack === true) {
+                            if (npcs[npcId].hosp_out >= time.current) {
+                                attackOrder += `<span style="text-decoration: line-through">${npcs[npcId].name}</span>, `;
+                            } else {
+                                attackOrder += `${npcs[npcId].name}, `;
+                            }
+                        } else {
+                            attackOrder += `${npcs[npcId].name}, `;
+                        }
+                    }
+
+                    // Set attack target
+                    if (time.attack === true) {
+                        if (npcs[npcId].hosp_out <= time.current && attackTarget === 0) {
+                            attackTarget = npcId;
+                        }
+                    }
+                });
+
+                // Default to first in order
+                if (attackTarget === 0 && order.length > 0) {
+                    attackTarget = order[0];
+                }
+
+                // Clean up attack order
+                attackOrder = attackOrder.slice(0, -2) + '.';
+
+                // Set message based on attack status
+                if (time.attack === true) {
+                    attackString = 'NPC attack is underway! Get in there and get some loot!';
+                    attackLink = `loader.php?sid=attack&user2ID=${attackTarget}`;
+                } else {
+                    const timeStr = this.formatTime(time.clear);
+                    attackString = `NPC attack set for ${timeStr}. Order is: ${attackOrder}`;
+                    attackLink = `loader.php?sid=attack&user2ID=${attackTarget}`;
+                }
+            }
+
+            // Return news item object
+            return {
+                ID: 0,
+                headline: `<span style="color:${CONFIG.tickerColor}; font-weight: bold;" id="sidekick-npc-timer">${attackString}</span>`,
+                countdown: time.clear > 0,
+                endTime: time.clear,
+                link: attackLink,
+                isGlobal: true,
+                type: 'generalMessage'
             };
         },
 
-        // Create NPC news item for ticker
-        createNPCNewsItem(npcData) {
-            try {
-                if (!npcData || !npcData.time || !npcData.order || !npcData.npcs) {
-                    console.log('⚠️ Invalid NPC data structure');
-                    return null;
-                }
+        // Format timestamp to readable time
+        formatTime(timestamp) {
+            const date = new Date(timestamp * 1000);
+            const hours = date.getUTCHours();
+            const minutes = date.getUTCMinutes().toString().padStart(2, '0');
 
-                let message = '';
-                if (npcData.time.attack) {
-                    // If attack is live
-                    const targetId = npcData.order[0];
-                    const targetName = npcData.npcs[targetId]?.name || 'Unknown';
-                    message = `NPC attack is ongoing! Target: ${targetName}`;
-                } else {
-                    // Next attack
-                    const nextTime = this.formatTime(npcData.time.clear);
-                    const orderNames = npcData.order.map(id => npcData.npcs[id]?.name || 'Unknown').join(', ');
-                    message = `Next NPC attack at ${nextTime}. Order: ${orderNames}.`;
-                }
-
-                // Create news ticker item
-                return {
-                    ID: 0,
-                    headline: `<span style="color:${CONFIG.tickerColor}; font-weight: bold;">${message}</span>`,
-                    countdown: !npcData.time.attack, // Only show countdown if not attacking
-                    endTime: npcData.time.clear,
-                    link: '',
-                    isGlobal: true,
-                    type: 'generalMessage'
-                };
-            } catch (error) {
-                console.error('❌ Error creating NPC news item:', error);
-                return null;
+            if (CONFIG.timeFormat24h) {
+                return `${hours.toString().padStart(2, '0')}:${minutes} TCT`;
+            } else {
+                const period = hours >= 12 ? 'PM' : 'AM';
+                const displayHours = hours % 12 || 12;
+                return `${displayHours}:${minutes} ${period} TCT`;
             }
         },
 
-        // Restore original fetch
-        restoreFetch() {
-            if (this.originalFetch) {
-                window.fetch = this.originalFetch;
-                this.originalFetch = null;
-                console.log('🔧 Fetch interceptor removed');
-            }
-        },
-
-        // Get current status
+        // Get current status (for debugging)
         getStatus() {
             return {
                 isEnabled: this.isEnabled,
-                isInitialized: this.isInitialized,
                 hasData: !!this.npcData,
-                isIntercepting: !!this.originalFetch
+                npcData: this.npcData
             };
         }
     };
 
-    // Initialize global namespace if it doesn't exist
-    if (!window.SidekickModules) {
-        window.SidekickModules = {};
+    // Initialize module when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => NPCAttackTimerModule.init());
+    } else {
+        NPCAttackTimerModule.init();
     }
 
-    // Export NPC Attack Timer module to global namespace
+    // Expose module
+    window.SidekickModules = window.SidekickModules || {};
     window.SidekickModules.NPCAttackTimer = NPCAttackTimerModule;
+
     console.log("✅ NPC Attack Timer Module loaded and ready");
 
 })();
