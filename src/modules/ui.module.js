@@ -254,6 +254,8 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                z-index: 10000;
+                opacity: 0.85;
             `;
 
             addModuleButton.addEventListener('mouseenter', () => {
