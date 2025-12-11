@@ -403,7 +403,7 @@
             panel.dataset.playerId = playerId; // Store which player this panel is for
             panel.style.cssText = `
                 position: absolute;
-                left: 1160px;
+                left: 1150px;
                 top: 511px;
                 width: 190px;
                 height: 32px;
