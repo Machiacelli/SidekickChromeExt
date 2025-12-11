@@ -147,7 +147,7 @@
                 buttonContainer.id = `flight-tracker-btn-${playerId}`;
                 buttonContainer.style.cssText = `
                     position: absolute;
-                    left: 1171px;
+                    left: 981px;
                     top: 507px;
                     width: 185px;
                     height: 40px;
@@ -403,7 +403,7 @@
             panel.dataset.playerId = playerId; // Store which player this panel is for
             panel.style.cssText = `
                 position: absolute;
-                left: 981px;
+                left: 1176px;
                 top: 507px;
                 width: 180px;
                 height: 40px;
