@@ -176,16 +176,16 @@
             if (!sliderWrapper) return;
 
             this.observer = new MutationObserver((mutations) => {
-                // Re-inject if our slide was removed
-                if (!this.hasNPCSlide()) {
-                    console.log('🔄 NPC slide removed, re-injecting...');
+                // Only re-inject if our slide was actually removed by Torn (not by us)
+                if (!this.hasNPCSlide() && !this.isInjectingSlide) {
+                    console.log('🔄 NPC slide removed by Torn, re-injecting...');
                     this.injectNPCSlide();
                 }
             });
 
             this.observer.observe(sliderWrapper, {
                 childList: true,
-                subtree: true
+                subtree: false  // Only watch direct children, not subtree
             });
 
             console.log('👀 MutationObserver set up for news ticker');
@@ -209,6 +209,14 @@
                 return;
             }
 
+            // Set flag to prevent observer from re-injecting during our injection
+            this.isInjectingSlide = true;
+
+            // Temporarily disconnect observer to avoid loops
+            if (this.observer) {
+                this.observer.disconnect();
+            }
+
             // Remove existing NPC slide if present
             this.removeNPCSlide();
 
@@ -220,6 +228,20 @@
 
             this.npcSlideInjected = true;
             console.log('✅ NPC slide injected into news ticker');
+
+            // Reconnect observer after a short delay
+            setTimeout(() => {
+                if (this.observer) {
+                    const wrapper = document.querySelector('.news-ticker-slider-wrapper');
+                    if (wrapper) {
+                        this.observer.observe(wrapper, {
+                            childList: true,
+                            subtree: false
+                        });
+                    }
+                }
+                this.isInjectingSlide = false;
+            }, 100);
         },
 
         // Create the NPC slide element
