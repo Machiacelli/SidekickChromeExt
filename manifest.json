@@ -12,7 +12,8 @@
     "https://*.torn.com/*",
     "https://api.torn.com/*",
     "https://notion-bug-proxy.akaffebtd.workers.dev/*",
-    "https://torn.synclayer.dev/*"
+    "https://torn.synclayer.dev/*",
+    "https://sidekick-premium.akaffebtd.workers.dev/*"
   ],
   "icons": {
     "16": "assets/icons/swissknife-16.png",

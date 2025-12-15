@@ -84,87 +84,71 @@
             }
         },
 
-        // Check if user is admin
-        async isAdmin() {
-            console.log('🔍 Checking if user is admin...');
+        // Cached verification status (5 minutes)
+        cachedStatus: null,
+        cacheExpiry: 0,
+
+        // Worker URL
+        WORKER_URL: 'https://sidekick-premium.akaffebtd.workers.dev',
+
+        // Verify premium status with server
+        async verifyPremium(forceRefresh = false) {
+            // Check cache (5 minutes)
+            if (!forceRefresh && this.cachedStatus && Date.now() < this.cacheExpiry) {
+                console.log('💎 Using cached premium status');
+                return this.cachedStatus;
+            }
+
+            console.log('🔍 Verifying premium status with server...');
+
             try {
                 const apiKey = await window.SidekickModules.Core.ChromeStorage.get('sidekick_api_key');
-                console.log('🔑 API Key:', apiKey ? 'SET' : 'NOT SET');
-                if (!apiKey) return false;
+                if (!apiKey) {
+                    console.warn('⚠️ No API key for premium verification');
+                    return { success: false, premium: { active: false }, isAdmin: false };
+                }
 
-                // Fetch own user ID
-                console.log('📡 Fetching user ID from API...');
-                const response = await fetch(`https://api.torn.com/user/?selections=basic&key=${apiKey}`);
+                const response = await fetch(`${this.WORKER_URL}/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apiKey })
+                });
+
                 if (!response.ok) {
-                    console.error('❌ API response not OK:', response.status);
-                    return false;
+                    console.error('❌ Server verification failed:', response.status);
+                    return { success: false, premium: { active: false }, isAdmin: false };
                 }
 
                 const data = await response.json();
-                if (data.error) {
-                    console.error('❌ API error:', data.error);
-                    return false;
-                }
 
-                console.log('👤 User ID:', data.player_id);
-                console.log('📋 Admin whitelist:', this.adminWhitelist);
-                const isAdmin = this.adminWhitelist.includes(data.player_id);
-                console.log('👑 Is admin:', isAdmin);
-                return isAdmin;
+                // Cache for 5 minutes
+                this.cachedStatus = data;
+                this.cacheExpiry = Date.now() + (5 * 60 * 1000);
+
+                console.log('✅ Premium status verified:', data);
+                return data;
             } catch (error) {
-                console.error('❌ isAdmin error:', error);
-                return false;
+                console.error('❌ Premium verification error:', error);
+                return { success: false, premium: { active: false }, isAdmin: false };
             }
         },
 
-        // Check if user has active subscription
+        // Check if user is admin (server-side verification)
+        async isAdmin() {
+            const status = await this.verifyPremium();
+            return status.isAdmin || false;
+        },
+
+        // Check if user has active subscription (server-side verification)
         async isSubscribed() {
-            // Check if user is admin (unlimited premium)
-            if (await this.isAdmin()) {
-                console.log('💎 Premium: Admin detected - unlimited access');
-                return true;
-            }
-
-            // Check for admin-granted premium
-            try {
-                const apiKey = await window.SidekickModules.Core.ChromeStorage.get('sidekick_api_key');
-                if (apiKey) {
-                    const response = await fetch(`https://api.torn.com/user/?selections=basic&key=${apiKey}`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.player_id) {
-                            const grantKey = `sidekick_premium_grant_${data.player_id}`;
-                            const grant = await window.SidekickModules.Core.ChromeStorage.get(grantKey);
-                            if (grant && grant.expiresAt && Date.now() < grant.expiresAt) {
-                                console.log('💎 Premium: Admin-granted access active');
-                                // Store it in subscriptionExpires for consistency
-                                this.subscriptionExpires = grant.expiresAt;
-                                return true;
-                            }
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('❌ Failed to check admin-granted premium:', error);
-            }
-
-            // Check regular Xanax-based subscription
-            if (!this.subscriptionExpires) {
-                return false;
-            }
-            return Date.now() < this.subscriptionExpires;
+            const status = await this.verifyPremium();
+            return status.premium?.active || false;
         },
 
         // Get remaining subscription time in days
-        getRemainingDays() {
-            if (!this.subscriptionExpires) {
-                return 0;
-            }
-            const remaining = this.subscriptionExpires - Date.now();
-            if (remaining <= 0) {
-                return 0;
-            }
-            return Math.ceil(remaining / (24 * 60 * 60 * 1000));
+        async getRemainingDays() {
+            const status = await this.verifyPremium();
+            return status.premium?.daysRemaining || 0;
         },
 
         // Read Xanax payments from Torn API logs
@@ -230,85 +214,64 @@
             }
         },
 
-        // Update subscription based on Xanax payments OR admin-granted premium
+        // Update subscription based on Xanax payments (server-side)
         async updateSubscription() {
-            console.log('🔄 Refreshing subscription status...');
+            console.log('🔄 Refreshing subscription status with server...');
 
-            // First, check for admin-granted premium
             try {
                 const apiKey = await window.SidekickModules.Core.ChromeStorage.get('sidekick_api_key');
-                if (apiKey) {
-                    const response = await fetch(`https://api.torn.com/user/?selections=basic&key=${apiKey}`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.player_id) {
-                            const grantKey = `sidekick_premium_grant_${data.player_id}`;
-                            const grant = await window.SidekickModules.Core.ChromeStorage.get(grantKey);
-                            if (grant && grant.expiresAt && Date.now() < grant.expiresAt) {
-                                console.log('💎 Admin-granted premium found!');
-                                this.subscriptionExpires = grant.expiresAt;
+                if (!apiKey) {
+                    console.warn('⚠️ No API key for subscription update');
+                    return;
+                }
 
-                                // Refresh dialog if it's open
-                                const dialog = document.getElementById('premium-subscription-info');
-                                if (dialog) {
-                                    dialog.innerHTML = this.renderSubscriptionInfo();
-                                }
+                // Call server to process payment
+                const response = await fetch(`${this.WORKER_URL}/process-payment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apiKey })
+                });
 
-                                return;
-                            }
-                        }
-                    }
+                if (!response.ok) {
+                    console.error('❌ Payment processing failed:', response.status);
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    console.log('💎 No new payments found');
+                    return;
+                }
+
+                if (data.xanaxCount === 0) {
+                    console.log('💎 No Xanax payments found');
+                    return;
+                }
+
+                console.log(`💎 Subscription updated! ${data.message}`);
+
+                // Clear cache to force refresh
+                this.cachedStatus = null;
+                this.cacheExpiry = 0;
+
+                // Refresh dialog if open
+                const dialog = document.getElementById('premium-subscription-info');
+                if (dialog) {
+                    const status = await this.verifyPremium(true);
+                    dialog.innerHTML = this.renderSubscriptionInfo(status);
+                }
+
+                // Show notification
+                if (window.SidekickModules?.UI?.showNotification) {
+                    window.SidekickModules.UI.showNotification(
+                        'Premium Subscription',
+                        data.message,
+                        'success'
+                    );
                 }
             } catch (error) {
-                console.error('❌ Failed to check admin-granted premium:', error);
-            }
-
-            // Check for Xanax payments
-            const xanaxSent = await this.readXanaxPayments();
-
-            if (xanaxSent === 0) {
-                console.log('💎 No Xanax payments or admin grants found');
-                // Notification removed - no need to notify user every time
-                // if (window.SidekickModules?.UI?.showNotification) {
-                //     window.SidekickModules.UI.showNotification(
-                //         'No Premium Found',
-                //         'Send Xanax to activate premium',
-                //         'warning'
-                //     );
-                // }
-                return;
-            }
-
-            const msPerDay = 24 * 60 * 60 * 1000;
-            const addedDays = xanaxSent * this.DAYS_PER_XANAX;
-
-            // Calculate new expiration
-            // If already subscribed, extend from current expiration
-            // Otherwise, extend from now
-            const baseTime = (this.subscriptionExpires && this.subscriptionExpires > Date.now())
-                ? this.subscriptionExpires
-                : Date.now();
-
-            this.subscriptionExpires = baseTime + (addedDays * msPerDay);
-
-            await this.saveSubscription();
-
-            console.log(`💎 Subscription updated! Added ${addedDays} days (${xanaxSent} Xanax)`);
-            console.log(`💎 New expiration: ${new Date(this.subscriptionExpires).toLocaleString()}`);
-
-            // Refresh dialog if it's open
-            const dialog = document.getElementById('premium-subscription-info');
-            if (dialog) {
-                dialog.innerHTML = this.renderSubscriptionInfo();
-            }
-
-            // Show notification if UI module available
-            if (window.SidekickModules?.UI?.showNotification) {
-                window.SidekickModules.UI.showNotification(
-                    'Premium Subscription',
-                    `Added ${addedDays} days! Expires ${new Date(this.subscriptionExpires).toLocaleDateString()}`,
-                    'success'
-                );
+                console.error('❌ Failed to update subscription:', error);
             }
         },
 
@@ -365,9 +328,10 @@
         },
 
         // Render subscription info panel
-        renderSubscriptionInfo() {
-            const isActive = this.subscriptionExpires && Date.now() < this.subscriptionExpires;
-            const daysRemaining = this.getRemainingDays();
+        async renderSubscriptionInfo() {
+            const status = await this.verifyPremium();
+            const isActive = status.premium?.active || false;
+            const daysRemaining = status.premium?.daysRemaining || 0;
 
             return `
                 <div id="premium-subscription-info" style="
@@ -392,9 +356,9 @@
                             </div>
                         </div>
                     </div>
-                    ${isActive ? `
+                    ${isActive && status.premium?.expiresAt ? `
                         <div style="font-size: 11px; color: #aaa;">
-                            Expires: ${new Date(this.subscriptionExpires).toLocaleString()}
+                            Expires: ${new Date(status.premium.expiresAt).toLocaleString()}
                         </div>
                     ` : `
                         <div style="font-size: 11px; line-height: 1.6;">
@@ -417,28 +381,42 @@
             `;
         },
 
-        // Grant premium to a user (admin only)
+        // Grant premium to a user (admin only - server-side)
         async grantPremium(userTornId, days) {
-            if (!(await this.isAdmin())) {
-                console.error('❌ Only admins can grant premium');
-                return false;
-            }
+            console.log('👑 Attempting to grant premium...');
 
             try {
-                // Create a custom storage key for this user
-                const grantKey = `sidekick_premium_grant_${userTornId}`;
-                const expirationTime = Date.now() + (days * 24 * 60 * 60 * 1000);
+                const apiKey = await window.SidekickModules.Core.ChromeStorage.get('sidekick_api_key');
+                if (!apiKey) {
+                    console.error('❌ No API key for grant');
+                    return false;
+                }
 
-                await window.SidekickModules.Core.ChromeStorage.set(grantKey, {
-                    userId: userTornId,
-                    expiresAt: expirationTime,
-                    grantedBy: this.ADMIN_ID,
-                    grantedAt: Date.now(),
-                    days: days
+                // Call server to grant premium
+                const response = await fetch(`${this.WORKER_URL}/grant`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        adminApiKey: apiKey,
+                        targetUserId: parseInt(userTornId),
+                        days: parseInt(days)
+                    })
                 });
 
-                console.log(`✅ Granted ${days} days of premium to user ${userTornId}`);
-                console.log(`   Expires: ${new Date(expirationTime).toLocaleString()}`);
+                if (!response.ok) {
+                    console.error('❌ Grant request failed:', response.status);
+                    return false;
+                }
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    console.error('❌ Grant failed:', data.error);
+                    alert(`Failed: ${data.error}`);
+                    return false;
+                }
+
+                console.log('✅ Premium granted successfully:', data.granted);
 
                 if (window.SidekickModules?.UI?.showNotification) {
                     window.SidekickModules.UI.showNotification(
@@ -451,6 +429,7 @@
                 return true;
             } catch (error) {
                 console.error('❌ Failed to grant premium:', error);
+                alert(`Error: ${error.message}`);
                 return false;
             }
         },
@@ -523,12 +502,16 @@
             });
         },
 
-        // Show admin panel
-        showAdminPanel() {
-            if (!this.isAdmin()) {
-                console.error('❌ Admin access required');
+        // Show admin panel (FIXED ASYNC BUG)
+        async showAdminPanel() {
+            // Server-side verification with await
+            if (!(await this.isAdmin())) {
+                console.error('❌ Admin access denied by server');
+                alert('Access Denied: Admin privileges required');
                 return;
             }
+
+            console.log('👑 Admin verified - showing panel');
 
             const overlay = document.createElement('div');
             overlay.style.cssText = `
@@ -538,7 +521,7 @@
                 right: 0;
                 bottom: 0;
                 background: rgba(0,0,0,0.8);
-                z-index: 99999;
+                z-index: 9999999;
                 display: flex;
                 align-items: center;
                 justify-content: center;
