@@ -25,6 +25,8 @@
         windowState: { x: 100, y: 100, width: 280, height: 320 },
         history: {},
         lastUpdated: 0,
+        displayUpdateInterval: null,
+        gymObserver: null,
 
         // Initialize module
         async init() {
@@ -42,8 +44,11 @@
                 // Check if we need to update stats
                 await this.checkAndUpdate();
 
-                // Schedule periodic updates (every 90 minutes)
+                // Schedule periodic background updates (every 90 minutes) for safety
                 setInterval(() => this.updateStats(), 90 * 60 * 1000);
+
+                // Monitor gym page for training completion
+                this.startGymMonitoring();
 
                 if (this.isEnabled) {
                     this.enable();
@@ -213,6 +218,16 @@
             this.isEnabled = true;
             this.saveSettings();
             this.createWindow();
+
+            // Start periodic display refresh (every 1 minute for responsiveness)
+            if (this.displayUpdateInterval) {
+                clearInterval(this.displayUpdateInterval);
+            }
+            this.displayUpdateInterval = setInterval(() => {
+                if (this.window) {
+                    this.refreshDisplay();
+                }
+            }, 60 * 1000);
         },
 
         // Disable module
@@ -221,6 +236,12 @@
             this.isEnabled = false;
             this.saveSettings();
             this.removeWindow();
+
+            // Stop periodic display refresh
+            if (this.displayUpdateInterval) {
+                clearInterval(this.displayUpdateInterval);
+                this.displayUpdateInterval = null;
+            }
         },
 
         // Toggle module
@@ -526,6 +547,93 @@
                 this.window.remove();
                 this.window = null;
                 console.log("📊 Stats Tracker window removed");
+            }
+
+            // Stop periodic display refresh
+            if (this.displayUpdateInterval) {
+                clearInterval(this.displayUpdateInterval);
+                this.displayUpdateInterval = null;
+            }
+        },
+
+        // Monitor gym page for training completion
+        startGymMonitoring() {
+            // Only monitor if on gym page
+            const checkGymPage = () => {
+                if (window.location.href.includes('gym.php')) {
+                    this.setupGymObserver();
+                } else {
+                    this.cleanupGymObserver();
+                }
+            };
+
+            // Initial check
+            checkGymPage();
+
+            // Monitor URL changes (for SPA-like navigation)
+            setInterval(checkGymPage, 2000);
+        },
+
+        // Setup observer for gym training completion
+        setupGymObserver() {
+            if (this.gymObserver) return; // Already observing
+
+            console.log('📊 Monitoring gym for training completion...');
+
+            // Look for the gym training area
+            const gymContent = document.querySelector('body');
+            if (!gymContent) return;
+
+            this.gymObserver = new MutationObserver(async (mutations) => {
+                for (const mutation of mutations) {
+                    // Look for text nodes or elements that indicate training completed
+                    const addedNodes = Array.from(mutation.addedNodes);
+
+                    for (const node of addedNodes) {
+                        const text = node.textContent || '';
+
+                        // Check for training completion messages
+                        if (text.includes('You gained') ||
+                            text.includes('strength increased') ||
+                            text.includes('speed increased') ||
+                            text.includes('defense increased') ||
+                            text.includes('dexterity increased')) {
+
+                            console.log('📊 Gym training detected! Updating stats...');
+
+                            // Wait 2 seconds for API to update
+                            await new Promise(resolve => setTimeout(resolve, 2000));
+
+                            // Update stats
+                            await this.updateStats();
+
+                            // Show notification
+                            if (window.SidekickModules?.Core?.NotificationSystem) {
+                                window.SidekickModules.Core.NotificationSystem.show(
+                                    'Stats Updated',
+                                    'Training completed - stats refreshed!',
+                                    'success',
+                                    2000
+                                );
+                            }
+
+                            break;
+                        }
+                    }
+                }
+            });
+
+            this.gymObserver.observe(gymContent, {
+                childList: true,
+                subtree: true,
+                characterData: true
+            });
+        },
+
+        cleanupGymObserver() {
+            if (this.gymObserver) {
+                this.gymObserver.disconnect();
+                this.gymObserver = null;
             }
         }
     };

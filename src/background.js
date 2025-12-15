@@ -450,7 +450,7 @@ async function handleBugReport(bugData) {
         console.log('📦 Sending payload to worker:', JSON.stringify(payload, null, 2));
 
         // Send to Cloudflare Worker (handles Notion API securely)
-        const response = await fetch('https://notionbugreport.akaffebtd.workers.dev/', {
+        const response = await fetch('https://notion-bug-proxy.akaffebtd.workers.dev/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

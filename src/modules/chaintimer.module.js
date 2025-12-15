@@ -31,6 +31,7 @@
         alertsEnabled: true,
         popupEnabled: true,
         screenFlashEnabled: true,
+        floatingDisplayEnabled: true,
         floatingDisplay: null,
         monitorInterval: null,
         alertThresholdSeconds: 240, // 4 minutes
@@ -74,6 +75,7 @@
                     this.alertsEnabled = saved.alertsEnabled !== false;
                     this.popupEnabled = saved.popupEnabled !== false;
                     this.screenFlashEnabled = saved.screenFlashEnabled !== false;
+                    this.floatingDisplayEnabled = saved.floatingDisplayEnabled !== false;
                     this.alertThresholdSeconds = saved.alertThresholdSeconds || 240;
                 } else {
                     this.isEnabled = false;
@@ -87,7 +89,8 @@
                     threshold: this.alertThresholdSeconds,
                     alerts: this.alertsEnabled,
                     popup: this.popupEnabled,
-                    flash: this.screenFlashEnabled
+                    flash: this.screenFlashEnabled,
+                    floatingDisplay: this.floatingDisplayEnabled
                 });
             } catch (error) {
                 console.error('Failed to load chain timer settings:', error);
@@ -103,6 +106,7 @@
                     alertsEnabled: this.alertsEnabled,
                     popupEnabled: this.popupEnabled,
                     screenFlashEnabled: this.screenFlashEnabled,
+                    floatingDisplayEnabled: this.floatingDisplayEnabled,
                     alertThresholdSeconds: this.alertThresholdSeconds
                 });
                 console.log('💾 Chain Timer settings saved');
@@ -139,7 +143,11 @@
 
             this.stopMonitoring(); // Clean up any existing monitoring
 
-            this.createFloatingDisplay();
+            // Only create floating display if enabled
+            if (this.floatingDisplayEnabled) {
+                this.createFloatingDisplay();
+            }
+
             this.monitorInterval = setInterval(() => {
                 this.updateChainTimer();
             }, 1000);
@@ -258,7 +266,28 @@
 
         // Update chain timer display
         updateChainTimer() {
-            if (!this.floatingDisplay) return;
+            // Skip display updates if floating display is disabled or doesn't exist
+            if (!this.floatingDisplayEnabled || !this.floatingDisplay) {
+                // Still check for alerts even without display
+                const chainData = this.getChainData();
+                const chainLength = parseInt(chainData.length) || 0;
+
+                if (chainLength >= 25 && chainData.timeLeft) {
+                    const seconds = this.parseTimeToSeconds(chainData.timeLeft);
+
+                    // Alert if threshold reached
+                    if (seconds <= this.alertThresholdSeconds && !this.hasAlerted) {
+                        this.triggerAlert(seconds);
+                        this.hasAlerted = true;
+                    }
+
+                    // Reset alert flag if time goes back up
+                    if (seconds > this.alertThresholdSeconds) {
+                        this.hasAlerted = false;
+                    }
+                }
+                return;
+            }
 
             const chainData = this.getChainData();
             const timeDisplay = document.getElementById('chain-time-display');

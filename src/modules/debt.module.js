@@ -1266,9 +1266,6 @@
 
             console.log("💰 Using window state:", { x, y, width, height, savedState });
 
-            // Save that tracker window is open for persistence
-            this.saveWindowState(true);
-
             const trackerElement = document.createElement('div');
             trackerElement.className = 'sidekick-debt-tracker movable-panel';
             trackerElement.style.cssText = `
@@ -1490,6 +1487,9 @@
 
             // Add resize observer to save size changes
             this.addResizeObserver(trackerElement);
+
+            // Save the initial window state with position and size for persistence across tabs
+            this.saveWindowState(true, trackerElement);
 
             // Populate with existing entries
             this.populateDebtTrackerWindow();

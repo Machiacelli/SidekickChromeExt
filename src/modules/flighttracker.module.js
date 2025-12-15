@@ -131,6 +131,13 @@
             }
 
             try {
+                // Find the username/profile ID element to anchor to
+                const anchorElement = document.querySelector('#skip-to-content');
+                if (!anchorElement) {
+                    console.debug('Could not find #skip-to-content anchor element');
+                    return;
+                }
+
                 // Find the status container (the area with the travel image)
                 const statusContainer = this.findStatusContainer();
                 if (!statusContainer) {
@@ -138,20 +145,16 @@
                     return;
                 }
 
-                // Find a good container to insert our button
-                let targetContainer = statusContainer?.parentElement;
-
-                // Create button container with absolute positioning
-                const buttonContainer = document.createElement('div');
-                buttonContainer.className = 'sidekick-flight-tracker-container';
-                buttonContainer.id = `flight-tracker-btn-${playerId}`;
-                buttonContainer.style.cssText = `
-                    position: absolute;
-                    left: 981px;
-                    top: 507px;
-                    width: 185px;
-                    height: 40px;
-                    z-index: 9999;
+                // Create a flex container to hold button and info panel
+                const flexContainer = document.createElement('div');
+                flexContainer.className = 'sidekick-flight-tracker-container';
+                flexContainer.id = `flight-tracker-container-${playerId}`;
+                flexContainer.style.cssText = `
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 10px;
+                    margin-left: 20px;
+                    vertical-align: middle;
                 `;
 
                 // Create track button
@@ -162,15 +165,14 @@
                     background: linear-gradient(135deg, #4CAF50, #45a049);
                     border: none;
                     color: white;
-                    padding: 10px 16px;
+                    padding: 8px 14px;
                     border-radius: 6px;
                     cursor: pointer;
-                    font-size: 14px;
+                    font-size: 13px;
                     font-weight: 600;
                     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
                     transition: all 0.3s ease;
-                    display: block;
-                    width: 100%;
+                    white-space: nowrap;
                 `;
 
                 button.addEventListener('mouseenter', () => {
@@ -189,13 +191,13 @@
                     this.handleTrackButtonClick(playerId, statusContainer);
                 });
 
-                buttonContainer.appendChild(button);
+                flexContainer.appendChild(button);
 
-                // Append to body for fixed positioning
-                document.body.appendChild(buttonContainer);
+                // Insert the flex container right after the anchor element
+                anchorElement.parentNode.insertBefore(flexContainer, anchorElement.nextSibling);
 
-                // Create info panel
-                this.createInfoPanel(playerId);
+                // Create info panel inside the same container
+                this.createInfoPanel(playerId, flexContainer);
 
             } catch (error) {
                 console.error('❌ Error creating flight tracker button:', error);
@@ -391,22 +393,20 @@
         },
 
         // Create info panel
-        createInfoPanel(playerId) {
+        createInfoPanel(playerId, container) {
             // Remove existing panel
-            const existing = document.querySelector('.sidekick-flight-info-panel');
+            const existing = container.querySelector('.sidekick-flight-info-panel');
             if (existing) {
                 existing.remove();
             }
 
             const panel = document.createElement('div');
             panel.className = 'sidekick-flight-info-panel';
-            panel.dataset.playerId = playerId; // Store which player this panel is for
+            panel.dataset.playerId = playerId;
             panel.style.cssText = `
-                position: absolute;
-                left: 1150px;
-                top: 506px;
-                width: 190px;
-                height: 32px;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
                 background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(30,30,30,0.9));
                 padding: 6px 10px;
                 border-radius: 6px;
@@ -414,15 +414,12 @@
                 color: #fff;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.3);
                 border: 1px solid rgba(255,255,255,0.1);
-                z-index: 9999;
-                overflow: hidden;
-                display: flex;
-                align-items: center;
-                gap: 6px;
+                min-width: 180px;
+                white-space: nowrap;
             `;
 
-            // Append to body for absolute positioning
-            document.body.appendChild(panel);
+            // Add to the flex container
+            container.appendChild(panel);
 
             this.updateInfoPanel(playerId);
         },
@@ -741,9 +738,10 @@
             this.trackedPlayers.delete(playerId.toString());
             this.saveTrackedPlayers();
 
-            const panel = document.querySelector('.sidekick-flight-info-panel');
-            if (panel) {
-                panel.remove();
+            // Remove the entire flex container
+            const container = document.querySelector(`#flight-tracker-container-${playerId}`);
+            if (container) {
+                container.remove();
             }
         },
 

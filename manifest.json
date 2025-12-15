@@ -11,7 +11,7 @@
     "https://www.torn.com/*",
     "https://*.torn.com/*",
     "https://api.torn.com/*",
-    "https://notionbugreport.akaffebtd.workers.dev/*",
+    "https://notion-bug-proxy.akaffebtd.workers.dev/*",
     "https://torn.synclayer.dev/*"
   ],
   "icons": {

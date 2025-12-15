@@ -188,12 +188,14 @@
 
         // Get active timer information (only specific important timers)
         getActiveTimerInfo() {
-            // Hospital timer (highest priority)
-            const hospitalTimer = document.querySelector('#theCounter');
-            if (hospitalTimer && hospitalTimer.textContent.trim()) {
-                const hospitalTime = hospitalTimer.textContent.trim();
-                if (hospitalTime.match(/\d+:\d+/) && hospitalTime !== '00:00' && hospitalTime !== '0:00') {
-                    return `Hospital: ${hospitalTime}`;
+            // Hospital timer (highest priority) - only check on hospital page
+            if (window.location.href.includes('hospitalview.php')) {
+                const hospitalTimer = document.querySelector('#theCounter');
+                if (hospitalTimer && hospitalTimer.textContent.trim()) {
+                    const hospitalTime = hospitalTimer.textContent.trim();
+                    if (hospitalTime.match(/\d+:\d+/) && hospitalTime !== '00:00' && hospitalTime !== '0:00') {
+                        return `Hospital: ${hospitalTime}`;
+                    }
                 }
             }
 

@@ -73,7 +73,7 @@
                 background: linear-gradient(135deg, #2a2a2a, #1f1f1f);
                 border: 1px solid #444;
                 border-radius: 12px;
-                z-index: 99999;
+                z-index: 999999;
                 box-shadow: 0 8px 32px rgba(0,0,0,0.7);
                 backdrop-filter: blur(20px);
                 color: #fff;
@@ -351,7 +351,7 @@
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Alert Threshold:</label>
                     <div style="display: flex; align-items: center; gap: 15px;">
-                        <input type="range" id="sidekick-chain-threshold" min="1" max="10" step="0.5" value="4" 
+                        <input type="range" id="sidekick-chain-threshold" min="1" max="5" step="0.5" value="4" 
                                style="flex: 1; accent-color: #FF9800;">
                         <span id="sidekick-chain-threshold-display" style="color: #fff; min-width: 60px; text-align: right; font-weight: bold;">4 min</span>
                     </div>
@@ -379,6 +379,16 @@
                         <input type="checkbox" id="sidekick-chain-flash" style="accent-color: #FF9800;">
                         <span>Screen Flash Effect</span>
                     </label>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px; color: #ccc; cursor: pointer;">
+                        <input type="checkbox" id="sidekick-chain-floating-display" style="accent-color: #FF9800;">
+                        <span>Show Floating Timer Display</span>
+                    </label>
+                    <div style="font-size: 12px; color: #aaa; margin-top: 5px; margin-left: 25px;">
+                        Display floating timer on screen (alerts still work when disabled)
+                    </div>
                 </div>
                 
                 <button id="sidekick-save-chain-settings" style="width: 100%; padding: 10px; background: #FF9800; 
@@ -832,7 +842,8 @@
                     alertThresholdSeconds: parseFloat(chainThresholdSlider.value) * 60,
                     alertsEnabled: chainAlertsCheckbox.checked,
                     popupEnabled: chainPopupCheckbox.checked,
-                    screenFlashEnabled: chainFlashCheckbox.checked
+                    screenFlashEnabled: chainFlashCheckbox.checked,
+                    floatingDisplayEnabled: panel.querySelector('#sidekick-chain-floating-display').checked
                 };
 
                 try {
@@ -846,6 +857,7 @@
                         window.SidekickModules.ChainTimer.alertsEnabled = settings.alertsEnabled;
                         window.SidekickModules.ChainTimer.popupEnabled = settings.popupEnabled;
                         window.SidekickModules.ChainTimer.screenFlashEnabled = settings.screenFlashEnabled;
+                        window.SidekickModules.ChainTimer.floatingDisplayEnabled = settings.floatingDisplayEnabled;
 
                         // Start or stop monitoring based on enabled state
                         if (isEnabled) {
@@ -1061,6 +1073,11 @@
                 }
                 if (chainFlashCheckbox) {
                     chainFlashCheckbox.checked = chainSettings.screenFlashEnabled !== false;
+                }
+
+                const chainFloatingDisplayCheckbox = document.querySelector('#sidekick-chain-floating-display');
+                if (chainFloatingDisplayCheckbox) {
+                    chainFloatingDisplayCheckbox.checked = chainSettings.floatingDisplayEnabled !== false;
                 }
 
                 // NOTE: Notification settings are now loaded in attachNotificationsTabListeners()
