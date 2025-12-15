@@ -449,7 +449,7 @@
                 right: 0;
                 bottom: 0;
                 background: rgba(0,0,0,0.8);
-                z-index: 99999;
+                z-index: 9999999;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -467,13 +467,16 @@
                 color: #fff;
             `;
 
+            // Await the async renderSubscriptionInfo
+            const subscriptionHTML = await this.renderSubscriptionInfo();
+
             dialog.innerHTML = `
                 <div style="text-align: center; margin-bottom: 20px;">
                     <div style="font-size: 32px; margin-bottom: 12px;">💎</div>
                     <div style="font-size: 24px; font-weight: bold;">Sidekick Premium</div>
                 </div>
                 
-                ${this.renderSubscriptionInfo()}
+                ${subscriptionHTML}
                 
                 <button id="close-premium-dialog" style="
                     background: #444;
