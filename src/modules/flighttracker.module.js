@@ -145,16 +145,26 @@
                     return;
                 }
 
-                // Create a flex container to hold button and info panel
+                // Get the parent container for relative positioning
+                let parentContainer = anchorElement.offsetParent || document.body;
+
+                // Calculate position relative to offset parent
+                let offsetLeft = anchorElement.offsetLeft + anchorElement.offsetWidth + 20;
+                let offsetTop = anchorElement.offsetTop;
+
+                // Create a flex container with absolute positioning
                 const flexContainer = document.createElement('div');
                 flexContainer.className = 'sidekick-flight-tracker-container';
                 flexContainer.id = `flight-tracker-container-${playerId}`;
                 flexContainer.style.cssText = `
-                    display: inline-flex;
+                    position: absolute;
+                    left: ${offsetLeft}px;
+                    top: ${offsetTop}px;
+                    display: flex;
                     align-items: center;
                     gap: 10px;
-                    margin-left: 20px;
-                    vertical-align: middle;
+                    z-index: 9999;
+                    pointer-events: auto;
                 `;
 
                 // Create track button
@@ -193,8 +203,8 @@
 
                 flexContainer.appendChild(button);
 
-                // Insert the flex container right after the anchor element
-                anchorElement.parentNode.insertBefore(flexContainer, anchorElement.nextSibling);
+                // Append to the parent container for proper relative positioning
+                parentContainer.appendChild(flexContainer);
 
                 // Create info panel inside the same container
                 this.createInfoPanel(playerId, flexContainer);
@@ -404,7 +414,7 @@
             panel.className = 'sidekick-flight-info-panel';
             panel.dataset.playerId = playerId;
             panel.style.cssText = `
-                display: inline-flex;
+                display: flex;
                 align-items: center;
                 gap: 6px;
                 background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(30,30,30,0.9));
