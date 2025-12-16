@@ -79,6 +79,14 @@
                 overflow: hidden;
             `;
 
+            // Resolve icon paths before building HTML
+            const iconGeneral = chrome.runtime.getURL('icons/settings-general.png');
+            const iconFeatures = chrome.runtime.getURL('icons/settings-features.png');
+            const iconXanax = chrome.runtime.getURL('icons/settings-xanax.png');
+            const iconChain = chrome.runtime.getURL('icons/settings-chain.png');
+            const iconNotifications = chrome.runtime.getURL('icons/settings-notifications.png');
+            const iconMugcalc = chrome.runtime.getURL('icons/settings-mugcalc.png');
+
             panel.innerHTML = `
                 <style>
                     .settings-content-scroll::-webkit-scrollbar {
@@ -108,42 +116,42 @@
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: white; cursor: pointer; font-size: 12px; font-weight: 500; 
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <span class="tab-icon" style="font-size: 48px; margin-bottom: 8px; filter: drop-shadow(0 0 12px rgba(102, 187, 106, 0.8)) drop-shadow(0 0 24px rgba(255, 173, 90, 0.6)); transition: all 0.3s ease;">⚙️</span>
+                                <img src="${iconGeneral}" style="width: 48px; height: 48px; margin-bottom: 8px; filter: drop-shadow(0 0 12px rgba(102, 187, 106, 0.8)) drop-shadow(0 0 24px rgba(255, 173, 90, 0.6)); transition: all 0.3s ease;">
                                 <span>General</span>
                             </button>
                             <button class="settings-sidebar-tab" data-tab="modules" 
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <span class="tab-icon" style="font-size: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">⚡</span>
+                                <img src="${iconFeatures}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
                                 <span>Features</span>
                             </button>
                             <button class="settings-sidebar-tab" data-tab="xanax" 
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <span class="tab-icon" style="font-size: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">💊</span>
+                                <img src="${iconXanax}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
                                 <span>Xanax</span>
                             </button>
                             <button class="settings-sidebar-tab" data-tab="chain" 
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <span class="tab-icon" style="font-size: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">⏱️</span>
+                                <img src="${iconChain}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
                                 <span>Chain Timer</span>
                             </button>
                             <button class="settings-sidebar-tab" data-tab="notifications" 
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <span class="tab-icon" style="font-size: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">🔔</span>
+                                <img src="${iconNotifications}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
                                 <span>Notifications</span>
                             </button>
                             <button class="settings-sidebar-tab" data-tab="mugcalc" 
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <span class="tab-icon" style="font-size: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">💰</span>
+                                <img src="${iconMugcalc}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
                                 <span>Mug Calculator</span>
                             </button>
                         </div>
@@ -602,7 +610,7 @@
             // Update button states for sidebar tabs
             const tabButtons = panel.querySelectorAll('.settings-sidebar-tab');
             tabButtons.forEach(btn => {
-                const icon = btn.querySelector('.tab-icon');
+                const icon = btn.querySelector('img');
                 if (btn.dataset.tab === tabName) {
                     btn.style.background = 'transparent';
                     btn.style.boxShadow = 'none';
