@@ -2570,7 +2570,7 @@
                 right: 0;
                 bottom: 0;
                 background: rgba(0,0,0,0.7);
-                z-index: 99999;
+                z-index: 9999999;
                 display: flex;
                 align-items: center;
                 justify-content: center;
