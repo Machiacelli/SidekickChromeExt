@@ -2559,19 +2559,183 @@
             return timer;
         },
 
-        // Clear all intervals and reset
-        destroy() {
-            this.intervals.forEach(interval => clearInterval(interval));
-            this.intervals.clear();
+        // Show custom timer input dialog
+        showCustomTimerDialog(timer) {
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.7);
+                z-index: 99999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
 
-            if (this.apiCheckInterval) {
-                clearInterval(this.apiCheckInterval);
-                this.apiCheckInterval = null;
-            }
+            // Create dialog
+            const dialog = document.createElement('div');
+            dialog.style.cssText = `
+                background: #2a2a2a;
+                border: 1px solid #444;
+                border-radius: 12px;
+                padding: 24px;
+                max-width: 400px;
+                width: 90%;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+                color: #fff;
+            `;
 
-            this.timers = [];
-            this.isInitialized = false;
-            console.log('⏰ Timer Module destroyed');
+            dialog.innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="font-size: 32px; margin-bottom: 12px;">⏱️</div>
+                    <div style="font-size: 20px; font-weight: bold;">Custom Timer</div>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 12px; margin-bottom: 6px; color: #aaa;">Timer Name</label>
+                    <input id="custom-timer-name" type="text" value="Custom Timer" style="
+                        width: 100%;
+                        padding: 10px;
+                        background: #1a1a1a;
+                        border: 1px solid #444;
+                        border-radius: 6px;
+                        color: #fff;
+                        font-size: 14px;
+                        box-sizing: border-box;
+                    ">
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 12px; margin-bottom: 6px; color: #aaa;">Duration</label>
+                    <div style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 11px; color: #888; display: block; margin-bottom: 4px;">Hours</label>
+                            <input id="custom-timer-hours" type="number" min="0" max="23" value="0" style="
+                                width: 100%;
+                                padding: 10px;
+                                background: #1a1a1a;
+                                border: 1px solid #444;
+                                border-radius: 6px;
+                                color: #fff;
+                                font-size: 14px;
+                                text-align: center;
+                                box-sizing: border-box;
+                            ">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 11px; color: #888; display: block; margin-bottom: 4px;">Minutes</label>
+                            <input id="custom-timer-minutes" type="number" min="0" max="59" value="5" style="
+                                width: 100%;
+                                padding: 10px;
+                                background: #1a1a1a;
+                                border: 1px solid #444;
+                                border-radius: 6px;
+                                color: #fff;
+                                font-size: 14px;
+                                text-align: center;
+                                box-sizing: border-box;
+                            ">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 11px; color: #888; display: block; margin-bottom: 4px;">Seconds</label>
+                            <input id="custom-timer-seconds" type="number" min="0" max="59" value="0" style="
+                                width: 100%;
+                                padding: 10px;
+                                background: #1a1a1a;
+                                border: 1px solid #444;
+                                border-radius: 6px;
+                                color: #fff;
+                                font-size: 14px;
+                                text-align: center;
+                                box-sizing: border-box;
+                            ">
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button id="custom-timer-cancel" style="
+                        flex: 1;
+                        background: #444;
+                        border: 1px solid #666;
+                        color: #fff;
+                        padding: 12px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-size: 14px;
+                        font-weight: 600;
+                    ">Cancel</button>
+                    <button id="custom-timer-start" style="
+                        flex: 1;
+                        background: linear-gradient(135deg, #FFD700, #FFA500);
+                        border: none;
+                        color: #000;
+                        padding: 12px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-size: 14px;
+                        font-weight: 600;
+                    ">Start Timer</button>
+                </div>
+            `;
+
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+
+            // Focus name input
+            setTimeout(() => {
+                document.getElementById('custom-timer-name').focus();
+                document.getElementById('custom-timer-name').select();
+            }, 100);
+
+            // Handle cancel
+            document.getElementById('custom-timer-cancel').addEventListener('click', () => {
+                overlay.remove();
+            });
+
+            // Handle start
+            document.getElementById('custom-timer-start').addEventListener('click', () => {
+                const name = document.getElementById('custom-timer-name').value.trim() || 'Custom Timer';
+                const hours = parseInt(document.getElementById('custom-timer-hours').value) || 0;
+                const minutes = parseInt(document.getElementById('custom-timer-minutes').value) || 0;
+                const seconds = parseInt(document.getElementById('custom-timer-seconds').value) || 0;
+
+                const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
+
+                if (totalSeconds <= 0) {
+                    alert('Please enter a duration greater than 0');
+                    return;
+                }
+
+                // Update timer with custom values
+                timer.name = name;
+                timer.duration = totalSeconds;
+                timer.remainingTime = totalSeconds;
+                timer.color = '#FFD700';
+                timer.isApiTimer = false;
+                timer.cooldownType = null;
+
+                // Save and render
+                this.saveTimers();
+                this.renderTimer(timer);
+                this.startTimer(timer.id);
+
+                // Remove overlay
+                overlay.remove();
+
+                console.log(`⏱️ Custom timer created: ${name} (${totalSeconds}s)`);
+            });
+
+            // Close on click outside
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            });
         },
 
         // Helper methods
