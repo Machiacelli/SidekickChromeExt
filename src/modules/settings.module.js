@@ -227,9 +227,9 @@
                 
                 ${this.createToggle('attack-button-mover', '⚔️ Fast Attack', 'Moves Start Fight button over weapon for faster attacks')}
                 ${this.createToggle('time-on-tab', '⏰ Time on Tab', 'Shows remaining time for activities in browser tab')}
-                ${this.createToggle('npc-attack-timer', '🎯 NPC Attack Timer', 'Shows NPC attack countdowns in news ticker')}
+                ${''}
                 ${this.createToggle('random-target', '🎲 Random Target', 'Adds random target button to attack pages')}
-                ${this.createToggle('stats-tracker', '📊 Stats Tracker', 'Tracks your daily battle stat gains (requires API key)')}
+                ${''}
                 ${this.createToggle('mug-calculator', '💰 Mug Calculator', 'Shows mug value calculations on Item Market and Bazaars')}
                 <button id="sidekick-save-module-toggles" style="width: 100%; padding: 12px; background: #4CAF50; 
                                                                   border: none; color: white; border-radius: 6px; 
