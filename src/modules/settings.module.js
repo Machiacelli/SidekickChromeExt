@@ -108,42 +108,42 @@
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: linear-gradient(135deg, #66BB6A, #ffad5a); 
                                            border: none; color: white; cursor: pointer; font-size: 12px; font-weight: 500; 
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="chrome-extension://__MSG_@@extension_id__/icons/settings-general.png" style="width: 32px; height: 32px; margin-bottom: 8px;">
+                                <img src="${chrome.runtime.getURL('icons/settings-general.png')}" style="width: 32px; height: 32px; margin-bottom: 8px;">
                                 <span>General</span>
                             </button>
                             <button class="settings-sidebar-tab" data-tab="modules" 
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="chrome-extension://__MSG_@@extension_id__/icons/settings-features.png" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.7;">
+                                <img src="${chrome.runtime.getURL('icons/settings-features.png')}" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.7;">
                                 <span>Features</span>
                             </button>
                             <button class="settings-sidebar-tab" data-tab="xanax" 
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="chrome-extension://__MSG_@@extension_id__/icons/settings-xanax.png" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.7;">
+                                <img src="${chrome.runtime.getURL('icons/settings-xanax.png')}" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.7;">
                                 <span>Xanax</span>
                             </button>
                             <button class="settings-sidebar-tab" data-tab="chain" 
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="chrome-extension://__MSG_@@extension_id__/icons/settings-chain.png" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.7;">
+                                <img src="${chrome.runtime.getURL('icons/settings-chain.png')}" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.7;">
                                 <span>Chain Timer</span>
                             </button>
                             <button class="settings-sidebar-tab" data-tab="notifications" 
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="chrome-extension://__MSG_@@extension_id__/icons/settings-notifications.png" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.7;">
+                                <img src="${chrome.runtime.getURL('icons/settings-notifications.png')}" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.7;">
                                 <span>Notifications</span>
                             </button>
                             <button class="settings-sidebar-tab" data-tab="mugcalc" 
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="chrome-extension://__MSG_@@extension_id__/icons/settings-mugcalc.png" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.7;">
+                                <img src="${chrome.runtime.getURL('icons/settings-mugcalc.png')}" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.7;">
                                 <span>Mug Calculator</span>
                             </button>
                         </div>
