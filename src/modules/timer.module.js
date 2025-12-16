@@ -1185,15 +1185,16 @@
                 return;
             }
 
-            console.log(`🔍 Content area found:`, contentArea);
-            console.log(`🔍 Content area parent:`, contentArea.parentNode);
-            console.log(`🔍 Content area children count:`, contentArea.children.length);
-            console.log(`🔍 Content area innerHTML length:`, contentArea.innerHTML.length);
+            // Verbose logging commented out
+            // console.log(`🔍 Content area found:`, contentArea);
+            // console.log(`🔍 Content area parent:`, contentArea.parentNode);
+            // console.log(`🔍 Content area children count:`, contentArea.children.length);
+            // console.log(`🔍 Content area innerHTML length:`, contentArea.innerHTML.length);
 
             const contentWidth = contentArea.clientWidth || 480;
             const contentHeight = contentArea.clientHeight || 500;
 
-            console.log(`🔍 Content dimensions: ${contentWidth}x${contentHeight}`);
+            // console.log(`🔍 Content dimensions: ${contentWidth}x${contentHeight}`);
 
             const width = Math.min(Math.max(timer.width || 280, 140), contentWidth - 20);
             const height = Math.min(Math.max(timer.height || 180, 80), contentHeight - 40);
@@ -1816,13 +1817,14 @@
             const timer = this.timers.find(t => t.id === id);
             const element = document.getElementById(`sidekick-timer-${timer.id}`);
 
-            console.log(`🔍 updateTimerDisplay - Timer:`, timer?.name, 'remainingTime:', timer?.remainingTime);
-            console.log(`🔍 updateTimerDisplay - Looking for ID: sidekick-timer-${timer.id}`);
-            console.log(`🔍 updateTimerDisplay - Element found:`, !!element);
+            // Verbose logging commented out to reduce console spam
+            // console.log(`🔍 updateTimerDisplay - Timer:`, timer?.name, 'remainingTime:', timer?.remainingTime);
+            // console.log(`🔍 updateTimerDisplay - Looking for ID: sidekick-timer-${timer.id}`);
+            // console.log(`🔍 updateTimerDisplay - Element found:`, !!element);
 
             // Debug: Log all existing timer elements
-            const allTimerElements = document.querySelectorAll('[id^="sidekick-timer-"]');
-            console.log(`🔍 All timer elements in DOM:`, Array.from(allTimerElements).map(el => el.id));
+            // const allTimerElements = document.querySelectorAll('[id^="sidekick-timer-"]');
+            // console.log(`🔍 All timer elements in DOM:`, Array.from(allTimerElements).map(el => el.id));
 
             if (!timer || !element) {
                 console.error(`🔍 Cannot update - timer exists: ${!!timer}, element exists: ${!!element}`);
@@ -1836,7 +1838,7 @@
                 const nameSpan = header.querySelector('span');
                 if (nameSpan) {
                     nameSpan.textContent = timer.name;
-                    console.log(`🔍 Updated timer name to: ${timer.name}`);
+                    // console.log(`🔍 Updated timer name to: ${timer.name}`);
                 }
             }
 
