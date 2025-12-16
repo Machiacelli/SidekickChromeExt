@@ -68,21 +68,28 @@
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
-                width: 500px;
-                max-height: 90vh;
-                background: linear-gradient(135deg, #2a2a2a, #1f1f1f);
-                border: 1px solid #444;
+                width: 850px;
+                height: 750px;
+                background: #1a1a1a;
+                border: 1px solid rgba(255,255,255,0.2);
                 border-radius: 12px;
-                z-index: 999999;
-                box-shadow: 0 8px 32px rgba(0,0,0,0.7);
-                backdrop-filter: blur(20px);
-                color: #fff;
+                z-index: 10000;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.5);
                 font-family: Arial, sans-serif;
                 overflow: hidden;
             `;
 
             panel.innerHTML = `
-                <div style="display: flex; height: 600px; position: relative;">
+                <style>
+                    .settings-content-scroll::-webkit-scrollbar {
+                        display: none;
+                    }
+                    .settings-content-scroll {
+                        -ms-overflow-style: none;
+                        scrollbar-width: none;
+                    }
+                </style>
+                <div style="display: flex; height: 750px; position: relative;">
                     <!-- SIDEBAR NAVIGATION -->
                     <div class="settings-sidebar" style="width: 200px; background: #242424; border-right: 1px solid rgba(255,255,255,0.1); 
                                                          display: flex; flex-direction: column; padding: 20px 0;">
@@ -153,7 +160,7 @@
                         </div>
                         
                         <!-- Content Container -->
-                        <div style="flex: 1; overflow-y: auto; padding: 20px;">
+                        <div class="settings-content-scroll" style="flex: 1; overflow-y: auto; padding: 30px;">
                             
                             <!-- GENERAL TAB -->
                             <div class="settings-tab-content" id="settings-tab-general" style="display: block;">
