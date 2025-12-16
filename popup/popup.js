@@ -112,18 +112,18 @@ document.addEventListener('DOMContentLoaded', function () {
     // Load premium subscription status
     loadPremiumStatus();
 
-    // Premium action button
+    // Premium action button - changed to refresh
     const premiumActionBtn = document.getElementById('premiumActionBtn');
     if (premiumActionBtn) {
-        premiumActionBtn.addEventListener('click', () => {
-            chrome.tabs.query({ active: true, currentWindow: true, url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function (tabs) {
-                if (tabs[0]) {
-                    chrome.tabs.sendMessage(tabs[0].id, {
-                        action: 'showPremiumDialog'
-                    });
-                    window.close();
-                }
-            });
+        premiumActionBtn.addEventListener('click', async () => {
+            premiumActionBtn.textContent = 'Refreshing...';
+            premiumActionBtn.disabled = true;
+
+            // Force reload premium status
+            await loadPremiumStatus();
+
+            premiumActionBtn.disabled = false;
+            showMessage('Premium status refreshed!', 'success');
         });
     }
 
@@ -135,51 +135,70 @@ document.addEventListener('DOMContentLoaded', function () {
         const premiumActionBtn = document.getElementById('premiumActionBtn');
         const premiumStatus = document.getElementById('premiumStatus');
 
-        // Get stored data
-        const result = await chrome.storage.local.get(['sidekick_premium_expires', 'sidekick_api_key']);
-        let expiresAt = result.sidekick_premium_expires;
+        try {
+            // Get API key
+            const result = await chrome.storage.local.get(['sidekick_api_key']);
 
-        // Check for admin-granted premium
-        if (result.sidekick_api_key && !expiresAt) {
-            try {
-                const response = await fetch(`https://api.torn.com/user/?selections=basic&key=${result.sidekick_api_key}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.player_id) {
-                        const grantKey = `sidekick_premium_grant_${data.player_id}`;
-                        const grantResult = await chrome.storage.local.get([grantKey]);
-                        if (grantResult[grantKey] && grantResult[grantKey].expiresAt) {
-                            expiresAt = grantResult[grantKey].expiresAt;
-                            console.log('💎 Found admin-granted premium:', new Date(expiresAt));
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('❌ Failed to check admin-granted premium in popup:', error);
+            if (!result.sidekick_api_key) {
+                // No API key
+                premiumIcon.textContent = '🔒';
+                premiumLabel.textContent = 'Premium Inactive';
+                premiumDays.textContent = 'No API key';
+                premiumDetails.innerHTML = 'Please set your API key in settings';
+                premiumActionBtn.textContent = 'Refresh';
+                premiumStatus.style.borderColor = 'rgba(244, 67, 54, 0.3)';
+                return;
             }
-        }
 
-        // Display premium status
-        if (!expiresAt || Date.now() >= expiresAt) {
-            // Not subscribed
-            premiumIcon.textContent = '🔒';
-            premiumLabel.textContent = 'Premium Inactive';
-            premiumDays.textContent = 'Not active';
-            premiumDetails.innerHTML = 'Send Xanax to Machiacelli to unlock premium features';
-            premiumActionBtn.textContent = 'Learn More';
-            premiumStatus.style.borderColor = 'rgba(244, 67, 54, 0.3)';
-        } else {
-            // Active subscription
-            const remaining = expiresAt - Date.now();
-            const days = Math.ceil(remaining / (24 * 60 * 60 * 1000));
+            // Call Worker to verify premium status
+            const response = await fetch('https://sidekick-premium.akaffebtd.workers.dev/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ apiKey: result.sidekick_api_key })
+            });
 
-            premiumIcon.textContent = '💎';
-            premiumLabel.textContent = 'Premium Active';
-            premiumDays.textContent = `${days} day${days !== 1 ? 's' : ''} left`;
-            premiumDetails.innerHTML = `Expires: ${new Date(expiresAt).toLocaleDateString()}`;
-            premiumActionBtn.textContent = 'View Details';
-            premiumStatus.style.borderColor = 'rgba(76, 175, 80, 0.5)';
-            premiumStatus.style.background = 'linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(56, 142, 60, 0.1))';
+            if (!response.ok) {
+                throw new Error('Worker API call failed');
+            }
+
+            const data = await response.json();
+
+            // Display premium status from Worker
+            if (!data.premium?.active) {
+                // Not subscribed
+                premiumIcon.textContent = '🔒';
+                premiumLabel.textContent = 'Premium Inactive';
+                premiumDays.textContent = 'Not active';
+                premiumDetails.innerHTML = 'Send Xanax to Machiacelli to unlock premium features';
+                premiumActionBtn.textContent = 'Refresh';
+                premiumStatus.style.borderColor = 'rgba(244, 67, 54, 0.3)';
+            } else {
+                // Active subscription
+                const days = data.premium.daysRemaining || 0;
+
+                premiumIcon.textContent = '💎';
+                premiumLabel.textContent = 'Premium Active';
+                premiumDays.textContent = `${days} day${days !== 1 ? 's' : ''} left`;
+
+                if (data.premium.expiresAt) {
+                    premiumDetails.innerHTML = `Expires: ${new Date(data.premium.expiresAt).toLocaleDateString()}`;
+                } else {
+                    premiumDetails.innerHTML = data.isAdmin ? 'Admin: Unlimited' : 'Active';
+                }
+
+                premiumActionBtn.textContent = 'Refresh';
+                premiumStatus.style.borderColor = 'rgba(76, 175, 80, 0.5)';
+                premiumStatus.style.background = 'linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(56, 142, 60, 0.1))';
+            }
+        } catch (error) {
+            console.error('❌ Failed to load premium status:', error);
+            // Show error state
+            premiumIcon.textContent = '⚠️';
+            premiumLabel.textContent = 'Premium Status';
+            premiumDays.textContent = 'Error loading';
+            premiumDetails.innerHTML = 'Click refresh to try again';
+            premiumActionBtn.textContent = 'Refresh';
+            premiumStatus.style.borderColor = 'rgba(255, 152, 0, 0.3)';
         }
     }
 
