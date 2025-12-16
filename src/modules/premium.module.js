@@ -438,6 +438,10 @@
         async showSubscriptionDialog() {
             console.log('💎 Opening premium subscription dialog...');
 
+            // Clear cache to force fresh data
+            this.cachedStatus = null;
+            this.cacheExpiry = 0;
+
             // First refresh the subscription to get latest data
             await this.updateSubscription();
 
