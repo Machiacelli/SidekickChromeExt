@@ -82,134 +82,154 @@
             `;
 
             panel.innerHTML = `
-                <div style="padding: 20px; position: relative;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3 style="margin: 0; color: #fff; font-size: 20px;">⚙️ Sidekick Settings</h3>
-                        <div style="display: flex; gap: 10px;">
+                <div style="display: flex; height: 600px; position: relative;">
+                    <!-- SIDEBAR NAVIGATION -->
+                    <div class="settings-sidebar" style="width: 200px; background: #242424; border-right: 1px solid rgba(255,255,255,0.1); 
+                                                         display: flex; flex-direction: column; padding: 20px 0;">
+                        <!-- Header in Sidebar -->
+                        <div style="padding: 0 20px 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <h3 style="margin: 0; background: linear-gradient(135deg, #66BB6A, #ffad5a); 
+                                       -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+                                       background-clip: text; font-size: 18px; font-weight: bold;">
+                                ⚙️ Settings
+                            </h3>
+                        </div>
+                        
+                        <!-- Sidebar Tabs -->
+                        <div style="flex: 1; padding-top: 10px;">
+                            <button class="settings-sidebar-tab active" data-tab="general" 
+                                    style="width: 100%; text-align: left; padding: 12px 20px; background: linear-gradient(135deg, #66BB6A, #ffad5a); 
+                                           border: none; color: white; cursor: pointer; font-size: 14px; font-weight: 500; 
+                                           transition: all 0.3s ease; margin-bottom: 4px;">
+                                ⚙️ General
+                            </button>
+                            <button class="settings-sidebar-tab" data-tab="modules" 
+                                    style="width: 100%; text-align: left; padding: 12px 20px; background: transparent; 
+                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 14px; font-weight: 500; 
+                                           transition: all 0.3s ease; margin-bottom: 4px;">
+                                ⚡ Features
+                            </button>
+                            <button class="settings-sidebar-tab" data-tab="xanax" 
+                                    style="width: 100%; text-align: left; padding: 12px 20px; background: transparent; 
+                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 14px; font-weight: 500; 
+                                           transition: all 0.3s ease; margin-bottom: 4px;">
+                                💊 Xanax
+                            </button>
+                            <button class="settings-sidebar-tab" data-tab="chain" 
+                                    style="width: 100%; text-align: left; padding: 12px 20px; background: transparent; 
+                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 14px; font-weight: 500; 
+                                           transition: all 0.3s ease; margin-bottom: 4px;">
+                                ⏱️ Chain Timer
+                            </button>
+                            <button class="settings-sidebar-tab" data-tab="notifications" 
+                                    style="width: 100%; text-align: left; padding: 12px 20px; background: transparent; 
+                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 14px; font-weight: 500; 
+                                           transition: all 0.3s ease; margin-bottom: 4px;">
+                                🔔 Notifications
+                            </button>
+                            <button class="settings-sidebar-tab" data-tab="mugcalc" 
+                                    style="width: 100%; text-align: left; padding: 12px 20px; background: transparent; 
+                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 14px; font-weight: 500; 
+                                           transition: all 0.3s ease; margin-bottom: 4px;">
+                                💰 Mug Calculator
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- MAIN CONTENT AREA -->
+                    <div style="flex: 1; display: flex; flex-direction: column;">
+                        <!-- Top Bar with Admin and Close -->
+                        <div style="padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: flex-end; gap: 10px;">
                             <button id="sidekick-admin-btn" style="background: linear-gradient(135deg, #FFD700, #FFA500); border: 1px solid rgba(255,215,0,0.5); 
-                                                                color: #000; padding: 8px 16px; border-radius: 6px; 
-                                                                cursor: pointer; font-size: 12px; font-weight: bold; 
-                                                                transition: all 0.2s ease;" 
+                                                            color: #000; padding: 8px 16px; border-radius: 6px; 
+                                                            cursor: pointer; font-size: 12px; font-weight: bold; 
+                                                            transition: all 0.2s ease;" 
                                     title="Admin Panel">👑 Admin</button>
                             <button id="sidekick-close-settings" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
-                                                                color: #fff; width: 32px; height: 32px; border-radius: 50%; 
-                                                                cursor: pointer; font-size: 18px; display: flex; align-items: center; 
-                                                                justify-content: center; transition: all 0.2s ease;" 
+                                                            color: #fff; width: 32px; height: 32px; border-radius: 50%; 
+                                                            cursor: pointer; font-size: 18px; display: flex; align-items: center; 
+                                                            justify-content: center; transition: all 0.2s ease;" 
                                     title="Close Settings">×</button>
                         </div>
-                    </div>
-                    
-                    <!-- Tab Navigation -->
-                    <div style="display: flex; gap: 5px; margin-bottom: 20px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 8px;">
-                        <button class="settings-tab-btn active" data-tab="general" style="flex: 1; padding: 10px; background: rgba(76, 175, 80, 0.3); 
-                                                                                            border: none; color: white; border-radius: 6px; 
-                                                                                            cursor: pointer; font-weight: 500; transition: all 0.2s;">
-                            General
-                        </button>
-                        <button class="settings-tab-btn" data-tab="modules" style="flex: 1; padding: 10px; background: transparent; 
-                                                                                    border: none; color: rgba(255,255,255,0.7); border-radius: 6px; 
-                                                                                    cursor: pointer; font-weight: 500; transition: all 0.2s;">
-                            Modules
-                        </button>
-                        <button class="settings-tab-btn" data-tab="xanax" style="flex: 1; padding: 10px; background: transparent; 
-                                                                                    border: none; color: rgba(255,255,255,0.7); border-radius: 6px; 
-                                                                                    cursor: pointer; font-weight: 500; transition: all 0.2s;">
-                            💊 Xanax
-                        </button>
-                        <button class="settings-tab-btn" data-tab="chain" style="flex: 1; padding: 10px; background: transparent; 
-                                                                                    border: none; color: rgba(255,255,255,0.7); border-radius: 6px; 
-                                                                                    cursor: pointer; font-weight: 500; transition: all 0.2s;">
-                            ⏱️ Chain
-                        </button>
-                        <button class="settings-tab-btn" data-tab="notifications" style="flex: 1; padding: 10px; background: transparent; 
-                                                                                    border: none; color: rgba(255,255,255,0.7); border-radius: 6px; 
-                                                                                    cursor: pointer; font-weight: 500; transition: all 0.2s;">
-                            🔔 Notifications
-                        </button>
-                        <button class="settings-tab-btn" data-tab="mugcalc" style="flex: 1; padding: 10px; background: transparent; 
-                                                                                    border: none; color: rgba(255,255,255,0.7); border-radius: 6px; 
-                                                                                    cursor: pointer; font-weight: 500; transition: all 0.2s;">
-                            💰 Mug Calc
-                        </button>
-                    </div>
-                    
-                    <!-- Tab Content Container -->
-                    <div style="max-height: 60vh; overflow-y: auto; padding-right: 10px;">
                         
-                        <!-- GENERAL TAB -->
-                        <div class="settings-tab-content" id="settings-tab-general" style="display: block;">
-                            <div style="margin-bottom: 20px;">
-                                <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Torn API Key:</label>
-                                <input type="text" id="sidekick-api-key" placeholder="Enter your API key..." 
-                                       style="width: 100%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
-                                              color: #fff; padding: 10px; border-radius: 5px; box-sizing: border-box;">
-                                <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
-                                    Get your API key from: <a href="https://www.torn.com/preferences.php#tab=api" target="_blank" style="color: #4CAF50;">Torn Preferences</a>
-                                </div>
-                            </div>
+                        <!-- Content Container -->
+                        <div style="flex: 1; overflow-y: auto; padding: 20px;">
                             
-                            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                                <button id="sidekick-save-settings" style="flex: 1; padding: 10px; background: #4CAF50; 
-                                                                          border: none; color: white; border-radius: 5px; 
-                                                                          font-weight: bold; cursor: pointer;">
-                                    💾 Save
-                                </button>
-                                <button id="sidekick-test-api" style="flex: 1; padding: 10px; background: #2196F3; 
+                            <!-- GENERAL TAB -->
+                            <div class="settings-tab-content" id="settings-tab-general" style="display: block;">
+                                <div style="margin-bottom: 20px;">
+                                    <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Torn API Key:</label>
+                                    <input type="text" id="sidekick-api-key" placeholder="Enter your API key..." 
+                                           style="width: 100%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
+                                                  color: #fff; padding: 10px; border-radius: 5px; box-sizing: border-box;">
+                                    <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
+                                        Get your API key from: <a href="https://www.torn.com/preferences.php#tab=api" target="_blank" style="background: linear-gradient(135deg, #66BB6A, #ffad5a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: bold;">Torn Preferences</a>
+                                    </div>
+                                </div>
+                                
+                                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                                    <button id="sidekick-save-settings" style="flex: 1; padding: 10px; background: linear-gradient(135deg, #66BB6A, #ffad5a); 
+                                                                              border: none; color: white; border-radius: 5px; 
+                                                                              font-weight: bold; cursor: pointer;">
+                                        💾 Save
+                                    </button>
+                                    <button id="sidekick-test-api" style="flex: 1; padding: 10px; background: #2196F3; 
                                                                      border: none; color: white; border-radius: 5px; 
                                                                      font-weight: bold; cursor: pointer;">
-                                    🧪 Test
-                                </button>
-                            </div>
-                            
-                            <div id="sidekick-api-status" style="text-align: center; padding: 10px; border-radius: 5px; 
+                                        🧪 Test
+                                    </button>
+                                </div>
+                                
+                                <div id="sidekick-api-status" style="text-align: center; padding: 10px; border-radius: 5px; 
                                                                  background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;">
-                                Enter your API key and click Save
-                            </div>
-                            
-                            <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 25px 0;">
-                            
-                            <!-- Calendar Refresh Section -->
-                            <div style="background: rgba(33, 150, 243, 0.1); border-left: 3px solid #2196F3; padding: 12px; border-radius: 5px; margin-bottom: 15px;">
-                                <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
-                                    📅 <strong>Event Calendar:</strong> Automatically updates yearly. Use refresh to force update event dates (e.g., Christmas Town).
+                                    Enter your API key and click Save
+                                </div>
+                                
+                                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 25px 0;">
+                                
+                                <!-- Calendar Refresh Section -->
+                                <div style="background: rgba(33, 150, 243, 0.1); border-left: 3px solid #2196F3; padding: 12px; border-radius: 5px; margin-bottom: 15px;">
+                                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                                        📅 <strong>Event Calendar:</strong> Automatically updates yearly. Use refresh to force update event dates (e.g., Christmas Town).
+                                    </div>
+                                </div>
+                                
+                                <button id="sidekick-refresh-calendar" style="width: 100%; padding: 10px; background: #2196F3; 
+                                                                               border: none; color: white; border-radius: 5px; 
+                                                                               font-weight: bold; cursor: pointer; margin-bottom: 15px;">
+                                    🔄 Refresh Event Calendar
+                                </button>
+                                
+                                <div id="sidekick-calendar-status" style="text-align: center; padding: 10px; border-radius: 5px; 
+                                                                         background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;">
+                                    Last updated: <span id="calendar-last-year">Never</span>
                                 </div>
                             </div>
                             
-                            <button id="sidekick-refresh-calendar" style="width: 100%; padding: 10px; background: #2196F3; 
-                                                                           border: none; color: white; border-radius: 5px; 
-                                                                           font-weight: bold; cursor: pointer; margin-bottom: 15px;">
-                                🔄 Refresh Event Calendar
-                            </button>
-                            
-                            <div id="sidekick-calendar-status" style="text-align: center; padding: 10px; border-radius: 5px; 
-                                                                     background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;">
-                                Last updated: <span id="calendar-last-year">Never</span>
+                            <!-- MODULES TAB -->
+                            <div class="settings-tab-content" id="settings-tab-modules" style="display: none;">
+                                ${this.createModuleTogglesHTML()}
                             </div>
-                        </div>
-                        
-                        <!-- MODULES TAB -->
-                        <div class="settings-tab-content" id="settings-tab-modules" style="display: none;">
-                            ${this.createModuleTogglesHTML()}
-                        </div>
-                        
-                        <!-- XANAX VIEWER TAB -->
-                        <div class="settings-tab-content" id="settings-tab-xanax" style="display: none;">
-                            ${this.createXanaxSettingsHTML()}
-                        </div>
-                        
-                        <!-- CHAIN TIMER TAB -->
-                        <div class="settings-tab-content" id="settings-tab-chain" style="display: none;">
-                            ${this.createChainTimerSettingsHTML()}
-                        </div>
-                        
-                        <!-- NOTIFICATIONS TAB -->
-                        <div class="settings-tab-content" id="settings-tab-notifications" style="display: none;">
-                            ${this.createNotificationsSettingsHTML()}
-                        </div>
-                        
-                        <!-- MUG CALCULATOR TAB -->
-                        <div class="settings-tab-content" id="settings-tab-mugcalc" style="display: none;">
-                            ${this.createMugCalculatorSettingsHTML()}
+                            
+                            <!-- XANAX VIEWER TAB -->
+                            <div class="settings-tab-content" id="settings-tab-xanax" style="display: none;">
+                                ${this.createXanaxSettingsHTML()}
+                            </div>
+                            
+                            <!-- CHAIN TIMER TAB -->
+                            <div class="settings-tab-content" id="settings-tab-chain" style="display: none;">
+                                ${this.createChainTimerSettingsHTML()}
+                            </div>
+                            
+                            <!-- NOTIFICATIONS TAB -->
+                            <div class="settings-tab-content" id="settings-tab-notifications" style="display: none;">
+                                ${this.createNotificationsSettingsHTML()}
+                            </div>
+                            
+                            <!-- MUG CALCULATOR TAB -->
+                            <div class="settings-tab-content" id="settings-tab-mugcalc" style="display: none;">
+                                ${this.createMugCalculatorSettingsHTML()}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -500,8 +520,8 @@
 
         // Attach all event listeners
         attachEventListeners(panel) {
-            // Tab switching
-            const tabButtons = panel.querySelectorAll('.settings-tab-btn');
+            // Tab switching for sidebar
+            const tabButtons = panel.querySelectorAll('.settings-sidebar-tab');
             tabButtons.forEach(btn => {
                 btn.addEventListener('click', () => {
                     const targetTab = btn.dataset.tab;
@@ -566,15 +586,17 @@
 
         // Switch between tabs
         switchTab(tabName, panel) {
-            // Update button states
-            const tabButtons = panel.querySelectorAll('.settings-tab-btn');
+            // Update button states for sidebar tabs
+            const tabButtons = panel.querySelectorAll('.settings-sidebar-tab');
             tabButtons.forEach(btn => {
                 if (btn.dataset.tab === tabName) {
-                    btn.style.background = 'rgba(76, 175, 80, 0.3)';
+                    btn.style.background = 'linear-gradient(135deg, #66BB6A, #ffad5a)';
                     btn.style.color = 'white';
+                    btn.classList.add('active');
                 } else {
                     btn.style.background = 'transparent';
                     btn.style.color = 'rgba(255,255,255,0.7)';
+                    btn.classList.remove('active');
                 }
             });
 
@@ -1132,7 +1154,7 @@
         // Update toggle visual state
         updateToggleVisual(track, thumb, isActive) {
             if (isActive) {
-                track.style.backgroundColor = '#4CAF50';
+                track.style.background = 'linear-gradient(135deg, #66BB6A, #ffad5a)';
                 thumb.style.transform = 'translateX(26px)';
             } else {
                 track.style.backgroundColor = '#555';
