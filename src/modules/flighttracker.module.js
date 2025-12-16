@@ -24,6 +24,14 @@
                 await this.loadSettings();
                 await this.loadTrackedPlayers();
 
+                // Check premium status
+                const hasPremium = await this.checkPremium();
+                if (!hasPremium) {
+                    console.log('⚠️ Flight Tracker: Premium subscription required');
+                    this.isEnabled = false;
+                    return;
+                }
+
                 if (this.isEnabled) {
                     this.startMonitoring();
                 }
@@ -112,8 +120,24 @@
             }
         },
 
+        // Check premium subscription (server-side)
+        async checkPremium() {
+            if (!window.SidekickModules?.Premium) {
+                console.warn('⚠️ Premium module not available');
+                return false;
+            }
+
+            try {
+                const isSubscribed = await window.SidekickModules.Premium.isSubscribed();
+                return isSubscribed;
+            } catch (error) {
+                console.error('❌ Failed to check premium status:', error);
+                return false;
+            }
+        },
+
         // Add track button to profile page
-        addTrackButton() {
+        async addTrackButton() {
             if (!window.location.href.includes('XID=')) {
                 return;
             }
@@ -131,6 +155,13 @@
             }
 
             try {
+                // Premium check
+                const hasPremium = await this.checkPremium();
+                if (!hasPremium) {
+                    console.log('⚠️ Flight Tracker button hidden: Premium required');
+                    return;
+                }
+
                 // Find the username/profile ID element to anchor to
                 const anchorElement = document.querySelector('#skip-to-content');
                 if (!anchorElement) {
