@@ -113,45 +113,46 @@
                         <!-- Sidebar Tabs -->
                         <div style="flex: 1; padding-top: 10px;">
                             <button class="settings-sidebar-tab active" data-tab="general" 
-                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: linear-gradient(135deg, #66BB6A, #ffad5a); 
+                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: white; cursor: pointer; font-size: 12px; font-weight: 500; 
-                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="${iconGeneral}" style="width: 32px; height: 32px; margin-bottom: 8px;">
+                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;
+                                           box-shadow: 0 0 20px rgba(102, 187, 106, 0.6), 0 0 40px rgba(255, 173, 90, 0.4);">
+                                <img src="${iconGeneral}" style="width: 48px; height: 48px; margin-bottom: 8px;">
                                 <span>General</span>
                             </button>
                             <button class="settings-sidebar-tab" data-tab="modules" 
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="${iconFeatures}" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.7;">
+                                <img src="${iconFeatures}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7;">
                                 <span>Features</span>
                             </button>
                             <button class="settings-sidebar-tab" data-tab="xanax" 
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="${iconXanax}" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.7;">
+                                <img src="${iconXanax}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7;">
                                 <span>Xanax</span>
                             </button>
                             <button class="settings-sidebar-tab" data-tab="chain" 
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="${iconChain}" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.7;">
+                                <img src="${iconChain}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7;">
                                 <span>Chain Timer</span>
                             </button>
                             <button class="settings-sidebar-tab" data-tab="notifications" 
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="${iconNotifications}" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.7;">
+                                <img src="${iconNotifications}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7;">
                                 <span>Notifications</span>
                             </button>
                             <button class="settings-sidebar-tab" data-tab="mugcalc" 
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="${iconMugcalc}" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.7;">
+                                <img src="${iconMugcalc}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7;">
                                 <span>Mug Calculator</span>
                             </button>
                         </div>
@@ -612,12 +613,14 @@
             tabButtons.forEach(btn => {
                 const icon = btn.querySelector('img');
                 if (btn.dataset.tab === tabName) {
-                    btn.style.background = 'linear-gradient(135deg, #66BB6A, #ffad5a)';
+                    btn.style.background = 'transparent';
+                    btn.style.boxShadow = '0 0 20px rgba(102, 187, 106, 0.6), 0 0 40px rgba(255, 173, 90, 0.4)';
                     btn.style.color = 'white';
                     btn.classList.add('active');
                     if (icon) icon.style.opacity = '1';
                 } else {
                     btn.style.background = 'transparent';
+                    btn.style.boxShadow = 'none';
                     btn.style.color = 'rgba(255,255,255,0.7)';
                     btn.classList.remove('active');
                     if (icon) icon.style.opacity = '0.7';
