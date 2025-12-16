@@ -1309,6 +1309,19 @@
                                     transition: background 0.2s;
                                 ">Bank Investment</button>
                                 <div style="border-top: 1px solid #555; margin: 4px 0;"></div>
+                                <button class="custom-timer-option" style="
+                                    background: none;
+                                    border: none;
+                                    color: #FFD700;
+                                    padding: 6px 12px;
+                                    width: 100%;
+                                    text-align: left;
+                                    cursor: pointer;
+                                    font-size: 11px;
+                                    transition: background 0.2s;
+                                    font-weight: bold;
+                                ">⏱️ Custom Timer</button>
+                                <div style="border-top: 1px solid #555; margin: 4px 0;"></div>
                                 <button class="timer-pin-option" style="
                                     background: none;
                                     border: none;
@@ -1612,6 +1625,27 @@
                         self.saveTimers();
 
                         console.log(`⏰ Timer ${timer.pinned ? 'pinned' : 'unpinned'}`);
+                    });
+                }
+
+                // Handle custom timer option click
+                const customOption = element.querySelector('.custom-timer-option');
+                if (customOption) {
+                    customOption.addEventListener('mouseenter', function () {
+                        customOption.style.background = 'rgba(255,215,0,0.1)';
+                    });
+                    customOption.addEventListener('mouseleave', function () {
+                        customOption.style.background = 'none';
+                    });
+                    customOption.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        // Close dropdown
+                        dropdownContent.style.display = 'none';
+
+                        // Show custom timer dialog
+                        self.showCustomTimerDialog(timer);
                     });
                 }
             } else {
