@@ -572,7 +572,11 @@
 
                 // Save this association for next time
                 this.cooldownWindowMap[cooldownType] = selectedTimer.id;
-                console.log(`💾 Saved ${cooldownType} -> ${selectedTimer.id} mapping`);
+                console.log(`💾 Saved ${cooldownType} → ${selectedTimer.id} mapping`);
+
+                // Save to persist mapping
+                this.saveTimers();
+                console.log(`✅ Cooldown window mapping updated in storage`);
 
                 return selectedTimer;
             }
@@ -583,7 +587,11 @@
 
             // Save this association for future use
             this.cooldownWindowMap[cooldownType] = currentTimer.id;
-            console.log(`💾 Saved new ${cooldownType} -> ${currentTimer.id} mapping`);
+            console.log(`💾 Saved new ${cooldownType} → ${currentTimer.id} mapping`);
+
+            // IMPORTANT: Save immediately to persist mapping
+            this.saveTimers();
+            console.log(`✅ Cooldown window mapping persisted to storage`);
 
             return currentTimer;
         },
