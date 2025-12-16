@@ -89,7 +89,8 @@
     {
       "resources": [
         "assets/icons/sidekick-logo.png",
-        "assets/sounds/NotificationSound1.mp3"
+        "assets/sounds/NotificationSound1.mp3",
+        "icons/*.png"
       ],
       "matches": [
         "<all_urls>"
