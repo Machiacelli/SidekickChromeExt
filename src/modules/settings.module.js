@@ -73,7 +73,7 @@
                 background: #1a1a1a;
                 border: 1px solid rgba(255,255,255,0.2);
                 border-radius: 12px;
-                z-index: 10000;
+                z-index: 999999;
                 box-shadow: 0 10px 40px rgba(0,0,0,0.5);
                 font-family: Arial, sans-serif;
                 overflow: hidden;
