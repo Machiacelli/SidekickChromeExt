@@ -2490,9 +2490,54 @@
                         this.updateTimerDisplay(targetTimer.id);
                         hasUpdates = true;
                     } else {
-                        // Only create new timer if no existing timer can accommodate it
-                        console.log(`🆕 Creating new timer for ${cooldownType} (no existing timer available)`);
-                        this.createApiCooldownTimer(cooldownType, apiCooldown);
+                        // No timer has this cooldown - need to create/assign one
+                        console.log(`🆕 Need to assign ${cooldownType} cooldown - finding or creating timer`);
+
+                        // Use findOrCreateCooldownTimer to reuse existing windows if mapping exists
+                        // Create a temporary "current timer" reference for the function
+                        let selectedTimer = null;
+
+                        // If no timers exist at all, create one
+                        if (this.timers.length === 0) {
+                            console.log(`🆕 Creating new timer for ${cooldownType} (no existing timers)`);
+                            selectedTimer = this.createApiCooldownTimer(cooldownType, apiCooldown);
+                        } else {
+                            // Use findOrCreateCooldownTimer to check for mapping or existing usage
+                            // Pass the first timer as a placeholder if no specific mapping is found,
+                            // the function will handle creating a new one if needed.
+                            selectedTimer = this.findOrCreateCooldownTimer(this.timers[0], cooldownType);
+
+                            // Add cooldown to the selected timer
+                            if (!selectedTimer.cooldowns) {
+                                selectedTimer.cooldowns = {};
+                            }
+                            selectedTimer.cooldowns[cooldownType] = apiCooldown;
+
+                            // Update timer properties
+                            const cooldownCount = Object.keys(selectedTimer.cooldowns).length;
+                            if (cooldownCount === 1) {
+                                const cooldownNames = {
+                                    'drug': 'Drug Cooldown',
+                                    'medical': 'Medical Cooldown',
+                                    'booster': 'Booster Cooldown',
+                                    'Bank': 'Bank Investment'
+                                };
+                                selectedTimer.name = cooldownNames[cooldownType] || 'Cooldown';
+                                selectedTimer.color = this.getCooldownColor(cooldownType);
+                            } else {
+                                selectedTimer.name = 'Cooldowns';
+                                selectedTimer.color = '#9b59b6';
+                            }
+
+                            selectedTimer.duration = Math.max(...Object.values(selectedTimer.cooldowns));
+                            selectedTimer.remainingTime = Math.max(...Object.values(selectedTimer.cooldowns));
+                            selectedTimer.isApiTimer = true;
+                            selectedTimer.isRunning = true;
+
+                            this.saveTimers();
+                            this.updateTimerDisplay(selectedTimer.id); // Pass ID for updateTimerDisplay
+                            console.log(`✅ Assigned ${cooldownType} to existing timer via mapping`);
+                        }
                         hasUpdates = true;
                     }
                 }
