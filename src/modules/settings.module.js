@@ -115,9 +115,8 @@
                             <button class="settings-sidebar-tab active" data-tab="general" 
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: white; cursor: pointer; font-size: 12px; font-weight: 500; 
-                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;
-                                           box-shadow: 0 0 20px rgba(102, 187, 106, 0.6), 0 0 40px rgba(255, 173, 90, 0.4);">
-                                <img src="${iconGeneral}" style="width: 48px; height: 48px; margin-bottom: 8px;">
+                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
+                                <img src="${iconGeneral}" style="width: 48px; height: 48px; margin-bottom: 8px; filter: drop-shadow(0 0 12px rgba(102, 187, 106, 0.8)) drop-shadow(0 0 24px rgba(255, 173, 90, 0.6)); transition: all 0.3s ease;">
                                 <span>General</span>
                             </button>
                             <button class="settings-sidebar-tab" data-tab="modules" 
@@ -614,16 +613,22 @@
                 const icon = btn.querySelector('img');
                 if (btn.dataset.tab === tabName) {
                     btn.style.background = 'transparent';
-                    btn.style.boxShadow = '0 0 20px rgba(102, 187, 106, 0.6), 0 0 40px rgba(255, 173, 90, 0.4)';
+                    btn.style.boxShadow = 'none';
                     btn.style.color = 'white';
                     btn.classList.add('active');
-                    if (icon) icon.style.opacity = '1';
+                    if (icon) {
+                        icon.style.opacity = '1';
+                        icon.style.filter = 'drop-shadow(0 0 12px rgba(102, 187, 106, 0.8)) drop-shadow(0 0 24px rgba(255, 173, 90, 0.6))';
+                    }
                 } else {
                     btn.style.background = 'transparent';
                     btn.style.boxShadow = 'none';
                     btn.style.color = 'rgba(255,255,255,0.7)';
                     btn.classList.remove('active');
-                    if (icon) icon.style.opacity = '0.7';
+                    if (icon) {
+                        icon.style.opacity = '0.7';
+                        icon.style.filter = 'none';
+                    }
                 }
             });
 
