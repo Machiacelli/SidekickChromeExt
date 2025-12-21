@@ -742,6 +742,120 @@
         }
     };
 
+    // === DEBOUNCE UTILITY ===
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    // === STATE MANAGER ===
+    const StateManager = {
+        // Debounced save functions cache
+        debouncedSaves: {},
+
+        // Save module state with optional debouncing
+        async saveModuleState(moduleId, state, debounceMs = 0) {
+            const key = `sidekick_${moduleId}_state`;
+
+            if (debounceMs > 0) {
+                // Create debounced function if doesn't exist
+                if (!this.debouncedSaves[moduleId]) {
+                    this.debouncedSaves[moduleId] = debounce(async (stateToSave) => {
+                        await ChromeStorage.set(key, stateToSave);
+                        console.log(`[StateManager] Saved ${moduleId} state`);
+                    }, debounceMs);
+                }
+
+                // Call debounced function
+                this.debouncedSaves[moduleId](state);
+            } else {
+                // Immediate save
+                await ChromeStorage.set(key, state);
+                console.log(`[StateManager] Saved ${moduleId} state`);
+            }
+        },
+
+        // Load module state
+        async loadModuleState(moduleId, defaultState = {}) {
+            const key = `sidekick_${moduleId}_state`;
+            const state = await ChromeStorage.get(key);
+            return state || defaultState;
+        },
+
+        // Save window geometry (position + size)
+        async saveWindowGeometry(moduleId, element, debounceMs = 500) {
+            if (!element) return;
+
+            const rect = element.getBoundingClientRect();
+            const geometry = {
+                position: {
+                    x: Math.round(rect.left + window.scrollX),
+                    y: Math.round(rect.top + window.scrollY)
+                },
+                size: {
+                    width: Math.round(rect.width),
+                    height: Math.round(rect.height)
+                }
+            };
+
+            // Load existing state and merge with new geometry
+            const existingState = await this.loadModuleState(moduleId);
+            await this.saveModuleState(moduleId, { ...existingState, geometry }, debounceMs);
+        },
+
+        // Restore window geometry with bounds checking
+        restoreWindowGeometry(element, geometry) {
+            if (!element || !geometry) return false;
+
+            const { position, size } = geometry;
+            if (!position) return false;
+
+            // Get screen dimensions
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+
+            // Get element dimensions (use saved or current)
+            const width = size?.width || element.offsetWidth || 300;
+            const height = size?.height || element.offsetHeight || 200;
+
+            // Bounds checking - ensure window is on screen
+            // Keep at least 50px of the window visible
+            const minVisible = 50;
+            const maxX = Math.max(0, screenWidth - minVisible);
+            const maxY = Math.max(0, screenHeight - minVisible);
+
+            const safeX = Math.max(-width + minVisible, Math.min(position.x, maxX));
+            const safeY = Math.max(0, Math.min(position.y, maxY));
+
+            // Apply position
+            element.style.left = `${safeX}px`;
+            element.style.top = `${safeY}px`;
+
+            // Apply size if available
+            if (size) {
+                element.style.width = `${width}px`;
+                element.style.height = `${height}px`;
+            }
+
+            console.log(`[StateManager] Restored geometry: ${safeX},${safeY} ${width}x${height}`);
+            return true;
+        },
+
+        // Clear module state
+        async clearModuleState(moduleId) {
+            const key = `sidekick_${moduleId}_state`;
+            await ChromeStorage.remove(key);
+            console.log(`[StateManager] Cleared ${moduleId} state`);
+        }
+    };
+
     // === CORE MODULE EXPORT ===
     const CoreModule = {
         STORAGE_KEYS,
@@ -750,6 +864,7 @@
         SafeMessageSender,
         ExtensionContextMonitor,
         WindowManager,
+        StateManager,
 
         // Initialize core functionality
         async init() {
