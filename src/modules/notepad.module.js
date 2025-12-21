@@ -530,10 +530,21 @@
                 });
             }
 
-            // Content editing
+            // Content editing with debounced auto-save
             if (textarea) {
-                textarea.addEventListener('input', () => {
+                textarea.addEventListener('input', async () => {
                     notepad.content = textarea.value;
+
+                    // Use StateManager for debounced save (1 second delay)
+                    if (window.SidekickModules?.Core?.StateManager) {
+                        await window.SidekickModules.Core.StateManager.saveModuleState(
+                            `notepad_${notepad.id}`,
+                            { content: notepad.content },
+                            1000 // 1 second debounce
+                        );
+                    }
+
+                    // Also save to main notepads array (for backwards compatibility)
                     this.saveNotepads();
                 });
 
@@ -671,16 +682,26 @@
                     notepad.y = newY;
                 });
 
-                document.addEventListener('mouseup', () => {
+                document.addEventListener('mouseup', async () => {
                     if (isDragging) {
                         isDragging = false;
                         notepadElement.style.zIndex = '1000';
+
+                        // Save geometry using StateManager
+                        if (window.SidekickModules?.Core?.StateManager) {
+                            await window.SidekickModules.Core.StateManager.saveWindowGeometry(
+                                `notepad_${notepad.id}`,
+                                notepadElement,
+                                500 // 500ms debounce
+                            );
+                        }
+
                         this.saveNotepads();
                     }
                 });
             }
 
-            // Resizing functionality (only if not pinned)
+            // Resizing functionality (only if not pinned) with geometry persistence
             let resizeTimeout;
             const resizeObserver = new ResizeObserver(entries => {
                 if (notepad.pinned) return;
@@ -692,7 +713,16 @@
 
                         // Debounce saves to prevent excessive saving during resize
                         clearTimeout(resizeTimeout);
-                        resizeTimeout = setTimeout(() => {
+                        resizeTimeout = setTimeout(async () => {
+                            // Save geometry using StateManager
+                            if (window.SidekickModules?.Core?.StateManager) {
+                                await window.SidekickModules.Core.StateManager.saveWindowGeometry(
+                                    `notepad_${notepad.id}`,
+                                    notepadElement,
+                                    0 // Immediate save after debounce period
+                                );
+                            }
+
                             this.saveNotepads();
                             console.log(`📏 Saved notepad '${notepad.name}' size: ${notepad.width}x${notepad.height}`);
                         }, 500);
