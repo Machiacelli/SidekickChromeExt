@@ -184,6 +184,15 @@
                 console.warn('⚠️ Mug Calculator module not available');
             }
 
+            // Initialize Weapon XP Tracker Module
+            console.log('🎯 Sidekick: Initializing Weapon XP Tracker...');
+            if (window.SidekickModules.WeaponExpTracker?.initialize) {
+                await window.SidekickModules.WeaponExpTracker.initialize();
+                console.log('✅ Sidekick: Weapon XP Tracker initialized');
+            } else {
+                console.warn('⚠️ Weapon XP Tracker module not available');
+            }
+
             // Initialize Timer Module
             console.log("⏰ Sidekick: Initializing Timer...");
             if (window.SidekickModules.Timer?.init) {

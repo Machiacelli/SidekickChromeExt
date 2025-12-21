@@ -272,6 +272,7 @@
                 ${this.createToggle('random-target', '🎲 Random Target', 'Adds random target button to attack pages')}
                 ${''}
                 ${this.createToggle('mug-calculator', '💰 Mug Calculator', 'Shows mug value calculations on Item Market and Bazaars')}
+                ${this.createToggle('weapon-xp-tracker', '🎯 Weapon XP Tracker', 'Shows weapon experience percentage on Items page')}
                 <button id="sidekick-save-module-toggles" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #66BB6A, #ffad5a); 
                                                                   border: none; color: white; border-radius: 6px; 
                                                                   font-weight: bold; cursor: pointer; margin-top: 20px;">
