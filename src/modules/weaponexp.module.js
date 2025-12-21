@@ -196,7 +196,6 @@ const WeaponExpModule = (() => {
         buildExpLi(WE) {
             const newLi = document.createElement('li');
             newLi.className = 'left we';
-            newLi.style.cssText = 'background: linear-gradient(135deg, #66BB6A, #ffad5a); padding: 2px 6px; border-radius: 3px; color: white; font-weight: bold;';
             const weSpan = document.createElement('span');
             weSpan.innerHTML = WE + '%';
             newLi.appendChild(weSpan);
