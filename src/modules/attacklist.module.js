@@ -62,9 +62,19 @@
             }
         },
 
-        // Save attack lists to Chrome storage
+        // Save attack lists to Chrome storage with debouncing
         async saveAttackLists() {
             try {
+                // Use StateManager for debounced saves (1 second delay)
+                if (window.SidekickModules?.Core?.StateManager) {
+                    await window.SidekickModules.Core.StateManager.saveModuleState(
+                        'attacklist',
+                        { lists: this.attackLists },
+                        1000 // 1 second debounce
+                    );
+                }
+
+                // Legacy direct save for backwards compatibility
                 await window.SidekickModules.Core.ChromeStorage.set('sidekick_attacklists', this.attackLists);
                 console.log('💾 Attack lists saved successfully to Chrome storage');
             } catch (error) {

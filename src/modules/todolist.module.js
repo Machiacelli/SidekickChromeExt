@@ -204,9 +204,19 @@
             }
         },
 
-        // Save todo lists to Chrome storage
+        // Save todo lists to Chrome storage with debouncing
         async saveTodoLists() {
             try {
+                // Use StateManager for debounced saves (1 second delay)
+                if (window.SidekickModules?.Core?.StateManager) {
+                    await window.SidekickModules.Core.StateManager.saveModuleState(
+                        'todolist',
+                        { lists: this.todoLists },
+                        1000 // 1 second debounce
+                    );
+                }
+
+                // Legacy direct save for backwards compatibility
                 await window.SidekickModules.Core.ChromeStorage.set('sidekick_todolists', this.todoLists);
                 console.log('💾 Todo lists saved successfully to Chrome storage');
             } catch (error) {
