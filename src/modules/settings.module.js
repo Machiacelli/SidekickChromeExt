@@ -225,6 +225,36 @@
                                                                          background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;">
                                     Last updated: <span id="calendar-last-year">Never</span>
                                 </div>
+                                
+                                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 25px 0;">
+                                
+                                <!-- Data Export/Import Section -->
+                                <div style="background: rgba(76, 175, 80, 0.1); border-left: 3px solid #4CAF50; padding: 12px; border-radius: 5px; margin-bottom: 15px;">
+                                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                                        💾 <strong>Backup & Restore:</strong> Export all your data before uninstalling. Import to restore everything after reinstalling.
+                                    </div>
+                                </div>
+                                
+                                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                                    <button id="sidekick-export-data" style="flex: 1; padding: 10px; background: #4CAF50; 
+                                                                               border: none; color: white; border-radius: 5px; 
+                                                                               font-weight: bold; cursor: pointer;">
+                                        📤 Export Data
+                                    </button>
+                                    <button id="sidekick-import-data" style="flex: 1; padding: 10px; background: #2196F3; 
+                                                                               border: none; color: white; border-radius: 5px; 
+                                                                               font-weight: bold; cursor: pointer;">
+                                        📥 Import Data
+                                    </button>
+                                </div>
+                                
+                                <div id="sidekick-backup-status" style="text-align: center; padding: 10px; border-radius: 5px; 
+                                                                        background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;">
+                                    No backup loaded
+                                </div>
+                                
+                                <!-- Hidden file input -->
+                                <input type="file" id="sidekick-import-file" accept=".json" style="display: none;">
                             </div>
                             
                             <!-- MODULES TAB -->
@@ -756,6 +786,165 @@
                     } finally {
                         refreshCalendarBtn.disabled = false;
                         refreshCalendarBtn.textContent = '🔄 Refresh Event Calendar';
+                    }
+                });
+            }
+
+            // Export/Import functionality
+            const exportBtn = panel.querySelector('#sidekick-export-data');
+            const importBtn = panel.querySelector('#sidekick-import-data');
+            const importFile = panel.querySelector('#sidekick-import-file');
+            const backupStatus = panel.querySelector('#sidekick-backup-status');
+
+            if (exportBtn) {
+                exportBtn.addEventListener('click', async () => {
+                    try {
+                        exportBtn.disabled = true;
+                        exportBtn.textContent = '📤 Exporting...';
+                        this.showStatus(backupStatus, 'Collecting data...', 'info');
+
+                        // Get all data from Chrome storage
+                        const allData = await new Promise((resolve) => {
+                            chrome.storage.local.get(null, (items) => {
+                                resolve(items);
+                            });
+                        });
+
+                        // Create backup object with metadata
+                        const backup = {
+                            version: '1.0',
+                            timestamp: new Date().toISOString(),
+                            extensionVersion: chrome.runtime.getManifest().version,
+                            data: allData
+                        };
+
+                        // Create downloadable file
+                        const dataStr = JSON.stringify(backup, null, 2);
+                        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                        const url = URL.createObjectURL(dataBlob);
+
+                        // Trigger download
+                        const date = new Date().toISOString().split('T')[0];
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `sidekick-backup-${date}.json`;
+                        link.click();
+
+                        URL.revokeObjectURL(url);
+
+                        this.showStatus(backupStatus, `Exported ${Object.keys(allData).length} items successfully!`, 'success');
+
+                        if (window.SidekickModules.Core.NotificationSystem) {
+                            window.SidekickModules.Core.NotificationSystem.show(
+                                'Backup Created',
+                                `Downloaded sidekick-backup-${date}.json`,
+                                'success',
+                                3000
+                            );
+                        }
+                    } catch (error) {
+                        console.error('Export failed:', error);
+                        this.showStatus(backupStatus, 'Export failed: ' + error.message, 'error');
+
+                        if (window.SidekickModules.Core.NotificationSystem) {
+                            window.SidekickModules.Core.NotificationSystem.show(
+                                'Export Failed',
+                                error.message,
+                                'error',
+                                5000
+                            );
+                        }
+                    } finally {
+                        exportBtn.disabled = false;
+                        exportBtn.textContent = '📤 Export Data';
+                    }
+                });
+            }
+
+            if (importBtn && importFile) {
+                importBtn.addEventListener('click', () => {
+                    importFile.click();
+                });
+
+                importFile.addEventListener('change', async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    try {
+                        importBtn.disabled = true;
+                        importBtn.textContent = '📥 Importing...';
+                        this.showStatus(backupStatus, 'Reading backup file...', 'info');
+
+                        // Read file
+                        const text = await file.text();
+                        const backup = JSON.parse(text);
+
+                        // Validate backup structure
+                        if (!backup.data || !backup.version) {
+                            throw new Error('Invalid backup file format');
+                        }
+
+                        // Show confirmation
+                        const itemCount = Object.keys(backup.data).length;
+                        const backupDate = new Date(backup.timestamp).toLocaleString();
+
+                        if (!confirm(
+                            `Import backup from ${backupDate}?\n\n` +
+                            `This will restore ${itemCount} items and may overwrite current data.\n\n` +
+                            `Extension Version: ${backup.extensionVersion}`
+                        )) {
+                            this.showStatus(backupStatus, 'Import cancelled', 'warning');
+                            importBtn.textContent = '📥 Import Data';
+                            importBtn.disabled = false;
+                            importFile.value = '';
+                            return;
+                        }
+
+                        this.showStatus(backupStatus, 'Importing data...', 'info');
+
+                        // Import data to Chrome storage
+                        await new Promise((resolve, reject) => {
+                            chrome.storage.local.set(backup.data, () => {
+                                if (chrome.runtime.lastError) {
+                                    reject(new Error(chrome.runtime.lastError.message));
+                                } else {
+                                    resolve();
+                                }
+                            });
+                        });
+
+                        this.showStatus(backupStatus, 'Data imported! Reloading page...', 'success');
+
+                        if (window.SidekickModules.Core.NotificationSystem) {
+                            window.SidekickModules.Core.NotificationSystem.show(
+                                'Backup Restored',
+                                'Data imported successfully. Reloading...',
+                                'success',
+                                2000
+                            );
+                        }
+
+                        // Reload page after 2 seconds
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+
+                    } catch (error) {
+                        console.error('Import failed:', error);
+                        this.showStatus(backupStatus, 'Import failed: ' + error.message, 'error');
+
+                        if (window.SidekickModules.Core.NotificationSystem) {
+                            window.SidekickModules.Core.NotificationSystem.show(
+                                'Import Failed',
+                                error.message,
+                                'error',
+                                5000
+                            );
+                        }
+                    } finally {
+                        importBtn.disabled = false;
+                        importBtn.textContent = '📥 Import Data';
+                        importFile.value = ''; // Reset file input
                     }
                 });
             }
