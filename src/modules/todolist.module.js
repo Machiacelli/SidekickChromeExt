@@ -261,6 +261,13 @@
         async resetDailyTasksData() {
             console.log("🔄 Resetting daily tasks data");
 
+            // CRITICAL: Before clearing baselines, store yesterday's final values for smart recovery
+            // This allows correct tracking even if extension isn't running at midnight
+            if (this.apiBaselines.xantaken !== undefined) {
+                this.apiBaselines.yesterdayFinalXantaken = this.apiBaselines.xantaken;
+                console.log(`📦 Stored yesterday's final xantaken: ${this.apiBaselines.yesterdayFinalXantaken}`);
+            }
+
             // Force reset ALL tasks to incomplete state
             for (const taskKey in this.dailyTasks) {
                 const task = this.dailyTasks[taskKey];
@@ -276,9 +283,10 @@
                 }
             }
 
-            // Clear ALL API baselines - will be re-established on next API check
-            this.apiBaselines = {};
-            console.log("🧹 Cleared all API baselines - will be re-established on next API check");
+            // Clear current day's API baselines (but keep yesterday's final values)
+            // This will trigger smart recovery on next API check
+            delete this.apiBaselines.xantaken;
+            console.log("🧹 Cleared today's xantaken baseline - will use smart recovery on next API check");
 
             // Set last reset date to current UTC date (not time)
             const now = new Date();
@@ -810,16 +818,40 @@
             });
 
             // 🆕 PRIORITY: Initialize xantaken baseline if not set
-            // 🆕 CRITICAL: Xanax tracking via lifetime xantaken stat
+            // 🆕 CRITICAL: Xanax tracking via lifetime xantaken stat with SMART RECOVERY
             // xantaken is a CUMULATIVE stat that never resets in Torn
             // We track daily usage by comparing current value to baseline (set at midnight)
+            // 
+            // SMART RECOVERY: If extension wasn't running at midnight and user took xanax on mobile,
+            // we can still calculate correct usage by using yesterday's final value!
             if (typeof personalstats?.xantaken === 'number') {
                 const currentXan = personalstats.xantaken;
 
-                // If no baseline exists (after reset), establish it now
+                // If no baseline exists (after reset), use SMART RECOVERY
                 if (this.apiBaselines.xantaken === undefined) {
-                    console.log('💊 Establishing new xantaken baseline:', currentXan);
-                    this.apiBaselines.xantaken = currentXan;
+                    console.log('💊 No baseline set - attempting smart recovery...');
+
+                    // Check if we have yesterday's final value (stored at midnight)
+                    if (this.apiBaselines.yesterdayFinalXantaken !== undefined) {
+                        const yesterdayFinal = this.apiBaselines.yesterdayFinalXantaken;
+                        const xanUsedSinceMidnight = Math.max(0, currentXan - yesterdayFinal);
+
+                        console.log('💊 SMART RECOVERY: Using yesterday\'s final value');
+                        console.log(`💊   Yesterday final: ${yesterdayFinal}`);
+                        console.log(`💊   Current: ${currentXan}`);
+                        console.log(`💊   Usage since midnight: ${xanUsedSinceMidnight}`);
+
+                        // Set baseline to show correct usage
+                        // If user took 2 xanax on mobile before PC startup, we want to show 2/3
+                        this.apiBaselines.xantaken = currentXan - xanUsedSinceMidnight;
+
+                        console.log(`💊   Setting baseline to: ${this.apiBaselines.xantaken}`);
+                    } else {
+                        // No yesterday data - first time ever or data lost
+                        console.log('💊 No yesterday data - establishing fresh baseline:', currentXan);
+                        this.apiBaselines.xantaken = currentXan;
+                    }
+
                     this.saveDailyTasks();
                 }
 
