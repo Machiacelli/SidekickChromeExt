@@ -52,7 +52,6 @@ Organize frequently visited pages in custom collections:
 
 ### ⏰ Cooldown Timers
 Track all your cooldowns with desktop notifications:
-- 18 preset cooldown types (Drug, Booster, Medical, Energy, Nerve, etc.)
 - Custom timers with configurable duration
 - Multiple simultaneous timers
 - Desktop notifications when complete
@@ -63,33 +62,31 @@ Track all your cooldowns with desktop notifications:
 ## 🛠️ Additional Modules
 
 ### Tracking & Monitoring
-- **💵 Debt Tracker** - Track money owed and lent with auto-payment detection
-- **✈️ Flight Tracker** - Shows arrival times for traveling players
-- **🔫 Weapon XP Tracker** - Monitor weapon experience gains and mastery progress
-- **� Stats Tracker** - Track stat gains over time with session data
-- **⛓️ Chain Timer** - Visual countdown for chain timeout
-- **⏲️ Time on Tab** - Shows TCT seconds on browser tab title
-- **🕐 Clock Widget** - TCT and local time display in sidebar
-
+- **💵 Debt Tracker** 
+- **✈️ Flight Tracker** 
+- **🔫 Weapon XP Tracker** 
+- **� Stats Tracker** 
+- **⛓️ Chain Timer** 
+- **⏲️ Time on Tab** 
+- **🕐 Clock Widget** 
 ### Trading & Finance
-- **💎 Stock Advisor** - Real-time stock tracking with buy/sell recommendations
-- **🎯 Mug Calculator** - Calculate potential mug amounts (click ℹ️ on profiles)
-- **⚖️ Inventory Sorter** - Sort inventory items by total value
-- **🗺️ Travel Arc** - Optimized travel routes with profit calculations
+- **💎 Stock Advisor** 
+- **🎯 Mug Calculator**   
+- **⚖️ Inventory Sorter** 
 
 ### Combat & PvP
-- **🎲 Random Target** - Generate random attack targets in configurable level ranges
-- ** Attack Button Mover** - Relocates attack button for easier access
-- **🔍 Extended Chain View** - Enhanced chain information and member stats
+- **🎲 Random Target** 
+- ** Attack Button Mover** 
+- **🔍 Extended Chain View** 
 
 ### Alerts & Notifications
-- **🏎️ Racing Alert** - Notifies when Racing activity detected
-- **📊 Event Ticker** - Real-time Torn events feed with customizable filters
-- **💊 Xanax Viewer** - Daily Xanax usage counter with visual progress
+- **🏎️ Racing Alert** 
+- **📊 Event Ticker** 
+- **💊 Xanax Viewer** 
 
 ### Quality of Life
-- **� Training Blocker** - Prevents accidental gym training with overlay
-- **🐛 Bug Reporter** - Direct bug reporting to developer via Notion
+- **� Training Blocker** 
+- **🐛 Bug Reporter** 
 
 ---
 
@@ -97,7 +94,6 @@ Track all your cooldowns with desktop notifications:
 
 See full changelog in the original README for detailed version history.
 
-**Latest:** v1.4.1 - Premium Admin Panel & Color Customization
 
 ---
 
