@@ -104,7 +104,7 @@ MIT License - see [LICENSE](LICENSE) file.
 ---
 
 <p align="center">
-  <strong>Made with ❤️ by <a href="https://www.torn.com/profiles.php?XID=2407280">Machiacelli [2407280]</a></strong>
+  <strong>Made with ❤️ by Machiacelli</a></strong>
 </p>
 
 <p align="center">
