@@ -227,15 +227,35 @@ const WeaponExpModule = (() => {
                 }
 
                 try {
-                    const response = await fetch(`https://api.torn.com/user/?selections=weaponexp,personalstats,inventory&key=${apiKey}`);
-                    const data = await response.json();
+                    // Fetch user data and torn items in parallel
+                    const [userResponse, itemsResponse] = await Promise.all([
+                        fetch(`https://api.torn.com/user/?selections=weaponexp,personalstats,inventory&key=${apiKey}`),
+                        fetch(`https://api.torn.com/torn/?selections=items&key=${apiKey}`)
+                    ]);
 
-                    if (data.error) {
-                        alert('API Error: ' + data.error.error);
+                    const userData = await userResponse.json();
+                    const itemsData = await itemsResponse.json();
+
+                    if (userData.error) {
+                        alert('API Error: ' + userData.error.error);
                         return;
                     }
 
-                    cachedFullData = data;
+                    if (itemsData.error) {
+                        alert('API Error fetching items: ' + itemsData.error.error);
+                        return;
+                    }
+
+                    // Combine data
+                    cachedFullData = {
+                        ...userData,
+                        tornItems: itemsData.items
+                    };
+
+                    console.log('[Sidekick] Fetched data:', {
+                        weapons: userData.weaponexp?.length,
+                        items: Object.keys(itemsData.items || {}).length
+                    });
                 } catch (error) {
                     console.error('[Sidekick] Failed to fetch overview data:', error);
                     alert('Failed to fetch weapon data');
@@ -274,6 +294,7 @@ const WeaponExpModule = (() => {
             const weArray = data.weaponexp || [];
             const fhStats = data.personalstats || {};
             const inventory = data.inventory || [];
+            const tornItems = data.tornItems || {};
 
             // Calculate stats
             let weAt100pct = weArray.filter(w => w.exp === 100).length;
@@ -283,7 +304,7 @@ const WeaponExpModule = (() => {
 
             // Build tables
             const fhTable = this.buildFinishingHitsTable(fhStats, fhRemains);
-            const weTable = this.buildWeaponExpTable(weArray, inventory);
+            const weTable = this.buildWeaponExpTable(weArray, inventory, tornItems);
 
             return `
                 <div class="container">
@@ -336,9 +357,15 @@ const WeaponExpModule = (() => {
         },
 
         // Build weapon experience table
-        buildWeaponExpTable(weArray, inventory) {
+        buildWeaponExpTable(weArray, inventory, tornItems) {
             // Convert inventory object to array
             const inventoryArray = Object.values(inventory || {});
+
+            console.log('[Sidekick] Building weapon exp table:', {
+                weaponCount: weArray.length,
+                inventoryCount: inventoryArray.length,
+                tornItemsCount: Object.keys(tornItems || {}).length
+            });
 
             // Sort weapons by type
             const primary = [];
@@ -348,13 +375,26 @@ const WeaponExpModule = (() => {
 
             weArray.forEach(weapon => {
                 const invItem = inventoryArray.find(i => i.ID == weapon.itemID);
-                const type = invItem?.type || 'Unknown';
+                const tornItem = tornItems?.[weapon.itemID];
+                const type = tornItem?.type || 'Unknown';
                 const obj = { ...weapon, equipped: invItem?.equipped || false };
+
+                console.log('[Sidekick] Weapon:', weapon.name, 'Type:', type, 'ItemID:', weapon.itemID);
 
                 if (type === 'Primary') primary.push(obj);
                 else if (type === 'Secondary') secondary.push(obj);
                 else if (type === 'Melee') melee.push(obj);
                 else if (type === 'Temporary') temporary.push(obj);
+                else {
+                    console.warn('[Sidekick] Unknown weapon type:', type, 'for', weapon.name);
+                }
+            });
+
+            console.log('[Sidekick] Categorized weapons:', {
+                primary: primary.length,
+                secondary: secondary.length,
+                melee: melee.length,
+                temporary: temporary.length
             });
 
             const maxRows = Math.max(primary.length, secondary.length, melee.length, temporary.length);
