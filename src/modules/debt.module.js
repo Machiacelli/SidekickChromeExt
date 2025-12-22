@@ -2716,8 +2716,8 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
         };
     },
 
-        // Utility to darken a color
-        darkenColor(color, percent) {
+    // Utility to darken a color
+    darkenColor(color, percent) {
         if (!color) return '#45a049';
         const num = parseInt(color.replace("#", ""), 16);
         const amt = Math.round(2.55 * percent);
