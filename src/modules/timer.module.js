@@ -1700,37 +1700,6 @@
                         }
                     });
                 }
-
-                // Handle timer pin option click
-                const pinOption = element.querySelector('.timer-pin-option');
-                if (pinOption) {
-                    pinOption.addEventListener('mouseenter', function () {
-                        pinOption.style.background = 'rgba(255,255,255,0.1)';
-                    });
-                    pinOption.addEventListener('mouseleave', function () {
-                        pinOption.style.background = 'none';
-                    });
-                    pinOption.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-
-                        console.log(`🔍 Timer pin clicked for timer: ${timer.id}`);
-
-                        // Toggle pinned state
-                        timer.pinned = !timer.pinned;
-
-                        // Update button text
-                        pinOption.textContent = timer.pinned ? '📌 Unpin' : '📌 Pin';
-
-                        // Close dropdown
-                        dropdownContent.style.display = 'none';
-
-                        // Save timer state
-                        self.saveTimers();
-
-                        console.log(`⏰ Timer ${timer.pinned ? 'pinned' : 'unpinned'}`);
-                    });
-                }
             } else {
                 console.warn('❌ Dropdown elements not found:', {
                     dropdownBtn: !!dropdownBtn,
