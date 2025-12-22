@@ -734,88 +734,19 @@
 
         // Show color picker for notepad
         showColorPicker(notepadElement, notepad) {
-            // Remove any existing color picker
-            const existingPicker = document.querySelector('.color-picker');
-            if (existingPicker) existingPicker.remove();
+            if (!window.SidekickModules?.Core?.ColorPicker) {
+                console.error('ColorPicker not available');
+                return;
+            }
 
-            const colorPicker = document.createElement('div');
-            colorPicker.className = 'color-picker';
-            colorPicker.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: #333;
-                border: 1px solid #555;
-                border-radius: 8px;
-                padding: 16px;
-                z-index: 999999;
-                display: grid;
-                grid-template-columns: repeat(4, 30px);
-                gap: 8px;
-                box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-            `;
+            window.SidekickModules.Core.ColorPicker.show(notepad.color, (selectedColor) => {
+                notepad.color = selectedColor;
+                const header = notepadElement.querySelector('.notepad-header');
+                header.style.background = `linear-gradient(135deg, ${selectedColor}, ${this.darkenColor(selectedColor, 15)})`;
 
-            const colors = [
-                // Original greens and blues
-                '#4CAF50', '#2196F3', '#00BCD4', '#8BC34A',
-                // Oranges and reds
-                '#FF9800', '#f44336', '#E91E63', '#FF5722',
-                // Purples and pinks
-                '#9C27B0', '#673AB7', '#E91E63', '#FF4081',
-                // Yellows and ambers
-                '#FFC107', '#FFEB3B', '#FFD54F', '#FFA726',
-                // Grays and neutrals
-                '#607D8B', '#795548', '#BDBDBD', '#9E9E9E',
-                // Dark and light
-                '#333', '#424242', '#FFFFFF', '#E0E0E0'
-            ];
-
-            colors.forEach(color => {
-                const colorBtn = document.createElement('div');
-                colorBtn.style.cssText = `
-                    width: 30px;
-                    height: 30px;
-                    background: ${color};
-                    border: 2px solid ${notepad.color === color ? '#fff' : '#666'};
-                    border-radius: 4px;
-                    cursor: pointer;
-                    transition: all 0.2s ease;
-                `;
-
-                colorBtn.addEventListener('click', () => {
-                    notepad.color = color;
-                    const header = notepadElement.querySelector('.notepad-header');
-                    header.style.background = `linear-gradient(135deg, ${color}, ${this.darkenColor(color, 15)})`;
-
-                    this.saveNotepads();
-                    colorPicker.remove();
-
-                    console.log(`🎨 Notepad color changed to ${color}`);
-                });
-
-                colorBtn.addEventListener('mouseenter', () => {
-                    colorBtn.style.transform = 'scale(1.1)';
-                });
-
-                colorBtn.addEventListener('mouseleave', () => {
-                    colorBtn.style.transform = 'scale(1)';
-                });
-
-                colorPicker.appendChild(colorBtn);
+                this.saveNotepads();
+                console.log(`🎨 Notepad color changed to ${selectedColor}`);
             });
-
-            document.body.appendChild(colorPicker);
-
-            // Close when clicking outside
-            setTimeout(() => {
-                document.addEventListener('click', function closeColorPicker(e) {
-                    if (!colorPicker.contains(e.target)) {
-                        colorPicker.remove();
-                        document.removeEventListener('click', closeColorPicker);
-                    }
-                });
-            }, 100);
         },
 
         // Utility functions
