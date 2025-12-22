@@ -337,6 +337,9 @@ const WeaponExpModule = (() => {
 
         // Build weapon experience table
         buildWeaponExpTable(weArray, inventory) {
+            // Convert inventory object to array
+            const inventoryArray = Object.values(inventory || {});
+
             // Sort weapons by type
             const primary = [];
             const secondary = [];
@@ -344,7 +347,7 @@ const WeaponExpModule = (() => {
             const temporary = [];
 
             weArray.forEach(weapon => {
-                const invItem = inventory.find(i => i.ID == weapon.itemID);
+                const invItem = inventoryArray.find(i => i.ID == weapon.itemID);
                 const type = invItem?.type || 'Unknown';
                 const obj = { ...weapon, equipped: invItem?.equipped || false };
 
