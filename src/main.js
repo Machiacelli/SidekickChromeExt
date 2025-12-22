@@ -211,6 +211,15 @@
                 console.warn('⚠️ Refill Blocker module not available');
             }
 
+            // Initialize Extended Chain View Module
+            console.log('⛓️ Sidekick: Initializing Extended Chain View...');
+            if (window.SidekickModules.ExtendedChainView?.initialize) {
+                await window.SidekickModules.ExtendedChainView.initialize();
+                console.log('✅ Sidekick: Extended Chain View initialized');
+            } else {
+                console.warn('⚠️ Extended Chain View module not available');
+            }
+
             // Initialize Timer Module
             console.log("⏰ Sidekick: Initializing Timer...");
             if (window.SidekickModules.Timer?.init) {
