@@ -13,6 +13,10 @@ const WeaponExpModule = (() => {
     let pageObserver = null;
     let observing = false;
 
+    // Cache for overview window data
+    let cachedFullData = null;
+    let overviewWindow = null;
+
     // Selectors
     const pageSpanSelector = "#mainContainer > div.content-wrapper > div.main-items-cont-wrap > div.items-wrap.primary-items > div.title-black > span.items-name";
     const pageDivSelector = "#mainContainer > div.content-wrapper > div.main-items-cont-wrap > div.items-wrap.primary-items > div.title-black";
@@ -32,8 +36,8 @@ const WeaponExpModule = (() => {
             }
 
             // Check if module is enabled
-            const enabled = await window.SidekickModules.Core.ChromeStorage.get('weapon-xp-tracker');
-            isEnabled = enabled !== false;
+            const settings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_weapon_xp_tracker');
+            isEnabled = settings?.isEnabled !== false;
 
             if (!isEnabled) {
                 console.log('[Sidekick] Weapon XP Tracker is disabled');
@@ -210,6 +214,269 @@ const WeaponExpModule = (() => {
             return name;
         },
 
+        // Open weapons overview window
+        async openWeaponsOverview() {
+            console.log('[Sidekick] Opening weapons overview window...');
+
+            // Fetch full data if not cached
+            if (!cachedFullData) {
+                const apiKey = await window.SidekickModules.Core.ChromeStorage.get('sidekick_api_key');
+                if (!apiKey) {
+                    alert('API key not found. Please configure in settings.');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`https://api.torn.com/user/?selections=weaponexp,personalstats,inventory&key=${apiKey}`);
+                    const data = await response.json();
+
+                    if (data.error) {
+                        alert('API Error: ' + data.error.error);
+                        return;
+                    }
+
+                    cachedFullData = data;
+                } catch (error) {
+                    console.error('[Sidekick] Failed to fetch overview data:', error);
+                    alert('Failed to fetch weapon data');
+                    return;
+                }
+            }
+
+            const html = this.createWeaponsOverviewHTML(cachedFullData);
+
+            // Open in new window or update existing
+            if (overviewWindow && !overviewWindow.closed) {
+                overviewWindow.document.body.innerHTML = html;
+                overviewWindow.focus();
+            } else {
+                overviewWindow = window.open('', 'Weapon Overview', 'width=900,height=800,resizable=yes,scrollbars=yes');
+                if (overviewWindow) {
+                    overviewWindow.document.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>Weapon Experience & Finishing Hits</title>
+                            ${this.getOverviewStyles()}
+                        </head>
+                        <body>
+                            ${html}
+                        </body>
+                        </html>
+                    `);
+                    overviewWindow.document.close();
+                }
+            }
+        },
+
+        // Create HTML for weapons overview
+        createWeaponsOverviewHTML(data) {
+            const weArray = data.weaponexp || [];
+            const fhStats = data.personalstats || {};
+            const inventory = data.inventory || [];
+
+            // Calculate stats
+            let weAt100pct = weArray.filter(w => w.exp === 100).length;
+            let rfPct = Math.round((fhStats.roundsfired / 1000000) * 100);
+            let dmgPct = Math.round((fhStats.attackdamage / 100000000) * 100);
+            let fhRemains = this.calcRemainingFinishingHits(fhStats);
+
+            // Build tables
+            const fhTable = this.buildFinishingHitsTable(fhStats, fhRemains);
+            const weTable = this.buildWeaponExpTable(weArray, inventory);
+
+            return `
+                <div class="container">
+                    <h2 class="title">Weapon Experience and Finishing Hits</h2>
+                    <div class="stats">
+                        ${weAt100pct} weapons at 100% | 
+                        Rounds: ${this.numberWithCommas(fhStats.roundsfired || 0)}/1,000,000 (${rfPct}%) | 
+                        Damage: ${this.numberWithCommas(fhStats.attackdamage || 0)}/100,000,000 (${dmgPct}%)
+                    </div>
+                    
+                    <h3 class="section-title">Finishing Hits: ${fhRemains} remain (~${this.numberWithCommas(fhRemains * 25)}e)</h3>
+                    ${fhTable}
+                    
+                    <h3 class="section-title">Weapon Experience</h3>
+                    ${weTable}
+                </div>
+            `;
+        },
+
+        // Build finishing hits table
+        buildFinishingHitsTable(stats, remainingTotal) {
+            const categories = [
+                { name: 'Machine Guns', key: 'machits' },
+                { name: 'Rifles', key: 'rifhits' },
+                { name: 'Piercing', key: 'piehits' },
+                { name: 'Clubbing', key: 'axehits' },
+                { name: 'Sub Machine Guns', key: 'smghits' },
+                { name: 'Pistols', key: 'pishits' },
+                { name: 'Mechanical', key: 'chahits' },
+                { name: 'Temporary', key: 'grehits' },
+                { name: 'Heavy Artillery', key: 'heahits' },
+                { name: 'Shotguns', key: 'shohits' },
+                { name: 'Slashing', key: 'slahits' },
+                { name: 'Hand to Hand', key: 'h2hhits' }
+            ];
+
+            let rows = '';
+            for (let i = 0; i < categories.length; i += 4) {
+                rows += '<tr>';
+                for (let j = 0; j < 4 && i + j < categories.length; j++) {
+                    const cat = categories[i + j];
+                    const count = stats[cat.key] || 0;
+                    const colorClass = count >= 1000 ? 'green' : count >= 750 ? 'orange' : 'red';
+                    rows += `<td class="${colorClass}"><span class="left">${cat.name}</span><span class="right">${this.numberWithCommas(count)}</span></td>`;
+                }
+                rows += '</tr>';
+            }
+
+            return `<table class="fh-table">${rows}</table>`;
+        },
+
+        // Build weapon experience table
+        buildWeaponExpTable(weArray, inventory) {
+            // Sort weapons by type
+            const primary = [];
+            const secondary = [];
+            const melee = [];
+            const temporary = [];
+
+            weArray.forEach(weapon => {
+                const invItem = inventory.find(i => i.ID == weapon.itemID);
+                const type = invItem?.type || 'Unknown';
+                const obj = { ...weapon, equipped: invItem?.equipped || false };
+
+                if (type === 'Primary') primary.push(obj);
+                else if (type === 'Secondary') secondary.push(obj);
+                else if (type === 'Melee') melee.push(obj);
+                else if (type === 'Temporary') temporary.push(obj);
+            });
+
+            const maxRows = Math.max(primary.length, secondary.length, melee.length, temporary.length);
+            let rows = '';
+
+            for (let i = 0; i < maxRows; i++) {
+                rows += '<tr>';
+                [primary, secondary, melee, temporary].forEach(arr => {
+                    if (arr[i]) {
+                        const w = arr[i];
+                        const colorClass = w.equipped ? 'yellow' : w.exp === 100 ? 'green' : w.exp >= 50 ? 'orange' : 'red';
+                        rows += `<td class="${colorClass}"><span class="left">${w.name}</span><span class="right">${w.exp}%</span></td>`;
+                    } else {
+                        rows += '<td></td>';
+                    }
+                });
+                rows += '</tr>';
+            }
+
+            return `
+                <table class="we-table">
+                    <thead>
+                        <tr>
+                            <th>Primary</th>
+                            <th>Secondary</th>
+                            <th>Melee</th>
+                            <th>Temporary</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            `;
+        },
+
+        // Calculate remaining finishing hits
+        calcRemainingFinishingHits(stats) {
+            const keys = ['machits', 'rifhits', 'piehits', 'axehits', 'smghits', 'pishits',
+                'chahits', 'grehits', 'heahits', 'shohits', 'slahits', 'h2hhits'];
+            return keys.reduce((total, key) => {
+                const count = stats[key] || 0;
+                return total + (count >= 1000 ? 0 : 1000 - count);
+            }, 0);
+        },
+
+        // Helper: Number formatting
+        numberWithCommas(x) {
+            return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        },
+
+        // Styles for overview window
+        getOverviewStyles() {
+            return `
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        background: #1a1a1a;
+                        color: #fff;
+                        margin: 0;
+                        padding: 20px;
+                    }
+                    .container {
+                        max-width: 900px;
+                        margin: 0 auto;
+                    }
+                    .title {
+                        text-align: center;
+                        background: linear-gradient(135deg, #66BB6A, #ffad5a);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        font-size: 24px;
+                        margin-bottom: 10px;
+                    }
+                    .stats {
+                        text-align: center;
+                        color: #aaa;
+                        margin-bottom: 30px;
+                        font-size: 14px;
+                    }
+                    .section-title {
+                        color: #66BB6A;
+                        border-bottom: 2px solid #66BB6A;
+                        padding-bottom: 8px;
+                        margin-top: 30px;
+                        margin-bottom: 15px;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 20px;
+                    }
+                    th, td {
+                        border: 1px solid #555;
+                        padding: 10px;
+                        text-align: center;
+                    }
+                    th {
+                        background: #2a2a2a;
+                        color: #66BB6A;
+                        font-weight: bold;
+                    }
+                    td {
+                        background: #242424;
+                    }
+                    .left {
+                        float: left;
+                    }
+                    .right {
+                        float: right;
+                    }
+                    .green {
+                        color: #4CAF50;
+                    }
+                    .orange {
+                        color: #FF9800;
+                    }
+                    .red {
+                        color: #f44336;
+                    }
+                    .yellow {
+                        color: #FFEB3B;
+                    }
+                </style>
+            `;
+        },
+
         // Observer helpers
         observeOff() {
             if (observing && pageObserver) {
@@ -228,6 +495,10 @@ const WeaponExpModule = (() => {
         async destroy() {
             this.observeOff();
             weArray = null;
+            cachedFullData = null;
+            if (overviewWindow && !overviewWindow.closed) {
+                overviewWindow.close();
+            }
             pageName = '';
             pageDiv = null;
             pageObserver = null;

@@ -302,7 +302,7 @@
                 ${this.createToggle('random-target', '🎲 Random Target', 'Adds random target button to attack pages')}
                 ${''}
                 ${this.createToggle('mug-calculator', '💰 Mug Calculator', 'Shows mug value calculations on Item Market and Bazaars')}
-                ${this.createToggle('weapon-xp-tracker', '🎯 Weapon XP Tracker', 'Shows weapon experience percentage on Items page')}
+                ${this.createWeaponXpToggle()}
                 <button id="sidekick-save-module-toggles" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #66BB6A, #ffad5a); 
                                                                   border: none; color: white; border-radius: 6px; 
                                                                   font-weight: bold; cursor: pointer; margin-top: 20px;">
@@ -311,6 +311,57 @@
                 <div id="sidekick-module-status" style="text-align: center; padding: 10px; border-radius: 5px; 
                                                        background: rgba(255,255,255,0.1); color: #ccc; margin-top: 10px; font-size: 13px;">
                     Module settings loaded
+                </div>
+            `;
+        },
+
+        // Create special weapon XP toggle with link
+        createWeaponXpToggle() {
+            return `
+                <div style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #fff; margin-bottom: 4px;">🎯 Weapon XP Tracker</div>
+                            <div style="font-size: 12px; color: #aaa;">
+                                Shows weapon experience percentage on Items page
+                                <br>
+                                <a href="#" id="weapon-overview-link" style="color: #66BB6A; text-decoration: underline; cursor: pointer; font-weight: 500;">
+                                    📊 View All Weapons & Finishing Hits
+                                </a>
+                            </div>
+                        </div>
+                        <div class="toggle-switch" data-module="weapon-xp-tracker" style="
+                            position: relative;
+                            display: inline-block;
+                            width: 50px;
+                            height: 24px;
+                            margin-left: 15px;
+                            cursor: pointer;
+                            flex-shrink: 0;
+                        ">
+                            <div class="toggle-track" style="
+                                position: absolute;
+                                top: 0;
+                                left: 0;
+                                right: 0;
+                                bottom: 0;
+                                background-color: #555;
+                                border-radius: 24px;
+                                transition: background-color 0.3s ease;
+                            "></div>
+                            <div class="toggle-thumb" style="
+                                position: absolute;
+                                top: 2px;
+                                left: 2px;
+                                width: 20px;
+                                height: 20px;
+                                background-color: white;
+                                border-radius: 50%;
+                                transition: transform 0.3s ease;
+                                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                            "></div>
+                        </div>
+                    </div>
                 </div>
             `;
         },
@@ -971,6 +1022,39 @@
                 });
             });
 
+            // Weapon overview link - enhanced with better debugging
+            const weaponOverviewLink = panel.querySelector('#weapon-overview-link');
+            console.log('[Sidekick] Weapon overview link element:', weaponOverviewLink);
+
+            if (weaponOverviewLink) {
+                console.log('[Sidekick] Attaching click listener to weapon overview link');
+
+                weaponOverviewLink.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[Sidekick] Weapon overview link clicked!');
+                    console.log('[Sidekick] WeaponExpTracker module:', window.SidekickModules?.WeaponExpTracker);
+
+                    // Access the WeaponExpTracker module
+                    if (window.SidekickModules?.WeaponExpTracker?.openWeaponsOverview) {
+                        console.log('[Sidekick] Calling openWeaponsOverview...');
+                        try {
+                            await window.SidekickModules.WeaponExpTracker.openWeaponsOverview();
+                        } catch (error) {
+                            console.error('[Sidekick] Error opening weapons overview:', error);
+                            alert('Error opening weapons overview: ' + error.message);
+                        }
+                    } else {
+                        console.error('[Sidekick] WeaponExpTracker module not available');
+                        alert('Weapon XP Tracker module not available. Please enable it in settings and reload the page.');
+                    }
+                });
+
+                console.log('[Sidekick] Click listener attached successfully');
+            } else {
+                console.error('[Sidekick] Weapon overview link element not found!');
+            }
+
             // Save button
             saveBtn.addEventListener('click', async () => {
                 const settings = {};
@@ -1342,6 +1426,7 @@
                 'stats-tracker',
                 'xanax-viewer',
                 'chain-timer',
+                'weapon-xp-tracker',
                 'mug-calculator'
             ];
 
