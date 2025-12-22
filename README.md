@@ -107,7 +107,4 @@ MIT License - see [LICENSE](LICENSE) file.
   <strong>Made with ❤️ by Machiacelli</a></strong>
 </p>
 
-<p align="center">
-  <a href="https://github.com/Machiacelli/SidekickChromeExt/issues">Report Bug</a> • 
-  <a href="https://github.com/Machiacelli/SidekickChromeExt/issues">Request Feature</a>
-</p>
+
