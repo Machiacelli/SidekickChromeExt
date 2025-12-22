@@ -301,6 +301,7 @@
                 ${''}
                 ${this.createToggle('random-target', '🎲 Random Target', 'Adds random target button to attack pages')}
                 ${''}
+                ${this.createToggle('racing-alert', '🏎️ Racing Alert', 'Shows flashing red icon when not in a race')}
                 ${this.createToggle('mug-calculator', '💰 Mug Calculator', 'Shows mug value calculations on Item Market and Bazaars')}
                 ${this.createWeaponXpToggle()}
                 <button id="sidekick-save-module-toggles" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #66BB6A, #ffad5a); 
@@ -1426,6 +1427,7 @@
                 'stats-tracker',
                 'xanax-viewer',
                 'chain-timer',
+                'racing-alert',
                 'weapon-xp-tracker',
                 'mug-calculator'
             ];

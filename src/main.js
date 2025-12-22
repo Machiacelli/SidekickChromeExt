@@ -193,6 +193,15 @@
                 console.warn('⚠️ Weapon XP Tracker module not available');
             }
 
+            // Initialize Racing Alert Module
+            console.log('🏎️ Sidekick: Initializing Racing Alert...');
+            if (window.SidekickModules.RacingAlert?.initialize) {
+                await window.SidekickModules.RacingAlert.initialize();
+                console.log('✅ Sidekick: Racing Alert initialized');
+            } else {
+                console.warn('⚠️ Racing Alert module not available');
+            }
+
             // Initialize Timer Module
             console.log("⏰ Sidekick: Initializing Timer...");
             if (window.SidekickModules.Timer?.init) {
