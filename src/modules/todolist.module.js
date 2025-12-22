@@ -1641,6 +1641,7 @@
                 id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 name: 'New Todo List',
                 tasks: [],
+                color: '#4CAF50',  // Default color
                 x: x,
                 y: y,
                 width: todoListWidth,
@@ -1701,7 +1702,7 @@
 
             todoListElement.innerHTML = `
                 <div class="todolist-header" style="
-                    background: linear-gradient(135deg, #4CAF50, #388E3C);
+                    background: linear-gradient(135deg, ${todoList.color || '#4CAF50'}, ${this.darkenColor(todoList.color || '#4CAF50', 15)});
                     border-bottom: 1px solid #555;
                     padding: 6px 10px;
                     display: flex;
@@ -1795,6 +1796,15 @@
                                     border-bottom: 1px solid #444;
                                 " onmouseover="this.style.background='#3a3a3a'" 
                                    onmouseout="this.style.background='none'">➕ Add Task</div>
+                                
+                                <div class="todolist-option" data-action="color" style="
+                                    padding: 8px 12px;
+                                    cursor: pointer;
+                                    color: #fff;
+                                    font-size: 12px;
+                                    border-bottom: 1px solid #444;
+                                " onmouseover="this.style.background='#3a3a3a'" 
+                                   onmouseout="this.style.background='none'">🎨 Change Color</div>
                                 
                                 <div class="todolist-option" data-action="delete" style="
                                     padding: 8px 12px;
@@ -2088,6 +2098,18 @@
                                 break;
                             case 'add':
                                 window.SidekickModules.TodoList.showAddTaskDialog(todoList);
+                                break;
+                            case 'color':
+                                if (window.SidekickModules?.Core?.ColorPicker) {
+                                    window.SidekickModules.Core.ColorPicker.show(todoList.color || '#4CAF50', (selectedColor) => {
+                                        todoList.color = selectedColor;
+                                        const header = element.querySelector('.todolist-header');
+                                        if (header) {
+                                            header.style.background = `linear-gradient(135deg, ${selectedColor}, ${window.SidekickModules.Core.ColorPicker.darkenColor(selectedColor, 15)})`;
+                                        }
+                                        window.SidekickModules.TodoList.saveTodoLists();
+                                    });
+                                }
                                 break;
                             case 'delete':
                                 if (confirm(`Delete "${todoList.name}" todo list?`)) {
@@ -2827,6 +2849,19 @@
         } catch (e) {
             console.error('❌ Failed to expose debug functions:', e.message);
         }
+    };
+
+    // Utility to darken a color for TodoList module
+    TodoListModule.darkenColor = function (color, percent) {
+        if (!color) return '#388E3C';
+        const num = parseInt(color.replace("#", ""), 16);
+        const amt = Math.round(2.55 * percent);
+        const R = (num >> 16) - amt;
+        const G = (num >> 8 & 0x00FF) - amt;
+        const B = (num & 0x0000FF) - amt;
+        return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+            (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+            (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
     };
 
     // Expose immediately since we have direct module reference
