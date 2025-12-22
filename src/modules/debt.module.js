@@ -2714,65 +2714,79 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
             resizeObserver.disconnect();
             originalRemove.call(this);
         };
-    };
+    },
+
+        // Utility to darken a color
+        darkenColor(color, percent) {
+        if (!color) return '#45a049';
+        const num = parseInt(color.replace("#", ""), 16);
+        const amt = Math.round(2.55 * percent);
+        const R = (num >> 16) - amt;
+        const G = (num >> 8 & 0x00FF) - amt;
+        const B = (num & 0x0000FF) - amt;
+        return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+            (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+            (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+    }
+};
 
 
-    // Make sure functions are accessible
-    setTimeout(() => {
-        console.log("🔍 Debug: Debt module functions available:");
-        console.log("  - testPaymentDetection:", typeof window.SidekickModules.Debt.testPaymentDetection);
-        console.log("  - searchAllLogsForPayments:", typeof window.SidekickModules.Debt.searchAllLogsForPayments);
-        console.log("  - checkForPayments:", typeof window.SidekickModules.Debt.checkForPayments);
-        console.log("  - debtsAndLoans:", !!window.SidekickModules.Debt.debtsAndLoans);
-    }, 2000);
+// Make sure functions are accessible
+setTimeout(() => {
+    console.log("🔍 Debug: Debt module functions available:");
+    console.log("  - testPaymentDetection:", typeof window.SidekickModules.Debt.testPaymentDetection);
+    console.log("  - searchAllLogsForPayments:", typeof window.SidekickModules.Debt.searchAllLogsForPayments);
+    console.log("  - checkForPayments:", typeof window.SidekickModules.Debt.checkForPayments);
+    console.log("  - debtsAndLoans:", !!window.SidekickModules.Debt.debtsAndLoans);
+}, 2000);
 
-    // Create a global debug function for easier access
-    window.debugDebtModule = function () {
-        console.log("🔍 Debt Module Debug Information:");
-        console.log("  SidekickModules exists:", typeof window.SidekickModules);
-        console.log("  Available modules:", window.SidekickModules ? Object.keys(window.SidekickModules) : 'none');
-        console.log("  Debt module exists:", !!window.SidekickModules?.Debt);
+// Create a global debug function for easier access
+window.debugDebtModule = function () {
+    console.log("🔍 Debt Module Debug Information:");
+    console.log("  SidekickModules exists:", typeof window.SidekickModules);
+    console.log("  Available modules:", window.SidekickModules ? Object.keys(window.SidekickModules) : 'none');
+    console.log("  Debt module exists:", !!window.SidekickModules?.Debt);
 
-        if (window.SidekickModules?.Debt) {
-            console.log("  Functions available:");
-            console.log("    testPaymentDetection:", typeof window.SidekickModules.Debt.testPaymentDetection);
-            console.log("    searchAllLogsForPayments:", typeof window.SidekickModules.Debt.searchAllLogsForPayments);
-            console.log("    checkForPayments:", typeof window.SidekickModules.Debt.checkForPayments);
-            console.log("  Current debts/loans:", window.SidekickModules.Debt.debtsAndLoans);
-        }
-    };
+    if (window.SidekickModules?.Debt) {
+        console.log("  Functions available:");
+        console.log("    testPaymentDetection:", typeof window.SidekickModules.Debt.testPaymentDetection);
+        console.log("    searchAllLogsForPayments:", typeof window.SidekickModules.Debt.searchAllLogsForPayments);
+        console.log("    checkForPayments:", typeof window.SidekickModules.Debt.checkForPayments);
+        console.log("  Current debts/loans:", window.SidekickModules.Debt.debtsAndLoans);
+    }
+};
 
-    // Create direct access functions for testing
-    window.testDebtPaymentDetection = function () {
-        if (window.SidekickModules?.Debt) {
-            return window.SidekickModules.Debt.testPaymentDetection();
-        } else {
-            console.error("❌ Debt module not available");
-        }
-    };
+// Create direct access functions for testing
+window.testDebtPaymentDetection = function () {
+    if (window.SidekickModules?.Debt) {
+        return window.SidekickModules.Debt.testPaymentDetection();
+    } else {
+        console.error("❌ Debt module not available");
+    }
+};
 
-    window.searchAllLogsForPayments = function () {
-        if (window.SidekickModules?.Debt) {
-            return window.SidekickModules.Debt.searchAllLogsForPayments();
-        } else {
-            console.error("❌ Debt module not available");
-        }
-    };
+window.searchAllLogsForPayments = function () {
+    if (window.SidekickModules?.Debt) {
+        return window.SidekickModules.Debt.searchAllLogsForPayments();
+    } else {
+        console.error("❌ Debt module not available");
+    }
+};
 
-    window.checkDebtPayments = function () {
-        if (window.SidekickModules?.Debt) {
-            return window.SidekickModules.Debt.checkForPayments();
-        } else {
-            console.error("❌ Debt module not available");
-        }
-    };
+window.checkDebtPayments = function () {
+    if (window.SidekickModules?.Debt) {
+        return window.SidekickModules.Debt.checkForPayments();
+    } else {
+        console.error("❌ Debt module not available");
+    }
+};
 
-    window.testBackgroundConnection = function () {
-        if (window.SidekickModules?.Debt) {
-            return window.SidekickModules.Debt.testBackgroundConnection();
-        } else {
-            console.error("❌ Debt module not available");
-        }
-    };
+window.testBackgroundConnection = function () {
+    if (window.SidekickModules?.Debt) {
+        return window.SidekickModules.Debt.testBackgroundConnection();
+    } else {
+        console.error("❌ Debt module not available");
+    }
+};
 
-})();
+}) ();
