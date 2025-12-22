@@ -176,21 +176,21 @@
                     return;
                 }
 
-                // Get the parent container for relative positioning
-                let parentContainer = anchorElement.offsetParent || document.body;
+                // Get the bounding rectangle for fixed positioning
+                const anchorRect = anchorElement.getBoundingClientRect();
 
-                // Calculate position relative to offset parent
-                let offsetLeft = anchorElement.offsetLeft + anchorElement.offsetWidth + 20;
-                let offsetTop = anchorElement.offsetTop;
+                // Calculate position relative to viewport (fixed positioning)
+                let fixedLeft = anchorRect.right + 20;
+                let fixedTop = anchorRect.top - 3; // Moved 3px up
 
-                // Create a flex container with absolute positioning
+                // Create a flex container with fixed positioning
                 const flexContainer = document.createElement('div');
                 flexContainer.className = 'sidekick-flight-tracker-container';
                 flexContainer.id = `flight-tracker-container-${playerId}`;
                 flexContainer.style.cssText = `
-                    position: absolute;
-                    left: ${offsetLeft}px;
-                    top: ${offsetTop}px;
+                    position: fixed;
+                    left: ${fixedLeft}px;
+                    top: ${fixedTop}px;
                     display: flex;
                     align-items: center;
                     gap: 10px;
@@ -234,8 +234,8 @@
 
                 flexContainer.appendChild(button);
 
-                // Append to the parent container for proper relative positioning
-                parentContainer.appendChild(flexContainer);
+                // Append to body for fixed positioning
+                document.body.appendChild(flexContainer);
 
                 // Create info panel inside the same container
                 this.createInfoPanel(playerId, flexContainer);
