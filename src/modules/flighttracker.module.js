@@ -234,6 +234,19 @@
 
                 flexContainer.appendChild(button);
 
+                // Function to update position
+                const updatePosition = () => {
+                    const rect = anchorElement.getBoundingClientRect();
+                    flexContainer.style.left = (rect.right + 20) + 'px';
+                    flexContainer.style.top = (rect.top - 8) + 'px';
+                };
+
+                // Add resize listener to update position when window resizes
+                window.addEventListener('resize', updatePosition);
+
+                // Store the listener reference for cleanup
+                flexContainer.dataset.resizeListener = 'attached';
+
                 // Append to body for fixed positioning
                 document.body.appendChild(flexContainer);
 
