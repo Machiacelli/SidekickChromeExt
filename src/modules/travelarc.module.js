@@ -206,21 +206,48 @@
         path.setAttribute('stroke-dasharray', '6 6');
         path.setAttribute('id', 'flight-path');
 
-        // Create plane marker (circle with glow)
-        const plane = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        plane.setAttribute('r', '6');
-        plane.setAttribute('fill', '#fff');
-        plane.setAttribute('stroke', '#0af');
-        plane.setAttribute('stroke-width', '2');
+        // Create gradient definition for Sidekick colors
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+        gradient.setAttribute('id', 'sidekick-gradient');
+        gradient.setAttribute('x1', '0%');
+        gradient.setAttribute('y1', '0%');
+        gradient.setAttribute('x2', '100%');
+        gradient.setAttribute('y2', '100%');
+
+        const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+        stop1.setAttribute('offset', '0%');
+        stop1.setAttribute('style', 'stop-color:#66BB6A;stop-opacity:1');
+
+        const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+        stop2.setAttribute('offset', '100%');
+        stop2.setAttribute('style', 'stop-color:#ffad5a;stop-opacity:1');
+
+        gradient.appendChild(stop1);
+        gradient.appendChild(stop2);
+        defs.appendChild(gradient);
+        svg.appendChild(defs);
+
+        // Create plane marker (arrow pointing in direction of travel)
+        const plane = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         plane.setAttribute('id', 'flight-plane');
-        plane.style.filter = 'drop-shadow(0 0 4px rgba(0, 175, 255, 0.8))';
+
+        // Arrow shape (pointing right by default)
+        const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        arrow.setAttribute('d', 'M -10 -6 L 10 0 L -10 6 Z'); // Triangle pointing right
+        arrow.setAttribute('fill', 'url(#sidekick-gradient)');
+        arrow.setAttribute('stroke', '#fff');
+        arrow.setAttribute('stroke-width', '1');
+        arrow.style.filter = 'drop-shadow(0 0 4px rgba(102, 187, 106, 0.8))';
+
+        plane.appendChild(arrow);
 
         svg.appendChild(path);
         svg.appendChild(plane);
         wrapper.appendChild(svg);
         figure.appendChild(wrapper);
 
-        console.log('✅ TravelArc: Arc added successfully!');
+        console.log('✅ TravelArc: Arc with gradient arrow added successfully!');
 
         // Start animation loop
         startAnimation(path, plane);
@@ -231,19 +258,31 @@
             cancelAnimationFrame(animationFrame);
         }
 
+        let lastPoint = null;
+
         function animate() {
             const progress = detectProgress();
             const pathLength = pathEl.getTotalLength();
             const point = pathEl.getPointAtLength(pathLength * progress);
 
-            planeEl.setAttribute('cx', point.x);
-            planeEl.setAttribute('cy', point.y);
+            // Calculate rotation angle based on direction of travel
+            if (lastPoint) {
+                const dx = point.x - lastPoint.x;
+                const dy = point.y - lastPoint.y;
+                const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+                planeEl.setAttribute('transform', `translate(${point.x}, ${point.y}) rotate(${angle})`);
+            } else {
+                planeEl.setAttribute('transform', `translate(${point.x}, ${point.y})`);
+            }
+
+            lastPoint = { x: point.x, y: point.y };
 
             animationFrame = requestAnimationFrame(animate);
         }
 
         animate();
-        console.log('✅ TravelArc: Animation started');
+        console.log('✅ TravelArc: Animation with rotating arrow started');
     }
 
     function init() {
