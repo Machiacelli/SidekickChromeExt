@@ -1289,7 +1289,7 @@
 
             trackerElement.innerHTML = `
                 <div class="debt-tracker-header" style="
-                    background: #4CAF50;
+                    background: linear-gradient(135deg, ${savedState?.color || '#4CAF50'}, ${this.darkenColor(savedState?.color || '#4CAF50', 15)});
                     padding: 8px 12px;
                     display: flex;
                     justify-content: space-between;
@@ -1322,17 +1322,25 @@
                                 transition: background 0.2s;
                             " onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'">⚙️</button>
                             <div class="debt-cogwheel-menu" style="
-                                position: absolute;
-                                top: 25px;
-                                right: 0;
+                                position: fixed;
                                 background: #2a2a2a;
                                 border: 1px solid #444;
                                 border-radius: 4px;
                                 box-shadow: 0 4px 12px rgba(0,0,0,0.5);
                                 display: none;
-                                z-index: 10002;
+                                z-index: 999999;
                                 min-width: 120px;
                             ">
+                                <div class="debt-menu-option" data-action="color" style="
+                                    padding: 8px 12px;
+                                    color: #fff;
+                                    cursor: pointer;
+                                    font-size: 12px;
+                                    border-bottom: 1px solid #444;
+                                " onmouseover="this.style.background='rgba(255,255,255,0.1)'" 
+                                   onmouseout="this.style.background='none'">
+                                    🎨 Change Color
+                                </div>
                                 <div class="debt-menu-option" data-action="pin" style="
                                     padding: 8px 12px;
                                     color: #fff;
@@ -1449,6 +1457,10 @@
                 if (menu.style.display === 'block') {
                     menu.style.display = 'none';
                 } else {
+                    // Position dropdown using fixed positioning
+                    const btnRect = cogwheelBtn.getBoundingClientRect();
+                    menu.style.top = `${btnRect.bottom + 5}px`;
+                    menu.style.left = `${btnRect.right - 120}px`;
                     menu.style.display = 'block';
                 }
             });
@@ -1464,7 +1476,17 @@
                 });
                 option.addEventListener('click', () => {
                     const action = option.dataset.action;
-                    if (action === 'debt') {
+                    if (action === 'color') {
+                        cogwheelMenu.style.display = 'none';
+                        if (window.SidekickModules?.Core?.ColorPicker) {
+                            window.SidekickModules.Core.ColorPicker.show(savedState?.color || '#4CAF50', async (selectedColor) => {
+                                // Update header color
+                                header.style.background = `linear-gradient(135deg, ${selectedColor}, ${this.darkenColor(selectedColor, 15)})`;
+                                // Save color to state
+                                await this.saveWindowState(true, trackerElement, selectedColor);
+                            });
+                        }
+                    } else if (action === 'debt') {
                         this.showAddDebtDialog();
                     } else if (action === 'loan') {
                         this.showAddLoanDialog();
