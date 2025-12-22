@@ -317,6 +317,104 @@
         .switch input:checked+.slider:before {
             transform: translateX(24px);
         }
+
+        /* Module Control Panel */
+        .module-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .module-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .module-icon {
+            font-size: 20px;
+            margin-right: 12px;
+        }
+
+        .module-name {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .module-toggle {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+            margin-right: 8px;
+        }
+
+        .module-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .module-toggle .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.2);
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .module-toggle .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        .module-toggle input:checked+.slider {
+            background-color: #4CAF50;
+        }
+
+        .module-toggle input:checked+.slider:before {
+            transform: translateX(24px);
+        }
+
+        .module-settings-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px 8px;
+            transition: all 0.2s ease;
+        }
+
+        .module-settings-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .tab-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
     </style>
 </head>
 
@@ -380,52 +478,37 @@
         </div>
     </div>
 
+    <!-- Tabs Navigation -->
+    <div class="tabs">
+        <button class="tab-button active" data-tab="modules">\ud83c\udfae Modules</button>
+        <button class="tab-button" data-tab="notifications">\ud83d\udd14 Notifications</button>
+    </div>
+
     <div class="content">
-        <div class="tab-content active" id="notifications-tab">
-            <div style="margin-bottom: 15px;">
-                <h2 style="margin: 0; font-size: 16px; opacity: 0.9;">📬 Recent Activity</h2>
-                <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.5;">Coming soon: Real-time notifications and
-                    activity feed</p>
-            </div>
+        <!-- Modules Tab -->
+        <div class="tab-content active" id="modules-tab">
+            <div class="tab-section-title">MODULE CONTROL</div>
+            <!-- 8 module items here -->
+            <div class="module-item"><span class="module-icon">\ud83d\udcca</span><span class="module-name">Stats Tracker</span><label class="module-toggle"><input type="checkbox" data-module="stats-tracker" checked><span class="slider"></span></label><button class="module-settings-btn" data-module="stats-tracker">\u2699\ufe0f</button></div>
+            <div class="module-item"><span class="module-icon">\ud83d\udcc8</span><span class="module-name">Stock Advisor</span><label class="module-toggle"><input type="checkbox" data-module="stock-advisor" checked><span class="slider"></span></label><button class="module-settings-btn" data-module="stock-advisor">\u2699\ufe0f</button></div>
+            <div class="module-item"><span class="module-icon">\ud83d\udcb0</span><span class="module-name">Debt Tracker</span><label class="module-toggle"><input type="checkbox" data-module="debt-tracker" checked><span class="slider"></span></label><button class="module-settings-btn" data-module="debt-tracker">\u2699\ufe0f</button></div>
+            <div class="module-item"><span class="module-icon">\u2705</span><span class="module-name">Todo List</span><label class="module-toggle"><input type="checkbox" data-module="todo-list" checked><span class="slider"></span></label><button class="module-settings-btn" data-module="todo-list">\u2699\ufe0f</button></div>
+            <div class="module-item"><span class="module-icon">\u2694\ufe0f</span><span class="module-name">Attack List</span><label class="module-toggle"><input type="checkbox" data-module="attack-list" checked><span class="slider"></span></label><button class="module-settings-btn" data-module="attack-list">\u2699\ufe0f</button></div>
+            <div class="module-item"><span class="module-icon">\u23f1\ufe0f</span><span class="module-name">Timer</span><label class="module-toggle"><input type="checkbox" data-module="timer" checked><span class="slider"></span></label><button class="module-settings-btn" data-module="timer">\u2699\ufe0f</button></div>
+            <div class="module-item"><span class="module-icon">\ud83d\udcdd</span><span class="module-name">Notepad</span><label class="module-toggle"><input type="checkbox" data-module="notepad" checked><span class="slider"></span></label><button class="module-settings-btn" data-module="notepad">\u2699\ufe0f</button></div>
+            <div class="module-item"><span class="module-icon">\ud83d\udd17</span><span class="module-name">Link Groups</span><label class="module-toggle"><input type="checkbox" data-module="link-groups" checked><span class="slider"></span></label><button class="module-settings-btn" data-module="link-groups">\u2699\ufe0f</button></div>
+        </div>
 
-            <div class="empty-state">
-                <div class="empty-state-icon">🔔</div>
-                <div style="font-size: 14px; margin-bottom: 10px;">No Recent Notifications</div>
-                <div style="font-size: 12px; opacity: 0.7;">
-                    Future updates will display:<br>
-                    • Chain timer alerts<br>
-                    • NPC attack reminders<br>
-                    • API status changes<br>
-                    • Module updates<br>
-                    • And more!
-                </div>
-            </div>
-
-            <!-- Example notifications (commented out for future use)
-            <div class="notification-item info">
-                <div class="notification-title">✅ Sidekick Loaded</div>
-                <div class="notification-message">All modules initialized successfully</div>
-                <div class="notification-time">Just now</div>
-            </div>
-            
-            <div class="notification-item warning">
-                <div class="notification-title">⚠️ Chain Timer Alert</div>
-                <div class="notification-message">Chain timer below 2 minutes</div>
-                <div class="notification-time">5 minutes ago</div>
-            </div>
-            -->
-
-            <div
-                style="margin-top: 20px; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; border: 1px solid rgba(76, 175, 80, 0.3);">
-                <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">💡 Quick Tip</div>
-                <div style="font-size: 12px; opacity: 0.8;">
-                    Click the ⚙️ cogwheel button in the Torn sidebar to access all Sidekick settings and module toggles!
-                </div>
-            </div>
+        <!-- Notifications Tab -->
+        <div class="tab-content" id="notifications-tab">
+            <div class="tab-section-title">RECENT ACTIVITY</div>
+            <div id="notifications-container"><div class="empty-state"><div class="empty-state-icon">\ud83d\udd14</div><div style="font-size:14px;margin-bottom:10px">No Recent Notifications</div><div style="font-size:12px;opacity:0.7">Notifications will appear here when:<br>\u2022 Modules perform actions<br>\u2022 Important events occur<br>\u2022 Status changes happen</div></div></div>
+            <div style="margin-top:20px;padding:15px;background:rgba(76,175,80,0.1);border-radius:8px;border:1px solid rgba(76,175,80,0.3)"><div style="font-size:13px;font-weight:600;margin-bottom:8px">\ud83d\udca1 Quick Tip</div><div style="font-size:12px;opacity:0.8">Click the \u2699\ufe0f cogwheel button in the Torn sidebar to access all Sidekick settings and module toggles!</div></div>
         </div>
     </div>
 
     <script src="popup.js"></script>
 </body>
+</html>
 
 </html>

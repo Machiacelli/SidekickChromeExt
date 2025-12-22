@@ -4,7 +4,54 @@
  */
 
 document.addEventListener('DOMContentLoaded', function () {
-    console.log('📬 Sidekick Notification Center loaded');
+    console.log('📬 Sidekick Popup loaded');
+
+    // Tab switching
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.dataset.tab;
+
+            // Update buttons
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            // Update content
+            tabContents.forEach(content => content.classList.remove('active'));
+            document.getElementById(`${targetTab}-tab`).classList.add('active');
+        });
+    });
+
+    // Module toggles
+    const moduleToggles = document.querySelectorAll('.module-toggle input');
+    moduleToggles.forEach(toggle => {
+        // Load saved state
+        const moduleId = toggle.dataset.module;
+        chrome.storage.local.get([`module_${moduleId}_active`], result => {
+            if (result[`module_${moduleId}_active`] !== undefined) {
+                toggle.checked = result[`module_${moduleId}_active`];
+            }
+        });
+
+        // Handle toggle
+        toggle.addEventListener('change', () => {
+            const isActive = toggle.checked;
+            chrome.storage.local.set({ [`module_${moduleId}_active`]: isActive });
+            console.log(`🎮 Module ${moduleId}: ${isActive ? 'ON' : 'OFF'}`);
+            showMessage(`${moduleId} ${isActive ? 'enabled' : 'disabled'}`, 'success');
+        });
+    });
+
+    // Module settings buttons
+    const settingsButtons = document.querySelectorAll('.module-settings-btn');
+    settingsButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const moduleId = btn.dataset.module;
+            showMessage(`Settings for ${moduleId} coming soon!`, 'info');
+        });
+    });
 
     // Get DOM elements
     const openSettingsBtn = document.getElementById('openSettingsBtn');
