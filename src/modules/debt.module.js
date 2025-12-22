@@ -2730,7 +2730,6 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
     }
 };
 
-
 // Make sure functions are accessible
 setTimeout(() => {
     console.log("🔍 Debug: Debt module functions available:");
