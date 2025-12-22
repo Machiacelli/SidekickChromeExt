@@ -1331,6 +1331,17 @@
                                     font-weight: bold;
                                 ">⏱️ Custom Timer</button>
                                 <div style="border-top: 1px solid #555; margin: 4px 0;"></div>
+                                <button class="timer-color-option" style="
+                                    background: none;
+                                    border: none;
+                                    color: #fff;
+                                    padding: 6px 12px;
+                                    width: 100%;
+                                    text-align: left;
+                                    cursor: pointer;
+                                    font-size: 11px;
+                                    transition: background 0.2s;
+                                ">🎨 Change Color</button>
                                 <button class="timer-pin-option" style="
                                     background: none;
                                     border: none;
@@ -1655,6 +1666,69 @@
 
                         // Show custom timer dialog
                         self.showCustomTimerDialog(timer);
+                    });
+                }
+
+                // Handle timer color option click
+                const colorOption = element.querySelector('.timer-color-option');
+                if (colorOption) {
+                    colorOption.addEventListener('mouseenter', function () {
+                        colorOption.style.background = 'rgba(255,255,255,0.1)';
+                    });
+                    colorOption.addEventListener('mouseleave', function () {
+                        colorOption.style.background = 'none';
+                    });
+                    colorOption.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        console.log(`🎨 Timer color option clicked for timer: ${timer.id}`);
+
+                        // Close dropdown
+                        dropdownContent.style.display = 'none';
+
+                        // Show color picker
+                        if (window.SidekickModules?.Core?.ColorPicker) {
+                            window.SidekickModules.Core.ColorPicker.show(timer.color || '#2196F3', (selectedColor) => {
+                                timer.color = selectedColor;
+                                const header = element.querySelector('.timer-header');
+                                if (header) {
+                                    header.style.background = `linear-gradient(135deg, ${selectedColor}, ${self.darkenColor(selectedColor, 15)})`;
+                                }
+                                self.saveTimers();
+                            });
+                        }
+                    });
+                }
+
+                // Handle timer pin option click
+                const pinOption = element.querySelector('.timer-pin-option');
+                if (pinOption) {
+                    pinOption.addEventListener('mouseenter', function () {
+                        pinOption.style.background = 'rgba(255,255,255,0.1)';
+                    });
+                    pinOption.addEventListener('mouseleave', function () {
+                        pinOption.style.background = 'none';
+                    });
+                    pinOption.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        console.log(`🔍 Timer pin clicked for timer: ${timer.id}`);
+
+                        // Toggle pinned state
+                        timer.pinned = !timer.pinned;
+
+                        // Update button text
+                        pinOption.textContent = timer.pinned ? '📌 Unpin' : '📌 Pin';
+
+                        // Close dropdown
+                        dropdownContent.style.display = 'none';
+
+                        // Save timer state
+                        self.saveTimers();
+
+                        console.log(`⏰ Timer ${timer.pinned ? 'pinned' : 'unpinned'}`);
                     });
                 }
             } else {
