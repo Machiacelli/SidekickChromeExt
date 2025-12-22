@@ -250,7 +250,7 @@
 
             windowElement.innerHTML = `
                 <div class="stock-header" style="
-                    background: linear-gradient(135deg, #2196F3, #1976D2);
+                    background: linear-gradient(135deg, ${savedState?.color || '#2196F3'}, ${this.darkenColor(savedState?.color || '#2196F3', 15)});
                     padding: 8px 12px;
                     display: flex;
                     justify-content: space-between;
@@ -406,6 +406,115 @@
 
             // Add resize observer
             this.addResizeObserver(windowElement);
+        },
+
+        // Show menu dropdown
+        showMenuDropdown(menuBtn) {
+            const windowElement = menuBtn.closest('.movable-stockadvisor');
+            const existingDropdown = windowElement.querySelector('.stock-dropdown');
+            if (existingDropdown) {
+                existingDropdown.remove();
+                return;
+            }
+
+            const dropdown = document.createElement('div');
+            dropdown.className = 'stock-dropdown';
+            const btnRect = menuBtn.getBoundingClientRect();
+            dropdown.style.cssText = `
+                position: fixed;
+                top: ${btnRect.bottom + 5}px;
+                left: ${btnRect.right - 120}px;
+                background: #1a1a1a;
+                border: 1px solid #444;
+                border-radius: 4px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+                z-index: 999999;
+                min-width: 140px;
+            `;
+
+            dropdown.innerHTML = `
+                <button class="dropdown-option" data-action="color" style="
+                    width: 100%;
+                    padding: 8px 12px;
+                    background: none;
+                    border: none;
+                    color: #fff;
+                    text-align: left;
+                    cursor: pointer;
+                    font-size: 12px;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                ">
+                    <span>🎨</span> Change Color
+                </button>
+                <button class="dropdown-option" data-action="refresh" style="
+                    width: 100%;
+                    padding: 8px 12px;
+                    background: none;
+                    border: none;
+                    color: #fff;
+                    text-align: left;
+                    cursor: pointer;
+                    font-size: 12px;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                ">
+                    <span>🔄</span> Refresh Data
+                </button>
+            `;
+
+            document.body.appendChild(dropdown);
+
+            const options = dropdown.querySelectorAll('.dropdown-option');
+            options.forEach(option => {
+                option.addEventListener('mouseenter', () => {
+                    option.style.background = 'rgba(33, 150, 243, 0.2)';
+                });
+                option.addEventListener('mouseleave', () => {
+                    option.style.background = 'none';
+                });
+                option.addEventListener('click', async () => {
+                    const action = option.dataset.action;
+                    dropdown.remove();
+
+                    if (action === 'color') {
+                        if (window.SidekickModules?.Core?.ColorPicker) {
+                            const savedState = await this.loadWindowState();
+                            window.SidekickModules.Core.ColorPicker.show(savedState?.color || '#2196F3', async (selectedColor) => {
+                                const header = windowElement.querySelector('.stock-header');
+                                if (header) {
+                                    header.style.background = `linear-gradient(135deg, ${selectedColor}, ${this.darkenColor(selectedColor, 15)})`;
+                                }
+                                // Save color
+                                await this.saveWindowState(windowElement, selectedColor);
+                            });
+                        }
+                    } else if (action === 'refresh') {
+                        console.log('📊 Manually refreshing stock data...');
+                        await this.refreshData();
+                        if (window.SidekickModules?.Core?.NotificationSystem) {
+                            window.SidekickModules.Core.NotificationSystem.show(
+                                'Stock Data Refreshed',
+                                'Stock advisor data updated successfully',
+                                'success',
+                                2000
+                            );
+                        }
+                    }
+                });
+            });
+
+            setTimeout(() => {
+                const closeDropdown = (e) => {
+                    if (!dropdown.contains(e.target) && e.target !== menuBtn) {
+                        dropdown.remove();
+                        document.removeEventListener('click', closeDropdown);
+                    }
+                };
+                document.addEventListener('click', closeDropdown);
+            }, 0);
         },
 
         // Make window draggable
