@@ -856,6 +856,102 @@
         }
     };
 
+    // === COLOR PICKER UTILITY ===
+    const ColorPicker = {
+        // Shared color palette for all modules
+        colors: [
+            // Greens and blues
+            '#4CAF50', '#2196F3', '#00BCD4', '#8BC34A',
+            // Oranges and reds
+            '#FF9800', '#f44336', '#E91E63', '#FF5722',
+            // Purples and pinks
+            '#9C27B0', '#673AB7', '#E91E63', '#FF4081',
+            // Yellows and ambers
+            '#FFC107', '#FFEB3B', '#FFD54F', '#FFA726',
+            // Grays and neutrals
+            '#607D8B', '#795548', '#BDBDBD', '#9E9E9E',
+            // Dark and light
+            '#333', '#424242', '#FFFFFF', '#E0E0E0'
+        ],
+
+        // Show color picker and return selected color
+        show(currentColor, onColorSelected) {
+            // Remove any existing color picker
+            const existingPicker = document.querySelector('.sidekick-color-picker');
+            if (existingPicker) existingPicker.remove();
+
+            const colorPicker = document.createElement('div');
+            colorPicker.className = 'sidekick-color-picker';
+            colorPicker.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: #333;
+                border: 1px solid #555;
+                border-radius: 8px;
+                padding: 16px;
+                z-index: 999999;
+                display: grid;
+                grid-template-columns: repeat(4, 30px);
+                gap: 8px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            `;
+
+            this.colors.forEach(color => {
+                const colorBtn = document.createElement('div');
+                colorBtn.style.cssText = `
+                    width: 30px;
+                    height: 30px;
+                    background: ${color};
+                    border: 2px solid ${currentColor === color ? '#fff' : '#666'};
+                    border-radius: 4px;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                `;
+
+                colorBtn.addEventListener('click', () => {
+                    onColorSelected(color);
+                    colorPicker.remove();
+                });
+
+                colorBtn.addEventListener('mouseenter', () => {
+                    colorBtn.style.transform = 'scale(1.1)';
+                });
+
+                colorBtn.addEventListener('mouseleave', () => {
+                    colorBtn.style.transform = 'scale(1)';
+                });
+
+                colorPicker.appendChild(colorBtn);
+            });
+
+            document.body.appendChild(colorPicker);
+
+            // Close when clicking outside
+            setTimeout(() => {
+                document.addEventListener('click', function closeColorPicker(e) {
+                    if (!colorPicker.contains(e.target)) {
+                        colorPicker.remove();
+                        document.removeEventListener('click', closeColorPicker);
+                    }
+                });
+            }, 100);
+        },
+
+        // Utility to darken a color
+        darkenColor(color, percent) {
+            const num = parseInt(color.replace("#", ""), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) - amt;
+            const G = (num >> 8 & 0x00FF) - amt;
+            const B = (num & 0x0000FF) - amt;
+            return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+        }
+    };
+
     // === CORE MODULE EXPORT ===
     const CoreModule = {
         STORAGE_KEYS,
@@ -865,6 +961,7 @@
         ExtensionContextMonitor,
         WindowManager,
         StateManager,
+        ColorPicker,
 
         // Initialize core functionality
         async init() {
