@@ -305,6 +305,7 @@ const WeaponExpModule = (() => {
             // Build tables
             const fhTable = this.buildFinishingHitsTable(fhStats, fhRemains);
             const weTable = this.buildWeaponExpTable(weArray, inventory, tornItems);
+            const zeroWeaponsTable = this.buildZeroWeaponsTable(weArray, tornItems);
 
             return `
                 <div class="container">
@@ -320,6 +321,9 @@ const WeaponExpModule = (() => {
                     
                     <h3 class="section-title">Weapon Experience</h3>
                     ${weTable}
+                    
+                    <h3 class="section-title">Weapons at 0% (Not Yet Trained)</h3>
+                    ${zeroWeaponsTable}
                 </div>
             `;
         },
@@ -429,6 +433,82 @@ const WeaponExpModule = (() => {
             `;
         },
 
+        // Build table for weapons at 0% (not in weaponexp response)
+        buildZeroWeaponsTable(weArray, tornItems) {
+            // Get IDs of weapons with experience
+            const trainedWeaponIds = new Set(weArray.map(w => w.itemID));
+
+            // Filter tornItems to find weapons not in weaponexp
+            const zeroWeapons = {
+                primary: [],
+                secondary: [],
+                melee: [],
+                temporary: []
+            };
+
+            Object.entries(tornItems || {}).forEach(([itemId, item]) => {
+                // Skip if this weapon has experience
+                if (trainedWeaponIds.has(parseInt(itemId))) return;
+
+                // Only include weapons (not armor, drugs, etc)
+                const type = item.type;
+                if (type === 'Primary') {
+                    zeroWeapons.primary.push({ name: item.name, id: itemId });
+                } else if (type === 'Secondary') {
+                    zeroWeapons.secondary.push({ name: item.name, id: itemId });
+                } else if (type === 'Melee') {
+                    zeroWeapons.melee.push({ name: item.name, id: itemId });
+                } else if (type === 'Temporary') {
+                    zeroWeapons.temporary.push({ name: item.name, id: itemId });
+                }
+            });
+
+            // Sort alphabetically
+            Object.values(zeroWeapons).forEach(arr => arr.sort((a, b) => a.name.localeCompare(b.name)));
+
+            console.log('[Sidekick] 0% weapons:', {
+                primary: zeroWeapons.primary.length,
+                secondary: zeroWeapons.secondary.length,
+                melee: zeroWeapons.melee.length,
+                temporary: zeroWeapons.temporary.length
+            });
+
+            const maxRows = Math.max(
+                zeroWeapons.primary.length,
+                zeroWeapons.secondary.length,
+                zeroWeapons.melee.length,
+                zeroWeapons.temporary.length
+            );
+
+            let rows = '';
+            for (let i = 0; i < maxRows; i++) {
+                rows += '<tr>';
+                ['primary', 'secondary', 'melee', 'temporary'].forEach(type => {
+                    if (zeroWeapons[type][i]) {
+                        const weapon = zeroWeapons[type][i];
+                        rows += `<td class="gray"><span class="left">${weapon.name}</span><span class="right">0%</span></td>`;
+                    } else {
+                        rows += '<td></td>';
+                    }
+                });
+                rows += '</tr>';
+            }
+
+            return `
+                <table class="we-table">
+                    <thead>
+                        <tr>
+                            <th>Primary</th>
+                            <th>Secondary</th>
+                            <th>Melee</th>
+                            <th>Temporary</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            `;
+        },
+
         // Calculate remaining finishing hits
         calcRemainingFinishingHits(stats) {
             const keys = ['machits', 'rifhits', 'piehits', 'axehits', 'smghits', 'pishits',
@@ -515,6 +595,9 @@ const WeaponExpModule = (() => {
                     }
                     .yellow {
                         color: #FFEB3B;
+                    }
+                    .gray {
+                        color: #888;
                     }
                 </style>
             `;
