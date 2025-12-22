@@ -22,7 +22,7 @@
         isInitialized: false,
         isEnabled: false,
         window: null,
-        windowState: { x: 100, y: 100, width: 280, height: 320 },
+        windowState: { x: 100, y: 100, width: 280, height: 320, color: '#4CAF50' },
         history: {},
         lastUpdated: 0,
         displayUpdateInterval: null,
@@ -290,7 +290,7 @@
             const header = document.createElement('div');
             header.style.cssText = `
                 padding: 10px;
-                background: linear-gradient(135deg, #4CAF50, #45a049);
+                background: linear-gradient(135deg, ${this.windowState.color || '#4CAF50'}, ${this.darkenColor(this.windowState.color || '#4CAF50', 15)});
                 color: white;
                 font-weight: bold;
                 cursor: move;
@@ -357,19 +357,35 @@
                 // Create dropdown menu
                 const dropdown = document.createElement('div');
                 dropdown.className = 'stats-dropdown';
+                const cogBtnRect = cogBtn.getBoundingClientRect();
                 dropdown.style.cssText = `
-                    position: absolute;
-                    top: 40px;
-                    right: 35px;
+                    position: fixed;
+                    top: ${cogBtnRect.bottom + 5}px;
+                    left: ${cogBtnRect.right - 120}px;
                     background: #1a1a1a;
                     border: 1px solid #444;
                     border-radius: 4px;
                     box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-                    z-index: 10000;
+                    z-index: 999999;
                     min-width: 120px;
                 `;
 
                 dropdown.innerHTML = `
+                    <button class="dropdown-option" data-action="color" style="
+                        width: 100%;
+                        padding: 8px 12px;
+                        background: none;
+                        border: none;
+                        color: #fff;
+                        text-align: left;
+                        cursor: pointer;
+                        font-size: 12px;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                    ">
+                        <span>🎨</span> Change Color
+                    </button>
                     <button class="dropdown-option" data-action="refresh" style="
                         width: 100%;
                         padding: 8px 12px;
@@ -402,7 +418,15 @@
                         const action = option.dataset.action;
                         dropdown.remove();
 
-                        if (action === 'refresh') {
+                        if (action === 'color') {
+                            if (window.SidekickModules?.Core?.ColorPicker) {
+                                window.SidekickModules.Core.ColorPicker.show(this.windowState.color || '#4CAF50', (selectedColor) => {
+                                    this.windowState.color = selectedColor;
+                                    header.style.background = `linear-gradient(135deg, ${selectedColor}, ${this.darkenColor(selectedColor, 15)})`;
+                                    this.saveSettings();
+                                });
+                            }
+                        } else if (action === 'refresh') {
                             console.log('📊 Manually refreshing stats...');
                             await this.updateStats();
                             if (window.SidekickModules?.Core?.NotificationSystem) {
@@ -635,6 +659,19 @@
                 this.gymObserver.disconnect();
                 this.gymObserver = null;
             }
+        },
+
+        // Utility to darken a color
+        darkenColor(color, percent) {
+            if (!color) return '#45a049';
+            const num = parseInt(color.replace("#", ""), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) - amt;
+            const G = (num >> 8 & 0x00FF) - amt;
+            const B = (num & 0x0000FF) - amt;
+            return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
         }
     };
 
