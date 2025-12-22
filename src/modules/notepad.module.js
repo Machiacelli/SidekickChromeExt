@@ -757,10 +757,18 @@
             `;
 
             const colors = [
-                '#4CAF50', '#2196F3', '#FF9800', '#f44336',
-                '#9C27B0', '#607D8B', '#795548', '#E91E63',
-                '#00BCD4', '#8BC34A', '#FFC107', '#FFEB3B',
-                '#BDBDBD', '#333', '#FFFFFF', '#000000'
+                // Original greens and blues
+                '#4CAF50', '#2196F3', '#00BCD4', '#8BC34A',
+                // Oranges and reds
+                '#FF9800', '#f44336', '#E91E63', '#FF5722',
+                // Purples and pinks
+                '#9C27B0', '#673AB7', '#E91E63', '#FF4081',
+                // Yellows and ambers
+                '#FFC107', '#FFEB3B', '#FFD54F', '#FFA726',
+                // Grays and neutrals
+                '#607D8B', '#795548', '#BDBDBD', '#9E9E9E',
+                // Dark and light
+                '#333', '#424242', '#FFFFFF', '#E0E0E0'
             ];
 
             colors.forEach(color => {
