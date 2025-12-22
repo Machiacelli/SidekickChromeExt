@@ -168,7 +168,7 @@
 
             attackListElement.innerHTML = `
                 <div class="attacklist-header" style="
-                    background: linear-gradient(135deg, ${attackList.color || '#f44336'}, #B71C1C);
+                    background: linear-gradient(135deg, ${attackList.color || '#f44336'}, ${this.darkenColor(attackList.color || '#f44336', 15)});
                     border-bottom: 1px solid #555;
                     padding: 4px 8px;
                     display: flex;
@@ -231,6 +231,20 @@
                                 " onmouseover="this.style.background='rgba(255,255,255,0.1)'" 
                                    onmouseout="this.style.background='none'">
                                     🎯 Add Target
+                                </button>
+                                <button class="color-attacklist-btn" style="
+                                    background: none;
+                                    border: none;
+                                    color: #fff;
+                                    padding: 8px 12px;
+                                    width: 100%;
+                                    text-align: left;
+                                    cursor: pointer;
+                                    font-size: 12px;
+                                    transition: background 0.2s;
+                                " onmouseover="this.style.background='rgba(255,255,255,0.1)'" 
+                                   onmouseout="this.style.background='none'">
+                                    🎨 Change Color
                                 </button>
                                 <button class="pin-attacklist-btn" style="
                                     background: none;
@@ -474,6 +488,23 @@
                 e.stopPropagation();
                 dropdownContent.style.display = 'none';
                 this.showAddTargetDialog(attackList);
+            });
+
+            // Color button
+            const colorBtn = element.querySelector('.color-attacklist-btn');
+            colorBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdownContent.style.display = 'none';
+                if (window.SidekickModules?.Core?.ColorPicker) {
+                    window.SidekickModules.Core.ColorPicker.show(attackList.color || '#f44336', (selectedColor) => {
+                        attackList.color = selectedColor;
+                        const header = element.querySelector('.attacklist-header');
+                        if (header) {
+                            header.style.background = `linear-gradient(135deg, ${selectedColor}, ${this.darkenColor(selectedColor, 15)})`;
+                        }
+                        this.saveAttackLists();
+                    });
+                }
             });
 
             // Pin button
@@ -764,6 +795,19 @@
                 "'": '&#039;'
             };
             return text.replace(/[&<>"']/g, (m) => map[m]);
+        },
+
+        // Utility to darken a color
+        darkenColor(color, percent) {
+            if (!color) return '#B71C1C';
+            const num = parseInt(color.replace("#", ""), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) - amt;
+            const G = (num >> 8 & 0x00FF) - amt;
+            const B = (num & 0x0000FF) - amt;
+            return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
         }
     };
 

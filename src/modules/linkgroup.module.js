@@ -151,6 +151,7 @@
                 id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 name: name,
                 links: [],
+                color: '#607D8B',
                 x: x,
                 y: y,
                 width: linkGroupWidth,
@@ -210,7 +211,7 @@
 
             linkGroupElement.innerHTML = `
                 <div class="linkgroup-header" style="
-                    background: linear-gradient(135deg, #607D8B, #455A64);
+                    background: linear-gradient(135deg, ${linkGroup.color || '#607D8B'}, ${this.darkenColor(linkGroup.color || '#607D8B', 15)});
                     border-bottom: 1px solid #555;
                     padding: 4px 8px;
                     display: flex;
@@ -273,6 +274,20 @@
                                 " onmouseover="this.style.background='rgba(255,255,255,0.1)'" 
                                    onmouseout="this.style.background='none'">
                                     ➕ Add Link
+                                </button>
+                                <button class="color-linkgroup-btn" style="
+                                    background: none;
+                                    border: none;
+                                    color: #fff;
+                                    padding: 8px 12px;
+                                    width: 100%;
+                                    text-align: left;
+                                    cursor: pointer;
+                                    font-size: 12px;
+                                    transition: background 0.2s;
+                                " onmouseover="this.style.background='rgba(255,255,255,0.1)'" 
+                                   onmouseout="this.style.background='none'">
+                                    🎨 Change Color
                                 </button>
                                 <button class="pin-linkgroup-btn" style="
                                     background: none;
@@ -417,6 +432,23 @@
                 e.stopPropagation();
                 dropdownContent.style.display = 'none';
                 this.showAddLinkDialog(linkGroup);
+            });
+
+            // Color button
+            const colorBtn = element.querySelector('.color-linkgroup-btn');
+            colorBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdownContent.style.display = 'none';
+                if (window.SidekickModules?.Core?.ColorPicker) {
+                    window.SidekickModules.Core.ColorPicker.show(linkGroup.color || '#607D8B', (selectedColor) => {
+                        linkGroup.color = selectedColor;
+                        const header = element.querySelector('.linkgroup-header');
+                        if (header) {
+                            header.style.background = `linear-gradient(135deg, ${selectedColor}, ${this.darkenColor(selectedColor, 15)})`;
+                        }
+                        this.saveLinkGroups();
+                    });
+                }
             });
 
             // Pin button
@@ -623,6 +655,19 @@
                 "'": '&#039;'
             };
             return text.replace(/[&<>"']/g, (m) => map[m]);
+        },
+
+        // Utility to darken a color
+        darkenColor(color, percent) {
+            if (!color) return '#455A64';
+            const num = parseInt(color.replace("#", ""), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) - amt;
+            const G = (num >> 8 & 0x00FF) - amt;
+            const B = (num & 0x0000FF) - amt;
+            return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
         }
     };
 
