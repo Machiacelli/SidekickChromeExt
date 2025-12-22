@@ -181,7 +181,7 @@
 
                 // Calculate position relative to viewport (fixed positioning)
                 let fixedLeft = anchorRect.right + 20;
-                let fixedTop = anchorRect.top - 6; // Moved 6px up total
+                let fixedTop = anchorRect.top - 8; // Moved 8px up total
 
                 // Create a flex container with fixed positioning
                 const flexContainer = document.createElement('div');
