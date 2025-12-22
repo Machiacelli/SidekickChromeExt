@@ -48,6 +48,7 @@
         "src/modules/mugcalculator.module.js",
         "src/modules/weaponexp.module.js",
         "src/modules/racingalert.module.js",
+        "src/modules/refillblocker.module.js",
         "src/data/travel-times.js",
         "src/modules/flighttracker.module.js",
         "src/modules/debt.module.js",

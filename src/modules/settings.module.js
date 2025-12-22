@@ -302,6 +302,7 @@
                 ${this.createToggle('random-target', '🎲 Random Target', 'Adds random target button to attack pages')}
                 ${''}
                 ${this.createToggle('racing-alert', '🏎️ Racing Alert', 'Shows flashing red icon when not in a race')}
+                ${this.createToggle('refill-blocker', '🛡️ Refill Blocker', 'Prevents accidental refills when bars aren\'t empty')}
                 ${this.createToggle('mug-calculator', '💰 Mug Calculator', 'Shows mug value calculations on Item Market and Bazaars')}
                 ${this.createWeaponXpToggle()}
                 <button id="sidekick-save-module-toggles" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #66BB6A, #ffad5a); 
@@ -1428,6 +1429,7 @@
                 'xanax-viewer',
                 'chain-timer',
                 'racing-alert',
+                'refill-blocker',
                 'weapon-xp-tracker',
                 'mug-calculator'
             ];

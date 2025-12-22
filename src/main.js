@@ -202,6 +202,15 @@
                 console.warn('⚠️ Racing Alert module not available');
             }
 
+            // Initialize Refill Blocker Module
+            console.log('🛡️ Sidekick: Initializing Refill Blocker...');
+            if (window.SidekickModules.RefillBlocker?.initialize) {
+                await window.SidekickModules.RefillBlocker.initialize();
+                console.log('✅ Sidekick: Refill Blocker initialized');
+            } else {
+                console.warn('⚠️ Refill Blocker module not available');
+            }
+
             // Initialize Timer Module
             console.log("⏰ Sidekick: Initializing Timer...");
             if (window.SidekickModules.Timer?.init) {
