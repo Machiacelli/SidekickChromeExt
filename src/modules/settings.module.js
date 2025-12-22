@@ -326,7 +326,7 @@
                                 Shows weapon experience percentage on Items page
                                 <br>
                                 <a href="#" id="weapon-overview-link" style="color: #66BB6A; text-decoration: underline; cursor: pointer; font-weight: 500;">
-                                    📊 View All Weapons & Finishing Hits
+                                    View All Weapons & Finishing Hits
                                 </a>
                             </div>
                         </div>
