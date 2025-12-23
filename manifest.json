@@ -27,7 +27,6 @@
         "https://www.torn.com/*",
         "https://*.torn.com/*"
       ],
-      "world": "MAIN",
       "js": [
         "src/core/notification-center.js",
         "src/core/notification-preferences.js",
