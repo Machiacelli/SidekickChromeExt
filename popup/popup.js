@@ -24,34 +24,29 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Module toggles
-    const moduleToggles = document.querySelectorAll('.module-toggle input');
-    moduleToggles.forEach(toggle => {
+    // Feature toggles
+    const featureToggles = document.querySelectorAll('.module-toggle input');
+    featureToggles.forEach(toggle => {
         // Load saved state
-        const moduleId = toggle.dataset.module;
-        chrome.storage.local.get([`module_${moduleId}_active`], result => {
-            if (result[`module_${moduleId}_active`] !== undefined) {
-                toggle.checked = result[`module_${moduleId}_active`];
+        const featureId = toggle.dataset.feature;
+        if (!featureId) return; // Skip if no feature ID
+
+        chrome.storage.local.get([`feature_${featureId}_enabled`], result => {
+            if (result[`feature_${featureId}_enabled`] !== undefined) {
+                toggle.checked = result[`feature_${featureId}_enabled`];
             }
         });
 
         // Handle toggle
         toggle.addEventListener('change', () => {
-            const isActive = toggle.checked;
-            chrome.storage.local.set({ [`module_${moduleId}_active`]: isActive });
-            console.log(`🎮 Module ${moduleId}: ${isActive ? 'ON' : 'OFF'}`);
-            showMessage(`${moduleId} ${isActive ? 'enabled' : 'disabled'}`, 'success');
+            const isEnabled = toggle.checked;
+            chrome.storage.local.set({ [`feature_${featureId}_enabled`]: isEnabled });
+            console.log(`⚙️ Feature ${featureId}: ${isEnabled ? 'ON' : 'OFF'}`);
+            showMessage(`${featureId.replace(/-/g, ' ')} ${isEnabled ? 'enabled' : 'disabled'}`, 'success');
         });
     });
 
-    // Module settings buttons
-    const settingsButtons = document.querySelectorAll('.module-settings-btn');
-    settingsButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const moduleId = btn.dataset.module;
-            showMessage(`Settings for ${moduleId} coming soon!`, 'info');
-        });
-    });
+    // Remove module settings buttons logic since features don't have settings buttons
 
     // Get DOM elements
     const openSettingsBtn = document.getElementById('openSettingsBtn');

@@ -480,93 +480,103 @@
 
     <!-- Tabs Navigation -->
     <div class="tabs">
-        <button class="tab-button active" data-tab="modules">🎮 Modules</button>
+        <button class="tab-button active" data-tab="modules">⚙️ Features</button>
         <button class="tab-button" data-tab="notifications">🔔 Notifications</button>
     </div>
 
     <div class="content">
         <!-- Modules Tab -->
         <div class="tab-content active" id="modules-tab">
-            <div class="tab-section-title">MODULE CONTROL</div>
-
-            <div class="module-item">
-                <span class="module-icon">📊</span>
-                <span class="module-name">Stats Tracker</span>
-                <label class="module-toggle">
-                    <input type="checkbox" data-module="stats-tracker" checked>
-                    <span class="slider"></span>
-                </label>
-                <button class="module-settings-btn" data-module="stats-tracker">⚙️</button>
-            </div>
-
-            <div class="module-item">
-                <span class="module-icon">📈</span>
-                <span class="module-name">Stock Advisor</span>
-                <label class="module-toggle">
-                    <input type="checkbox" data-module="stock-advisor" checked>
-                    <span class="slider"></span>
-                </label>
-                <button class="module-settings-btn" data-module="stock-advisor">⚙️</button>
-            </div>
-
-            <div class="module-item">
-                <span class="module-icon">💰</span>
-                <span class="module-name">Debt Tracker</span>
-                <label class="module-toggle">
-                    <input type="checkbox" data-module="debt-tracker" checked>
-                    <span class="slider"></span>
-                </label>
-                <button class="module-settings-btn" data-module="debt-tracker">⚙️</button>
-            </div>
-
-            <div class="module-item">
-                <span class="module-icon">✅</span>
-                <span class="module-name">Todo List</span>
-                <label class="module-toggle">
-                    <input type="checkbox" data-module="todo-list" checked>
-                    <span class="slider"></span>
-                </label>
-                <button class="module-settings-btn" data-module="todo-list">⚙️</button>
-            </div>
+            <div class="tab-section-title">FEATURE TOGGLES</div>
 
             <div class="module-item">
                 <span class="module-icon">⚔️</span>
-                <span class="module-name">Attack List</span>
+                <span class="module-name">Fast Attack</span>
                 <label class="module-toggle">
-                    <input type="checkbox" data-module="attack-list" checked>
+                    <input type="checkbox" data-feature="fast-attack" checked>
                     <span class="slider"></span>
                 </label>
-                <button class="module-settings-btn" data-module="attack-list">⚙️</button>
+            </div>
+
+            <div class="module-item">
+                <span class="module-icon">⏰</span>
+                <span class="module-name">Time on Tab</span>
+                <label class="module-toggle">
+                    <input type="checkbox" data-feature="time-on-tab" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="module-item">
+                <span class="module-icon">🎲</span>
+                <span class="module-name">Random Target</span>
+                <label class="module-toggle">
+                    <input type="checkbox" data-feature="random-target" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="module-item">
+                <span class="module-icon">🏎️</span>
+                <span class="module-name">Racing Alert</span>
+                <label class="module-toggle">
+                    <input type="checkbox" data-feature="racing-alert" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="module-item">
+                <span class="module-icon">🛡️</span>
+                <span class="module-name">Refill Blocker</span>
+                <label class="module-toggle">
+                    <input type="checkbox" data-feature="refill-blocker" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="module-item">
+                <span class="module-icon">⛓️</span>
+                <span class="module-name">Extended Chain View</span>
+                <label class="module-toggle">
+                    <input type="checkbox" data-feature="extended-chain" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="module-item">
+                <span class="module-icon">🥊</span>
+                <span class="module-name">Mug Calculator</span>
+                <label class="module-toggle">
+                    <input type="checkbox" data-feature="mug-calculator" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="module-item">
+                <span class="module-icon">🎯</span>
+                <span class="module-name">Weapon XP Tracker</span>
+                <label class="module-toggle">
+                    <input type="checkbox" data-feature="weapon-xp" checked>
+                    <span class="slider"></span>
+                </label>
             </div>
 
             <div class="module-item">
                 <span class="module-icon">⏱️</span>
-                <span class="module-name">Timer</span>
+                <span class="module-name">Chain Timer</span>
                 <label class="module-toggle">
-                    <input type="checkbox" data-module="timer" checked>
+                    <input type="checkbox" data-feature="chain-timer" checked>
                     <span class="slider"></span>
                 </label>
-                <button class="module-settings-btn" data-module="timer">⚙️</button>
             </div>
 
             <div class="module-item">
-                <span class="module-icon">📝</span>
-                <span class="module-name">Notepad</span>
+                <span class="module-icon">🔔</span>
+                <span class="module-name">Notification Sounds</span>
                 <label class="module-toggle">
-                    <input type="checkbox" data-module="notepad" checked>
+                    <input type="checkbox" data-feature="notification-sounds" checked>
                     <span class="slider"></span>
                 </label>
-                <button class="module-settings-btn" data-module="notepad">⚙️</button>
-            </div>
-
-            <div class="module-item">
-                <span class="module-icon">🔗</span>
-                <span class="module-name">Link Groups</span>
-                <label class="module-toggle">
-                    <input type="checkbox" data-module="link-groups" checked>
-                    <span class="slider"></span>
-                </label>
-                <button class="module-settings-btn" data-module="link-groups">⚙️</button>
             </div>
         </div>
 
