@@ -103,7 +103,12 @@ const NotificationCenter = {
     }
 };
 
-// Export for use in other modules
+// Export to window for global access
+window.NotificationCenter = NotificationCenter;
+
+// Also export for CommonJS if needed
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = NotificationCenter;
 }
+
+console.log('📬 NotificationCenter loaded and ready');
