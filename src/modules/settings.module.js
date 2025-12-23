@@ -744,6 +744,7 @@
                     await window.SidekickModules.Core.ChromeStorage.set('sidekick_api_key', apiKey);
                     this.showStatus(statusDiv, 'API key saved successfully!', 'success');
 
+                    // Toast notification
                     if (window.SidekickModules.Core.NotificationSystem) {
                         window.SidekickModules.Core.NotificationSystem.show(
                             'Settings Saved',
@@ -751,6 +752,16 @@
                             'success',
                             3000
                         );
+                    }
+
+                    // Persistent notification
+                    if (window.NotificationCenter) {
+                        await NotificationCenter.emit({
+                            moduleId: 'extension',
+                            type: 'success',
+                            title: 'Settings Saved',
+                            message: 'API key configured successfully'
+                        });
                     }
                 } catch (error) {
                     console.error('Failed to save API key:', error);
