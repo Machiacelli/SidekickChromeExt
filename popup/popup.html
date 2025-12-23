@@ -423,6 +423,64 @@
             align-items: center;
             gap: 8px;
         }
+
+        /* Notification Cards */
+        .notification-card {
+            margin-bottom: 10px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            border-left: 3px solid;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .notification-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .notification-card.info {
+            border-left-color: #2196F3;
+        }
+
+        .notification-card.success {
+            border-left-color: #4CAF50;
+        }
+
+        .notification-card.warning {
+            border-left-color: #FF9800;
+        }
+
+        .notification-card.error {
+            border-left-color: #F44336;
+        }
+
+        .notification-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 6px;
+        }
+
+        .notification-card-title {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .notification-card-time {
+            font-size: 10px;
+            opacity: 0.6;
+        }
+
+        .notification-card-message {
+            font-size: 12px;
+            opacity: 0.85;
+            line-height: 1.4;
+        }
+
+        .notification-card.unread {
+            background: rgba(255, 255, 255, 0.08);
+        }
     </style>
 </head>
 
@@ -579,10 +637,18 @@
 
         <!-- Notifications Tab -->
         <div class="tab-content" id="notifications-tab">
-            <div class="tab-section-title">RECENT ACTIVITY</div>
+            <div class="tab-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>RECENT ACTIVITY</span>
+                <button id="clearAllNotifications"
+                    style="padding: 6px 12px; background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.4); color: #F44336; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.2s;">
+                    Clear All
+                </button>
+            </div>
 
+            <!-- Notifications List -->
             <div id="notifications-container">
-                <div class="empty-state">
+                <!-- Notifications will be rendered here dynamically -->
+                <div class="empty-state" id="emptyState">
                     <div class="empty-state-icon">🔔</div>
                     <div style="font-size: 14px; margin-bottom: 10px;">No Recent Notifications</div>
                     <div style="font-size: 12px; opacity: 0.7;">
@@ -590,6 +656,87 @@
                         • Modules perform actions<br>
                         • Important events occur<br>
                         • Status changes happen
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notification Preferences Section -->
+            <div
+                style="margin-top: 25px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; cursor: pointer;"
+                    id="togglePreferences">
+                    <div style="font-size: 13px; font-weight: 600;">⚙️ Notification Preferences</div>
+                    <span id="preferencesChevron" style="font-size: 12px; transition: transform 0.3s;">▼</span>
+                </div>
+
+                <div id="preferencesContent" style="display: none;">
+                    <div style="font-size: 11px; opacity: 0.7; margin-bottom: 12px;">Control which notifications appear
+                        in this popup</div>
+
+                    <!-- Type Filters -->
+                    <div style="margin-bottom: 15px;">
+                        <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; opacity: 0.9;">By Type</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-type" data-type="info" checked>
+                                <span>📘 Info</span>
+                            </label>
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-type" data-type="success" checked>
+                                <span>✅ Success</span>
+                            </label>
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-type" data-type="warning" checked>
+                                <span>⚠️ Warning</span>
+                            </label>
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-type" data-type="error" checked>
+                                <span>❌ Error</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Module Filters -->
+                    <div>
+                        <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; opacity: 0.9;">By Module
+                        </div>
+                        <div
+                            style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; max-height: 150px; overflow-y: auto;">
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-module" data-module="stats-tracker" checked>
+                                <span>📊 Stats</span>
+                            </label>
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-module" data-module="stock-advisor" checked>
+                                <span>📈 Stocks</span>
+                            </label>
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-module" data-module="debt-tracker" checked>
+                                <span>💰 Debts</span>
+                            </label>
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-module" data-module="attack-list" checked>
+                                <span>⚔️ Attacks</span>
+                            </label>
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-module" data-module="timer" checked>
+                                <span>⏱️ Timers</span>
+                            </label>
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-module" data-module="extension" checked>
+                                <span>🔧 System</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -604,6 +751,8 @@
         </div>
     </div>
 
+    <script src="../src/core/notification-center.js"></script>
+    <script src="../src/core/notification-preferences.js"></script>
     <script src="popup.js"></script>
 </body>
 

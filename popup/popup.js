@@ -46,6 +46,170 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // ========================================
+    // NOTIFICATION SYSTEM
+    // ========================================
+
+    // Load and display notifications
+    async function loadNotifications() {
+        try {
+            // Get recent notifications
+            const notifications = await NotificationCenter.getRecent(10);
+
+            // Get user preferences
+            const preferences = await NotificationPreferences.get();
+
+            // Filter notifications based on preferences
+            const filtered = notifications.filter(n =>
+                NotificationPreferences.shouldDisplay(n, preferences)
+            );
+
+            renderNotifications(filtered);
+        } catch (error) {
+            console.error('Error loading notifications:', error);
+        }
+    }
+
+    // Render notifications
+    function renderNotifications(notifications) {
+        const container = document.getElementById('notifications-container');
+        const emptyState = document.getElementById('emptyState');
+
+        if (notifications.length === 0) {
+            emptyState.style.display = 'block';
+            // Remove any existing notification cards
+            container.querySelectorAll('.notification-card').forEach(card => card.remove());
+            return;
+        }
+
+        emptyState.style.display = 'none';
+
+        // Clear existing notifications
+        container.querySelectorAll('.notification-card').forEach(card => card.remove());
+
+        // Render each notification
+        notifications.forEach(notification => {
+            const card = createNotificationCard(notification);
+            container.insertBefore(card, emptyState);
+        });
+    }
+
+    // Create a notification card element
+    function createNotificationCard(notification) {
+        const card = document.createElement('div');
+        card.className = `notification-card ${notification.type} ${!notification.read ? 'unread' : ''}`;
+        card.dataset.id = notification.id;
+
+        const timeAgo = getTimeAgo(notification.timestamp);
+
+        card.innerHTML = `
+            <div class="notification-card-header">
+                <div class="notification-card-title">${notification.title}</div>
+                <div class="notification-card-time">${timeAgo}</div>
+            </div>
+            ${notification.message ? `<div class="notification-card-message">${notification.message}</div>` : ''}
+        `;
+
+        // Handle click
+        card.addEventListener('click', async () => {
+            // Mark as read
+            await NotificationCenter.markAsRead(notification.id);
+            card.classList.remove('unread');
+
+            // Handle action if present
+            if (notification.action?.type === 'openModule') {
+                // Send message to content script to open module
+                chrome.tabs.query({ active: true, currentWindow: true, url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function (tabs) {
+                    if (tabs[0]) {
+                        chrome.tabs.sendMessage(tabs[0].id, {
+                            action: 'openModule',
+                            moduleId: notification.action.moduleId
+                        });
+                        window.close();
+                    }
+                });
+            }
+        });
+
+        return card;
+    }
+
+    // Helper: Get time ago string
+    function getTimeAgo(timestamp) {
+        const seconds = Math.floor((Date.now() - timestamp) / 1000);
+
+        if (seconds < 60) return 'Just now';
+        if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+        return `${Math.floor(seconds / 86400)}d ago`;
+    }
+
+    // Clear All button
+    document.getElementById('clearAllNotifications')?.addEventListener('click', async () => {
+        await NotificationCenter.clearAll();
+        loadNotifications();
+        showMessage('All notifications cleared', 'info');
+    });
+
+    // Preferences toggle
+    const togglePreferencesBtn = document.getElementById('togglePreferences');
+    const preferencesContent = document.getElementById('preferencesContent');
+    const preferencesChevron = document.getElementById('preferencesChevron');
+
+    togglePreferencesBtn?.addEventListener('click', () => {
+        const isHidden = preferencesContent.style.display === 'none';
+        preferencesContent.style.display = isHidden ? 'block' : 'none';
+        preferencesChevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+    });
+
+    // Load preferences and set checkboxes
+    async function loadPreferences() {
+        const preferences = await NotificationPreferences.get();
+
+        // Set type checkboxes
+        document.querySelectorAll('.pref-type').forEach(checkbox => {
+            const type = checkbox.dataset.type;
+            checkbox.checked = preferences.types[type] !== false;
+        });
+
+        // Set module checkboxes
+        document.querySelectorAll('.pref-module').forEach(checkbox => {
+            const module = checkbox.dataset.module;
+            checkbox.checked = preferences.modules[module] !== false;
+        });
+    }
+
+    // Handle preference changes
+    document.querySelectorAll('.pref-type').forEach(checkbox => {
+        checkbox.addEventListener('change', async () => {
+            await NotificationPreferences.toggleType(checkbox.dataset.type);
+            loadNotifications(); // Refresh displayed notifications
+        });
+    });
+
+    document.querySelectorAll('.pref-module').forEach(checkbox => {
+        checkbox.addEventListener('change', async () => {
+            await NotificationPreferences.toggleModule(checkbox.dataset.module);
+            loadNotifications(); // Refresh displayed notifications
+        });
+    });
+
+    // Initialize notifications when Notifications tab is clicked
+    document.querySelector('[data-tab="notifications"]')?.addEventListener('click', () => {
+        loadNotifications();
+        loadPreferences();
+    });
+
+    // Load notifications immediately if on notifications tab
+    if (document.getElementById('notifications-tab')?.classList.contains('active')) {
+        loadNotifications();
+        loadPreferences();
+    }
+
+    // ========================================
+    // END NOTIFICATION SYSTEM
+    // ========================================
+
     // Remove module settings buttons logic since features don't have settings buttons
 
     // Get DOM elements
