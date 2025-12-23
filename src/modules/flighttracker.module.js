@@ -179,18 +179,18 @@
                 // Get the bounding rectangle for fixed positioning
                 const anchorRect = anchorElement.getBoundingClientRect();
 
-                // Calculate position relative to viewport (fixed positioning)
-                let fixedLeft = anchorRect.right + 20;
-                let fixedTop = anchorRect.top - 8; // Moved 8px up total
+                // Calculate position relative to page (absolute positioning)
+                let absoluteLeft = anchorRect.right + window.scrollX + 20;
+                let absoluteTop = anchorRect.top + window.scrollY - 8; // Moved 8px up total
 
-                // Create a flex container with fixed positioning
+                // Create a flex container with absolute positioning
                 const flexContainer = document.createElement('div');
                 flexContainer.className = 'sidekick-flight-tracker-container';
                 flexContainer.id = `flight-tracker-container-${playerId}`;
                 flexContainer.style.cssText = `
-                    position: fixed;
-                    left: ${fixedLeft}px;
-                    top: ${fixedTop}px;
+                    position: absolute;
+                    left: ${absoluteLeft}px;
+                    top: ${absoluteTop}px;
                     display: flex;
                     align-items: center;
                     gap: 10px;
@@ -237,8 +237,8 @@
                 // Function to update position
                 const updatePosition = () => {
                     const rect = anchorElement.getBoundingClientRect();
-                    flexContainer.style.left = (rect.right + 20) + 'px';
-                    flexContainer.style.top = (rect.top - 8) + 'px';
+                    flexContainer.style.left = (rect.right + window.scrollX + 20) + 'px';
+                    flexContainer.style.top = (rect.top + window.scrollY - 8) + 'px';
                 };
 
                 // Add resize listener to update position when window resizes
