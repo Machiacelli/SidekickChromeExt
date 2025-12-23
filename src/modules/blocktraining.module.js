@@ -5,7 +5,7 @@
  * Author: Machiacelli
  */
 
-(function() {
+(function () {
     'use strict';
 
     console.log("🚫 Loading Sidekick Block Training Module...");
@@ -44,14 +44,14 @@
                 await waitForCore();
                 await this.loadSettings();
                 this.isInitialized = true;
-                
+
                 if (this.isBlocked) {
                     console.log('✅ Block Training: Enabled - blocking gym access');
                     this.startBlocking();
                 } else {
                     console.log('⏸️ Block Training: Disabled via settings');
                 }
-                
+
                 console.log("✅ Block Training Module initialized successfully");
             } catch (error) {
                 console.error("❌ Block Training Module initialization failed:", error);
@@ -90,17 +90,37 @@
         async toggle() {
             this.isBlocked = !this.isBlocked;
             await this.saveSettings();
-            
+
             if (this.isBlocked) {
                 console.log('✅ Block Training: Enabled');
                 this.startBlocking();
                 this.showNotification('Training blocked!', 'warning');
+
+                // Persistent notification
+                if (window.NotificationCenter) {
+                    NotificationCenter.emit({
+                        moduleId: 'extension',
+                        type: 'warning',
+                        title: 'Training Blocked',
+                        message: 'Gym access blocked to prevent accidental training'
+                    });
+                }
             } else {
                 console.log('⏸️ Block Training: Disabled');
                 this.stopBlocking();
                 this.showNotification('Training unblocked!', 'success');
+
+                // Persistent notification
+                if (window.NotificationCenter) {
+                    NotificationCenter.emit({
+                        moduleId: 'extension',
+                        type: 'success',
+                        title: 'Training Unblocked',
+                        message: 'Gym access restored'
+                    });
+                }
             }
-            
+
             return this.isBlocked;
         },
 
@@ -137,28 +157,28 @@
         // Create gym blocking overlay
         createTrainingBlock() {
             console.log('🔨 Creating training block...');
-            
+
             // Only work on gym.php page
             if (!window.location.href.includes('/gym.php')) {
                 console.log('⚠️ Not on gym.php - skipping block creation');
                 return;
             }
-            
+
             // Remove existing block if any
             this.removeTrainingBlock();
 
             // Target the gym root or page wrapper
-            const gymRoot = document.querySelector('#gymroot') || 
-                           document.querySelector('.gym-wrapper') ||
-                           document.querySelector('[class*="gym"]');
-            
+            const gymRoot = document.querySelector('#gymroot') ||
+                document.querySelector('.gym-wrapper') ||
+                document.querySelector('[class*="gym"]');
+
             if (!gymRoot) {
                 console.log('⚠️ Gym element not found yet, will retry...');
                 return;
             }
 
             console.log('✅ Gym found! Creating blocking overlay...');
-            
+
             // Create blocking overlay positioned over the gym container
             this.blockingOverlay = document.createElement('div');
             this.blockingOverlay.id = 'sidekick-training-block';
@@ -180,7 +200,7 @@
                 justify-content: center !important;
                 pointer-events: all !important;
             `;
-            
+
             // Ensure gym container has relative positioning
             gymRoot.style.position = 'relative';
 
@@ -190,7 +210,7 @@
                 e.stopPropagation();
                 return false;
             }, true);
-            
+
             // Add minimal overlay text
             this.blockingOverlay.innerHTML = `
                 <div style="
@@ -234,7 +254,7 @@
                 if (!window.location.href.includes('/gym.php')) {
                     return;
                 }
-                
+
                 mutations.forEach((mutation) => {
                     if (mutation.type === 'childList') {
                         // Check if gym content was added and we're still blocking
