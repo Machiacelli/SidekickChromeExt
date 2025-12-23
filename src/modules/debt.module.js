@@ -862,6 +862,16 @@
                     `${automatic ? 'Auto-detected' : 'Manual'} repayment: $${amount.toLocaleString()} from ${entry.playerName}`
                 );
             }
+
+            // Persistent notification
+            if (window.NotificationCenter) {
+                NotificationCenter.emit({
+                    moduleId: 'debt-tracker',
+                    type: entry.currentAmount <= 0.01 ? 'success' : 'info',
+                    title: entry.currentAmount <= 0.01 ? 'Debt Fully Repaid' : 'Payment Received',
+                    message: `$${amount.toLocaleString()} from ${entry.playerName}${entry.currentAmount <= 0.01 ? ' - Debt cleared!' : ''}`
+                });
+            }
         },
 
         // Render all debt panels

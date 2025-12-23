@@ -1514,9 +1514,19 @@
             });
 
             // Click handler
-            refreshBtn.addEventListener('click', () => {
+            refreshBtn.addEventListener('click', async () => {
                 menu.remove();
-                this.refreshData(true);
+                await this.refreshData(true);
+
+                // Emit notification
+                if (window.NotificationCenter) {
+                    await NotificationCenter.emit({
+                        moduleId: 'stock-advisor',
+                        type: 'info',
+                        title: 'Stock Data Refreshed',
+                        message: 'Stock portfolio and market data updated successfully'
+                    });
+                }
             });
 
             // Auto-close on outside click
