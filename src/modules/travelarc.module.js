@@ -194,8 +194,13 @@
         const destX = (destPct.x / 100) * mapImg.offsetWidth;
         const destY = (destPct.y / 100) * mapImg.offsetHeight;
 
+        // Calculate distance between points
+        const distance = Math.sqrt(Math.pow(destX - originX, 2) + Math.pow(destY - originY, 2));
+
+        // Create arc control point - offset by 20% of distance for nice curve
+        const arcHeight = distance * 0.2;
         const midX = (originX + destX) / 2;
-        const midY = (originY + destY) / 2 - 60;
+        const midY = (originY + destY) / 2 - arcHeight;
 
         // Create arc path
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
