@@ -1961,7 +1961,7 @@
                         cooldownDiv.style.cssText = `
                             background: rgba(255,255,255,0.1);
                             border-radius: 6px;
-                            padding: 6px 8px;
+                            padding: 5px 8px 6px 8px;
                             margin: 2px 0;
                             width: 90%;
                             min-height: 60px;
