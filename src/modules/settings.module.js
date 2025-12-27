@@ -1036,25 +1036,31 @@
                 });
             });
 
-            // Load initial toggle states from storage
-            chrome.storage.local.get(['sidekick_settings'], (result) => {
-                const settings = result.sidekick_settings || {};
-                console.log('⚙️ Loading initial toggle states:', settings);
+            // Load initial toggle states from storage (with slight delay to ensure DOM is ready)
+            setTimeout(() => {
+                chrome.storage.local.get(['sidekick_settings'], (result) => {
+                    const settings = result.sidekick_settings || {};
+                    console.log('⚙️ Loading initial toggle states:', settings);
 
-                toggleSwitches.forEach(toggle => {
-                    const moduleId = toggle.dataset.module;
-                    const moduleSettings = settings[moduleId];
-                    const isEnabled = moduleSettings ? moduleSettings.isEnabled !== false : true;
+                    toggleSwitches.forEach(toggle => {
+                        const moduleId = toggle.dataset.module;
+                        const moduleSettings = settings[moduleId];
+                        const isEnabled = moduleSettings ? moduleSettings.isEnabled !== false : true;
 
-                    // Set data attribute and update visual
-                    toggle.dataset.active = isEnabled.toString();
-                    const track = toggle.querySelector('.toggle-track');
-                    const thumb = toggle.querySelector('.toggle-thumb');
-                    this.updateToggleVisual(track, thumb, isEnabled);
+                        // Set data attribute and update visual
+                        toggle.dataset.active = isEnabled.toString();
+                        const track = toggle.querySelector('.toggle-track');
+                        const thumb = toggle.querySelector('.toggle-thumb');
 
-                    console.log(`🔄 Loaded ${moduleId}: ${isEnabled ? 'ON' : 'OFF'}`);
+                        if (track && thumb) {
+                            this.updateToggleVisual(track, thumb, isEnabled);
+                            console.log(`🔄 Loaded ${moduleId}: ${isEnabled ? 'ON' : 'OFF'}, colors applied`);
+                        } else {
+                            console.warn(`⚠️ Could not find track/thumb for ${moduleId}`);
+                        }
+                    });
                 });
-            });
+            }, 100);
 
             // Listen for storage changes from popup
             chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -1145,13 +1151,18 @@
                         if (window.SidekickModules.Core.NotificationSystem) {
                             window.SidekickModules.Core.NotificationSystem.show(
                                 'Modules Updated',
-                                'Reload the page for changes to take effect',
+                                'Reloading page to apply changes...',
                                 'info',
-                                5000
+                                2000
                             );
                         }
 
                         console.log('✅ Saved settings (unified + legacy):', settings);
+
+                        // Reload page to apply changes
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 500);
                     });
                 });
             });
