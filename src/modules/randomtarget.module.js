@@ -5,7 +5,7 @@
  * Author: Machiacelli
  */
 
-(function() {
+(function () {
     'use strict';
 
     console.log("🎯 Loading Sidekick Random Target Module...");
@@ -44,11 +44,11 @@
             try {
                 await waitForCore();
                 await this.loadSettings();
-                
+
                 if (this.isEnabled) {
                     this.enable();
                 }
-                
+
                 this.isInitialized = true;
                 console.log("✅ Random Target Module initialized successfully");
             } catch (error) {
@@ -63,7 +63,7 @@
                 if (saved) {
                     this.isEnabled = saved.isEnabled === true;
                     this.buttonPosition = saved.position || { x: 100, y: 100 };
-                    
+
                     // Load configuration settings
                     this.config = {
                         enableApiChecks: saved.enableApiChecks || false,
@@ -73,7 +73,7 @@
                         minID: saved.minID || 1000000,
                         maxID: saved.maxID || 3400000
                     };
-                    
+
                     console.log("✅ Random Target settings loaded - enabled:", this.isEnabled, "position:", this.buttonPosition, "config:", this.config);
                 } else {
                     this.isEnabled = false; // Default disabled
@@ -110,9 +110,13 @@
         },
 
         // Enable random target functionality
-        enable() {
+        async enable() {
             console.log("🟢 Enabling Random Target Module...");
             this.isEnabled = true;
+
+            // Reload settings to get the saved position before creating button
+            await this.loadSettings();
+
             this.saveSettings();
             this.createFloatingButton();
             this.startObserver();
@@ -248,7 +252,7 @@
 
                 const dx = e.clientX - startX;
                 const dy = e.clientY - startY;
-                
+
                 // If movement is significant, mark as moved
                 if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
                     hasMoved = true;
@@ -275,12 +279,12 @@
                 if (isDragging) {
                     isDragging = false;
                     element.style.cursor = 'grab';
-                    
+
                     // Only save position if the button was actually moved
                     if (hasMoved) {
                         this.saveSettings();
                         console.log(`🎯 Button moved to: ${this.buttonPosition.x}, ${this.buttonPosition.y}`);
-                        
+
                         // Prevent click event if dragged
                         setTimeout(() => {
                             hasMoved = false;
@@ -302,14 +306,14 @@
         // Select random target (single click)
         selectRandomTarget() {
             console.log("🎯 Single click - Ready to attack!");
-            
+
             // Just show ready message - no target checking or highlighting
             this.showNotification("Random Target Ready", "Double-click to attack a random target", "info");
-            
+
             // Brief visual feedback
             this.floatingButton.style.background = 'linear-gradient(135deg, #2196F3, #1976D2)';
             this.floatingButton.innerHTML = '👁️';
-            
+
             // Reset appearance after short delay
             setTimeout(() => {
                 this.resetButtonAppearance();
@@ -340,7 +344,7 @@
 
             // Generate random user ID
             const randomId = Math.floor(Math.random() * (config.maxID - config.minID + 1)) + config.minID;
-            
+
             // Visual feedback
             this.floatingButton.style.background = 'linear-gradient(135deg, #FF5722, #F44336)';
             this.floatingButton.innerHTML = '⚔️';
@@ -367,7 +371,7 @@
                         isValidTarget = false;
                         reason = `Status: ${user.status.state}`;
                     }
-                    
+
                     // Check personalstats if available
                     if (user.personalstats) {
                         if (user.personalstats.xantaken > config.maxXanax) {
@@ -412,25 +416,25 @@
         // Open attack page for specific user ID
         openAttackPage(userId) {
             const attackUrl = `https://www.torn.com/loader.php?sid=attack&user2ID=${userId}`;
-            
+
             console.log("✅ Opening attack page:", attackUrl);
-            
+
             setTimeout(() => {
                 window.location.href = attackUrl;
             }, 300);
-            
+
             // Reset button appearance after navigation attempt
             setTimeout(() => {
                 this.resetButtonAppearance();
             }, 1000);
-            
+
             this.showNotification("Random Attack", `Attacking random target ID: ${userId}`, "success");
         },
 
         // Find all possible attack targets on the page
         findAllAttackTargets() {
             const targets = [];
-            
+
             // Primary attack selectors - more comprehensive
             const attackSelectors = [
                 'a[href*="attack"]',
@@ -483,7 +487,7 @@
         // Check if element is a valid target
         isValidTarget(element) {
             if (!element || !element.style) return false;
-            
+
             // Skip hidden elements
             const style = window.getComputedStyle(element);
             if (style.display === 'none' || style.visibility === 'hidden') {
@@ -504,7 +508,7 @@
             const href = element.href || '';
             const text = element.textContent || '';
             const parent = element.parentElement;
-            
+
             // Skip if it's clearly not an attack context
             const excludeTexts = ['yourself', 'profile', 'view', 'details', 'info', 'edit', 'settings'];
             if (excludeTexts.some(exclude => text.toLowerCase().includes(exclude))) {
@@ -521,11 +525,11 @@
                 const parentText = parent.textContent.toLowerCase();
                 const attackContext = ['attack', 'enemy', 'target', 'faction', 'war', 'bounty', 'hit'];
                 const hasAttackContext = attackContext.some(context => parentText.includes(context));
-                
+
                 // Also check for general user lists that could be attackable
                 const userListContext = ['member', 'player', 'user', 'level', 'respect'];
                 const hasUserContext = userListContext.some(context => parentText.includes(context));
-                
+
                 return hasAttackContext || hasUserContext;
             }
 
@@ -539,7 +543,7 @@
 
             // Add highlight class for styling
             target.classList.add('sidekick-target-highlight');
-            
+
             // Create temporary highlight overlay
             const highlight = document.createElement('div');
             highlight.className = 'sidekick-target-overlay';
@@ -580,7 +584,7 @@
         clearHighlights() {
             const highlights = document.querySelectorAll('.sidekick-target-highlight');
             highlights.forEach(el => el.classList.remove('sidekick-target-highlight'));
-            
+
             const overlays = document.querySelectorAll('.sidekick-target-overlay');
             overlays.forEach(el => el.remove());
         },
@@ -621,7 +625,7 @@
         // Show notification
         showNotification(title, message, type = 'info') {
             console.log(`🔔 ${type.toUpperCase()}: ${title} - ${message}`);
-            
+
             // Use Core notification system if available
             if (window.SidekickModules?.Core?.NotificationSystem) {
                 // Clear existing notifications to prevent stacking
