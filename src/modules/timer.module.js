@@ -1961,10 +1961,10 @@
                         cooldownDiv.style.cssText = `
                             background: rgba(255,255,255,0.1);
                             border-radius: 6px;
-                            padding: 10px;
-                            margin: 6px 0;
+                            padding: 8px 10px;
+                            margin: 3px 0;
                             width: 90%;
-                            min-height: 70px;
+                            min-height: 65px;
                             display: flex;
                             flex-direction: column;
                             position: relative;
@@ -1974,7 +1974,7 @@
                                 display: flex;
                                 justify-content: space-between;
                                 align-items: flex-start;
-                                margin-bottom: 6px;
+                                margin-bottom: 5px;
                             ">
                                 <span style="
                                     color: #ccc;
@@ -2002,7 +2002,7 @@
                             <div style="
                                 display: flex;
                                 flex-direction: column;
-                                gap: 3px;
+                                gap: 2px;
                                 padding-left: 4px;
                             ">
                                 <span style="
@@ -2013,14 +2013,14 @@
                                     line-height: 1.2;
                                 ">${this.formatTime(time)}</span>
                                 <span style="
-                                    color: #888;
-                                    font-size: 10px;
+                                    color: #aaa;
+                                    font-size: 11px;
                                     font-family: 'Courier New', monospace;
                                     line-height: 1.3;
                                 ">Ends at: ${endTimeData.time}</span>
                                 <span style="
-                                    color: #666;
-                                    font-size: 9px;
+                                    color: #999;
+                                    font-size: 10px;
                                     line-height: 1.3;
                                 ">${endTimeData.date}</span>
                             </div>
