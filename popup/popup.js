@@ -71,10 +71,14 @@ document.addEventListener('DOMContentLoaded', function () {
                         console.log(`💾 Also saved to legacy key: ${legacyKey}`);
                     });
 
+
                     // Emit notification for Block Training toggles
                     if (moduleId === 'blocktraining') {
+                        console.log('🔍 Block training toggle detected, isEnabled:', isEnabled);
                         chrome.tabs.query({ active: true, url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function (tabs) {
+                            console.log('🔍 Found tabs:', tabs.length, tabs);
                             if (tabs[0]) {
+                                console.log('📬 Sending notification to tab:', tabs[0].id);
                                 chrome.tabs.sendMessage(tabs[0].id, {
                                     action: 'emitNotification',
                                     notification: {
@@ -83,10 +87,17 @@ document.addEventListener('DOMContentLoaded', function () {
                                         title: isEnabled ? 'Training Blocked' : 'Training Unblocked',
                                         message: isEnabled ? 'Gym access blocked to prevent accidental training' : 'Gym access restored'
                                     }
-                                }).catch(() => { }); // Ignore errors
+                                }).then(response => {
+                                    console.log('✅ Notification message sent, response:', response);
+                                }).catch(err => {
+                                    console.error('❌ Failed to send notification:', err);
+                                });
+                            } else {
+                                console.warn('⚠️ No active Torn tab found');
                             }
                         });
                     }
+
 
                     // Send message to content scripts to update module state
                     chrome.tabs.query({ url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function (tabs) {
