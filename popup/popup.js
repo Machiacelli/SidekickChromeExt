@@ -115,17 +115,25 @@ document.addEventListener('DOMContentLoaded', function () {
     // Load and display notifications
     async function loadNotifications() {
         try {
-            // Get recent notifications
-            const notifications = await NotificationCenter.getRecent(10);
+            // Get notifications directly from chrome.storage
+            const result = await chrome.storage.local.get(['sidekick_notifications', 'sidekick_notification_preferences']);
+            const allNotifications = result.sidekick_notifications || [];
+            const preferences = result.sidekick_notification_preferences || {};
 
-            // Get user preferences
-            const preferences = await NotificationPreferences.get();
+            // Get recent 10
+            const recent = allNotifications.slice(0, 10);
 
-            // Filter notifications based on preferences
-            const filtered = notifications.filter(n =>
-                NotificationPreferences.shouldDisplay(n, preferences)
-            );
+            // Filter based on preferences
+            const filtered = recent.filter(n => {
+                const pref = preferences[n.moduleId];
+                if (!pref) return true; // Show if no preference set
 
+                // Check if this notification type is enabled for this module
+                const typeEnabled = pref[n.type.toLowerCase()];
+                return typeEnabled !== false; // Show unless explicitly disabled
+            });
+
+            console.log('📬 Loaded notifications:', filtered.length, 'of', recent.length);
             renderNotifications(filtered);
         } catch (error) {
             console.error('Error loading notifications:', error);
