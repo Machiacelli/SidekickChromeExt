@@ -95,12 +95,16 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "assets/icons/sidekick-logo.png",
-        "assets/sounds/NotificationSound1.mp3",
-        "icons/*.png"
+        "assets/icons/*.png",
+        "assets/images/*.png",
+        "assets/images/*.jpg",
+        "assets/images/*.gif",
+        "assets/images/*.svg",
+        "src/core/notification-bridge-page.js"
       ],
       "matches": [
-        "<all_urls>"
+        "https://www.torn.com/*",
+        "https://*.torn.com/*"
       ]
     }
   ]

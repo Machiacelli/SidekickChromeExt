@@ -113,34 +113,17 @@ window.addEventListener('sidekick:emitNotification', async (event) => {
     await NotificationCenter.emit(notification);
 });
 
-// Expose a page-context compatible API using custom events
-const NotificationBridge = {
-    emit: (notification) => {
-        // Dispatch custom event that content script will catch
-        window.dispatchEvent(new CustomEvent('sidekick:emitNotification', {
-            detail: notification
-        }));
-        console.log('📬 Bridge: Notification dispatched to content script');
-    }
-};
-
-// Inject bridge into page context via script tag
+// Inject bridge into page context via external script (bypasses CSP)
 const script = document.createElement('script');
-script.textContent = `
-    (function() {
-        window.NotificationCenter = {
-            emit: function(notification) {
-                window.dispatchEvent(new CustomEvent('sidekick:emitNotification', {
-                    detail: notification
-                }));
-                console.log('📬 Page context: Notification request sent');
-                return Promise.resolve();
-            }
-        };
-        console.log('📬 NotificationCenter bridge injected into page context');
-    })();
-`;
-document.documentElement.appendChild(script);
-script.remove();
+script.src = chrome.runtime.getURL('src/core/notification-bridge-page.js');
+script.onload = function () {
+    this.remove();
+    console.log('📬 NotificationCenter bridge script loaded');
+};
+script.onerror = function () {
+    console.error('📬 Failed to load notification bridge script');
+    this.remove();
+};
+(document.head || document.documentElement).appendChild(script);
 
 console.log('📬 NotificationCenter loaded and ready');
