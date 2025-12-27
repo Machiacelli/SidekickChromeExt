@@ -1982,20 +1982,21 @@
                                     font-weight: 600;
                                 ">${cooldownNames[type] || type}</span>
                                 <button class="remove-cooldown-btn" data-cooldown-type="${type}" style="
-                                    background: #e74c3c;
+                                    background: rgba(0,0,0,0.4);
                                     border: none;
-                                    color: white;
+                                    color: #ccc;
                                     cursor: pointer;
-                                    width: 16px;
-                                    height: 16px;
-                                    border-radius: 50%;
-                                    font-size: 10px;
+                                    width: 12px;
+                                    height: 12px;
+                                    border-radius: 3px;
+                                    font-size: 9px;
                                     display: flex;
                                     align-items: center;
                                     justify-content: center;
                                     line-height: 1;
-                                    opacity: 0.7;
-                                    transition: opacity 0.2s;
+                                    opacity: 0.6;
+                                    transition: all 0.2s;
+                                    padding: 0;
                                 " title="Remove ${cooldownNames[type] || type} cooldown">×</button>
                             </div>
                             <div style="
@@ -2008,7 +2009,7 @@
                                     color: ${this.getCooldownColor(type)};
                                     font-family: 'Courier New', monospace;
                                     font-weight: 700;
-                                    font-size: 18px;
+                                    font-size: 15px;
                                     line-height: 1.2;
                                 ">${this.formatTime(time)}</span>
                                 <span style="
@@ -2052,11 +2053,13 @@
                             removeBtn.addEventListener('mouseenter', () => {
                                 if (!removeBtn.disabled) {
                                     removeBtn.style.opacity = '1';
+                                    removeBtn.style.backgroundColor = 'rgba(0,0,0,0.6)';
                                 }
                             });
                             removeBtn.addEventListener('mouseleave', () => {
                                 if (!removeBtn.disabled) {
-                                    removeBtn.style.opacity = '0.7';
+                                    removeBtn.style.opacity = '0.6';
+                                    removeBtn.style.backgroundColor = 'rgba(0,0,0,0.4)';
                                 }
                             });
                         }
