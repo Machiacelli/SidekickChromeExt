@@ -71,6 +71,23 @@ document.addEventListener('DOMContentLoaded', function () {
                         console.log(`💾 Also saved to legacy key: ${legacyKey}`);
                     });
 
+                    // Emit notification for Block Training toggles
+                    if (moduleId === 'blocktraining') {
+                        chrome.tabs.query({ active: true, url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function (tabs) {
+                            if (tabs[0]) {
+                                chrome.tabs.sendMessage(tabs[0].id, {
+                                    action: 'emitNotification',
+                                    notification: {
+                                        moduleId: 'blocktraining',
+                                        type: isEnabled ? 'warning' : 'success',
+                                        title: isEnabled ? 'Training Blocked' : 'Training Unblocked',
+                                        message: isEnabled ? 'Gym access blocked to prevent accidental training' : 'Gym access restored'
+                                    }
+                                }).catch(() => { }); // Ignore errors
+                            }
+                        });
+                    }
+
                     // Send message to content scripts to update module state
                     chrome.tabs.query({ url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function (tabs) {
                         tabs.forEach(tab => {

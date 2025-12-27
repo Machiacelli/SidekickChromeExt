@@ -473,6 +473,19 @@
                 return true;
             }
 
+            if (request.action === 'emitNotification') {
+                // Handle notification emission from popup
+                if (window.NotificationCenter && request.notification) {
+                    console.log('📬 Emitting notification from popup:', request.notification);
+                    NotificationCenter.emit(request.notification);
+                    sendResponse({ success: true });
+                } else {
+                    console.warn('⚠️ NotificationCenter not available or no notification data');
+                    sendResponse({ success: false });
+                }
+                return true;
+            }
+
             if (request.action === 'reloadChainTimer') {
                 handleReloadChainTimer(sendResponse);
                 return true;
