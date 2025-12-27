@@ -1036,6 +1036,49 @@
                 });
             });
 
+            // Load initial toggle states from storage
+            chrome.storage.local.get(['sidekick_settings'], (result) => {
+                const settings = result.sidekick_settings || {};
+                console.log('⚙️ Loading initial toggle states:', settings);
+
+                toggleSwitches.forEach(toggle => {
+                    const moduleId = toggle.dataset.module;
+                    const moduleSettings = settings[moduleId];
+                    const isEnabled = moduleSettings ? moduleSettings.isEnabled !== false : true;
+
+                    // Set data attribute and update visual
+                    toggle.dataset.active = isEnabled.toString();
+                    const track = toggle.querySelector('.toggle-track');
+                    const thumb = toggle.querySelector('.toggle-thumb');
+                    this.updateToggleVisual(track, thumb, isEnabled);
+
+                    console.log(`🔄 Loaded ${moduleId}: ${isEnabled ? 'ON' : 'OFF'}`);
+                });
+            });
+
+            // Listen for storage changes from popup
+            chrome.storage.onChanged.addListener((changes, areaName) => {
+                if (areaName === 'local' && changes.sidekick_settings) {
+                    const newSettings = changes.sidekick_settings.newValue || {};
+                    console.log('🔄 Settings changed, updating toggles:', newSettings);
+
+                    toggleSwitches.forEach(toggle => {
+                        const moduleId = toggle.dataset.module;
+                        const moduleSettings = newSettings[moduleId];
+                        const isEnabled = moduleSettings ? moduleSettings.isEnabled !== false : true;
+
+                        // Update data attribute and visual if changed
+                        if (toggle.dataset.active !== isEnabled.toString()) {
+                            toggle.dataset.active = isEnabled.toString();
+                            const track = toggle.querySelector('.toggle-track');
+                            const thumb = toggle.querySelector('.toggle-thumb');
+                            this.updateToggleVisual(track, thumb, isEnabled);
+                            console.log(`✅ Synced ${moduleId}: ${isEnabled ? 'ON' : 'OFF'}`);
+                        }
+                    });
+                }
+            });
+
             // Weapon overview link - enhanced with better debugging
             const weaponOverviewLink = panel.querySelector('#weapon-overview-link');
             console.log('[Sidekick] Weapon overview link element:', weaponOverviewLink);
@@ -1071,34 +1114,38 @@
 
             // Save button
             saveBtn.addEventListener('click', async () => {
-                const settings = {};
+                // Get current settings from storage to preserve other modules
+                chrome.storage.local.get(['sidekick_settings'], (result) => {
+                    const settings = result.sidekick_settings || {};
 
-                toggleSwitches.forEach(toggle => {
-                    const moduleId = toggle.dataset.module;
-                    const isEnabled = toggle.dataset.active === 'true';
-                    settings[`sidekick_${moduleId.replace(/-/g, '_')}`] = { isEnabled };
+                    // Update settings with current toggle states
+                    toggleSwitches.forEach(toggle => {
+                        const moduleId = toggle.dataset.module;
+                        const isEnabled = toggle.dataset.active === 'true';
+
+                        // Update or create module settings
+                        if (!settings[moduleId]) {
+                            settings[moduleId] = {};
+                        }
+                        settings[moduleId].isEnabled = isEnabled;
+                    });
+
+                    // Save unified settings object
+                    chrome.storage.local.set({ sidekick_settings: settings }, () => {
+                        this.showStatus(statusDiv, 'Module settings saved successfully!', 'success');
+
+                        if (window.SidekickModules.Core.NotificationSystem) {
+                            window.SidekickModules.Core.NotificationSystem.show(
+                                'Modules Updated',
+                                'Reload the page for changes to take effect',
+                                'info',
+                                5000
+                            );
+                        }
+
+                        console.log('✅ Saved settings:', settings);
+                    });
                 });
-
-                try {
-                    // Save each module setting individually
-                    for (const [key, value] of Object.entries(settings)) {
-                        await window.SidekickModules.Core.ChromeStorage.set(key, value);
-                    }
-
-                    this.showStatus(statusDiv, 'Module settings saved successfully!', 'success');
-
-                    if (window.SidekickModules.Core.NotificationSystem) {
-                        window.SidekickModules.Core.NotificationSystem.show(
-                            'Modules Updated',
-                            'Reload the page for changes to take effect',
-                            'info',
-                            5000
-                        );
-                    }
-                } catch (error) {
-                    console.error('Failed to save module settings:', error);
-                    this.showStatus(statusDiv, 'Failed to save settings', 'error');
-                }
             });
         },
 
