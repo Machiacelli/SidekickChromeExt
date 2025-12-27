@@ -109,6 +109,9 @@ window.NotificationCenter = NotificationCenter;
 // Also export for CommonJS if needed
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = NotificationCenter;
-}
+};
+
+// Expose to window for module access
+window.NotificationCenter = NotificationCenter;
 
 console.log('📬 NotificationCenter loaded and ready');
