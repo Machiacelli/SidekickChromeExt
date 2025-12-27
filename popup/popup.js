@@ -238,18 +238,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Load preferences and set checkboxes
     async function loadPreferences() {
-        const preferences = await NotificationPreferences.get();
+        const result = await chrome.storage.local.get('sidekick_notification_preferences');
+        const preferences = result.sidekick_notification_preferences || {};
 
         // Set type checkboxes
         document.querySelectorAll('.pref-type').forEach(checkbox => {
             const type = checkbox.dataset.type;
-            checkbox.checked = preferences.types[type] !== false;
+            checkbox.checked = preferences.types?.[type] !== false;
         });
 
         // Set module checkboxes
         document.querySelectorAll('.pref-module').forEach(checkbox => {
             const module = checkbox.dataset.module;
-            checkbox.checked = preferences.modules[module] !== false;
+            checkbox.checked = preferences.modules?.[module] !== false;
         });
     }
 
