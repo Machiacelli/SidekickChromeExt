@@ -97,13 +97,17 @@
                 this.showNotification('Training blocked!', 'warning');
 
                 // Persistent notification
+                console.log('🔍 NotificationCenter available?', typeof window.NotificationCenter);
                 if (window.NotificationCenter) {
+                    console.log('📬 Emitting training blocked notification');
                     NotificationCenter.emit({
-                        moduleId: 'extension',
+                        moduleId: 'blocktraining',
                         type: 'warning',
                         title: 'Training Blocked',
                         message: 'Gym access blocked to prevent accidental training'
                     });
+                } else {
+                    console.warn('⚠️ NotificationCenter not available for training blocked notification');
                 }
             } else {
                 console.log('⏸️ Block Training: Disabled');
@@ -111,13 +115,17 @@
                 this.showNotification('Training unblocked!', 'success');
 
                 // Persistent notification
+                console.log('🔍 NotificationCenter available?', typeof window.NotificationCenter);
                 if (window.NotificationCenter) {
+                    console.log('📬 Emitting training unblocked notification');
                     NotificationCenter.emit({
-                        moduleId: 'extension',
+                        moduleId: 'blocktraining',
                         type: 'success',
                         title: 'Training Unblocked',
                         message: 'Gym access restored'
                     });
+                } else {
+                    console.warn('⚠️ NotificationCenter not available for training unblocked notification');
                 }
             }
 
