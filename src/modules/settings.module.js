@@ -1478,10 +1478,12 @@
         // Update toggle visual state
         updateToggleVisual(track, thumb, isActive) {
             if (isActive) {
-                track.style.background = 'linear-gradient(135deg, #66BB6A, #ffad5a)';
+                track.style.backgroundColor = '#4CAF50'; // Solid green to match popup
+                track.style.background = '';  // Clear any gradient
                 thumb.style.transform = 'translateX(26px)';
             } else {
                 track.style.backgroundColor = '#555';
+                track.style.background = '';  // Clear any gradient
                 thumb.style.transform = 'translateX(0px)';
             }
         },

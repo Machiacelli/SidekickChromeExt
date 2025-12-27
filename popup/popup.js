@@ -80,6 +80,28 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // Listen for storage changes from settings page
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName === 'local' && changes.sidekick_settings) {
+            const newSettings = changes.sidekick_settings.newValue || {};
+
+            // Update all toggle states
+            featureToggles.forEach(toggle => {
+                const moduleId = toggle.dataset.module;
+                if (!moduleId) return;
+
+                const moduleSettings = newSettings[moduleId];
+                const isEnabled = moduleSettings ? moduleSettings.isEnabled !== false : true;
+
+                // Only update if changed to avoid unnecessary reflows
+                if (toggle.checked !== isEnabled) {
+                    toggle.checked = isEnabled;
+                    console.log(`🔄 Synced ${moduleId}: ${isEnabled ? 'ON' : 'OFF'}`);
+                }
+            });
+        }
+    });
+
     // ========================================
     // NOTIFICATION SYSTEM
     // ========================================

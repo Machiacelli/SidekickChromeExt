@@ -498,8 +498,19 @@
                     window.SidekickModules.Premium.showSubscriptionDialog();
                     sendResponse({ success: true });
                 } else {
-                    sendResponse({ success: false, error: 'Premium module not available' });
+                    sendResponse({ success: false, error: 'Premium module not loaded' });
                 }
+                return true;
+            }
+
+            // Handle module settings update from popup
+            if (request.action === 'updateModuleSettings') {
+                console.log(`⚙️ Module settings updated for ${request.moduleId}`, request.settings);
+                // Reload the page to apply module changes
+                setTimeout(() => {
+                    window.location.reload();
+                }, 100);
+                sendResponse({ success: true });
                 return true;
             }
         });
