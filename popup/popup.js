@@ -24,25 +24,59 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Feature toggles
+    // Feature toggles - using unified sidekick_settings storage
     const featureToggles = document.querySelectorAll('.module-toggle input');
-    featureToggles.forEach(toggle => {
-        // Load saved state
-        const featureId = toggle.dataset.feature;
-        if (!featureId) return; // Skip if no feature ID
 
-        chrome.storage.local.get([`feature_${featureId}_enabled`], result => {
-            if (result[`feature_${featureId}_enabled`] !== undefined) {
-                toggle.checked = result[`feature_${featureId}_enabled`];
-            }
+    // Load all toggle states from unified storage
+    chrome.storage.local.get(['sidekick_settings'], result => {
+        const settings = result.sidekick_settings || {};
+
+        featureToggles.forEach(toggle => {
+            const moduleId = toggle.dataset.module;
+            if (!moduleId) return; // Skip if no module ID
+
+            // Load saved state (default to true if not set)
+            const moduleSettings = settings[moduleId];
+            const isEnabled = moduleSettings ? moduleSettings.isEnabled !== false : true;
+            toggle.checked = isEnabled;
         });
+    });
 
-        // Handle toggle
+    // Handle toggle changes
+    featureToggles.forEach(toggle => {
         toggle.addEventListener('change', () => {
+            const moduleId = toggle.dataset.module;
+            if (!moduleId) return;
+
             const isEnabled = toggle.checked;
-            chrome.storage.local.set({ [`feature_${featureId}_enabled`]: isEnabled });
-            console.log(`⚙️ Feature ${featureId}: ${isEnabled ? 'ON' : 'OFF'}`);
-            showMessage(`${featureId.replace(/-/g, ' ')} ${isEnabled ? 'enabled' : 'disabled'}`, 'success');
+
+            // Get current settings, update the specific module, and save
+            chrome.storage.local.get(['sidekick_settings'], result => {
+                const settings = result.sidekick_settings || {};
+
+                // Update or create module settings
+                if (!settings[moduleId]) {
+                    settings[moduleId] = {};
+                }
+                settings[moduleId].isEnabled = isEnabled;
+
+                // Save back to storage
+                chrome.storage.local.set({ sidekick_settings: settings }, () => {
+                    console.log(`⚙️ Module ${moduleId}: ${isEnabled ? 'ON' : 'OFF'}`);
+                    showMessage(`${moduleId.replace(/-/g, ' ')} ${isEnabled ? 'enabled' : 'disabled'}`, 'success');
+
+                    // Send message to content scripts to update module state
+                    chrome.tabs.query({ url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function (tabs) {
+                        tabs.forEach(tab => {
+                            chrome.tabs.sendMessage(tab.id, {
+                                action: 'updateModuleSettings',
+                                moduleId: moduleId,
+                                settings: settings[moduleId]
+                            }).catch(() => { }); // Ignore errors for tabs without content script
+                        });
+                    });
+                });
+            });
         });
     });
 
