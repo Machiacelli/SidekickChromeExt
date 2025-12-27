@@ -1132,6 +1132,14 @@
 
                     // Save unified settings object
                     chrome.storage.local.set({ sidekick_settings: settings }, () => {
+                        // ALSO save to legacy format for backwards compatibility
+                        toggleSwitches.forEach(toggle => {
+                            const moduleId = toggle.dataset.module;
+                            const isEnabled = toggle.dataset.active === 'true';
+                            const legacyKey = `sidekick_${moduleId.replace(/-/g, '_')}`;
+                            chrome.storage.local.set({ [legacyKey]: { isEnabled } });
+                        });
+
                         this.showStatus(statusDiv, 'Module settings saved successfully!', 'success');
 
                         if (window.SidekickModules.Core.NotificationSystem) {
@@ -1143,7 +1151,7 @@
                             );
                         }
 
-                        console.log('✅ Saved settings:', settings);
+                        console.log('✅ Saved settings (unified + legacy):', settings);
                     });
                 });
             });

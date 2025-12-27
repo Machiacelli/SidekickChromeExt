@@ -60,10 +60,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 settings[moduleId].isEnabled = isEnabled;
 
-                // Save back to storage
+                // Save to unified storage
                 chrome.storage.local.set({ sidekick_settings: settings }, () => {
                     console.log(`⚙️ Module ${moduleId}: ${isEnabled ? 'ON' : 'OFF'}`);
                     showMessage(`${moduleId.replace(/-/g, ' ')} ${isEnabled ? 'enabled' : 'disabled'}`, 'success');
+
+                    // ALSO save to legacy format for backwards compatibility
+                    const legacyKey = `sidekick_${moduleId.replace(/-/g, '_')}`;
+                    chrome.storage.local.set({ [legacyKey]: { isEnabled } }, () => {
+                        console.log(`💾 Also saved to legacy key: ${legacyKey}`);
+                    });
 
                     // Send message to content scripts to update module state
                     chrome.tabs.query({ url: ['https://www.torn.com/*', 'https://*.torn.com/*'] }, function (tabs) {
