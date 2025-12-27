@@ -1544,12 +1544,12 @@
         // Update toggle visual state
         updateToggleVisual(track, thumb, isActive) {
             if (isActive) {
-                track.style.backgroundColor = '#4CAF50'; // Solid green to match popup
-                track.style.background = '';  // Clear any gradient
+                // Use setAttribute to set style with !important
+                track.setAttribute('style', track.getAttribute('style').replace(/background-color:[^;]+;?/g, '') + 'background-color: #4CAF50 !important;');
                 thumb.style.transform = 'translateX(26px)';
             } else {
-                track.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'; // Light semi-transparent to match popup
-                track.style.background = '';  // Clear any gradient
+                // Use setAttribute to set style with !important
+                track.setAttribute('style', track.getAttribute('style').replace(/background-color:[^;]+;?/g, '') + 'background-color: rgba(255, 255, 255, 0.2) !important;');
                 thumb.style.transform = 'translateX(0px)';
             }
         },
