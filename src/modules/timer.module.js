@@ -1976,14 +1976,14 @@
                                 font-size: 14px;
                                 font-weight: 600;
                                 align-self: flex-start;
+                                margin-right: auto;
                             ">${cooldownNames[type] || type}</span>
                             <div style="
                                 display: flex;
                                 flex-direction: column;
                                 align-items: flex-end;
-                                gap: 3px;
-                                flex: 1;
-                                margin: 0 10px;
+                                gap: 4px;
+                                margin-left: auto;
                             ">
                                 <span style="
                                     color: ${this.getCooldownColor(type)};
@@ -1991,17 +1991,20 @@
                                     font-weight: 700;
                                     font-size: 16px;
                                     white-space: nowrap;
+                                    line-height: 1.2;
                                 ">${this.formatTime(time)}</span>
                                 <span style="
                                     color: #888;
                                     font-size: 10px;
                                     font-family: 'Courier New', monospace;
                                     white-space: nowrap;
+                                    line-height: 1.3;
                                 ">Ends at: ${endTimeData.time}</span>
                                 <span style="
                                     color: #666;
                                     font-size: 9px;
                                     white-space: nowrap;
+                                    line-height: 1.3;
                                 ">${endTimeData.date}</span>
                             </div>
                             <button class="remove-cooldown-btn" data-cooldown-type="${type}" style="
@@ -2021,6 +2024,7 @@
                                 transition: opacity 0.2s;
                                 flex-shrink: 0;
                                 align-self: flex-start;
+                                margin-left: 8px;
                             " title="Remove ${cooldownNames[type] || type} cooldown">×</button>
                         `;
 
