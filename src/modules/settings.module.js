@@ -348,7 +348,7 @@
                                 left: 0;
                                 right: 0;
                                 bottom: 0;
-                                background-color: #555;
+                                background-color: rgba(255, 255, 255, 0.2);
                                 border-radius: 24px;
                                 transition: background-color 0.3s ease;
                             "></div>
@@ -393,7 +393,7 @@
                                 left: 0;
                                 right: 0;
                                 bottom: 0;
-                                background-color: #555;
+                                background-color: rgba(255, 255, 255, 0.2);
                                 border-radius: 24px;
                                 transition: background-color 0.3s ease;
                             "></div>
@@ -1529,7 +1529,7 @@
                 track.style.background = '';  // Clear any gradient
                 thumb.style.transform = 'translateX(26px)';
             } else {
-                track.style.backgroundColor = '#555';
+                track.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'; // Light semi-transparent to match popup
                 track.style.background = '';  // Clear any gradient
                 thumb.style.transform = 'translateX(0px)';
             }
