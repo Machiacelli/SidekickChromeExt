@@ -1961,71 +1961,68 @@
                         cooldownDiv.style.cssText = `
                             background: rgba(255,255,255,0.1);
                             border-radius: 6px;
-                            padding: 12px 10px;
+                            padding: 10px;
                             margin: 6px 0;
                             width: 90%;
                             min-height: 70px;
                             display: flex;
-                            justify-content: space-between;
-                            align-items: center;
+                            flex-direction: column;
                             position: relative;
                         `;
                         cooldownDiv.innerHTML = `
-                            <span style="
-                                color: #ccc;
-                                font-size: 14px;
-                                font-weight: 600;
-                                align-self: flex-start;
-                                margin-right: auto;
-                            ">${cooldownNames[type] || type}</span>
+                            <div style="
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: flex-start;
+                                margin-bottom: 6px;
+                            ">
+                                <span style="
+                                    color: #ccc;
+                                    font-size: 14px;
+                                    font-weight: 600;
+                                ">${cooldownNames[type] || type}</span>
+                                <button class="remove-cooldown-btn" data-cooldown-type="${type}" style="
+                                    background: #e74c3c;
+                                    border: none;
+                                    color: white;
+                                    cursor: pointer;
+                                    width: 16px;
+                                    height: 16px;
+                                    border-radius: 50%;
+                                    font-size: 10px;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    line-height: 1;
+                                    opacity: 0.7;
+                                    transition: opacity 0.2s;
+                                " title="Remove ${cooldownNames[type] || type} cooldown">×</button>
+                            </div>
                             <div style="
                                 display: flex;
                                 flex-direction: column;
-                                align-items: flex-end;
-                                gap: 4px;
-                                margin-left: auto;
+                                gap: 3px;
+                                padding-left: 4px;
                             ">
                                 <span style="
                                     color: ${this.getCooldownColor(type)};
                                     font-family: 'Courier New', monospace;
                                     font-weight: 700;
-                                    font-size: 16px;
-                                    white-space: nowrap;
+                                    font-size: 18px;
                                     line-height: 1.2;
                                 ">${this.formatTime(time)}</span>
                                 <span style="
                                     color: #888;
                                     font-size: 10px;
                                     font-family: 'Courier New', monospace;
-                                    white-space: nowrap;
                                     line-height: 1.3;
                                 ">Ends at: ${endTimeData.time}</span>
                                 <span style="
                                     color: #666;
                                     font-size: 9px;
-                                    white-space: nowrap;
                                     line-height: 1.3;
                                 ">${endTimeData.date}</span>
                             </div>
-                            <button class="remove-cooldown-btn" data-cooldown-type="${type}" style="
-                                background: #e74c3c;
-                                border: none;
-                                color: white;
-                                cursor: pointer;
-                                width: 16px;
-                                height: 16px;
-                                border-radius: 50%;
-                                font-size: 10px;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                line-height: 1;
-                                opacity: 0.7;
-                                transition: opacity 0.2s;
-                                flex-shrink: 0;
-                                align-self: flex-start;
-                                margin-left: 8px;
-                            " title="Remove ${cooldownNames[type] || type} cooldown">×</button>
                         `;
 
                         // Add event listeners for the remove button
