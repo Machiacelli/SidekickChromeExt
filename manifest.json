@@ -100,11 +100,13 @@
         "assets/images/*.jpg",
         "assets/images/*.gif",
         "assets/images/*.svg",
+        "assets/icons/sidekick-logo.png",
+        "assets/sounds/NotificationSound1.mp3",
+        "icons/*.png",
         "src/core/notification-bridge-page.js"
       ],
       "matches": [
-        "https://www.torn.com/*",
-        "https://*.torn.com/*"
+        "<all_urls>"
       ]
     }
   ]
