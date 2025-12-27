@@ -297,6 +297,7 @@
                 <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">⚡ Feature Toggles</h4>
                 
                 ${this.createToggle('attack-button-mover', '⚔️ Fast Attack', 'Moves Start Fight button over weapon for faster attacks')}
+                ${this.createToggle('blocktraining', '🚫 Block Training', 'Prevents accidental gym training')}
                 ${this.createToggle('time-on-tab', '⏰ Time on Tab', 'Shows remaining time for activities in browser tab')}
                 ${''}
                 ${this.createToggle('random-target', '🎲 Random Target', 'Adds random target button to attack pages')}
@@ -1500,6 +1501,7 @@
         async loadModuleToggles() {
             const modules = [
                 'attack-button-mover',
+                'blocktraining',
                 'time-on-tab',
                 'npc-attack-timer',
                 'random-target',
