@@ -1961,9 +1961,10 @@
                         cooldownDiv.style.cssText = `
                             background: rgba(255,255,255,0.1);
                             border-radius: 6px;
-                            padding: 8px;
-                            margin: 4px 0;
+                            padding: 12px 10px;
+                            margin: 6px 0;
                             width: 90%;
+                            min-height: 70px;
                             display: flex;
                             justify-content: space-between;
                             align-items: center;
@@ -1974,22 +1975,33 @@
                                 color: #ccc;
                                 font-size: 14px;
                                 font-weight: 600;
+                                align-self: flex-start;
                             ">${cooldownNames[type] || type}</span>
-                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+                            <div style="
+                                display: flex;
+                                flex-direction: column;
+                                align-items: flex-end;
+                                gap: 3px;
+                                flex: 1;
+                                margin: 0 10px;
+                            ">
                                 <span style="
                                     color: ${this.getCooldownColor(type)};
                                     font-family: 'Courier New', monospace;
                                     font-weight: 700;
                                     font-size: 16px;
+                                    white-space: nowrap;
                                 ">${this.formatTime(time)}</span>
                                 <span style="
                                     color: #888;
                                     font-size: 10px;
                                     font-family: 'Courier New', monospace;
+                                    white-space: nowrap;
                                 ">Ends at: ${endTimeData.time}</span>
                                 <span style="
                                     color: #666;
                                     font-size: 9px;
+                                    white-space: nowrap;
                                 ">${endTimeData.date}</span>
                             </div>
                             <button class="remove-cooldown-btn" data-cooldown-type="${type}" style="
@@ -2007,6 +2019,8 @@
                                 line-height: 1;
                                 opacity: 0.7;
                                 transition: opacity 0.2s;
+                                flex-shrink: 0;
+                                align-self: flex-start;
                             " title="Remove ${cooldownNames[type] || type} cooldown">×</button>
                         `;
 
