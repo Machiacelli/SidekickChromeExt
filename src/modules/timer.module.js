@@ -1913,6 +1913,39 @@
                     `;
                     emptyDiv.textContent = 'No active cooldowns';
                     contentArea.appendChild(emptyDiv);
+                } else if (timer.cooldowns && Object.keys(timer.cooldowns).length === 1) {
+                    // Single cooldown display - larger, centered
+                    const [type, time] = Object.entries(timer.cooldowns)[0];
+                    const endTimeData = this.getEndTime(time);
+
+                    const singleCooldownDiv = document.createElement('div');
+                    singleCooldownDiv.style.cssText = `
+                        text-align: center;
+                        padding: 10px;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 4px;
+                    `;
+                    singleCooldownDiv.innerHTML = `
+                        <div style="
+                            color: ${this.getCooldownColor(type)};
+                            font-family: 'Courier New', monospace;
+                            font-weight: 700;
+                            font-size: 24px;
+                        ">${this.formatTime(time)}</div>
+                        <div style="
+                            color: #888;
+                            font-size: 11px;
+                            font-family: 'Courier New', monospace;
+                            margin-top: 2px;
+                        ">Ends at: ${endTimeData.time}</div>
+                        <div style="
+                            color: #666;
+                            font-size: 10px;
+                        ">${endTimeData.date}</div>
+                    `;
+                    contentArea.appendChild(singleCooldownDiv);
                 } else if (timer.cooldowns && Object.keys(timer.cooldowns).length > 1) {
                     // Multi-cooldown display
                     const cooldownNames = {
@@ -1922,6 +1955,8 @@
                     };
 
                     Object.entries(timer.cooldowns).forEach(([type, time]) => {
+                        const endTimeData = this.getEndTime(time);
+
                         const cooldownDiv = document.createElement('div');
                         cooldownDiv.style.cssText = `
                             background: rgba(255,255,255,0.1);
@@ -1940,30 +1975,39 @@
                                 font-size: 14px;
                                 font-weight: 600;
                             ">${cooldownNames[type] || type}</span>
-                            <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
                                 <span style="
                                     color: ${this.getCooldownColor(type)};
                                     font-family: 'Courier New', monospace;
                                     font-weight: 700;
                                     font-size: 16px;
                                 ">${this.formatTime(time)}</span>
-                                <button class="remove-cooldown-btn" data-cooldown-type="${type}" style="
-                                    background: #e74c3c;
-                                    border: none;
-                                    color: white;
-                                    cursor: pointer;
-                                    width: 16px;
-                                    height: 16px;
-                                    border-radius: 50%;
+                                <span style="
+                                    color: #888;
                                     font-size: 10px;
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    line-height: 1;
-                                    opacity: 0.7;
-                                    transition: opacity 0.2s;
-                                " title="Remove ${cooldownNames[type] || type} cooldown">×</button>
+                                    font-family: 'Courier New', monospace;
+                                ">Ends at: ${endTimeData.time}</span>
+                                <span style="
+                                    color: #666;
+                                    font-size: 9px;
+                                ">${endTimeData.date}</span>
                             </div>
+                            <button class="remove-cooldown-btn" data-cooldown-type="${type}" style="
+                                background: #e74c3c;
+                                border: none;
+                                color: white;
+                                cursor: pointer;
+                                width: 16px;
+                                height: 16px;
+                                border-radius: 50%;
+                                font-size: 10px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                line-height: 1;
+                                opacity: 0.7;
+                                transition: opacity 0.2s;
+                            " title="Remove ${cooldownNames[type] || type} cooldown">×</button>
                         `;
 
                         // Add event listeners for the remove button
@@ -2874,6 +2918,26 @@
             } else {
                 return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
             }
+        },
+
+        // Calculate end time from remaining seconds
+        getEndTime(remainingSeconds) {
+            const now = new Date();
+            const endTime = new Date(now.getTime() + (remainingSeconds * 1000));
+
+            return {
+                time: endTime.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                }),
+                date: endTime.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                })
+            };
         },
 
         // Get display name for cooldown type
