@@ -120,6 +120,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const allNotifications = result.sidekick_notifications || [];
             const preferences = result.sidekick_notification_preferences || {};
 
+            console.log('📬 DEBUG: All notifications from storage:', allNotifications);
+            console.log('📬 DEBUG: Preferences:', preferences);
+
             // Get recent 10
             const recent = allNotifications.slice(0, 10);
 
@@ -134,6 +137,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             console.log('📬 Loaded notifications:', filtered.length, 'of', recent.length);
+            console.log('📬 DEBUG: Filtered notifications:', filtered);
             renderNotifications(filtered);
         } catch (error) {
             console.error('Error loading notifications:', error);
