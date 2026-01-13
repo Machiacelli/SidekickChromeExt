@@ -154,9 +154,9 @@
 
             // Style the floating button - smaller and more responsive
             this.floatingButton.style.cssText = `
-                position: fixed;
-                top: ${this.buttonPosition.y}px;
-                left: ${this.buttonPosition.x}px;
+                position: fixed !important;
+                top: ${this.buttonPosition.y}px !important;
+                left: ${this.buttonPosition.x}px !important;
                 width: 30px;
                 height: 30px;
                 background: linear-gradient(135deg, #4CAF50, #45a049);
@@ -268,8 +268,8 @@
                 const boundedLeft = Math.max(0, Math.min(newLeft, maxLeft));
                 const boundedTop = Math.max(0, Math.min(newTop, maxTop));
 
-                element.style.left = boundedLeft + 'px';
-                element.style.top = boundedTop + 'px';
+                element.style.setProperty('left', boundedLeft + 'px', 'important');
+                element.style.setProperty('top', boundedTop + 'px', 'important');
 
                 // Update position
                 this.buttonPosition = { x: boundedLeft, y: boundedTop };
