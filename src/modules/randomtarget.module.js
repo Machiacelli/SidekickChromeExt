@@ -152,11 +152,15 @@
             this.floatingButton.innerHTML = '🎯';
             this.floatingButton.title = 'Random Target - Click to select, Double-click to attack';
 
-            // Style the floating button - smaller and more responsive
+            // Style the floating button - using absolute positioning like flight tracker
+            // Calculate absolute position (viewport position + scroll offset)
+            const absoluteX = this.buttonPosition.x + window.scrollX;
+            const absoluteY = this.buttonPosition.y + window.scrollY;
+
             this.floatingButton.style.cssText = `
-                position: fixed !important;
-                top: ${this.buttonPosition.y}px !important;
-                left: ${this.buttonPosition.x}px !important;
+                position: absolute;
+                top: ${absoluteY}px;
+                left: ${absoluteX}px;
                 width: 30px;
                 height: 30px;
                 background: linear-gradient(135deg, #4CAF50, #45a049);
@@ -173,24 +177,23 @@
                 user-select: none;
                 font-family: Arial, sans-serif;
                 opacity: 0.9;
-                transform: none !important;
-                margin: 0 !important;
+                margin: 0;
                 padding: 0;
             `;
 
             // Add hover effects - more responsive
             this.floatingButton.addEventListener('mouseenter', () => {
+                this.floatingButton.style.transform = 'scale(1.15)';
                 this.floatingButton.style.boxShadow = '0 4px 16px rgba(0,0,0,0.5)';
                 this.floatingButton.style.background = 'linear-gradient(135deg, #66BB6A, #4CAF50)';
                 this.floatingButton.style.opacity = '1';
-                this.floatingButton.style.setProperty('transform', 'scale(1.15)', 'important');
             });
 
             this.floatingButton.addEventListener('mouseleave', () => {
+                this.floatingButton.style.transform = 'scale(1)';
                 this.floatingButton.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
                 this.floatingButton.style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
                 this.floatingButton.style.opacity = '0.9';
-                this.floatingButton.style.setProperty('transform', 'none', 'important');
             });
 
             // Make draggable
@@ -228,14 +231,6 @@
             // Append directly to body
             document.body.appendChild(this.floatingButton);
 
-            // Force position update after append to ensure it's truly fixed
-            requestAnimationFrame(() => {
-                this.floatingButton.style.setProperty('position', 'fixed', 'important');
-                this.floatingButton.style.setProperty('top', this.buttonPosition.y + 'px', 'important');
-                this.floatingButton.style.setProperty('left', this.buttonPosition.x + 'px', 'important');
-                this.floatingButton.style.setProperty('transform', 'none', 'important');
-            });
-
             console.log("✅ Random Target floating button created");
         },
 
@@ -259,8 +254,11 @@
                 hasMoved = false;
                 startX = e.clientX;
                 startY = e.clientY;
-                startLeft = parseInt(window.getComputedStyle(element).left, 10);
-                startTop = parseInt(window.getComputedStyle(element).top, 10);
+                // Get current absolute position and convert to viewport-relative
+                const currentAbsLeft = parseInt(window.getComputedStyle(element).left, 10);
+                const currentAbsTop = parseInt(window.getComputedStyle(element).top, 10);
+                startLeft = currentAbsLeft - window.scrollX;
+                startTop = currentAbsTop - window.scrollY;
                 element.style.cursor = 'grabbing';
                 e.preventDefault();
             });
@@ -286,10 +284,14 @@
                 const boundedLeft = Math.max(0, Math.min(newLeft, maxLeft));
                 const boundedTop = Math.max(0, Math.min(newTop, maxTop));
 
-                element.style.setProperty('left', boundedLeft + 'px', 'important');
-                element.style.setProperty('top', boundedTop + 'px', 'important');
+                // Convert viewport position to absolute position (add scroll offset)
+                const absoluteLeft = boundedLeft + window.scrollX;
+                const absoluteTop = boundedTop + window.scrollY;
 
-                // Update position
+                element.style.left = absoluteLeft + 'px';
+                element.style.top = absoluteTop + 'px';
+
+                // Store viewport-relative position
                 this.buttonPosition = { x: boundedLeft, y: boundedTop };
             });
 
