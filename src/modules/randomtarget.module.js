@@ -169,25 +169,28 @@
                 justify-content: center;
                 font-size: 14px;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-                transition: all 0.2s ease;
+                transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
                 user-select: none;
                 font-family: Arial, sans-serif;
                 opacity: 0.9;
+                transform: none !important;
+                margin: 0 !important;
+                padding: 0;
             `;
 
             // Add hover effects - more responsive
             this.floatingButton.addEventListener('mouseenter', () => {
-                this.floatingButton.style.transform = 'scale(1.15)';
-                this.floatingButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.4)';
+                this.floatingButton.style.boxShadow = '0 4px 16px rgba(0,0,0,0.5)';
                 this.floatingButton.style.background = 'linear-gradient(135deg, #66BB6A, #4CAF50)';
                 this.floatingButton.style.opacity = '1';
+                this.floatingButton.style.setProperty('transform', 'scale(1.15)', 'important');
             });
 
             this.floatingButton.addEventListener('mouseleave', () => {
-                this.floatingButton.style.transform = 'scale(1)';
                 this.floatingButton.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
                 this.floatingButton.style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
                 this.floatingButton.style.opacity = '0.9';
+                this.floatingButton.style.setProperty('transform', 'none', 'important');
             });
 
             // Make draggable
@@ -216,8 +219,23 @@
                 }
             });
 
-            // Append to body
+            // Ensure button is appended directly to body with no transforms
+            // Remove from any existing parent first
+            if (this.floatingButton.parentNode) {
+                this.floatingButton.parentNode.removeChild(this.floatingButton);
+            }
+
+            // Append directly to body
             document.body.appendChild(this.floatingButton);
+
+            // Force position update after append to ensure it's truly fixed
+            requestAnimationFrame(() => {
+                this.floatingButton.style.setProperty('position', 'fixed', 'important');
+                this.floatingButton.style.setProperty('top', this.buttonPosition.y + 'px', 'important');
+                this.floatingButton.style.setProperty('left', this.buttonPosition.x + 'px', 'important');
+                this.floatingButton.style.setProperty('transform', 'none', 'important');
+            });
+
             console.log("✅ Random Target floating button created");
         },
 
