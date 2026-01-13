@@ -231,7 +231,12 @@
             // Append directly to body
             document.body.appendChild(this.floatingButton);
 
-            console.log("✅ Random Target floating button created");
+            // Explicitly enforce absolute positioning (cannot be overridden)
+            this.floatingButton.style.position = 'absolute';
+            this.floatingButton.style.top = absoluteY + 'px';
+            this.floatingButton.style.left = absoluteX + 'px';
+
+            console.log("✅ Random Target floating button created at absolute position:", absoluteX, absoluteY);
         },
 
         // Remove floating button
