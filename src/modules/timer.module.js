@@ -1234,7 +1234,7 @@
                 min-height: 80px;
                 z-index: 1000;
                 resize: both;
-                overflow: visible;
+                overflow: auto;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.4);
             `;
 
