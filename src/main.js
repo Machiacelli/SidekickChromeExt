@@ -277,15 +277,6 @@
                 console.warn("⚠️ Debt Module not available");
             }
 
-            // Initialize Event Monitor Module
-            console.log("📬 Sidekick: Initializing Event Monitor...");
-            if (window.SidekickModules.EventMonitor?.initialize) {
-                await window.SidekickModules.EventMonitor.initialize();
-                console.log("✅ Sidekick: Event Monitor initialized");
-            } else {
-                console.warn("⚠️ Event Monitor module not available");
-            }
-
 
             // REMOVED: Vault Tracker Module
             // Vault Tracker has been removed from the extension

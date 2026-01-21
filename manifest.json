@@ -56,7 +56,6 @@
         "src/data/travel-times.js",
         "src/modules/flighttracker.module.js",
         "src/modules/debt.module.js",
-        "src/modules/event-monitor.module.js",
         "src/modules/stockadvisor.module.js",
         "src/modules/travelarc.module.js",
         "src/modules/statstracker.module.js",
