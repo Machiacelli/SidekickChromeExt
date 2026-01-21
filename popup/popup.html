@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Sidekick Notifications</title>
+    <style>
+        .notification-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid #4CAF50;
+            transition: all 0.2s ease;
+        }
+
+        .notification-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .notification-item.info {
+            border-left-color: #2196F3;
+        }
+
+        .notification-item.warning {
+            border-left-color: #FF9800;
+        }
+
+        .notification-item.error {
+            border-left-color: #F44336;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .notification-message {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .notification-time {
+            font-size: 11px;
+            opacity: 0.5;
+            margin-top: 5px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        /* HIDE ALL SCROLLBARS */
+        * {
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+        }
+
+        *::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        body {
+            width: 350px;
+            min-height: 450px;
+            max-height: 600px;
+            padding: 0;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a !important;
+            color: white;
+            overflow: auto;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px 20px 20px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header .logo {
+            width: 200px;
+            height: auto;
+            margin-bottom: 5px;
+            margin-top: -5px;
+            border: none !important;
+            outline: none !important;
+            background: transparent !important;
+            background-color: transparent !important;
+            display: block;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin-left: auto;
+            margin-right: auto;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+
+        .header h1 {
+            display: none;
+        }
+
+        .header .version {
+            font-size: 11px;
+            opacity: 0.6;
+            margin-top: 2px;
+            margin-bottom: 10px;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .quick-action-btn {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(76, 175, 80, 0.5);
+        }
+
+        .tabs {
+            display: flex;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-button:hover {
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-button.active {
+            color: white;
+            border-bottom-color: rgba(76, 175, 80, 1);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+
+        .tab-content::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .content {
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .setting-group {
+            margin-bottom: 20px;
+        }
+
+        .setting-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .setting-group input[type="text"],
+        .setting-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .setting-group input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .setting-group input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .setting-group input[type="range"] {
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .setting-group .range-value {
+            display: inline-block;
+            min-width: 30px;
+            text-align: center;
+            font-weight: bold;
+            color: rgba(76, 175, 80, 1);
+        }
+
+        .button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .button.danger {
+            background: rgba(244, 67, 54, 0.3);
+            border-color: rgba(244, 67, 54, 0.5);
+        }
+
+        .button.danger:hover {
+            background: rgba(244, 67, 54, 0.5);
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            font-size: 13px;
+            display: none;
+        }
+
+        .status.error {
+            background: rgba(244, 67, 54, 0.2);
+            border-color: rgba(244, 67, 54, 0.3);
+        }
+
+        .links {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .links a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 12px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .links a:hover {
+            color: white;
+        }
+
+        .cache-info {
+            font-size: 13px;
+            opacity: 0.8;
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        .switch input:checked+.slider {
+            background-color: #4CAF50 !important;
+        }
+
+        .switch .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        .switch input:checked+.slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Module Control Panel */
+        .module-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .module-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .module-icon {
+            font-size: 20px;
+            margin-right: 12px;
+        }
+
+        .module-name {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .module-toggle {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+            margin-right: 8px;
+        }
+
+        .module-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .module-toggle .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.2);
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .module-toggle .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        .module-toggle input:checked+.slider {
+            background-color: #4CAF50;
+        }
+
+        .module-toggle input:checked+.slider:before {
+            transform: translateX(24px);
+        }
+
+        .module-settings-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px 8px;
+            transition: all 0.2s ease;
+        }
+
+        .module-settings-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .tab-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Notification Cards */
+        .notification-card {
+            margin-bottom: 10px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            border-left: 3px solid;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .notification-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .notification-card.info {
+            border-left-color: #2196F3;
+        }
+
+        .notification-card.success {
+            border-left-color: #4CAF50;
+        }
+
+        .notification-card.warning {
+            border-left-color: #FF9800;
+        }
+
+        .notification-card.error {
+            border-left-color: #F44336;
+        }
+
+        .notification-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 6px;
+        }
+
+        .notification-card-title {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .notification-card-time {
+            font-size: 10px;
+            opacity: 0.6;
+        }
+
+        .notification-card-message {
+            font-size: 12px;
+            opacity: 0.85;
+            line-height: 1.4;
+        }
+
+        .notification-card.unread {
+            background: rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <img src="../assets/icons/sidekick-logo.png" alt="Sidekick" class="logo">
+        <h1>Sidekick</h1>
+        <div class="version">Chrome Extension v1.1.2</div>
+        <div class="quick-actions">
+            <button class="quick-action-btn" id="openSettingsBtn">⚙️ Settings</button>
+            <button class="quick-action-btn" id="reportIssuesBtn">🐛 Report Bug</button>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="tabs">
+        <button class="tab-button active" data-tab="modules">⚙️ Features</button>
+        <button class="tab-button" data-tab="notifications">🔔 Notifications</button>
+    </div>
+
+    <div class="content">
+        <!-- Modules Tab -->
+        <div class="tab-content active" id="modules-tab">
+            <div class="tab-section-title">FEATURE TOGGLES</div>
+
+            <div class="module-item">
+                <span class="module-icon">⚔️</span>
+                <span class="module-name">Fast Attack</span>
+                <label class="module-toggle">
+                    <input type="checkbox" data-module="attack-button-mover" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="module-item">
+                <span class="module-icon">⏰</span>
+                <span class="module-name">Time on Tab</span>
+                <label class="module-toggle">
+                    <input type="checkbox" data-module="time-on-tab" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="module-item">
+                <span class="module-icon">🎲</span>
+                <span class="module-name">Random Target</span>
+                <label class="module-toggle">
+                    <input type="checkbox" data-module="random-target" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="module-item">
+                <span class="module-icon">🏎️</span>
+                <span class="module-name">Racing Alert</span>
+                <label class="module-toggle">
+                    <input type="checkbox" data-module="racing-alert" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="module-item">
+                <span class="module-icon">🛡️</span>
+                <span class="module-name">Refill Blocker</span>
+                <label class="module-toggle">
+                    <input type="checkbox" data-module="refill-blocker" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="module-item">
+                <span class="module-icon">⛓️</span>
+                <span class="module-name">Extended Chain View</span>
+                <label class="module-toggle">
+                    <input type="checkbox" data-module="extended-chain-view" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="module-item">
+                <span class="module-icon">🥊</span>
+                <span class="module-name">Mug Calculator</span>
+                <label class="module-toggle">
+                    <input type="checkbox" data-module="mug-calculator" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="module-item">
+                <span class="module-icon">🎯</span>
+                <span class="module-name">Weapon XP Tracker</span>
+                <label class="module-toggle">
+                    <input type="checkbox" data-module="weapon-xp-tracker" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="module-item">
+                <span class="module-icon">⏱️</span>
+                <span class="module-name">Chain Timer</span>
+                <label class="module-toggle">
+                    <input type="checkbox" data-module="chain-timer" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="module-item">
+                <span class="module-icon">💊</span>
+                <span class="module-name">Xanax Viewer</span>
+                <label class="module-toggle">
+                    <input type="checkbox" data-module="xanax-viewer" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="module-item">
+                <span class="module-icon">🔔</span>
+                <span class="module-name">Notification Sounds</span>
+                <label class="module-toggle">
+                    <input type="checkbox" data-module="notif-sound" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="module-item">
+                <span class="module-icon">🚫</span>
+                <span class="module-name">Block Training</span>
+                <label class="module-toggle">
+                    <input type="checkbox" id="trainingBlockerToggle" data-module="blocktraining">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Notifications Tab -->
+        <div class="tab-content" id="notifications-tab">
+            <div class="tab-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>RECENT ACTIVITY</span>
+                <button id="clearAllNotifications"
+                    style="padding: 6px 12px; background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.4); color: #F44336; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.2s;">
+                    Clear All
+                </button>
+            </div>
+
+            <!-- Notifications List -->
+            <div id="notifications-container">
+                <!-- Notifications will be rendered here dynamically -->
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-state-icon">🔔</div>
+                    <div style="font-size: 14px; margin-bottom: 10px;">No Recent Notifications</div>
+                    <div style="font-size: 12px; opacity: 0.7;">
+                        Notifications will appear here when:<br>
+                        • Modules perform actions<br>
+                        • Important events occur<br>
+                        • Status changes happen
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notification Preferences Section -->
+            <div
+                style="margin-top: 25px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; cursor: pointer;"
+                    id="togglePreferences">
+                    <div style="font-size: 13px; font-weight: 600;">⚙️ Notification Preferences</div>
+                    <span id="preferencesChevron" style="font-size: 12px; transition: transform 0.3s;">▼</span>
+                </div>
+
+                <div id="preferencesContent" style="display: none;">
+                    <div style="font-size: 11px; opacity: 0.7; margin-bottom: 12px;">Control which notifications appear
+                        in this popup</div>
+
+                    <!-- Type Filters -->
+                    <div style="margin-bottom: 15px;">
+                        <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; opacity: 0.9;">By Type</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-type" data-type="info" checked>
+                                <span>📘 Info</span>
+                            </label>
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-type" data-type="success" checked>
+                                <span>✅ Success</span>
+                            </label>
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-type" data-type="warning" checked>
+                                <span>⚠️ Warning</span>
+                            </label>
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-type" data-type="error" checked>
+                                <span>❌ Error</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Module Filters -->
+                    <div>
+                        <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; opacity: 0.9;">By Module
+                        </div>
+                        <div
+                            style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; max-height: 150px; overflow-y: auto;">
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-module" data-module="stats-tracker" checked>
+                                <span>📊 Stats</span>
+                            </label>
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-module" data-module="stock-advisor" checked>
+                                <span>📈 Stocks</span>
+                            </label>
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-module" data-module="debt-tracker" checked>
+                                <span>💰 Debts</span>
+                            </label>
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-module" data-module="attack-list" checked>
+                                <span>⚔️ Attacks</span>
+                            </label>
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-module" data-module="timer" checked>
+                                <span>⏱️ Timers</span>
+                            </label>
+                            <label
+                                style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+                                <input type="checkbox" class="pref-module" data-module="extension" checked>
+                                <span>🔧 System</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                style="margin-top: 20px; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; border: 1px solid rgba(76, 175, 80, 0.3);">
+                <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">💡 Quick Tip</div>
+                <div style="font-size: 12px; opacity: 0.8;">
+                    Click the ⚙️ cogwheel button in the Torn sidebar to access all Sidekick settings and module toggles!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>

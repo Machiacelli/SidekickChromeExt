@@ -159,13 +159,8 @@
                     
                     <!-- MAIN CONTENT AREA -->
                     <div style="flex: 1; display: flex; flex-direction: column;">
-                        <!-- Top Bar with Admin and Close -->
+                        <!-- Top Bar with Close -->
                         <div style="padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: flex-end; gap: 10px;">
-                            <button id="sidekick-admin-btn" style="background: linear-gradient(135deg, #FFD700, #FFA500); border: 1px solid rgba(255,215,0,0.5); 
-                                                            color: #000; padding: 8px 16px; border-radius: 6px; 
-                                                            cursor: pointer; font-size: 12px; font-weight: bold; 
-                                                            transition: all 0.2s ease;" 
-                                    title="Admin Panel">👑 Admin</button>
                             <button id="sidekick-close-settings" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
                                                             color: #fff; width: 32px; height: 32px; border-radius: 50%; 
                                                             cursor: pointer; font-size: 18px; display: flex; align-items: center; 
@@ -620,24 +615,7 @@
                 closeBtn.style.transform = 'scale(1)';
             });
 
-            // Admin button
-            const adminBtn = panel.querySelector('#sidekick-admin-btn');
-            if (adminBtn) {
-                adminBtn.addEventListener('click', () => {
-                    console.log('👑 Admin button clicked!');
-                    console.log('Premium module check:', window.SidekickModules?.Premium);
-                    if (window.SidekickModules?.Premium?.showAdminPanel) {
-                        console.log('Calling showAdminPanel...');
-                        window.SidekickModules.Premium.showAdminPanel();
-                    } else {
-                        console.error('❌ Premium module not available');
-                        alert('Premium module not available. Please refresh the page.');
-                    }
-                });
-                console.log('✅ Admin button listener attached');
-            } else {
-                console.error('❌ Admin button not found in panel');
-            }
+
 
             // General Tab listeners
             this.attachGeneralTabListeners(panel);
