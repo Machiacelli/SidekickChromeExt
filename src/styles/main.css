@@ -1,0 +1,517 @@
+/**
+ * Sidekick Chrome Extension - Main Styles
+ * Core CSS for the Sidekick sidebar and components
+ * Version: 1.0.0
+ */
+
+/* Notification Animations */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-10px);
+        opacity: 0.8;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Sidekick Notification Styles */
+.sidekick-notification {
+    position: fixed !important;
+    right: 20px !important;
+    z-index: 999999 !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    max-width: 350px !important;
+    word-wrap: break-word !important;
+    pointer-events: auto !important;
+    user-select: none !important;
+}
+
+.sidekick-notification:hover {
+    transform: translateY(-2px) translateX(-5px) !important;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4) !important;
+}
+
+.sidekick-notification:active {
+    transform: translateY(0) translateX(-2px) !important;
+    transition: all 0.1s ease !important;
+}
+
+/* Notification type styles */
+.sidekick-notification.info {
+    background: #2196F3 !important;
+    color: white !important;
+    border-left: 4px solid #1976D2 !important;
+}
+
+.sidekick-notification.success {
+    background: #4CAF50 !important;
+    color: white !important;
+    border-left: 4px solid #388E3C !important;
+}
+
+.sidekick-notification.warning {
+    background: #FF9800 !important;
+    color: white !important;
+    border-left: 4px solid #F57C00 !important;
+}
+
+.sidekick-notification.error {
+    background: #F44336 !important;
+    color: white !important;
+    border-left: 4px solid #D32F2F !important;
+}
+
+/* Sidebar Base Styles - Original Design */
+#sidekick-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 500px !important;
+    height: 100vh !important;
+    background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%) !important;
+    border-right: 2px solid #444 !important;
+    color: white !important;
+    z-index: 999999 !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.3) !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    overflow: hidden !important;
+    overscroll-behavior: contain !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+#sidekick-sidebar.hidden {
+    transform: translateX(-100%) !important;
+}
+
+#sidekick-sidebar:not(.hidden) {
+    transform: translateX(0) !important;
+}
+
+/* Top Bar Logo - Follow sidebar instead of fading */
+.sidekick-top-bar {
+    opacity: 1 !important;
+    transform: translateX(0) !important;
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+.sidekick-top-bar.hidden {
+    transform: translateX(-500px) !important;
+    pointer-events: none !important;
+}
+
+/* Hamburger Menu - Original Design */
+#sidekick-hamburger {
+    position: fixed !important;
+    top: 4px !important;
+    left: 10px !important;
+    width: 31px !important;
+    height: 31px !important;
+    background: linear-gradient(135deg, #262626, #5e5c5cff) !important;
+    color: white !important;
+    border: 1px solid rgba(255,255,255,0.6) !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 2147483647 !important;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    font-family: monospace !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5) !important;
+    outline: none !important;
+    user-select: none !important;
+    line-height: 1 !important;
+}
+
+#sidekick-hamburger:hover {
+    transform: scale(1.15) !important;
+    box-shadow: 0 4px 16px #000000ff !important;
+    background: linear-gradient(135deg, #66BB6A, #ffad5a) !important;
+}
+
+/* Sidebar Header */
+.sidekick-header {
+    padding: 20px !important;
+    background: rgba(0,0,0,0.2) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+    text-align: center !important;
+}
+
+.sidekick-header h1 {
+    margin: 0 !important;
+    font-size: 24px !important;
+    font-weight: 300 !important;
+    color: white !important;
+}
+
+.sidekick-header .version {
+    font-size: 12px !important;
+    opacity: 0.7 !important;
+    margin-top: 5px !important;
+}
+
+/* Sidebar Content - Updated for wider sidebar and black theme */
+.sidekick-content {
+    flex: 1 !important;
+    overflow: visible !important;
+    position: relative !important;
+    padding: 5px !important;
+    margin-bottom: 50px !important;
+}
+
+/* Movable Notepad Windows */
+.movable-notepad {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    user-select: none !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+
+.movable-notepad:hover {
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4) !important;
+}
+
+.movable-notepad .notepad-header {
+    user-select: none !important;
+    transition: background 0.2s ease !important;
+}
+
+.movable-notepad .notepad-title {
+    user-select: text !important;
+}
+
+.movable-notepad .notepad-textarea {
+    user-select: text !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+/* Dropdown Menu Styling */
+.dropdown-content {
+    animation: fadeIn 0.2s ease !important;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Color Picker Styling */
+.color-picker {
+    animation: scaleIn 0.2s ease !important;
+}
+
+@keyframes scaleIn {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Placeholder Styling */
+.sidekick-placeholder {
+    animation: fadeInUp 0.3s ease !important;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translate(-50%, -50%) translateY(20px); }
+    to { opacity: 1; transform: translate(-50%, -50%) translateY(0); }
+}
+
+/* Ensure sidebar content area positioning - Updated for dark theme */
+#sidekick-content {
+    position: relative !important;
+    height: 100% !important;
+    box-sizing: border-box !important;
+    background: transparent !important;
+}
+
+/* Scrollbar styling for dark theme - Hide visual scrollbars but keep functionality */
+#sidekick-content::-webkit-scrollbar {
+    width: 0px !important;
+    background: transparent !important;
+}
+
+#sidekick-content {
+    scrollbar-width: none !important; /* Firefox */
+    -ms-overflow-style: none !important; /* IE and Edge */
+}
+
+/* Sidebar Buttons */
+.sidekick-button {
+    width: 100% !important;
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    color: white !important;
+    padding: 12px 16px !important;
+    margin-bottom: 10px !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    transition: all 0.3s ease !important;
+    text-align: left !important;
+    display: flex !important;
+    align-items: center !important;
+    font-family: inherit !important;
+}
+
+.sidekick-button:hover {
+    background: rgba(255,255,255,0.2) !important;
+    transform: translateX(5px) !important;
+}
+
+.sidekick-button.active {
+    background: rgba(255,255,255,0.3) !important;
+    border-color: rgba(255,255,255,0.5) !important;
+}
+
+.sidekick-button .icon {
+    margin-right: 10px !important;
+    font-size: 16px !important;
+}
+
+/* Panel Styles */
+.sidekick-panel {
+    position: fixed !important;
+    top: 50px !important;
+    left: 50px !important;
+    width: 300px !important;
+    min-height: 200px !important;
+    background: white !important;
+    color: #333 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+    z-index: 999997 !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    overflow: hidden !important;
+    resize: both !important;
+    border: 1px solid #ddd !important;
+}
+
+.sidekick-panel-header {
+    background: linear-gradient(135deg, #37474F 0%, #263238 100%) !important;
+    color: white !important;
+    padding: 12px 16px !important;
+    cursor: move !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    user-select: none !important;
+}
+
+.sidekick-panel-header h3 {
+    margin: 0 !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+}
+
+.sidekick-panel-controls {
+    display: flex !important;
+    gap: 8px !important;
+}
+
+.sidekick-panel-controls button {
+    background: rgba(255,255,255,0.2) !important;
+    border: none !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    font-size: 12px !important;
+    transition: background 0.2s ease !important;
+}
+
+.sidekick-panel-controls button:hover {
+    background: rgba(255,255,255,0.3) !important;
+}
+
+.sidekick-panel-content {
+    padding: 16px !important;
+    max-height: 400px !important;
+    overflow-y: auto !important;
+}
+
+/* Body state classes for layout adjustments */
+body.sidekick-sidebar-visible {
+    margin-right: 400px !important;
+    transition: margin-right 0.3s ease !important;
+}
+
+body.sidekick-sidebar-hidden {
+    margin-right: 0 !important;
+    transition: margin-right 0.3s ease !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    body.sidekick-sidebar-visible {
+        margin-right: 0 !important;
+    }
+    
+    #sidekick-sidebar {
+        width: 350px !important;
+    }
+}
+
+/* Form Controls */
+.sidekick-input {
+    width: 100% !important;
+    padding: 8px 12px !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+    font-size: 14px !important;
+    font-family: inherit !important;
+    margin-bottom: 10px !important;
+    box-sizing: border-box !important;
+}
+
+.sidekick-input:focus {
+    outline: none !important;
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+}
+
+.sidekick-textarea {
+    width: 100% !important;
+    min-height: 100px !important;
+    padding: 8px 12px !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+    font-size: 14px !important;
+    font-family: inherit !important;
+    resize: vertical !important;
+    box-sizing: border-box !important;
+}
+
+.sidekick-textarea:focus {
+    outline: none !important;
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+}
+
+/* Loading States */
+.sidekick-loading {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px !important;
+    font-style: italic !important;
+    opacity: 0.7 !important;
+}
+
+.sidekick-spinner {
+    width: 20px !important;
+    height: 20px !important;
+    border: 2px solid #f3f3f3 !important;
+    border-top: 2px solid #667eea !important;
+    border-radius: 50% !important;
+    animation: spin 1s linear infinite !important;
+    margin-right: 10px !important;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Scrollbar Styling - Updated to hide all scrollbars but keep functionality */
+.sidekick-content::-webkit-scrollbar,
+.sidekick-panel-content::-webkit-scrollbar,
+.movable-notepad .notepad-textarea::-webkit-scrollbar,
+.movable-linkgroup .linkgroup-content::-webkit-scrollbar {
+    width: 0px !important;
+    background: transparent !important;
+}
+
+/* Hide scrollbars for Firefox */
+.sidekick-content,
+.sidekick-panel-content,
+.movable-notepad .notepad-textarea,
+.movable-linkgroup .linkgroup-content {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+/* Flight Tracker Menu Styles */
+.flight-tracker-menu {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+.flight-tracker-menu .plane-option:hover {
+    background: #3a3a3a !important;
+}
+
+.flight-tracker-menu .plane-option:active {
+    background: #4a4a4a !important;
+    transform: scale(0.98);
+}
+
+/* Flight Tracker Button - Force no borders */
+.sidekick-flight-tracker-btn {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: #4CAF50 !important;
+    color: white !important;
+    padding: 6px 10px !important;
+    margin: 10px 0 5px 0 !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    width: fit-content !important;
+    max-width: 120px !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+    display: block !important;
+    clear: both !important;
+}
+
+.sidekick-flight-tracker-btn:hover {
+    background: #45a049 !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.sidekick-flight-tracker-btn:focus {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.sidekick-flight-tracker-btn:active {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
