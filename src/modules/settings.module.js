@@ -188,22 +188,10 @@
                                     </div>
                                 </div>
                                 
-                                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                                    <button id="sidekick-save-settings" style="flex: 1; padding: 10px; background: linear-gradient(135deg, #66BB6A, #ffad5a); 
-                                                                              border: none; color: white; border-radius: 5px; 
-                                                                              font-weight: bold; cursor: pointer;">
-                                        💾 Save
-                                    </button>
-                                    <button id="sidekick-test-api" style="flex: 1; padding: 10px; background: #2196F3; 
-                                                                     border: none; color: white; border-radius: 5px; 
-                                                                     font-weight: bold; cursor: pointer;">
-                                        🧪 Test
-                                    </button>
-                                </div>
-                                
-                                <div id="sidekick-api-status" style="text-align: center; padding: 10px; border-radius: 5px; 
-                                                                 background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;">
-                                    Enter your API key and click Save
+                
+                <div id="sidekick-api-status" style="text-align: center; padding: 10px; border-radius: 5px; 
+                                                 background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px; margin-top: 10px;">
+                    Settings auto-save enabled
                                 </div>
                                 
                                 <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 25px 0;">
@@ -307,14 +295,9 @@
                 ${this.createToggle('extended-chain-view', '⛓️ Extended Chain View', 'Shows more than 10 chain attacks on faction page')}
                 ${this.createToggle('mug-calculator', '🥊 Mug Calculator', 'Shows mug value calculations on Item Market and Bazaars')}
                 ${this.createWeaponXpToggle()}
-                <button id="sidekick-save-module-toggles" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #66BB6A, #ffad5a); 
-                                                                  border: none; color: white; border-radius: 6px; 
-                                                                  font-weight: bold; cursor: pointer; margin-top: 20px;">
-                    💾 Save Module Settings
-                </button>
                 <div id="sidekick-module-status" style="text-align: center; padding: 10px; border-radius: 5px; 
-                                                       background: rgba(255,255,255,0.1); color: #ccc; margin-top: 10px; font-size: 13px;">
-                    Module settings loaded
+                                                       background: rgba(255,255,255,0.1); color: #ccc; margin-top: 20px; font-size: 13px;">
+                    Settings auto-save enabled
                 </div>
             `;
         },
@@ -446,22 +429,15 @@
                     </div>
                 </div>
                 
-                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <button id="sidekick-save-xanax-settings" style="flex: 1; padding: 10px; background: #9C27B0; 
-                                                                     border: none; color: white; border-radius: 5px; 
-                                                                     font-weight: bold; cursor: pointer;">
-                        💾 Save
-                    </button>
-                    <button id="sidekick-clear-xanax-cache" style="flex: 1; padding: 10px; background: #FF5722; 
-                                                                   border: none; color: white; border-radius: 5px; 
-                                                                   font-weight: bold; cursor: pointer;">
-                        🗑️ Clear Cache
-                    </button>
-                </div>
+                <button id="sidekick-clear-xanax-cache" style="width: 100%; padding: 10px; background: #FF5722; 
+                                                               border: none; color: white; border-radius: 5px; 
+                                                               font-weight: bold; cursor: pointer; margin-bottom: 10px;">
+                    🗑️ Clear Cache
+                </button>
                 
                 <div id="sidekick-xanax-status" style="text-align: center; padding: 10px; border-radius: 5px; 
                                                      background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;">
-                    Xanax Viewer settings loaded
+                    Settings auto-save enabled
                 </div>
             `;
         },
@@ -518,15 +494,9 @@
                     </div>
                 </div>
                 
-                <button id="sidekick-save-chain-settings" style="width: 100%; padding: 10px; background: #FF9800; 
-                                                                 border: none; color: white; border-radius: 5px; 
-                                                                 font-weight: bold; cursor: pointer; margin-bottom: 10px;">
-                    ⏱️ Save Chain Timer Settings
-                </button>
-                
                 <div id="sidekick-chain-status" style="text-align: center; padding: 10px; border-radius: 5px; 
-                                                     background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;">
-                    Chain Timer settings loaded
+                                                     background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px; margin-top: 10px;">
+                    Settings auto-save enabled
                 </div>
             `;
         },
@@ -557,15 +527,9 @@
                     </div>
                 </div>
                 
-                <button id="sidekick-save-notif-settings" style="width: 100%; padding: 10px; background: #2196F3; 
-                                                                 border: none; color: white; border-radius: 5px; 
-                                                                 font-weight: bold; cursor: pointer; margin-bottom: 10px;">
-                    🔔 Save Notification Settings
-                </button>
-                
                 <div id="sidekick-notif-status" style="text-align: center; padding: 10px; border-radius: 5px; 
-                                                     background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;">
-                    Notification settings loaded
+                                                     background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px; margin-top: 10px;">
+                    Settings auto-save enabled
                 </div>
             `;
         },
@@ -612,15 +576,9 @@
                     </div>
                 </div>
                 
-                <button id="sidekick-save-mugcalc-settings" style="width: 100%; padding: 12px; background: #4CAF50; 
-                                                                   border: none; color: white; border-radius: 6px; 
-                                                                   font-weight: bold; cursor: pointer; margin-bottom: 10px;">
-                    💾 Save Mug Calculator Settings
-                </button>
-                
                 <div id="sidekick-mugcalc-status" style="text-align: center; padding: 10px; border-radius: 5px; 
-                                                        background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;">
-                    Mug calculator settings loaded
+                                                        background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px; margin-top: 10px;">
+                    Settings auto-save enabled
                 </div>
             `;
         },
@@ -734,72 +692,31 @@
             const apiInput = panel.querySelector('#sidekick-api-key');
             const statusDiv = panel.querySelector('#sidekick-api-status');
 
-            saveBtn.addEventListener('click', async () => {
+            // Auto-save API key on blur (when user clicks away)
+            apiInput.addEventListener('blur', async () => {
                 const apiKey = apiInput.value.trim();
                 if (!apiKey) {
-                    this.showStatus(statusDiv, 'Please enter an API key', 'error');
+                    this.showStatus(statusDiv, 'API key cleared', 'info');
+                    await window.SidekickModules.Core.ChromeStorage.set('sidekick_api_key', '');
                     return;
                 }
 
                 try {
                     await window.SidekickModules.Core.ChromeStorage.set('sidekick_api_key', apiKey);
-                    this.showStatus(statusDiv, 'API key saved successfully!', 'success');
+                    this.showStatus(statusDiv, '✅ API key saved automatically', 'success');
 
-                    // Toast notification
+                    // Show toast notification
                     if (window.SidekickModules.Core.NotificationSystem) {
                         window.SidekickModules.Core.NotificationSystem.show(
                             'Settings Saved',
-                            'API key has been saved successfully',
+                            'API key saved automatically',
                             'success',
-                            3000
+                            2000
                         );
-                    }
-
-                    // Persistent notification
-                    if (window.NotificationCenter) {
-                        await NotificationCenter.emit({
-                            moduleId: 'extension',
-                            type: 'success',
-                            title: 'Settings Saved',
-                            message: 'API key configured successfully'
-                        });
                     }
                 } catch (error) {
                     console.error('Failed to save API key:', error);
-                    this.showStatus(statusDiv, 'Failed to save settings', 'error');
-                }
-            });
-
-            testBtn.addEventListener('click', async () => {
-                const apiKey = apiInput.value.trim();
-                if (!apiKey) {
-                    this.showStatus(statusDiv, 'Please enter an API key first', 'error');
-                    return;
-                }
-
-                this.showStatus(statusDiv, 'Testing API connection...', 'info');
-
-                try {
-                    const response = await fetch(`https://api.torn.com/user/?selections=basic&key=${apiKey}`);
-                    const data = await response.json();
-
-                    if (data.error) {
-                        this.showStatus(statusDiv, `API Error: ${data.error.error}`, 'error');
-                    } else {
-                        this.showStatus(statusDiv, `API Working! Welcome ${data.name} [${data.player_id}]`, 'success');
-
-                        if (window.SidekickModules.Core.NotificationSystem) {
-                            window.SidekickModules.Core.NotificationSystem.show(
-                                'API Test Success',
-                                `Connected as ${data.name}`,
-                                'success',
-                                3000
-                            );
-                        }
-                    }
-                } catch (error) {
-                    console.error('API test failed:', error);
-                    this.showStatus(statusDiv, 'API test failed - check your connection', 'error');
+                    this.showStatus(statusDiv, 'Failed to save API key', 'error');
                 }
             });
 
@@ -1046,7 +963,7 @@
                     toggleSwitches.forEach(toggle => {
                         const moduleId = toggle.dataset.module;
                         const moduleSettings = settings[moduleId];
-                        const isEnabled = moduleSettings ? moduleSettings.isEnabled !== false : true;
+                        const isEnabled = moduleSettings ? moduleSettings.isEnabled === true : false;
 
                         // Set data attribute and update visual
                         toggle.dataset.active = isEnabled.toString();
@@ -1072,7 +989,7 @@
                     toggleSwitches.forEach(toggle => {
                         const moduleId = toggle.dataset.module;
                         const moduleSettings = newSettings[moduleId];
-                        const isEnabled = moduleSettings ? moduleSettings.isEnabled !== false : true;
+                        const isEnabled = moduleSettings ? moduleSettings.isEnabled === true : false;
 
                         // Update data attribute and visual if changed
                         if (toggle.dataset.active !== isEnabled.toString()) {
@@ -1119,51 +1036,44 @@
                 console.error('[Sidekick] Weapon overview link element not found!');
             }
 
-            // Save button
-            saveBtn.addEventListener('click', async () => {
-                // Get current settings from storage to preserve other modules
-                chrome.storage.local.get(['sidekick_settings'], (result) => {
-                    const settings = result.sidekick_settings || {};
+            // Auto-save on toggle click (replaces save button)
+            toggleSwitches.forEach(toggle => {
+                // Skip notif-sound toggle - it has specialized handling in attachNotificationsTabListeners
+                if (toggle.dataset.module === 'notif-sound') return;
 
-                    // Update settings with current toggle states
-                    toggleSwitches.forEach(toggle => {
-                        const moduleId = toggle.dataset.module;
-                        const isEnabled = toggle.dataset.active === 'true';
+                toggle.addEventListener('click', () => {
+                    const track = toggle.querySelector('.toggle-track');
+                    const thumb = toggle.querySelector('.toggle-thumb');
+                    const isActive = toggle.dataset.active === 'true';
+                    const moduleId = toggle.dataset.module;
 
-                        // Update or create module settings
+                    // Toggle the state
+                    toggle.dataset.active = (!isActive).toString();
+                    this.updateToggleVisual(track, thumb, !isActive);
+
+                    // AUTO-SAVE: Save immediately after toggle
+                    chrome.storage.local.get(['sidekick_settings'], (result) => {
+                        const settings = result.sidekick_settings || {};
+
                         if (!settings[moduleId]) {
                             settings[moduleId] = {};
                         }
-                        settings[moduleId].isEnabled = isEnabled;
-                    });
+                        settings[moduleId].isEnabled = !isActive;
 
-                    // Save unified settings object
-                    chrome.storage.local.set({ sidekick_settings: settings }, () => {
-                        // ALSO save to legacy format for backwards compatibility
-                        toggleSwitches.forEach(toggle => {
-                            const moduleId = toggle.dataset.module;
-                            const isEnabled = toggle.dataset.active === 'true';
-                            const legacyKey = `sidekick_${moduleId.replace(/-/g, '_')}`;
-                            chrome.storage.local.set({ [legacyKey]: { isEnabled } });
+                        chrome.storage.local.set({ sidekick_settings: settings }, () => {
+                            console.log(`✅ Auto-saved ${moduleId}: ${!isActive ? 'ON' : 'OFF'}`);
+                            this.showStatus(statusDiv, `✅ ${moduleId.replace(/-/g, ' ')} ${!isActive ? 'enabled' : 'disabled'}`, 'success');
+
+                            // Show toast notification
+                            if (window.SidekickModules.Core.NotificationSystem) {
+                                window.SidekickModules.Core.NotificationSystem.show(
+                                    'Setting Saved',
+                                    `${moduleId.replace(/-/g, ' ')} ${!isActive ? 'enabled' : 'disabled'}`,
+                                    'success',
+                                    1500
+                                );
+                            }
                         });
-
-                        this.showStatus(statusDiv, 'Module settings saved successfully!', 'success');
-
-                        if (window.SidekickModules.Core.NotificationSystem) {
-                            window.SidekickModules.Core.NotificationSystem.show(
-                                'Modules Updated',
-                                'Reloading page to apply changes...',
-                                'info',
-                                2000
-                            );
-                        }
-
-                        console.log('✅ Saved settings (unified + legacy):', settings);
-
-                        // Reload page to apply changes
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 500);
                     });
                 });
             });
@@ -1182,7 +1092,8 @@
                 xanaxAutoLimitDisplay.textContent = xanaxAutoLimitSlider.value;
             });
 
-            saveXanaxBtn.addEventListener('click', async () => {
+            // Auto-save function for Xanax settings
+            const autoSaveXanax = async () => {
                 const settings = {
                     autoLimit: parseInt(xanaxAutoLimitSlider.value),
                     showRelative: xanaxRelativeCheckbox.checked,
@@ -1191,21 +1102,27 @@
 
                 try {
                     await window.SidekickModules.Core.ChromeStorage.set('sidekick_xanax_viewer', settings);
-                    this.showStatus(xanaxStatusDiv, 'Xanax Viewer settings saved!', 'success');
+                    this.showStatus(xanaxStatusDiv, '✅ Xanax settings saved', 'success');
 
                     if (window.SidekickModules.Core.NotificationSystem) {
                         window.SidekickModules.Core.NotificationSystem.show(
-                            'Xanax Viewer Settings',
-                            'Settings saved successfully',
+                            'Settings Saved',
+                            'Xanax Viewer settings saved',
                             'success',
-                            3000
+                            1500
                         );
                     }
                 } catch (error) {
                     console.error('Failed to save Xanax Viewer settings:', error);
                     this.showStatus(xanaxStatusDiv, 'Failed to save settings', 'error');
                 }
-            });
+            };
+
+            // Auto-save on slider change
+            xanaxAutoLimitSlider.addEventListener('change', autoSaveXanax);
+
+            // Auto-save on checkbox change
+            xanaxRelativeCheckbox.addEventListener('change', autoSaveXanax);
 
             clearCacheBtn.addEventListener('click', async () => {
                 try {
@@ -1242,12 +1159,12 @@
                 chainThresholdDisplay.textContent = `${chainThresholdSlider.value} min`;
             });
 
-            saveChainBtn.addEventListener('click', async () => {
-                // Get actual toggle state (not hardcoded!)
+            // Auto-save function for Chain Timer settings
+            const autoSaveChain = async () => {
                 const isEnabled = chainTimerToggle ? chainTimerToggle.dataset.active === 'true' : false;
 
                 const settings = {
-                    isEnabled: isEnabled,  // Use actual toggle state
+                    isEnabled: isEnabled,
                     alertThresholdSeconds: parseFloat(chainThresholdSlider.value) * 60,
                     alertsEnabled: chainAlertsCheckbox.checked,
                     popupEnabled: chainPopupCheckbox.checked,
@@ -1257,40 +1174,28 @@
 
                 try {
                     await window.SidekickModules.Core.ChromeStorage.set('sidekick_chain_timer', settings);
-                    this.showStatus(chainStatusDiv, 'Chain Timer settings saved!', 'success');
-
-                    // Immediately apply the settings to the chain timer module
-                    if (window.SidekickModules?.ChainTimer) {
-                        window.SidekickModules.ChainTimer.isEnabled = isEnabled;
-                        window.SidekickModules.ChainTimer.alertThresholdSeconds = settings.alertThresholdSeconds;
-                        window.SidekickModules.ChainTimer.alertsEnabled = settings.alertsEnabled;
-                        window.SidekickModules.ChainTimer.popupEnabled = settings.popupEnabled;
-                        window.SidekickModules.ChainTimer.screenFlashEnabled = settings.screenFlashEnabled;
-                        window.SidekickModules.ChainTimer.floatingDisplayEnabled = settings.floatingDisplayEnabled;
-
-                        // Start or stop monitoring based on enabled state
-                        if (isEnabled) {
-                            console.log('✅ Chain Timer enabled via settings');
-                            window.SidekickModules.ChainTimer.startMonitoring();
-                        } else {
-                            console.log('⏸️ Chain Timer disabled via settings');
-                            window.SidekickModules.ChainTimer.stopMonitoring();
-                        }
-                    }
+                    this.showStatus(chainStatusDiv, '✅ Chain Timer settings saved', 'success');
 
                     if (window.SidekickModules.Core.NotificationSystem) {
                         window.SidekickModules.Core.NotificationSystem.show(
-                            'Chain Timer Settings',
-                            isEnabled ? 'Chain Timer enabled' : 'Chain Timer disabled',
+                            'Settings Saved',
+                            'Chain Timer settings saved',
                             'success',
-                            3000
+                            1500
                         );
                     }
                 } catch (error) {
                     console.error('Failed to save Chain Timer settings:', error);
                     this.showStatus(chainStatusDiv, 'Failed to save settings', 'error');
                 }
-            });
+            };
+
+            // Auto-save on all input changes
+            chainThresholdSlider.addEventListener('change', autoSaveChain);
+            chainAlertsCheckbox.addEventListener('change', autoSaveChain);
+            chainPopupCheckbox.addEventListener('change', autoSaveChain);
+            chainFlashCheckbox.addEventListener('change', autoSaveChain);
+            panel.querySelector('#sidekick-chain-floating-display').addEventListener('change', autoSaveChain);
         },
 
         // Notifications Tab listeners
@@ -1346,35 +1251,38 @@
                 });
             }
 
-            if (saveNotifBtn) {
-                saveNotifBtn.addEventListener('click', async () => {
-                    const settings = {
-                        soundEnabled: notifSoundToggle?.dataset.active === 'true',
-                        autoDismiss: notifAutoDismissCheckbox.checked,
-                        duration: parseInt(notifDurationSlider.value) * 1000
-                    };
+            // Auto-save function for Notifications settings
+            const autoSaveNotif = async () => {
+                const settings = {
+                    soundEnabled: notifSoundToggle?.dataset.active === 'true',
+                    autoDismiss: notifAutoDismissCheckbox.checked,
+                    duration: parseInt(notifDurationSlider.value) * 1000
+                };
 
-                    try {
-                        await window.SidekickModules.Core.ChromeStorage.set('sidekick_notifications', settings);
-                        this.showStatus(notifStatusDiv, 'Notification settings saved!', 'success');
+                try {
+                    await window.SidekickModules.Core.ChromeStorage.set('sidekick_notifications', settings);
+                    this.showStatus(notifStatusDiv, '✅ Notification settings saved', 'success');
 
-                        console.log('🔊 Notification settings saved:', settings);
-                        console.log('🔊 Test notification will display for:', settings.duration, 'ms (', settings.duration / 1000, 'seconds)');
-
-                        // Show notification (which will play sound if enabled and use saved duration)
-                        if (window.SidekickModules.Core.NotificationSystem) {
-                            window.SidekickModules.Core.NotificationSystem.show(
-                                'Settings Saved',
-                                'Notification settings updated successfully!',
-                                'success',
-                                settings.duration // Use the actual saved duration!
-                            );
-                        }
-                    } catch (error) {
-                        console.error('Failed to save Notification settings:', error);
-                        this.showStatus(notifStatusDiv, 'Failed to save settings', 'error');
+                    if (window.SidekickModules.Core.NotificationSystem) {
+                        window.SidekickModules.Core.NotificationSystem.show(
+                            'Settings Saved',
+                            'Notification settings saved',
+                            'success',
+                            1500
+                        );
                     }
-                });
+                } catch (error) {
+                    console.error('Failed to save Notification settings:', error);
+                    this.showStatus(notifStatusDiv, 'Failed to save settings', 'error');
+                }
+            };
+
+            // Auto-save on input changes
+            if (notifDurationSlider) {
+                notifDurationSlider.addEventListener('change', autoSaveNotif);
+            }
+            if (notifAutoDismissCheckbox) {
+                notifAutoDismissCheckbox.addEventListener('change', autoSaveNotif);
             }
         },
 
@@ -1386,51 +1294,61 @@
             const saveMugCalcBtn = panel.querySelector('#sidekick-save-mugcalc-settings');
             const mugCalcStatusDiv = panel.querySelector('#sidekick-mugcalc-status');
 
-            if (saveMugCalcBtn) {
-                saveMugCalcBtn.addEventListener('click', async () => {
-                    try {
-                        // Save mug merits
-                        if (mugMeritsInput) {
-                            const mugMeritsVal = parseInt(mugMeritsInput.value.trim(), 10);
-                            await window.SidekickModules.Core.ChromeStorage.set('mugMerits', isNaN(mugMeritsVal) ? 0 : Math.min(Math.max(mugMeritsVal, 0), 10));
-                        }
-
-                        // Save plunder percentage
-                        if (plunderInput) {
-                            let plunderInputVal = parseFloat(plunderInput.value.trim());
-                            if (plunderInputVal === '' || parseFloat(plunderInputVal) === 0) {
-                                plunderInputVal = 0;
-                            } else {
-                                plunderInputVal = parseFloat(plunderInputVal);
-                                if (plunderInputVal < 20 || plunderInputVal > 50) {
-                                    this.showStatus(mugCalcStatusDiv, 'Plunder percentage must be between 20% and 49%', 'error');
-                                    return;
-                                }
-                            }
-                            await window.SidekickModules.Core.ChromeStorage.set('mugPlunder', plunderInputVal);
-                        }
-
-                        // Save threshold
-                        if (thresholdInput) {
-                            const thresholdVal = parseInt(thresholdInput.value.trim(), 10);
-                            await window.SidekickModules.Core.ChromeStorage.set('mugThreshold', isNaN(thresholdVal) ? 0 : thresholdVal);
-                        }
-
-                        this.showStatus(mugCalcStatusDiv, 'Mug calculator settings saved!', 'success');
-
-                        if (window.SidekickModules.Core.NotificationSystem) {
-                            window.SidekickModules.Core.NotificationSystem.show(
-                                'Mug Calculator',
-                                'Settings saved successfully',
-                                'success',
-                                3000
-                            );
-                        }
-                    } catch (error) {
-                        console.error('Failed to save mug calculator settings:', error);
-                        this.showStatus(mugCalcStatusDiv, 'Failed to save settings', 'error');
+            // Auto-save function for Mug Calculator settings
+            const autoSaveMugCalc = async () => {
+                try {
+                    // Save mug merits
+                    if (mugMeritsInput) {
+                        const mugMeritsVal = parseInt(mugMeritsInput.value.trim(), 10);
+                        await window.SidekickModules.Core.ChromeStorage.set('mugMerits', isNaN(mugMeritsVal) ? 0 : Math.min(Math.max(mugMeritsVal, 0), 10));
                     }
-                });
+
+                    // Save plunder percentage
+                    if (plunderInput) {
+                        let plunderInputVal = parseFloat(plunderInput.value.trim());
+                        if (plunderInputVal === '' || parseFloat(plunderInputVal) === 0) {
+                            plunderInputVal = 0;
+                        } else {
+                            plunderInputVal = parseFloat(plunderInputVal);
+                            if (plunderInputVal < 20 || plunderInputVal > 50) {
+                                this.showStatus(mugCalcStatusDiv, 'Plunder percentage must be between 20% and 49%', 'error');
+                                return;
+                            }
+                        }
+                        await window.SidekickModules.Core.ChromeStorage.set('mugPlunder', plunderInputVal);
+                    }
+
+                    // Save threshold
+                    if (thresholdInput) {
+                        const thresholdVal = parseInt(thresholdInput.value.trim(), 10);
+                        await window.SidekickModules.Core.ChromeStorage.set('mugThreshold', isNaN(thresholdVal) ? 0 : thresholdVal);
+                    }
+
+                    this.showStatus(mugCalcStatusDiv, '✅ Mug Calculator settings saved', 'success');
+
+                    if (window.SidekickModules.Core.NotificationSystem) {
+                        window.SidekickModules.Core.NotificationSystem.show(
+                            'Settings Saved',
+                            'Mug Calculator settings saved',
+                            'success',
+                            1500
+                        );
+                    }
+                } catch (error) {
+                    console.error('Failed to save mug calculator settings:', error);
+                    this.showStatus(mugCalcStatusDiv, 'Failed to save settings', 'error');
+                }
+            };
+
+            // Auto-save on blur (when user clicks away from input)
+            if (mugMeritsInput) {
+                mugMeritsInput.addEventListener('blur', autoSaveMugCalc);
+            }
+            if (plunderInput) {
+                plunderInput.addEventListener('blur', autoSaveMugCalc);
+            }
+            if (thresholdInput) {
+                thresholdInput.addEventListener('blur', autoSaveMugCalc);
             }
         },
 

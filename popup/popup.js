@@ -35,9 +35,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const moduleId = toggle.dataset.module;
             if (!moduleId) return; // Skip if no module ID
 
-            // Load saved state (default to true if not set)
+            // Load saved state (default to FALSE if not set)
             const moduleSettings = settings[moduleId];
-            const isEnabled = moduleSettings ? moduleSettings.isEnabled !== false : true;
+            const isEnabled = moduleSettings ? moduleSettings.isEnabled === true : false;
             toggle.checked = isEnabled;
         });
     });
@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (!moduleId) return;
 
                 const moduleSettings = newSettings[moduleId];
-                const isEnabled = moduleSettings ? moduleSettings.isEnabled !== false : true;
+                const isEnabled = moduleSettings ? moduleSettings.isEnabled === true : false;
 
                 // Only update if changed to avoid unnecessary reflows
                 if (toggle.checked !== isEnabled) {
@@ -417,99 +417,6 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(() => messageEl.remove(), 3000);
     }
 
-
-    // Load premium subscription status
-    loadPremiumStatus();
-
-    // Premium action button - changed to refresh
-    const premiumActionBtn = document.getElementById('premiumActionBtn');
-    if (premiumActionBtn) {
-        premiumActionBtn.addEventListener('click', async () => {
-            premiumActionBtn.textContent = 'Refreshing...';
-            premiumActionBtn.disabled = true;
-
-            // Force reload premium status
-            await loadPremiumStatus();
-
-            premiumActionBtn.disabled = false;
-            showMessage('Premium status refreshed!', 'success');
-        });
-    }
-
-    async function loadPremiumStatus() {
-        const premiumIcon = document.getElementById('premiumIcon');
-        const premiumLabel = document.getElementById('premiumLabel');
-        const premiumDays = document.getElementById('premiumDays');
-        const premiumDetails = document.getElementById('premiumDetails');
-        const premiumActionBtn = document.getElementById('premiumActionBtn');
-        const premiumStatus = document.getElementById('premiumStatus');
-
-        try {
-            // Get API key
-            const result = await chrome.storage.local.get(['sidekick_api_key']);
-
-            if (!result.sidekick_api_key) {
-                // No API key
-                premiumIcon.textContent = '🔒';
-                premiumLabel.textContent = 'Premium Inactive';
-                premiumDays.textContent = 'No API key';
-                premiumDetails.innerHTML = 'Please set your API key in settings';
-                premiumActionBtn.textContent = 'Refresh';
-                premiumStatus.style.borderColor = 'rgba(244, 67, 54, 0.3)';
-                return;
-            }
-
-            // Call Worker to verify premium status
-            const response = await fetch('https://sidekick-premium.akaffebtd.workers.dev/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ apiKey: result.sidekick_api_key })
-            });
-
-            if (!response.ok) {
-                throw new Error('Worker API call failed');
-            }
-
-            const data = await response.json();
-
-            // Display premium status from Worker
-            if (!data.premium?.active) {
-                // Not subscribed
-                premiumIcon.textContent = '🔒';
-                premiumLabel.textContent = 'Premium Inactive';
-                premiumDays.textContent = 'Not active';
-                premiumDetails.innerHTML = 'Send Xanax to Machiacelli to unlock premium features';
-                premiumActionBtn.textContent = 'Refresh';
-                premiumStatus.style.borderColor = 'rgba(244, 67, 54, 0.3)';
-            } else {
-                // Active subscription
-                const days = data.premium.daysRemaining || 0;
-
-                premiumIcon.textContent = '💎';
-                premiumLabel.textContent = 'Premium Active';
-                premiumDays.textContent = `${days} day${days !== 1 ? 's' : ''} left`;
-
-                if (data.premium.expiresAt) {
-                    premiumDetails.innerHTML = `Expires: ${new Date(data.premium.expiresAt).toLocaleDateString()}`;
-                } else {
-                    premiumDetails.innerHTML = data.isAdmin ? 'Admin: Unlimited' : 'Active';
-                }
-
-                premiumActionBtn.textContent = 'Refresh';
-                premiumStatus.style.borderColor = 'rgba(76, 175, 80, 0.5)';
-                premiumStatus.style.background = 'linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(56, 142, 60, 0.1))';
-            }
-        } catch (error) {
-            console.error('❌ Failed to load premium status:', error);
-            // Show error state
-            premiumIcon.textContent = '⚠️';
-            premiumLabel.textContent = 'Premium Status';
-            premiumDays.textContent = 'Error loading';
-            premiumDetails.innerHTML = 'Click refresh to try again';
-            premiumActionBtn.textContent = 'Refresh';
-            premiumStatus.style.borderColor = 'rgba(255, 152, 0, 0.3)';
-        }
-    }
 
     function loadExtensionInfo() {
         chrome.storage.local.get(['sidekick_api_key'], function (result) {

@@ -91,58 +91,28 @@
         // Worker URL
         WORKER_URL: 'https://sidekick-premium.akaffebtd.workers.dev',
 
-        // Verify premium status with server
+        // Verify premium status with server (PAYWALL REMOVED - Always returns active)
         async verifyPremium(forceRefresh = false) {
-            // Check cache (5 minutes)
-            if (!forceRefresh && this.cachedStatus && Date.now() < this.cacheExpiry) {
-                console.log('💎 Using cached premium status');
-                return this.cachedStatus;
-            }
-
-            console.log('🔍 Verifying premium status with server...');
-
-            try {
-                const apiKey = await window.SidekickModules.Core.ChromeStorage.get('sidekick_api_key');
-                if (!apiKey) {
-                    console.warn('⚠️ No API key for premium verification');
-                    return { success: false, premium: { active: false }, isAdmin: false };
-                }
-
-                const response = await fetch(`${this.WORKER_URL}/verify`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ apiKey })
-                });
-
-                if (!response.ok) {
-                    console.error('❌ Server verification failed:', response.status);
-                    return { success: false, premium: { active: false }, isAdmin: false };
-                }
-
-                const data = await response.json();
-
-                // Cache for 5 minutes
-                this.cachedStatus = data;
-                this.cacheExpiry = Date.now() + (5 * 60 * 1000);
-
-                console.log('✅ Premium status verified:', data);
-                return data;
-            } catch (error) {
-                console.error('❌ Premium verification error:', error);
-                return { success: false, premium: { active: false }, isAdmin: false };
-            }
+            console.log('💎 Premium check bypassed - always active');
+            return {
+                success: true,
+                premium: {
+                    active: true,
+                    daysRemaining: 999,
+                    expiresAt: null
+                },
+                isAdmin: true
+            };
         },
 
-        // Check if user is admin (server-side verification)
+        // Check if user is admin (PAYWALL REMOVED - Always returns true)
         async isAdmin() {
-            const status = await this.verifyPremium();
-            return status.isAdmin || false;
+            return true;
         },
 
-        // Check if user has active subscription (server-side verification)
+        // Check if user has active subscription (PAYWALL REMOVED - Always returns true)
         async isSubscribed() {
-            const status = await this.verifyPremium();
-            return status.premium?.active || false;
+            return true;
         },
 
         // Get remaining subscription time in days

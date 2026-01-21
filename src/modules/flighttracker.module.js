@@ -24,14 +24,6 @@
                 await this.loadSettings();
                 await this.loadTrackedPlayers();
 
-                // Check premium status
-                const hasPremium = await this.checkPremium();
-                if (!hasPremium) {
-                    console.log('⚠️ Flight Tracker: Premium subscription required');
-                    this.isEnabled = false;
-                    return;
-                }
-
                 if (this.isEnabled) {
                     this.startMonitoring();
                 }
@@ -155,13 +147,6 @@
             }
 
             try {
-                // Premium check
-                const hasPremium = await this.checkPremium();
-                if (!hasPremium) {
-                    console.log('⚠️ Flight Tracker button hidden: Premium required');
-                    return;
-                }
-
                 // Find the username/profile ID element to anchor to
                 const anchorElement = document.querySelector('#skip-to-content');
                 if (!anchorElement) {
