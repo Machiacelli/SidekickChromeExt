@@ -410,44 +410,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function showMessage(message, type = 'info') {
         const messageEl = document.createElement('div');
-        const bgColor = type === 'success' ? 'rgba(76, 175, 80, 0.95)' :
-            type === 'warning' ? 'rgba(255, 152, 0, 0.95)' :
-                type === 'error' ? 'rgba(244, 67, 54, 0.95)' :
-                    'rgba(33, 150, 243, 0.95)';
-
-        messageEl.style.cssText = `
-            position: fixed; 
-            top: 10px; 
-            left: 50%; 
-            transform: translateX(-50%) translateY(-20px); 
-            padding: 12px 20px; 
-            background: ${bgColor}; 
-            color: white; 
-            border-radius: 6px; 
-            font-size: 13px; 
-            font-weight: 500; 
-            z-index: 999999; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            opacity: 0;
-            transition: all 0.3s ease;
-            max-width: 90%;
-            text-align: center;
-        `;
+        const bgColor = type === 'success' ? 'rgba(76, 175, 80, 0.9)' : type === 'warning' ? 'rgba(255, 152, 0, 0.9)' : 'rgba(33, 150, 243, 0.9)';
+        messageEl.style.cssText = `position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 12px 20px; background: ${bgColor}; color: white; border-radius: 6px; font-size: 13px; font-weight: 500; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.3);`;
         messageEl.textContent = message;
         document.body.appendChild(messageEl);
-
-        // Trigger animation
-        requestAnimationFrame(() => {
-            messageEl.style.opacity = '1';
-            messageEl.style.transform = 'translateX(-50%) translateY(0)';
-        });
-
-        // Remove after 3 seconds with fade out
-        setTimeout(() => {
-            messageEl.style.opacity = '0';
-            messageEl.style.transform = 'translateX(-50%) translateY(-20px)';
-            setTimeout(() => messageEl.remove(), 300);
-        }, 3000);
+        setTimeout(() => messageEl.remove(), 3000);
     }
 
 
