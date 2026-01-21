@@ -326,38 +326,50 @@
             transform: translateX(24px);
         }
 
-        /* Module Control Panel */
+        /* Module Control Panel - Two Column Grid */
+        .module-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
         .module-item {
             display: flex;
             align-items: center;
-            padding: 12px 15px;
-            margin-bottom: 8px;
+            padding: 10px 12px;
             background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
+            border-radius: 6px;
             transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .module-item:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(76, 175, 80, 0.3);
         }
 
         .module-icon {
-            font-size: 20px;
-            margin-right: 12px;
+            font-size: 16px;
+            margin-right: 8px;
+            flex-shrink: 0;
         }
 
         .module-name {
             flex: 1;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .module-toggle {
             position: relative;
             display: inline-block;
-            width: 48px;
-            height: 24px;
-            margin-right: 8px;
+            width: 40px;
+            height: 20px;
+            flex-shrink: 0;
         }
 
         .module-toggle input {
@@ -374,19 +386,19 @@
             right: 0;
             bottom: 0;
             background-color: rgba(255, 255, 255, 0.2);
-            transition: .4s;
-            border-radius: 24px;
+            transition: .3s;
+            border-radius: 20px;
         }
 
         .module-toggle .slider:before {
             position: absolute;
             content: "";
-            height: 18px;
-            width: 18px;
+            height: 14px;
+            width: 14px;
             left: 3px;
             bottom: 3px;
             background-color: white;
-            transition: .4s;
+            transition: .3s;
             border-radius: 50%;
         }
 
@@ -395,23 +407,7 @@
         }
 
         .module-toggle input:checked+.slider:before {
-            transform: translateX(24px);
-        }
-
-        .module-settings-btn {
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 16px;
-            cursor: pointer;
-            padding: 4px 8px;
-            transition: all 0.2s ease;
-        }
-
-        .module-settings-btn:hover {
-            color: white;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
+            transform: translateX(20px);
         }
 
         .tab-section-title {
@@ -506,112 +502,114 @@
         <div class="tab-content active" id="modules-tab">
             <div class="tab-section-title">FEATURE TOGGLES</div>
 
-            <div class="module-item">
-                <span class="module-icon">⚔️</span>
-                <span class="module-name">Fast Attack</span>
-                <label class="module-toggle">
-                    <input type="checkbox" data-module="attack-button-mover" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
+            <div class="module-grid">
+                <div class="module-item">
+                    <span class="module-icon">⚔️</span>
+                    <span class="module-name">Fast Attack</span>
+                    <label class="module-toggle">
+                        <input type="checkbox" data-module="attack-button-mover" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
 
-            <div class="module-item">
-                <span class="module-icon">⏰</span>
-                <span class="module-name">Time on Tab</span>
-                <label class="module-toggle">
-                    <input type="checkbox" data-module="time-on-tab" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
+                <div class="module-item">
+                    <span class="module-icon">⏰</span>
+                    <span class="module-name">Time on Tab</span>
+                    <label class="module-toggle">
+                        <input type="checkbox" data-module="time-on-tab" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
 
-            <div class="module-item">
-                <span class="module-icon">🎲</span>
-                <span class="module-name">Random Target</span>
-                <label class="module-toggle">
-                    <input type="checkbox" data-module="random-target" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
+                <div class="module-item">
+                    <span class="module-icon">🎲</span>
+                    <span class="module-name">Random Target</span>
+                    <label class="module-toggle">
+                        <input type="checkbox" data-module="random-target" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
 
-            <div class="module-item">
-                <span class="module-icon">🏎️</span>
-                <span class="module-name">Racing Alert</span>
-                <label class="module-toggle">
-                    <input type="checkbox" data-module="racing-alert" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
+                <div class="module-item">
+                    <span class="module-icon">🏎️</span>
+                    <span class="module-name">Racing Alert</span>
+                    <label class="module-toggle">
+                        <input type="checkbox" data-module="racing-alert" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
 
-            <div class="module-item">
-                <span class="module-icon">🛡️</span>
-                <span class="module-name">Refill Blocker</span>
-                <label class="module-toggle">
-                    <input type="checkbox" data-module="refill-blocker" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
+                <div class="module-item">
+                    <span class="module-icon">🛡️</span>
+                    <span class="module-name">Refill Blocker</span>
+                    <label class="module-toggle">
+                        <input type="checkbox" data-module="refill-blocker" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
 
-            <div class="module-item">
-                <span class="module-icon">⛓️</span>
-                <span class="module-name">Extended Chain View</span>
-                <label class="module-toggle">
-                    <input type="checkbox" data-module="extended-chain-view" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
+                <div class="module-item">
+                    <span class="module-icon">⛓️</span>
+                    <span class="module-name">Chain View</span>
+                    <label class="module-toggle">
+                        <input type="checkbox" data-module="extended-chain-view" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
 
-            <div class="module-item">
-                <span class="module-icon">🥊</span>
-                <span class="module-name">Mug Calculator</span>
-                <label class="module-toggle">
-                    <input type="checkbox" data-module="mug-calculator" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
+                <div class="module-item">
+                    <span class="module-icon">🥊</span>
+                    <span class="module-name">Mug Calc</span>
+                    <label class="module-toggle">
+                        <input type="checkbox" data-module="mug-calculator" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
 
-            <div class="module-item">
-                <span class="module-icon">🎯</span>
-                <span class="module-name">Weapon XP Tracker</span>
-                <label class="module-toggle">
-                    <input type="checkbox" data-module="weapon-xp-tracker" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
+                <div class="module-item">
+                    <span class="module-icon">🎯</span>
+                    <span class="module-name">Weapon XP</span>
+                    <label class="module-toggle">
+                        <input type="checkbox" data-module="weapon-xp-tracker" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
 
-            <div class="module-item">
-                <span class="module-icon">⏱️</span>
-                <span class="module-name">Chain Timer</span>
-                <label class="module-toggle">
-                    <input type="checkbox" data-module="chain-timer" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
+                <div class="module-item">
+                    <span class="module-icon">⏱️</span>
+                    <span class="module-name">Chain Timer</span>
+                    <label class="module-toggle">
+                        <input type="checkbox" data-module="chain-timer" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
 
-            <div class="module-item">
-                <span class="module-icon">💊</span>
-                <span class="module-name">Xanax Viewer</span>
-                <label class="module-toggle">
-                    <input type="checkbox" data-module="xanax-viewer" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
+                <div class="module-item">
+                    <span class="module-icon">💊</span>
+                    <span class="module-name">Xanax Viewer</span>
+                    <label class="module-toggle">
+                        <input type="checkbox" data-module="xanax-viewer" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
 
-            <div class="module-item">
-                <span class="module-icon">🔔</span>
-                <span class="module-name">Notification Sounds</span>
-                <label class="module-toggle">
-                    <input type="checkbox" data-module="notif-sound" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
+                <div class="module-item">
+                    <span class="module-icon">🔔</span>
+                    <span class="module-name">Notif Sounds</span>
+                    <label class="module-toggle">
+                        <input type="checkbox" data-module="notif-sound" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
 
-            <div class="module-item">
-                <span class="module-icon">🚫</span>
-                <span class="module-name">Block Training</span>
-                <label class="module-toggle">
-                    <input type="checkbox" id="trainingBlockerToggle" data-module="blocktraining">
-                    <span class="slider"></span>
-                </label>
+                <div class="module-item">
+                    <span class="module-icon">🚫</span>
+                    <span class="module-name">Block Training</span>
+                    <label class="module-toggle">
+                        <input type="checkbox" id="trainingBlockerToggle" data-module="blocktraining">
+                        <span class="slider"></span>
+                    </label>
+                </div>
             </div>
         </div>
 
