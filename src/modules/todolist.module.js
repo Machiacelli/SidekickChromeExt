@@ -872,7 +872,6 @@
                     console.log(`💊 Xanax status confirmed: ${xanClamped}/3 (lifetime: ${currentXan}, baseline: ${baselineXan})`);
                 }
             }
-            }
 
             // 🆕 PRIORITY: Check refills data first (most reliable method)
             if (refillsData) {
