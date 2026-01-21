@@ -529,6 +529,24 @@
         findOrCreateCooldownTimer(currentTimer, cooldownType) {
             console.log(`🔍 findOrCreateCooldownTimer for ${cooldownType}, currentTimer:`, currentTimer.id);
 
+            // CRITICAL FIX: If current timer is a blank/custom timer (not an API timer),
+            // use it directly instead of searching for existing cooldown timers.
+            // This prevents blank timers from being replaced by existing cooldown timers.
+            if (!currentTimer.isApiTimer) {
+                console.log(`ℹ️ Current timer is a blank/custom timer, using it directly`);
+                console.log(`🔍 Not searching for existing ${cooldownType} timers to preserve user's blank timer`);
+
+                // Save this association for future use
+                this.cooldownWindowMap[cooldownType] = currentTimer.id;
+                console.log(`💾 Saved new ${cooldownType} → ${currentTimer.id} mapping`);
+
+                // Save immediately to persist mapping
+                this.saveTimers();
+                console.log(`✅ Cooldown window mapping persisted to storage`);
+
+                return currentTimer;
+            }
+
             // FIRST: Check if we have a saved mapping for this cooldown type
             if (this.cooldownWindowMap[cooldownType]) {
                 const mappedTimerId = this.cooldownWindowMap[cooldownType];
