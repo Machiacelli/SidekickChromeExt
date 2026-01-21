@@ -883,21 +883,69 @@
 
                         // Read file
                         const text = await file.text();
-                        const backup = JSON.parse(text);
 
-                        // Validate backup structure
-                        if (!backup.data || !backup.version) {
-                            throw new Error('Invalid backup file format');
+                        // Parse JSON with detailed error handling
+                        let backup;
+                        try {
+                            backup = JSON.parse(text);
+                            console.log('📦 Backup file parsed successfully');
+                            console.log('📦 Backup structure:', {
+                                hasVersion: !!backup.version,
+                                hasTimestamp: !!backup.timestamp,
+                                hasExtensionVersion: !!backup.extensionVersion,
+                                hasData: !!backup.data,
+                                dataType: typeof backup.data,
+                                dataKeys: backup.data ? Object.keys(backup.data).length : 0
+                            });
+                        } catch (parseError) {
+                            console.error('❌ JSON parse error:', parseError);
+                            throw new Error('File is not valid JSON. Please ensure you selected a valid Sidekick backup file.');
                         }
 
-                        // Show confirmation
+                        // Detailed validation with specific error messages
+                        if (!backup) {
+                            throw new Error('Backup file is empty or corrupted.');
+                        }
+
+                        if (!backup.version) {
+                            console.error('❌ Missing version field. Backup structure:', Object.keys(backup));
+                            throw new Error('Invalid backup: Missing version field. This may not be a Sidekick backup file.');
+                        }
+
+                        if (!backup.data) {
+                            console.error('❌ Missing data field. Backup structure:', Object.keys(backup));
+                            throw new Error('Invalid backup: Missing data field. The backup file appears to be corrupted.');
+                        }
+
+                        if (typeof backup.data !== 'object' || backup.data === null) {
+                            console.error('❌ Invalid data field type:', typeof backup.data);
+                            throw new Error('Invalid backup: Data field is not an object. The backup file is corrupted.');
+                        }
+
                         const itemCount = Object.keys(backup.data).length;
-                        const backupDate = new Date(backup.timestamp).toLocaleString();
+
+                        if (itemCount === 0) {
+                            console.warn('⚠️ Backup contains no data items');
+                            if (!confirm('This backup file contains no data. Continue anyway?')) {
+                                this.showStatus(backupStatus, 'Import cancelled', 'warning');
+                                importBtn.textContent = '📥 Import Data';
+                                importBtn.disabled = false;
+                                importFile.value = '';
+                                return;
+                            }
+                        }
+
+                        // Show confirmation with backup details
+                        const backupDate = backup.timestamp ? new Date(backup.timestamp).toLocaleString() : 'Unknown date';
+                        const backupVersion = backup.extensionVersion || 'Unknown version';
+
+                        console.log(`📦 Backup validated: ${itemCount} items from ${backupDate}`);
 
                         if (!confirm(
                             `Import backup from ${backupDate}?\n\n` +
                             `This will restore ${itemCount} items and may overwrite current data.\n\n` +
-                            `Extension Version: ${backup.extensionVersion}`
+                            `Backup Version: ${backupVersion}\n` +
+                            `Current Version: ${chrome.runtime.getManifest().version}`
                         )) {
                             this.showStatus(backupStatus, 'Import cancelled', 'warning');
                             importBtn.textContent = '📥 Import Data';
@@ -907,6 +955,7 @@
                         }
 
                         this.showStatus(backupStatus, 'Importing data...', 'info');
+                        console.log('📥 Starting import of', itemCount, 'items...');
 
                         // Import data to Chrome storage
                         await new Promise((resolve, reject) => {
@@ -919,6 +968,7 @@
                             });
                         });
 
+                        console.log('✅ Import successful!');
                         this.showStatus(backupStatus, 'Data imported! Reloading page...', 'success');
 
                         if (window.SidekickModules.Core.NotificationSystem) {
@@ -936,7 +986,13 @@
                         }, 2000);
 
                     } catch (error) {
-                        console.error('Import failed:', error);
+                        console.error('❌ Import failed:', error);
+                        console.error('Error details:', {
+                            name: error.name,
+                            message: error.message,
+                            stack: error.stack
+                        });
+
                         this.showStatus(backupStatus, 'Import failed: ' + error.message, 'error');
 
                         if (window.SidekickModules.Core.NotificationSystem) {
