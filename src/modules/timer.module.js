@@ -634,16 +634,17 @@
                 // This prevents automatic API spam
             }, 300000);
 
-            // VIRUS CHECKING DISABLED - User must manually add via dropdown
-            // Automatic creation was creating unwanted timers
-            // setInterval(() => {
-            //     this.checkVirusCoding();
-            // }, 300000);
-            // setTimeout(() => {
-            //     this.checkVirusCoding();
-            // }, 10000);
+            // Check virus coding status every 5 minutes (only if user has opted in)
+            setInterval(() => {
+                this.checkVirusCoding();
+            }, 300000);
 
-            console.log('⏰ Periodic synchronization started');
+            // Initial virus check after 10 seconds (only if user has opted in)
+            setTimeout(() => {
+                this.checkVirusCoding();
+            }, 10000);
+
+            console.log('⏰ Periodic synchronization and virus checking started');
 
             // Check for page visibility changes and sync immediately
             document.addEventListener('visibilitychange', () => {
@@ -727,41 +728,53 @@
 
                 const data = await response.json();
 
-                if (data.error) {
-                    console.warn('⚠️ Virus API Error:', data.error);
+                console.log('🦠 Virus API response:', data);
+
+                // Check if user has opted in to virus tracking
+                // Opt-in happens when they manually add a virus timer via dropdown
+                const virusTrackingEnabled = localStorage.getItem('sidekick_virus_tracking_enabled') === 'true';
+                const hasExistingVirusTimer = this.timers.some(t => t.isVirusTimer);
+
+                if (!virusTrackingEnabled && !hasExistingVirusTimer) {
+                    console.log('🦠 Virus tracking not enabled - user must manually add via dropdown first');
                     return;
                 }
 
-                const now = Math.floor(Date.now() / 1000);
-
                 // Check if virus is being coded
-                if (data?.virus && data.virus.until) {
-                    const virusName = data.virus.item ? data.virus.item.name : 'Virus';
+                if (data.virus && data.virus.until) {
+                    const virusName = data.virus.item?.name || 'Unknown Virus';
                     const endTime = data.virus.until * 1000; // Convert to milliseconds
 
-                    console.log(`🦠 Virus detected: ${virusName}, completes at ${new Date(endTime).toLocaleString()}`);
+                    console.log(`🦠 Virus detected: ${virusName}, ends at: ${new Date(endTime)}`);
 
                     // Check if we already have a virus timer
-                    let virusTimer = this.timers.find(t => t.isVirusTimer);
+                    const existingVirus = this.timers.find(t => t.isVirusTimer);
 
-                    if (virusTimer) {
+                    if (existingVirus) {
                         // Update existing timer
-                        virusTimer.name = `🦠 ${virusName}`;
-                        virusTimer.endTime = endTime;
-                        virusTimer.isCountdown = true;
+                        console.log('🦠 Updating existing virus timer');
+                        existingVirus.name = `🦠 ${virusName}`;
+                        existingVirus.endTime = endTime;
+                        existingVirus.remainingTime = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+                        existingVirus.duration = existingVirus.remainingTime;
                         this.saveTimers();
-                        this.updateTimerDisplay(virusTimer.id);
-                        console.log('🦠 Updated existing virus timer');
+                        this.updateTimerDisplay(existingVirus.id);
                     } else {
-                        // Create new virus timer
+                        // Create new virus timer (only if opted in)
+                        console.log('🦠 Creating new virus timer');
                         this.createVirusTimer(virusName, endTime);
                     }
                 } else {
                     // No virus being coded - remove virus timer if it exists
-                    const virusTimer = this.timers.find(t => t.isVirusTimer);
-                    if (virusTimer) {
-                        console.log('🦠 Virus coding completed - removing timer');
-                        this.deleteTimer(virusTimer.id);
+                    const existingVirus = this.timers.find(t => t.isVirusTimer);
+                    if (existingVirus) {
+                        console.log('🦠 Virus coding complete - removing timer');
+                        const element = document.getElementById(`sidekick-timer-${existingVirus.id}`);
+                        if (element) {
+                            element.remove();
+                        }
+                        this.timers = this.timers.filter(t => t.id !== existingVirus.id);
+                        this.saveTimers();
                     }
                 }
             } catch (error) {
@@ -807,10 +820,12 @@
             };
 
             this.timers.push(timer);
-            // CRITICAL: Save BEFORE rendering to prevent race condition
             this.saveTimers();
             this.renderTimer(timer);
             this.startTimer(timer.id);
+
+            // Set opt-in flag so virus tracking continues
+            localStorage.setItem('sidekick_virus_tracking_enabled', 'true');
 
             console.log(`🦠 Created virus timer: ${virusName}, remaining: ${remainingSeconds}s`);
             return timer;
@@ -830,18 +845,10 @@
                         console.log("⏰ Method 1: Loading via ChromeStorage wrapper");
                         state = await window.SidekickModules.Core.ChromeStorage.get('sidekick_timer_state');
                         if (state && state.timers) {
-                            console.log(`📦 Found ${state.timers.length} timers in storage`);
-
-                            // Filter out virus timers - they should not auto-restore
-                            this.timers = state.timers.filter(timer => !timer.isVirusTimer);
-
-                            if (state.timers.length !== this.timers.length) {
-                                console.log(`🦠 Filtered out ${state.timers.length - this.timers.length} virus timer(s)`);
-                            }
-
+                            this.timers = state.timers;
                             this.cooldownWindowMap = state.cooldownWindowMap || {}; // Load cooldown-to-window mapping
                             loaded = true;
-                            console.log("✅ ChromeStorage wrapper load succeeded, loaded:", this.timers.length, "timers (excluding virus timers)");
+                            console.log("✅ ChromeStorage wrapper load succeeded, loaded:", this.timers.length, "timers");
                             console.log("✅ Loaded cooldown window map:", Object.keys(this.cooldownWindowMap).length, "mappings");
                         }
                     }
@@ -855,11 +862,10 @@
                         console.log("⏰ Method 2: Loading via localStorage fallback");
                         const savedState = JSON.parse(localStorage.getItem('sidekick_timer_state') || '{}');
                         if (savedState && savedState.timers) {
-                            // Filter out virus timers - they should not auto-restore
-                            this.timers = savedState.timers.filter(timer => !timer.isVirusTimer);
+                            this.timers = savedState.timers;
                             this.cooldownWindowMap = savedState.cooldownWindowMap || {}; // Load cooldown-to-window mapping
                             loaded = true;
-                            console.log("✅ localStorage fallback load succeeded, loaded:", this.timers.length, "timers (excluding virus timers)");
+                            console.log("✅ localStorage fallback load succeeded, loaded:", this.timers.length, "timers");
                             console.log("✅ Loaded cooldown window map:", Object.keys(this.cooldownWindowMap).length, "mappings");
                         }
                     } catch (error) {
