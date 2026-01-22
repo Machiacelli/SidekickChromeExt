@@ -855,10 +855,11 @@
                         console.log("⏰ Method 2: Loading via localStorage fallback");
                         const savedState = JSON.parse(localStorage.getItem('sidekick_timer_state') || '{}');
                         if (savedState && savedState.timers) {
-                            this.timers = savedState.timers;
+                            // Filter out virus timers - they should not auto-restore
+                            this.timers = savedState.timers.filter(timer => !timer.isVirusTimer);
                             this.cooldownWindowMap = savedState.cooldownWindowMap || {}; // Load cooldown-to-window mapping
                             loaded = true;
-                            console.log("✅ localStorage fallback load succeeded, loaded:", this.timers.length, "timers");
+                            console.log("✅ localStorage fallback load succeeded, loaded:", this.timers.length, "timers (excluding virus timers)");
                             console.log("✅ Loaded cooldown window map:", Object.keys(this.cooldownWindowMap).length, "mappings");
                         }
                     } catch (error) {
