@@ -999,7 +999,9 @@
                         modified: timer.modified,
                         isApiTimer: timer.isApiTimer,
                         cooldownType: timer.cooldownType,
-                        cooldowns: timer.cooldowns
+                        cooldowns: timer.cooldowns,
+                        isVirusTimer: timer.isVirusTimer,
+                        endTime: timer.endTime
                     })),
                     cooldownWindowMap: this.cooldownWindowMap || {}, // Save cooldown-to-window mapping
                     lastSaved: Date.now(),
@@ -1414,7 +1416,7 @@
                                 display: none;
                                 position: fixed;
                                 background: #333;
-                                min-width: 160px;
+                                min-width: 140px;
                                 box-shadow: 0px 8px 16px rgba(0,0,0,0.3);
                                 z-index: 99999;
                                 border-radius: 4px;
@@ -1477,7 +1479,7 @@
                                     cursor: pointer;
                                     font-size: 11px;
                                     transition: background 0.2s;
-                                ">🦠 Virus Coding</button>
+                                ">Virus Coding</button>
                                 <div style="border-top: 1px solid #555; margin: 4px 0;"></div>
                                 <button class="custom-timer-option" style="
                                     background: none;
@@ -1610,6 +1612,7 @@
                             `).join('');
                     } else if (timer.remainingTime > 0) {
                         // Single cooldown display
+                        const endTimeData = timer.endTime ? this.getEndTime(Math.floor((timer.endTime - Date.now()) / 1000)) : null;
                         return `
                                 <div class="timer-display" style="
                                     text-align: center;
@@ -1618,6 +1621,21 @@
                                     color: ${timer.color || '#666'};
                                     font-family: 'Courier New', monospace;
                                 ">${this.formatTime(timer.remainingTime)}</div>
+                                ${endTimeData ? `
+                                <div style="
+                                    text-align: center;
+                                    color: #aaa;
+                                    font-size: 11px;
+                                    margin-top: 4px;
+                                    font-family: 'Courier New', monospace;
+                                ">Ends at: ${endTimeData.time}</div>
+                                <div style="
+                                    text-align: center;
+                                    color: #999;
+                                    font-size: 10px;
+                                    margin-top: 2px;
+                                ">${endTimeData.date}</div>
+                                ` : ''}
                             `;
                     } else {
                         // Empty timer
@@ -1713,7 +1731,7 @@
 
                             // Position dropdown below button
                             dropdownContent.style.top = (btnRect.bottom + 2) + 'px';
-                            dropdownContent.style.left = (btnRect.right - 160) + 'px'; // Align right edge with new width
+                            dropdownContent.style.left = (btnRect.right - 140) + 'px'; // Align right edge with new width
 
                             // Check if dropdown goes off right edge
                             const dropdownRect = dropdownContent.getBoundingClientRect();
