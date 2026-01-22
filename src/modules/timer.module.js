@@ -1627,7 +1627,8 @@
                             `).join('');
                     } else if (timer.remainingTime > 0) {
                         // Single cooldown display
-                        const endTimeData = timer.endTime ? this.getEndTime(Math.floor((timer.endTime - Date.now()) / 1000)) : null;
+                        // Calculate end time from remaining time if not explicitly set
+                        const endTimeData = timer.remainingTime > 0 ? this.getEndTime(timer.remainingTime) : null;
                         const showEndDate = timer.showEndDate !== undefined ? timer.showEndDate : false;
                         return `
                                 <div class="timer-display" data-timer-id="${timer.id}" style="
@@ -1806,8 +1807,46 @@
                                     console.log('🦠 Virus option selected - enabling virus tracking');
                                     // Enable virus tracking
                                     localStorage.setItem('sidekick_virus_tracking_enabled', 'true');
-                                    // Trigger immediate virus check
-                                    await self.checkVirusCoding();
+
+                                    // Check virus status and add to THIS timer
+                                    if (!self.apiKey) {
+                                        console.error('❌ No API key configured');
+                                        alert('Please configure your API key first!');
+                                        return;
+                                    }
+
+                                    const response = await fetch(`https://api.torn.com/v2/user/virus`, {
+                                        headers: {
+                                            'accept': 'application/json',
+                                            'Authorization': `ApiKey ${self.apiKey}`
+                                        }
+                                    });
+
+                                    const data = await response.json();
+                                    console.log('🦠 Virus API response:', data);
+
+                                    if (data.virus && data.virus.until) {
+                                        const virusName = data.virus.item?.name || 'Virus';
+                                        const endTime = data.virus.until * 1000;
+                                        const remainingSeconds = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+
+                                        // Add virus as a cooldown to THIS timer
+                                        if (!timer.cooldowns) {
+                                            timer.cooldowns = {};
+                                        }
+                                        timer.cooldowns['Virus'] = remainingSeconds;
+                                        timer.type = 'countdown';
+                                        timer.isRunning = true;
+
+                                        console.log(`🦠 Added virus cooldown: ${virusName}, ${remainingSeconds}s`);
+
+                                        self.saveTimers();
+                                        self.updateTimerDisplay(timer.id);
+                                        self.startTimer(timer.id);
+                                    } else {
+                                        console.log('🦠 No active virus coding detected');
+                                        alert('No active virus coding detected. Start coding a virus in Torn first!');
+                                    }
                                 } else {
                                     // Call the cooldown check with proper context
                                     await self.checkSpecificCooldown(timer, cooldownType);
