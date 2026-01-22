@@ -3020,6 +3020,10 @@
 
         // Helper methods
         darkenColor(color, percent) {
+            // Safety check for undefined or invalid colors
+            if (!color || typeof color !== 'string') {
+                color = '#2196F3'; // Default blue color
+            }
             const num = parseInt(color.replace("#", ""), 16);
             const amt = Math.round(2.55 * percent);
             const R = (num >> 16) - amt;
