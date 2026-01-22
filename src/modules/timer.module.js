@@ -2226,6 +2226,7 @@
 
                     Object.entries(timer.cooldowns).forEach(([type, time]) => {
                         const endTimeData = this.getEndTime(time);
+                        const showEndDate = timer.showEndDate !== undefined ? timer.showEndDate : false;
 
                         const cooldownDiv = document.createElement('div');
                         cooldownDiv.style.cssText = `
@@ -2238,6 +2239,7 @@
                             display: flex;
                             flex-direction: column;
                             position: relative;
+                            cursor: pointer;
                         `;
                         cooldownDiv.innerHTML = `
                             <div style="
@@ -2295,6 +2297,19 @@
                                 ">${endTimeData.date}</span>
                             </div>
                         `;
+
+                        // Add click handler to toggle end date
+                        cooldownDiv.addEventListener('click', (e) => {
+                            // Don't toggle if clicking the remove button
+                            if (e.target.classList.contains('remove-cooldown-btn')) {
+                                return;
+                            }
+                            e.stopPropagation();
+                            timer.showEndDate = !timer.showEndDate;
+                            console.log(`🔄 Toggled end date display for timer ${timer.id}: ${timer.showEndDate}`);
+                            this.saveTimers();
+                            this.updateTimerDisplay(timer.id);
+                        });
 
                         // Add event listeners for the remove button
                         const removeBtn = cooldownDiv.querySelector('.remove-cooldown-btn');
