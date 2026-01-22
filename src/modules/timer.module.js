@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Sidekick Chrome Extension - Timer Module
  * Handles timer functionality for countdown and stopwatch timers
  * Version: 1.0.0
@@ -2204,7 +2204,6 @@
                             font-weight: 700;
                             font-size: 24px;
                         ">${this.formatTime(time)}</div>
-                                ${showEndDate ? `<span style="
                         <div style="
                             color: #888;
                             font-size: 11px;
@@ -2216,7 +2215,6 @@
                             font-size: 10px;
                         ">${endTimeData.date}</div>
                     `;
-                                ` : ''}
                     contentArea.appendChild(singleCooldownDiv);
                 } else if (timer.cooldowns && Object.keys(timer.cooldowns).length > 1) {
                     // Multi-cooldown display
