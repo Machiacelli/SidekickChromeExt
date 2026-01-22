@@ -1414,7 +1414,7 @@
                                 display: none;
                                 position: fixed;
                                 background: #333;
-                                min-width: 120px;
+                                min-width: 160px;
                                 box-shadow: 0px 8px 16px rgba(0,0,0,0.3);
                                 z-index: 99999;
                                 border-radius: 4px;
@@ -1467,6 +1467,17 @@
                                     font-size: 11px;
                                     transition: background 0.2s;
                                 ">Bank Investment</button>
+                                <button class="cooldown-option" data-type="Virus" style="
+                                    background: none;
+                                    border: none;
+                                    color: #fff;
+                                    padding: 6px 12px;
+                                    width: 100%;
+                                    text-align: left;
+                                    cursor: pointer;
+                                    font-size: 11px;
+                                    transition: background 0.2s;
+                                ">🦠 Virus Coding</button>
                                 <div style="border-top: 1px solid #555; margin: 4px 0;"></div>
                                 <button class="custom-timer-option" style="
                                     background: none;
@@ -1702,7 +1713,7 @@
 
                             // Position dropdown below button
                             dropdownContent.style.top = (btnRect.bottom + 2) + 'px';
-                            dropdownContent.style.left = (btnRect.right - 120) + 'px'; // Align right edge
+                            dropdownContent.style.left = (btnRect.right - 160) + 'px'; // Align right edge with new width
 
                             // Check if dropdown goes off right edge
                             const dropdownRect = dropdownContent.getBoundingClientRect();
