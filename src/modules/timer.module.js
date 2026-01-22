@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Sidekick Chrome Extension - Timer Module
  * Handles timer functionality for countdown and stopwatch timers
  * Version: 1.0.0
@@ -1629,7 +1629,6 @@
                         // Single cooldown display
                         // Calculate end time from remaining time if not explicitly set
                         const endTimeData = timer.remainingTime > 0 ? this.getEndTime(timer.remainingTime) : null;
-                        const showEndDate = timer.showEndDate !== undefined ? timer.showEndDate : false;
                         return `
                                 <div class="timer-display" data-timer-id="${timer.id}" style="
                                     text-align: center;
@@ -1639,7 +1638,7 @@
                                     font-family: 'Courier New', monospace;
                                     cursor: pointer;
                                 ">${this.formatTime(timer.remainingTime)}</div>
-                                ${endTimeData && showEndDate ? `
+                                ${endTimeData ? `
                                 <div style="
                                     text-align: center;
                                     color: #aaa;
@@ -2226,8 +2225,6 @@
 
                     Object.entries(timer.cooldowns).forEach(([type, time]) => {
                         const endTimeData = this.getEndTime(time);
-                        const showEndDate = timer.showEndDate !== undefined ? timer.showEndDate : false;
-
                         const cooldownDiv = document.createElement('div');
                         cooldownDiv.style.cssText = `
                             background: rgba(255,255,255,0.1);
