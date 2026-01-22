@@ -616,12 +616,28 @@
 
         // Start periodic time synchronization and API checks
         startPeriodicSynchronization() {
-            console.log('🔄 Starting periodic timer synchronization...');
-
-            // Synchronize timers every 30 seconds to prevent drift
+            // Synchronize timers every 60 seconds to fix drift
             setInterval(() => {
                 this.synchronizeTimers();
-            }, 30000);
+            }, 60000);
+
+            // Check API cooldowns every 5 minutes (if enabled by user via dropdown)
+            setInterval(() => {
+                // Only check if user has explicitly requested cooldown checking
+                // This prevents automatic API spam
+            }, 300000);
+
+            // Check virus coding status every 5 minutes
+            setInterval(() => {
+                this.checkVirusCoding();
+            }, 300000);
+
+            // Initial virus check after 5 seconds
+            setTimeout(() => {
+                this.checkVirusCoding();
+            }, 5000);
+
+            console.log('⏰ Periodic synchronization and virus checking started');
 
             // Check for page visibility changes and sync immediately
             document.addEventListener('visibilitychange', () => {
@@ -683,6 +699,93 @@
                 this.saveTimers();
                 console.log("✅ Timer synchronization complete");
             }
+        },
+
+        // Check virus coding status from Torn API v2
+        async checkVirusCoding() {
+            if (!this.apiKey) {
+                console.log('⏰ No API key for virus check');
+                return;
+            }
+
+            try {
+                console.log('🦠 Checking virus coding status...');
+
+                // Use Torn API v2 virus endpoint
+                const response = await fetch(`https://api.torn.com/v2/user/virus`, {
+                    headers: {
+                        'accept': 'application/json',
+                        'Authorization': `ApiKey ${this.apiKey}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    console.warn('⚠️ Virus API Error:', data.error);
+                    return;
+                }
+
+                const now = Math.floor(Date.now() / 1000);
+
+                // Check if virus is being coded
+                if (data?.virus && data.virus.until) {
+                    const virusName = data.virus.item ? data.virus.item.name : 'Virus';
+                    const endTime = data.virus.until * 1000; // Convert to milliseconds
+
+                    console.log(`🦠 Virus detected: ${virusName}, completes at ${new Date(endTime).toLocaleString()}`);
+
+                    // Check if we already have a virus timer
+                    let virusTimer = this.timers.find(t => t.isVirusTimer);
+
+                    if (virusTimer) {
+                        // Update existing timer
+                        virusTimer.name = `🦠 ${virusName}`;
+                        virusTimer.endTime = endTime;
+                        virusTimer.isCountdown = true;
+                        this.saveTimers();
+                        this.updateTimerDisplay(virusTimer.id);
+                        console.log('🦠 Updated existing virus timer');
+                    } else {
+                        // Create new virus timer
+                        this.createVirusTimer(virusName, endTime);
+                    }
+                } else {
+                    // No virus being coded - remove virus timer if it exists
+                    const virusTimer = this.timers.find(t => t.isVirusTimer);
+                    if (virusTimer) {
+                        console.log('🦠 Virus coding completed - removing timer');
+                        this.deleteTimer(virusTimer.id);
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error checking virus coding:', error);
+            }
+        },
+
+        // Create a virus coding timer
+        createVirusTimer(virusName, endTime) {
+            const timer = {
+                id: `virus-${Date.now()}`,
+                name: `🦠 ${virusName}`,
+                isCountdown: true,
+                endTime: endTime,
+                startTime: Date.now(),
+                isRunning: true,
+                isVirusTimer: true, // Flag to identify virus timers
+                color: '#9C27B0', // Purple color for virus timers
+                x: 10,
+                y: 10,
+                width: 280,
+                height: 180
+            };
+
+            this.timers.push(timer);
+            this.saveTimers();
+            this.renderTimer(timer);
+            this.startTimer(timer.id);
+
+            console.log(`🦠 Created virus timer: ${virusName}`);
         },
 
         // Load timers from storage
