@@ -634,16 +634,17 @@
                 // This prevents automatic API spam
             }, 300000);
 
-            // TEMPORARILY DISABLED - Virus checking causing duplicate timers
-            // Will re-enable after fixing the deduplication logic
-            // setInterval(() => {
-            //     this.checkVirusCoding();
-            // }, 300000);
-            // setTimeout(() => {
-            //     this.checkVirusCoding();
-            // }, 5000);
+            // Check virus coding status every 5 minutes
+            setInterval(() => {
+                this.checkVirusCoding();
+            }, 300000);
 
-            console.log('⏰ Periodic synchronization started (virus checking disabled)');
+            // Initial virus check after 10 seconds (give time for API key to load)
+            setTimeout(() => {
+                this.checkVirusCoding();
+            }, 10000);
+
+            console.log('⏰ Periodic synchronization and virus checking started');
 
             // Check for page visibility changes and sync immediately
             document.addEventListener('visibilitychange', () => {
@@ -771,6 +772,18 @@
 
         // Create a virus coding timer
         createVirusTimer(virusName, endTime) {
+            // Double-check we don't already have a virus timer
+            const existingVirus = this.timers.find(t => t.isVirusTimer);
+            if (existingVirus) {
+                console.log('🦠 Virus timer already exists, updating instead');
+                existingVirus.name = `🦠 ${virusName}`;
+                existingVirus.endTime = endTime;
+                existingVirus.isCountdown = true;
+                this.saveTimers();
+                this.updateTimerDisplay(existingVirus.id);
+                return existingVirus;
+            }
+
             const timer = {
                 id: `virus-${Date.now()}`,
                 name: `🦠 ${virusName}`,
@@ -782,16 +795,18 @@
                 color: '#9C27B0', // Purple color for virus timers
                 x: 10,
                 y: 10,
-                width: 280,
-                height: 180
+                width: 300,
+                height: 250
             };
 
             this.timers.push(timer);
+            // CRITICAL: Save BEFORE rendering to prevent race condition
             this.saveTimers();
             this.renderTimer(timer);
             this.startTimer(timer.id);
 
             console.log(`🦠 Created virus timer: ${virusName}`);
+            return timer;
         },
 
         // Load timers from storage
