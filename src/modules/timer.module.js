@@ -634,17 +634,16 @@
                 // This prevents automatic API spam
             }, 300000);
 
-            // Check virus coding status every 5 minutes
-            setInterval(() => {
-                this.checkVirusCoding();
-            }, 300000);
+            // VIRUS CHECKING DISABLED - User must manually add via dropdown
+            // Automatic creation was creating unwanted timers
+            // setInterval(() => {
+            //     this.checkVirusCoding();
+            // }, 300000);
+            // setTimeout(() => {
+            //     this.checkVirusCoding();
+            // }, 10000);
 
-            // Initial virus check after 10 seconds (give time for API key to load)
-            setTimeout(() => {
-                this.checkVirusCoding();
-            }, 10000);
-
-            console.log('⏰ Periodic synchronization and virus checking started');
+            console.log('⏰ Periodic synchronization started');
 
             // Check for page visibility changes and sync immediately
             document.addEventListener('visibilitychange', () => {
@@ -831,10 +830,18 @@
                         console.log("⏰ Method 1: Loading via ChromeStorage wrapper");
                         state = await window.SidekickModules.Core.ChromeStorage.get('sidekick_timer_state');
                         if (state && state.timers) {
-                            this.timers = state.timers;
+                            console.log(`📦 Found ${state.timers.length} timers in storage`);
+
+                            // Filter out virus timers - they should not auto-restore
+                            this.timers = state.timers.filter(timer => !timer.isVirusTimer);
+
+                            if (state.timers.length !== this.timers.length) {
+                                console.log(`🦠 Filtered out ${state.timers.length - this.timers.length} virus timer(s)`);
+                            }
+
                             this.cooldownWindowMap = state.cooldownWindowMap || {}; // Load cooldown-to-window mapping
                             loaded = true;
-                            console.log("✅ ChromeStorage wrapper load succeeded, loaded:", this.timers.length, "timers");
+                            console.log("✅ ChromeStorage wrapper load succeeded, loaded:", this.timers.length, "timers (excluding virus timers)");
                             console.log("✅ Loaded cooldown window map:", Object.keys(this.cooldownWindowMap).length, "mappings");
                         }
                     }
@@ -2079,8 +2086,8 @@
             // Update display content based on timer type
             const contentArea = element.querySelector('div[style*="flex-direction: column"]');
             if (contentArea) {
-                // ALWAYS rebuild for now to prevent duplication issues
-                const needsRebuild = true; // this.checkIfRebuildNeeded(contentArea, timer);
+                // Check if rebuild is needed (prevents expansion bug)
+                const needsRebuild = this.checkIfRebuildNeeded(contentArea, timer);
 
                 if (!needsRebuild) {
                     // Just update time displays without recreating elements
