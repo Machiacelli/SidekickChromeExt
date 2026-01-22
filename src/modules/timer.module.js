@@ -38,6 +38,13 @@
         apiKey: null,
         apiCheckInterval: null,
         cooldownWindowMap: {}, // Map of cooldownType -> timerId to remember which window each cooldown belongs to
+        currentZIndex: 1000, // Track highest z-index for stacking
+
+        // Get next z-index for new timer windows
+        getNextZIndex() {
+            this.currentZIndex += 1;
+            return this.currentZIndex;
+        },
 
         // Add timer persistence safeguard during navigation
         setupNavigationHandler() {
@@ -1316,8 +1323,8 @@
 
             // console.log(`🔍 Content dimensions: ${contentWidth}x${contentHeight}`);
 
-            const width = Math.min(Math.max(timer.width || 280, 140), contentWidth - 20);
-            const height = Math.min(Math.max(timer.height || 180, 80), contentHeight - 40);
+            const width = Math.min(Math.max(timer.width || 300, 140), contentWidth - 20);
+            const height = Math.min(Math.max(timer.height || 250, 80), contentHeight - 40);
             const x = Math.min(Math.max(timer.x || 10, 0), contentWidth - width);
             const y = Math.min(Math.max(timer.y || 10, 0), contentHeight - height);
 
@@ -1334,7 +1341,7 @@
                 flex-direction: column;
                 min-width: 140px;
                 min-height: 80px;
-                z-index: 1000;
+                z-index: ${this.getNextZIndex()};
                 resize: both;
                 overflow: auto;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.4);
@@ -1391,9 +1398,18 @@
                                 border: 1px solid #555;
                                 top: 100%;
                                 right: 0;
+                                margin-top: 2px;
+                                overflow-y: auto;
+                                max-height: 300px;
+                                scrollbar-width: none;
+                                -ms-overflow-style: none;
                                 padding: 4px 0;
                             ">
-                                <button class="cooldown-option" data-type="drug" style="
+                                <style>
+                                    .dropdown-content::-webkit-scrollbar {
+                                        display: none;
+                                    }
+                                </style>  <button class="cooldown-option" data-type="drug" style="
                                     background: none;
                                     border: none;
                                     color: #fff;
