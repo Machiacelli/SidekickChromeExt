@@ -1015,7 +1015,8 @@
                         cooldownType: timer.cooldownType,
                         cooldowns: timer.cooldowns,
                         isVirusTimer: timer.isVirusTimer,
-                        endTime: timer.endTime
+                        endTime: timer.endTime,
+                        showEndDate: timer.showEndDate !== undefined ? timer.showEndDate : false
                     })),
                     cooldownWindowMap: this.cooldownWindowMap || {}, // Save cooldown-to-window mapping
                     lastSaved: Date.now(),
@@ -1627,15 +1628,17 @@
                     } else if (timer.remainingTime > 0) {
                         // Single cooldown display
                         const endTimeData = timer.endTime ? this.getEndTime(Math.floor((timer.endTime - Date.now()) / 1000)) : null;
+                        const showEndDate = timer.showEndDate !== undefined ? timer.showEndDate : false;
                         return `
-                                <div class="timer-display" style="
+                                <div class="timer-display" data-timer-id="${timer.id}" style="
                                     text-align: center;
                                     font-size: 18px;
                                     font-weight: 700;
                                     color: ${timer.color || '#666'};
                                     font-family: 'Courier New', monospace;
+                                    cursor: pointer;
                                 ">${this.formatTime(timer.remainingTime)}</div>
-                                ${endTimeData ? `
+                                ${endTimeData && showEndDate ? `
                                 <div style="
                                     text-align: center;
                                     color: #aaa;
@@ -1798,18 +1801,27 @@
                             dropdownContent.style.display = 'none';
 
                             try {
-                                // Call the cooldown check with proper context
-                                await self.checkSpecificCooldown(timer, cooldownType);
+                                // Special handling for Virus option
+                                if (cooldownType === 'Virus') {
+                                    console.log('🦠 Virus option selected - enabling virus tracking');
+                                    // Enable virus tracking
+                                    localStorage.setItem('sidekick_virus_tracking_enabled', 'true');
+                                    // Trigger immediate virus check
+                                    await self.checkVirusCoding();
+                                } else {
+                                    // Call the cooldown check with proper context
+                                    await self.checkSpecificCooldown(timer, cooldownType);
 
-                                // Show visual feedback that timer was started
-                                const timerWindow = document.getElementById(`sidekick-timer-${timer.id}`);
-                                if (timerWindow) {
-                                    const timerDisplay = timerWindow.querySelector('.timer-display');
-                                    if (timerDisplay) {
-                                        timerDisplay.style.backgroundColor = '#2ecc71';
-                                        setTimeout(() => {
-                                            timerDisplay.style.backgroundColor = '#34495e';
-                                        }, 1000);
+                                    // Show visual feedback that timer was started
+                                    const timerWindow = document.getElementById(`sidekick-timer-${timer.id}`);
+                                    if (timerWindow) {
+                                        const timerDisplay = timerWindow.querySelector('.timer-display');
+                                        if (timerDisplay) {
+                                            timerDisplay.style.backgroundColor = '#2ecc71';
+                                            setTimeout(() => {
+                                                timerDisplay.style.backgroundColor = '#34495e';
+                                            }, 1000);
+                                        }
                                     }
                                 }
                             } catch (error) {
@@ -1981,6 +1993,20 @@
 
             // Add resize observer to save size changes
             this.addResizeObserver(element, timer);
+
+            // Add click handler to timer display to toggle end date
+            const timerDisplay = element.querySelector('.timer-display');
+            if (timerDisplay) {
+                timerDisplay.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Toggle showEndDate flag
+                    timer.showEndDate = !timer.showEndDate;
+                    console.log(`🔄 Toggled end date display for timer ${timer.id}: ${timer.showEndDate}`);
+                    // Save and update display
+                    this.saveTimers();
+                    this.updateTimerDisplay(timer.id);
+                });
+            }
         },
 
         // Start/Resume timer
