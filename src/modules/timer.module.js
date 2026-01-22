@@ -778,18 +778,26 @@
                 console.log('🦠 Virus timer already exists, updating instead');
                 existingVirus.name = `🦠 ${virusName}`;
                 existingVirus.endTime = endTime;
-                existingVirus.isCountdown = true;
+                existingVirus.type = 'countdown';
+                // Calculate remaining time from endTime
+                existingVirus.remainingTime = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+                existingVirus.duration = existingVirus.remainingTime;
                 this.saveTimers();
                 this.updateTimerDisplay(existingVirus.id);
                 return existingVirus;
             }
 
+            // Calculate remaining time from endTime
+            const remainingSeconds = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+
             const timer = {
                 id: `virus-${Date.now()}`,
                 name: `🦠 ${virusName}`,
-                isCountdown: true,
+                type: 'countdown', // CRITICAL: Use 'type' not 'isCountdown'
                 endTime: endTime,
                 startTime: Date.now(),
+                remainingTime: remainingSeconds,
+                duration: remainingSeconds,
                 isRunning: true,
                 isVirusTimer: true, // Flag to identify virus timers
                 color: '#9C27B0', // Purple color for virus timers
@@ -805,7 +813,7 @@
             this.renderTimer(timer);
             this.startTimer(timer.id);
 
-            console.log(`🦠 Created virus timer: ${virusName}`);
+            console.log(`🦠 Created virus timer: ${virusName}, remaining: ${remainingSeconds}s`);
             return timer;
         },
 
@@ -1404,27 +1412,18 @@
                             " title="Cooldowns">⚙️</button>
                             <div class="dropdown-content" style="
                                 display: none;
-                                position: absolute;
+                                position: fixed;
                                 background: #333;
                                 min-width: 120px;
                                 box-shadow: 0px 8px 16px rgba(0,0,0,0.3);
-                                z-index: 10001;
+                                z-index: 99999;
                                 border-radius: 4px;
                                 border: 1px solid #555;
-                                top: 100%;
-                                right: 0;
-                                margin-top: 2px;
+                                padding: 4px 0;
                                 overflow-y: auto;
                                 max-height: 300px;
-                                scrollbar-width: none;
-                                -ms-overflow-style: none;
-                                padding: 4px 0;
                             ">
-                                <style>
-                                    .dropdown-content::-webkit-scrollbar {
-                                        display: none;
-                                    }
-                                </style>  <button class="cooldown-option" data-type="drug" style="
+                                <button class="cooldown-option" data-type="drug" style="
                                     background: none;
                                     border: none;
                                     color: #fff;
@@ -1690,25 +1689,37 @@
                     dropdownContent.style.display = isVisible ? 'none' : 'block';
                     console.log('🔍 Dropdown visibility:', dropdownContent.style.display);
 
-                    // Smart positioning: prevent clipping at edges
+                    // Position dropdown using fixed positioning
                     if (!isVisible) {
+                        // Hide scrollbar while keeping scroll functionality
+                        dropdownContent.style.scrollbarWidth = 'none';
+                        dropdownContent.style.msOverflowStyle = 'none';
+
                         setTimeout(() => {
-                            const dropdownRect = dropdownContent.getBoundingClientRect();
-                            const timerRect = element.getBoundingClientRect();
+                            const btnRect = dropdownBtn.getBoundingClientRect();
                             const viewportWidth = window.innerWidth;
+                            const viewportHeight = window.innerHeight;
 
-                            // Check if dropdown clips on the right
+                            // Position dropdown below button
+                            dropdownContent.style.top = (btnRect.bottom + 2) + 'px';
+                            dropdownContent.style.left = (btnRect.right - 120) + 'px'; // Align right edge
+
+                            // Check if dropdown goes off right edge
+                            const dropdownRect = dropdownContent.getBoundingClientRect();
                             if (dropdownRect.right > viewportWidth) {
-                                dropdownContent.style.right = '0';
-                                dropdownContent.style.left = 'auto';
+                                dropdownContent.style.left = (viewportWidth - dropdownRect.width - 10) + 'px';
                             }
 
-                            // Check if dropdown clips on the left
+                            // Check if dropdown goes off left edge
                             if (dropdownRect.left < 0) {
-                                dropdownContent.style.left = '0';
-                                dropdownContent.style.right = 'auto';
+                                dropdownContent.style.left = '10px';
                             }
-                        }, 0);
+
+                            // Check if dropdown goes off bottom
+                            if (dropdownRect.bottom > viewportHeight) {
+                                dropdownContent.style.top = (btnRect.top - dropdownRect.height - 2) + 'px';
+                            }
+                        }, 10);
                     }
                 });
 
