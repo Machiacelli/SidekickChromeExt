@@ -1215,7 +1215,6 @@
                         background: #f44336;
                         border: none;
                         color: white;
-                        cursor: pointer;
                         width: 14px;
                         height: 14px;
                         border-radius: 50%;
@@ -1249,7 +1248,6 @@
                             color: white;
                             padding: 12px;
                             border-radius: 6px;
-                            cursor: pointer;
                             text-align: left;
                             font-size: 12px;
                             font-weight: 600;
@@ -1270,7 +1268,6 @@
                         color: white;
                         padding: 12px;
                         border-radius: 6px;
-                        cursor: pointer;
                         text-align: center;
                         font-size: 12px;
                         font-weight: 600;
@@ -1418,7 +1415,6 @@
                                 background: none;
                                 border: none;
                                 color: rgba(255,255,255,0.8);
-                                cursor: pointer;
                                 font-size: 10px;
                                 padding: 1px 3px;
                                 border-radius: 2px;
@@ -1447,7 +1443,6 @@
                                     padding: 6px 12px;
                                     width: 100%;
                                     text-align: left;
-                                    cursor: pointer;
                                     font-size: 11px;
                                     transition: background 0.2s;
                                 ">Drug</button>
@@ -1458,7 +1453,6 @@
                                     padding: 6px 12px;
                                     width: 100%;
                                     text-align: left;
-                                    cursor: pointer;
                                     font-size: 11px;
                                     transition: background 0.2s;
                                 ">Medical</button>
@@ -1469,7 +1463,6 @@
                                     padding: 6px 12px;
                                     width: 100%;
                                     text-align: left;
-                                    cursor: pointer;
                                     font-size: 11px;
                                     transition: background 0.2s;
                                 ">Booster</button>
@@ -1480,7 +1473,6 @@
                                     padding: 6px 12px;
                                     width: 100%;
                                     text-align: left;
-                                    cursor: pointer;
                                     font-size: 11px;
                                     transition: background 0.2s;
                                 ">Bank Investment</button>
@@ -1491,7 +1483,6 @@
                                     padding: 6px 12px;
                                     width: 100%;
                                     text-align: left;
-                                    cursor: pointer;
                                     font-size: 11px;
                                     transition: background 0.2s;
                                 ">Virus Coding</button>
@@ -1503,7 +1494,6 @@
                                     padding: 6px 12px;
                                     width: 100%;
                                     text-align: left;
-                                    cursor: pointer;
                                     font-size: 11px;
                                     transition: background 0.2s;
                                     font-weight: bold;
@@ -1516,7 +1506,6 @@
                                     padding: 6px 12px;
                                     width: 100%;
                                     text-align: left;
-                                    cursor: pointer;
                                     font-size: 11px;
                                     transition: background 0.2s;
                                 ">🎨 Change Color</button>
@@ -1527,7 +1516,6 @@
                                     padding: 6px 12px;
                                     width: 100%;
                                     text-align: left;
-                                    cursor: pointer;
                                     font-size: 11px;
                                     transition: background 0.2s;
                                 ">${timer.pinned ? '📌 Unpin' : '📌 Pin'}</button>
@@ -1538,7 +1526,6 @@
                             background: #f44336;
                             border: none;
                             color: white;
-                            cursor: pointer;
                             width: 14px;
                             height: 14px;
                             border-radius: 50%;
@@ -1610,7 +1597,6 @@
                                             background: #e74c3c;
                                             border: none;
                                             color: white;
-                                            cursor: pointer;
                                             width: 16px;
                                             height: 16px;
                                             border-radius: 50%;
@@ -1636,8 +1622,7 @@
                                     font-weight: 700;
                                     color: ${timer.color || '#666'};
                                     font-family: 'Courier New', monospace;
-                                    cursor: pointer;
-                                ">${this.formatTime(timer.remainingTime)}</div>
+                                    ">${this.formatTime(timer.remainingTime)}</div>
                                 ${endTimeData ? `
                                 <div style="
                                     text-align: center;
@@ -2236,8 +2221,7 @@
                             display: flex;
                             flex-direction: column;
                             position: relative;
-                            cursor: pointer;
-                        `;
+                            `;
                         cooldownDiv.innerHTML = `
                             <div style="
                                 display: flex;
@@ -2254,7 +2238,6 @@
                                     background: rgba(0,0,0,0.4);
                                     border: none;
                                     color: #ccc;
-                                    cursor: pointer;
                                     width: 12px;
                                     height: 12px;
                                     border-radius: 3px;
@@ -3107,7 +3090,6 @@
                         color: #fff;
                         padding: 12px;
                         border-radius: 6px;
-                        cursor: pointer;
                         font-size: 14px;
                         font-weight: 600;
                     ">Cancel</button>
@@ -3118,7 +3100,6 @@
                         color: #000;
                         padding: 12px;
                         border-radius: 6px;
-                        cursor: pointer;
                         font-size: 14px;
                         font-weight: 600;
                     ">Start Timer</button>
