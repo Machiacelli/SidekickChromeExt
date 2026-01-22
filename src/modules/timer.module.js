@@ -627,17 +627,16 @@
                 // This prevents automatic API spam
             }, 300000);
 
-            // Check virus coding status every 5 minutes
-            setInterval(() => {
-                this.checkVirusCoding();
-            }, 300000);
+            // TEMPORARILY DISABLED - Virus checking causing duplicate timers
+            // Will re-enable after fixing the deduplication logic
+            // setInterval(() => {
+            //     this.checkVirusCoding();
+            // }, 300000);
+            // setTimeout(() => {
+            //     this.checkVirusCoding();
+            // }, 5000);
 
-            // Initial virus check after 5 seconds
-            setTimeout(() => {
-                this.checkVirusCoding();
-            }, 5000);
-
-            console.log('⏰ Periodic synchronization and virus checking started');
+            console.log('⏰ Periodic synchronization started (virus checking disabled)');
 
             // Check for page visibility changes and sync immediately
             document.addEventListener('visibilitychange', () => {
