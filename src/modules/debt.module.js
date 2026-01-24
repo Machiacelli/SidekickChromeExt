@@ -518,13 +518,24 @@
 
             // Check for payments every 1 minute for better responsiveness
             this.apiCheckInterval = setInterval(() => {
+                // Stop monitoring if module is disabled due to context error
+                if (this.moduleDisabled) {
+                    console.log("💰 Module disabled, stopping API monitoring");
+                    if (this.apiCheckInterval) {
+                        clearInterval(this.apiCheckInterval);
+                        this.apiCheckInterval = null;
+                    }
+                    return;
+                }
                 this.checkForPayments();
             }, 1 * 60 * 1000);
 
             // Do immediate check after 2 seconds
             setTimeout(() => {
-                console.log("💰 Starting immediate payment check...");
-                this.checkForPayments();
+                if (!this.moduleDisabled) {
+                    console.log("💰 Starting immediate payment check...");
+                    this.checkForPayments();
+                }
             }, 2000);
 
             console.log("💰 API payment monitoring started (checking every minute)");
@@ -589,9 +600,27 @@
         // Helper method to make API calls via background script
         async makeApiCallViaBackground(apiKey, selections) {
             try {
+                // Check if module is already disabled
+                if (this.moduleDisabled) {
+                    throw new Error('Module disabled due to extension context error');
+                }
+
                 // Check if extension context is valid first
                 if (!window.SidekickModules?.Core?.SafeMessageSender?.isExtensionContextValid()) {
-                    // Only log once to avoid spam
+                    // Disable module completely
+                    this.moduleDisabled = true;
+
+                    // Stop all intervals
+                    if (this.apiCheckInterval) {
+                        clearInterval(this.apiCheckInterval);
+                        this.apiCheckInterval = null;
+                    }
+                    if (this.interestUpdateInterval) {
+                        clearInterval(this.interestUpdateInterval);
+                        this.interestUpdateInterval = null;
+                    }
+
+                    // Only log once
                     if (!this.contextInvalidatedLogged) {
                         console.warn('💰 Extension context invalidated - Debt module disabled until page refresh');
                         this.contextInvalidatedLogged = true;
@@ -612,9 +641,12 @@
 
             } catch (error) {
                 if (error.message.includes('Extension context invalidated')) {
-                    // Only log once to avoid spam
+                    // Disable module
+                    this.moduleDisabled = true;
+
+                    // Only log once
                     if (!this.contextErrorLogged) {
-                        console.warn('💰 Extension context lost - please refresh page');
+                        console.warn('💰 Extension context lost - Debt module disabled');
                         this.contextErrorLogged = true;
                     }
                     // Show user a helpful message in the debt tracker
