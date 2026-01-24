@@ -155,10 +155,17 @@
         async fetchWeights() {
             try {
                 console.log("📊 Fetching OC weights from API...");
-                const response = await fetch(this.API_URL);
+
+                const response = await fetch(this.API_URL, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
 
                 if (!response.ok) {
-                    throw new Error(`API request failed: ${response.status}`);
+                    throw new Error(`API request failed with status: ${response.status}`);
                 }
 
                 const data = await response.json();
@@ -174,8 +181,13 @@
                 }
 
                 console.log("✅ OC weights loaded successfully");
+                console.log(`📊 Loaded weights for ${Object.keys(this.weightData).length} OCs`);
             } catch (error) {
                 console.error("❌ Failed to fetch OC weights:", error);
+                console.error("API URL:", this.API_URL);
+
+                // Don't disable the module, just log the error
+                // The module will try again on next page load
             }
         },
 
