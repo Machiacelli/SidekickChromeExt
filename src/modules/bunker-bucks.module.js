@@ -104,8 +104,10 @@
         async loadSettings() {
             try {
                 if (window.SidekickModules?.Core?.ChromeStorage?.get) {
-                    const enabled = await window.SidekickModules.Core.ChromeStorage.get('bunker_bucks_enabled');
-                    return enabled !== false; // Default to true if not set
+                    const settings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings');
+                    if (settings && settings['bunker-bucks']) {
+                        return settings['bunker-bucks'].isEnabled !== false;
+                    }
                 }
                 return true; // Default enabled
             } catch (error) {
@@ -117,8 +119,13 @@
         // Save settings to storage
         async saveSettings(enabled) {
             try {
-                if (window.SidekickModules?.Core?.ChromeStorage?.set) {
-                    await window.SidekickModules.Core.ChromeStorage.set('bunker_bucks_enabled', enabled);
+                if (window.SidekickModules?.Core?.ChromeStorage?.get) {
+                    const settings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings') || {};
+                    if (!settings['bunker-bucks']) {
+                        settings['bunker-bucks'] = {};
+                    }
+                    settings['bunker-bucks'].isEnabled = enabled;
+                    await window.SidekickModules.Core.ChromeStorage.set('sidekick_settings', settings);
                 }
                 this.isEnabled = enabled;
             } catch (error) {

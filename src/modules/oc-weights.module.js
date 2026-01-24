@@ -46,8 +46,10 @@
         async loadSettings() {
             try {
                 if (window.SidekickModules?.Core?.ChromeStorage?.get) {
-                    const enabled = await window.SidekickModules.Core.ChromeStorage.get('oc_weights_enabled');
-                    return enabled !== false; // Default to true if not set
+                    const settings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings');
+                    if (settings && settings['oc-weights']) {
+                        return settings['oc-weights'].isEnabled !== false;
+                    }
                 }
                 return true; // Default enabled
             } catch (error) {
@@ -59,8 +61,13 @@
         // Save settings to storage
         async saveSettings(enabled) {
             try {
-                if (window.SidekickModules?.Core?.ChromeStorage?.set) {
-                    await window.SidekickModules.Core.ChromeStorage.set('oc_weights_enabled', enabled);
+                if (window.SidekickModules?.Core?.ChromeStorage?.get) {
+                    const settings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings') || {};
+                    if (!settings['oc-weights']) {
+                        settings['oc-weights'] = {};
+                    }
+                    settings['oc-weights'].isEnabled = enabled;
+                    await window.SidekickModules.Core.ChromeStorage.set('sidekick_settings', settings);
                 }
                 this.isEnabled = enabled;
             } catch (error) {
