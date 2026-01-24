@@ -591,16 +591,12 @@
             try {
                 // Check if extension context is valid first
                 if (!window.SidekickModules?.Core?.SafeMessageSender?.isExtensionContextValid()) {
-                    console.warn('💰 Extension context invalidated, attempting recovery...');
-
-                    // Try to recover the connection
-                    const recovered = await window.SidekickModules.Core.SafeMessageSender.attemptContextRecovery();
-                    if (!recovered) {
-                        window.SidekickModules?.Core?.SafeMessageSender?.showExtensionReloadNotification();
-                        throw new Error('Extension context invalidated - please refresh page');
+                    // Only log once to avoid spam
+                    if (!this.contextInvalidatedLogged) {
+                        console.warn('💰 Extension context invalidated - Debt module disabled until page refresh');
+                        this.contextInvalidatedLogged = true;
                     }
-
-                    console.log('✅ Extension context recovered, proceeding with API call');
+                    throw new Error('Extension context invalidated - please refresh page');
                 }
 
                 console.log('💰 Sending message to background script:', { action: 'fetchTornApi', selections });
@@ -616,9 +612,11 @@
 
             } catch (error) {
                 if (error.message.includes('Extension context invalidated')) {
-                    console.warn('💰 Extension context lost during API call');
-                    window.SidekickModules?.Core?.SafeMessageSender?.showExtensionReloadNotification();
-
+                    // Only log once to avoid spam
+                    if (!this.contextErrorLogged) {
+                        console.warn('💰 Extension context lost - please refresh page');
+                        this.contextErrorLogged = true;
+                    }
                     // Show user a helpful message in the debt tracker
                     if (window.SidekickModules?.UI?.showNotification) {
                         window.SidekickModules.UI.showNotification(
