@@ -86,6 +86,7 @@
             const iconChain = chrome.runtime.getURL('icons/settings-chain.png');
             const iconNotifications = chrome.runtime.getURL('icons/settings-notifications.png');
             const iconMugcalc = chrome.runtime.getURL('icons/settings-mugcalc.png');
+            const iconBloodBag = chrome.runtime.getURL('assets/icons/blood-bag-settings.png');
 
             panel.innerHTML = `
                 <style>
@@ -111,7 +112,16 @@
                         </div>
                         
                         <!-- Sidebar Tabs -->
-                        <div style="flex: 1; padding-top: 10px;">
+                        <div style="flex: 1; padding-top: 10px; overflow-y: auto; overflow-x: hidden;">
+                            <style>
+                                .settings-sidebar > div:last-of-type::-webkit-scrollbar {
+                                    display: none;
+                                }
+                                .settings-sidebar > div:last-of-type {
+                                    -ms-overflow-style: none;
+                                    scrollbar-width: none;
+                                }
+                            </style>
                             <button class="settings-sidebar-tab active" data-tab="general" 
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: white; cursor: pointer; font-size: 12px; font-weight: 500; 
@@ -153,6 +163,13 @@
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
                                 <img src="${iconMugcalc}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
                                 <span>Mug Calculator</span>
+                            </button>
+                            <button class="settings-sidebar-tab" data-tab="bloodbag" 
+                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
+                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
+                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
+                                <img src="${iconBloodBag}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
+                                <span>Blood Bags</span>
                             </button>
                         </div>
                     </div>
@@ -270,6 +287,11 @@
                             <!-- MUG CALCULATOR TAB -->
                             <div class="settings-tab-content" id="settings-tab-mugcalc" style="display: none;">
                                 ${this.createMugCalculatorSettingsHTML()}
+                            </div>
+                            
+                            <!-- BLOOD BAG REMINDER TAB -->
+                            <div class="settings-tab-content" id="settings-tab-bloodbag" style="display: none;">
+                                ${this.createBloodBagSettingsHTML()}
                             </div>
                         </div>
                     </div>
@@ -587,6 +609,64 @@
             `;
         },
 
+        // Create Blood Bag Reminder settings HTML
+        createBloodBagSettingsHTML() {
+            return `
+                <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">🩸 Blood Bag Reminder Settings</h4>
+                
+                <div style="background: rgba(220, 53, 69, 0.1); border-left: 3px solid #dc3545; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
+                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                        ℹ️ Shows a blood bag icon when you have enough life and medical cooldown room to fill blood bags.
+                        Each bag uses 30% life and adds 1 hour to medical cooldown.
+                    </div>
+                </div>
+                
+                ${this.createToggle('blood-bag-reminder', '🩸 Enable Blood Bag Reminder', 'Shows icon when ready to fill blood bags')}
+                
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Bags to Fill:</label>
+                    <select id="bloodbag-count" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
+                                                       border-radius: 5px; color: white; font-size: 14px; box-sizing: border-box;">
+                        <option value="1" style="background: #1a1a1a; color: white;">1 bag (requires >30% life)</option>
+                        <option value="2" selected style="background: #1a1a1a; color: white;">2 bags (requires >60% life) - Recommended</option>
+                        <option value="3" style="background: #1a1a1a; color: white;">3 bags (requires >90% life)</option>
+                    </select>
+                    <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
+                        How many blood bags do you want to fill at once? Each bag uses 30% life and adds 1hr medical cooldown.
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Destination Page:</label>
+                    <select id="bloodbag-destination" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
+                                                             border-radius: 5px; color: white; font-size: 14px; box-sizing: border-box;">
+                        <option value="items" selected style="background: #1a1a1a; color: white;">Personal Inventory (Medical)</option>
+                        <option value="bazaar" style="background: #1a1a1a; color: white;">Bazaar (Add Item)</option>
+                    </select>
+                    <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
+                        Where clicking the blood bag icon takes you.
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: flex; align-items: center; gap: 10px; color: #ccc; cursor: pointer;">
+                        <input type="checkbox" id="bloodbag-newtab" style="accent-color: #dc3545;">
+                        <span>Open in new tab</span>
+                    </label>
+                    <div style="font-size: 12px; color: #aaa; margin-top: 5px; margin-left: 28px;">
+                        When disabled, clicking the icon navigates in the same tab.
+                    </div>
+                </div>
+                
+                <div id="sidekick-bloodbag-status" style="text-align: center; padding: 10px; border-radius: 5px; 
+                                                            background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px; margin-top: 20px;">
+                    Blood Bag Reminder settings loaded
+                </div>
+            `;
+        },
+
         // Attach all event listeners
         attachEventListeners(panel) {
             // Tab switching for sidebar
@@ -634,6 +714,9 @@
 
             // Mug Calculator Tab listeners
             this.attachMugCalculatorTabListeners(panel);
+
+            // Blood Bag Reminder Tab listeners
+            this.attachBloodBagTabListeners(panel);
         },
 
         // Switch between tabs
@@ -1649,6 +1732,62 @@
             } catch (error) {
                 console.debug('Admin check failed:', error);
             }
+        },
+
+        // Attach Blood Bag Reminder tab listeners
+        async attachBloodBagTabListeners(panel) {
+            const bagsInput = panel.querySelector('#bloodbag-count');
+            const destinationSelect = panel.querySelector('#bloodbag-destination');
+            const newTabCheckbox = panel.querySelector('#bloodbag-newtab');
+            const statusDiv = panel.querySelector('#sidekick-bloodbag-status');
+
+            if (!bagsInput || !destinationSelect || !newTabCheckbox) {
+                console.warn('Blood Bag settings elements not found');
+                return;
+            }
+
+            // Load current settings
+            try {
+                const settings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings') || {};
+                const bloodBagSettings = settings['blood-bag-reminder'] || {};
+
+                bagsInput.value = bloodBagSettings.bagsToFill || 5;
+                destinationSelect.value = bloodBagSettings.destination || 'items';
+                newTabCheckbox.checked = bloodBagSettings.openInNewTab !== undefined ? bloodBagSettings.openInNewTab : false;
+            } catch (error) {
+                console.error('Failed to load Blood Bag settings:', error);
+            }
+
+            // Auto-save on change
+            const saveSettings = async () => {
+                try {
+                    const settings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings') || {};
+                    settings['blood-bag-reminder'] = settings['blood-bag-reminder'] || {};
+                    settings['blood-bag-reminder'].bagsToFill = parseInt(bagsInput.value);
+                    settings['blood-bag-reminder'].destination = destinationSelect.value;
+                    settings['blood-bag-reminder'].openInNewTab = newTabCheckbox.checked;
+
+                    await window.SidekickModules.Core.ChromeStorage.set('sidekick_settings', settings);
+
+                    // Update module if it's loaded
+                    if (window.SidekickModules.BloodBagReminder) {
+                        await window.SidekickModules.BloodBagReminder.updateSettings({
+                            bagsToFill: parseInt(bagsInput.value),
+                            destination: destinationSelect.value,
+                            openInNewTab: newTabCheckbox.checked
+                        });
+                    }
+
+                    this.showAutoSaveStatus(statusDiv, 'Settings saved ✓');
+                } catch (error) {
+                    console.error('Failed to save Blood Bag settings:', error);
+                    this.showStatus(statusDiv, 'Failed to save settings', 'error');
+                }
+            };
+
+            bagsInput.addEventListener('change', saveSettings);
+            destinationSelect.addEventListener('change', saveSettings);
+            newTabCheckbox.addEventListener('change', saveSettings);
         }
     };
 

@@ -158,43 +158,12 @@
             }
         },
 
-        // Fetch weight data from API
+        // Fetch weight data from API (disabled - using fallback data to avoid API errors)
         async fetchWeights() {
-            try {
-                console.log("📊 Fetching OC weights from API...");
-
-                const response = await fetch(this.API_URL, {
-                    method: 'GET',
-                    mode: 'cors',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`API request failed with status: ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                // Normalize the data
-                this.weightData = {};
-                for (const [ocName, roles] of Object.entries(data)) {
-                    const ocKey = this.normalize(ocName);
-                    this.weightData[ocKey] = {};
-                    for (const [roleName, value] of Object.entries(roles)) {
-                        this.weightData[ocKey][this.normalize(roleName)] = value;
-                    }
-                }
-
-                console.log("✅ OC weights loaded successfully from API");
-                console.log(`📊 Loaded weights for ${Object.keys(this.weightData).length} OCs`);
-            } catch (error) {
-                console.warn("⚠️ Failed to fetch OC weights from API, using fallback data:", error.message);
-
-                // Use hardcoded fallback data
-                this.loadFallbackData();
-            }
+            // Skip API call and use hardcoded fallback data directly
+            // This prevents "Failed to fetch OC weights" error spam
+            console.log("📊 Using hardcoded OC weights data (API fetch disabled)");
+            this.loadFallbackData();
         },
 
         // Load hardcoded fallback data

@@ -166,6 +166,14 @@
                 console.warn("⚠️ Bunker Bucks Calculator module not available");
             }
 
+            // Initialize Blood Bag Reminder Module
+            console.log("🩸 Sidekick: Initializing Blood Bag Reminder...");
+            if (window.SidekickModules.BloodBagReminder?.init) {
+                await window.SidekickModules.BloodBagReminder.init();
+                console.log("✅ Sidekick: Blood Bag Reminder initialized");
+            } else {
+                console.warn("⚠️ Blood Bag Reminder module not available");
+            }
 
 
 

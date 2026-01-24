@@ -4,6 +4,113 @@
  * Version: 1.0.0
  */
 
+// API Cache Manager - Prevents rate limiting by caching responses and deduplicating requests
+const apiCache = {
+    cache: new Map(),
+    pendingRequests: new Map(),
+
+    // Cache TTL (Time To Live) in milliseconds for different data types
+    TTL: {
+        personalstats: 30000,   // 30 seconds - changes frequently with actions
+        cooldowns: 15000,       // 15 seconds - time-sensitive
+        bars: 30000,            // 30 seconds - changes with actions
+        logs: 60000,            // 60 seconds - historical data
+        refills: 300000,        // 5 minutes - only changes once per day
+        profile: 300000,        // 5 minutes - rarely changes
+        items: 60000,           // 60 seconds - inventory changes
+        money: 60000,           // 60 seconds - bank/wallet changes
+        company: 300000         // 5 minutes - company data rarely changes
+    },
+
+    // Generate unique cache key from request parameters
+    getCacheKey(apiKey, selections, endpoint) {
+        // Sort selections for consistent cache keys
+        const sortedSelections = Array.isArray(selections) ? selections.sort().join(',') : selections;
+        return `${apiKey}:${endpoint}:${sortedSelections}`;
+    },
+
+    // Get cached data if still valid
+    get(cacheKey) {
+        const cached = this.cache.get(cacheKey);
+        if (!cached) return null;
+
+        // Check if cache is still valid based on TTL
+        const maxTTL = this.getMaxTTL(cached.selections);
+        const age = Date.now() - cached.timestamp;
+
+        if (age > maxTTL) {
+            console.log(`🗑️ Cache expired for ${cacheKey} (age: ${age}ms, max: ${maxTTL}ms)`);
+            this.cache.delete(cacheKey);
+            return null;
+        }
+
+        console.log(`✅ Cache hit for ${cacheKey} (age: ${age}ms, max: ${maxTTL}ms)`);
+        return cached.data;
+    },
+
+    // Store data in cache with timestamp
+    set(cacheKey, data, selections) {
+        this.cache.set(cacheKey, {
+            data,
+            selections,
+            timestamp: Date.now()
+        });
+        console.log(`💾 Cached data for ${cacheKey}`);
+    },
+
+    // Get the shortest TTL among requested selections
+    getMaxTTL(selections) {
+        if (!Array.isArray(selections)) {
+            selections = [selections];
+        }
+
+        let minTTL = 30000; // Default 30 seconds
+        for (const selection of selections) {
+            if (this.TTL[selection] && this.TTL[selection] < minTTL) {
+                minTTL = this.TTL[selection];
+            }
+        }
+        return minTTL;
+    },
+
+    // Deduplicate concurrent identical requests
+    async deduplicate(cacheKey, requestFn) {
+        // If an identical request is already in progress, wait for it
+        if (this.pendingRequests.has(cacheKey)) {
+            console.log(`🔄 Deduplicating concurrent request: ${cacheKey}`);
+            return await this.pendingRequests.get(cacheKey);
+        }
+
+        // Start new request and track it
+        const requestPromise = requestFn();
+        this.pendingRequests.set(cacheKey, requestPromise);
+
+        try {
+            const result = await requestPromise;
+            return result;
+        } finally {
+            // Clean up pending request tracker
+            this.pendingRequests.delete(cacheKey);
+        }
+    },
+
+    // Clear all cached data
+    clear() {
+        console.log('🗑️ Clearing API cache');
+        this.cache.clear();
+        this.pendingRequests.clear();
+    },
+
+    // Get cache statistics for debugging
+    getStats() {
+        return {
+            cacheSize: this.cache.size,
+            pendingRequests: this.pendingRequests.size,
+            cacheKeys: Array.from(this.cache.keys())
+        };
+    }
+};
+
 // Extension installation/update handler
 chrome.runtime.onInstalled.addListener((details) => {
     console.log('🚀 Sidekick Extension installed/updated:', details.reason);
@@ -110,19 +217,43 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Handle Torn API calls from content scripts (avoids CORS issues)
 async function handleTornApiCall(request) {
-    try {
-        console.log('🔍 Background: Making Torn API call:', request.selections);
+    const { apiKey, selections, userId, endpoint: requestEndpoint } = request;
 
-        const { apiKey, selections, userId, endpoint: requestEndpoint } = request;
+    if (!apiKey) {
+        return { success: false, error: 'No API key provided' };
+    }
 
-        if (!apiKey) {
-            throw new Error('No API key provided');
+    // Determine the API endpoint
+    const endpoint = requestEndpoint || (userId ? `user/${userId}` : 'user');
+
+    // Generate cache key for this request
+    const cacheKey = apiCache.getCacheKey(apiKey, selections, endpoint);
+
+    // Check cache first
+    const cached = apiCache.get(cacheKey);
+    if (cached) {
+        return cached;
+    }
+
+    // Deduplicate concurrent identical requests
+    return await apiCache.deduplicate(cacheKey, async () => {
+        console.log('🔍 Background: Making fresh API call:', { endpoint, selections });
+
+        // Make the actual API call
+        const result = await makeActualApiCall(apiKey, selections, endpoint);
+
+        // Cache successful results
+        if (result.success) {
+            apiCache.set(cacheKey, result, selections);
         }
 
-        // Determine the API endpoint based on request
-        let endpoint = requestEndpoint || (userId ? `user/${userId}` : 'user');
-        console.log(`🔍 Background: Using endpoint: ${endpoint}`);
+        return result;
+    });
+}
 
+// Actual API call implementation (extracted from handleTornApiCall)
+async function makeActualApiCall(apiKey, selections, endpoint) {
+    try {
         // Prepare results object
         const results = {
             success: true,
