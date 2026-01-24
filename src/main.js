@@ -148,6 +148,16 @@
                 console.warn("⚠️ Chain Timer module not available");
             }
 
+            // Initialize OC Weights Module
+            console.log("📊 Sidekick: Initializing OC Weights...");
+            if (window.SidekickModules.OCWeights?.init) {
+                await window.SidekickModules.OCWeights.init();
+                console.log("✅ Sidekick: OC Weights initialized");
+            } else {
+                console.warn("⚠️ OC Weights module not available");
+            }
+
+
             // Initialize NPC Attack Timer Module
             console.log("⚔️ Sidekick: Initializing NPC Attack Timer...");
             if (window.SidekickModules.NPCAttackTimer?.init) {

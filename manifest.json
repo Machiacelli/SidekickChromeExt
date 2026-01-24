@@ -13,7 +13,8 @@
     "https://api.torn.com/*",
     "https://notion-bug-proxy.akaffebtd.workers.dev/*",
     "https://torn.synclayer.dev/*",
-    "https://sidekick-premium.akaffebtd.workers.dev/*"
+    "https://sidekick-premium.akaffebtd.workers.dev/*",
+    "https://tornprobability.com/*"
   ],
   "icons": {
     "16": "assets/icons/swissknife-16.png",
@@ -61,6 +62,7 @@
         "src/modules/statstracker.module.js",
         "src/modules/premium.module.js",
         "src/modules/notionBugReporter.js",
+        "src/modules/oc-weights.module.js",
         "src/modules/ui.module.js",
         "src/main.js"
       ],
