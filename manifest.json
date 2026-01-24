@@ -63,6 +63,7 @@
         "src/modules/premium.module.js",
         "src/modules/notionBugReporter.js",
         "src/modules/oc-weights.module.js",
+        "src/modules/bunker-bucks.module.js",
         "src/modules/ui.module.js",
         "src/main.js"
       ],

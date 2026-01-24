@@ -157,6 +157,17 @@
                 console.warn("⚠️ OC Weights module not available");
             }
 
+            // Initialize Bunker Bucks Calculator Module
+            console.log("💰 Sidekick: Initializing Bunker Bucks Calculator...");
+            if (window.SidekickModules.BunkerBucks?.init) {
+                await window.SidekickModules.BunkerBucks.init();
+                console.log("✅ Sidekick: Bunker Bucks Calculator initialized");
+            } else {
+                console.warn("⚠️ Bunker Bucks Calculator module not available");
+            }
+
+
+
 
             // Initialize NPC Attack Timer Module
             console.log("⚔️ Sidekick: Initializing NPC Attack Timer...");
