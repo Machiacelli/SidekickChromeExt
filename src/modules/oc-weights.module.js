@@ -180,16 +180,34 @@
                     }
                 }
 
-                console.log("✅ OC weights loaded successfully");
+                console.log("✅ OC weights loaded successfully from API");
                 console.log(`📊 Loaded weights for ${Object.keys(this.weightData).length} OCs`);
             } catch (error) {
-                console.error("❌ Failed to fetch OC weights:", error);
-                console.error("API URL:", this.API_URL);
+                console.warn("⚠️ Failed to fetch OC weights from API, using fallback data:", error.message);
 
-                // Don't disable the module, just log the error
-                // The module will try again on next page load
+                // Use hardcoded fallback data
+                this.loadFallbackData();
             }
         },
+
+        // Load hardcoded fallback data
+        loadFallbackData() {
+            const fallbackData = { "MobMentality": { "Looter1": 33.96650646, "Looter2": 26.48850715, "Looter3": 18.36444021, "Looter4": 21.18054618 }, "PetProject": { "Kidnapper": 30.92676727, "Muscle": 32.62884615, "Picklock": 36.44438658 }, "CashMeIfYouCan": { "Thief1": 54.18134868, "Thief2": 28.04221236, "Lookout": 17.77643896 }, "BestOfTheLot": { "Picklock": 20.73368395, "CarThief": 19.5328795, "Muscle": 43.67657367, "Imitator": 16.05686289 }, "MarketForces": { "Enforcer": 29.4020952, "Negotiator": 27.22899702, "Lookout": 16.36647471, "Arsonist": 4.456390991, "Muscle": 22.54604208 }, "SmokeAndWingMirrors": { "CarThief": 50.89511253, "Imitator": 27.10752487, "Hustler1": 9.000400474, "Hustler2": 12.99696212 }, "GaslightTheWay": { "Imitator1": 9.394999578, "Imitator2": 27.46467248, "Imitator3": 41.32194207, "Looter1": 9.394999578, "Looter2": -0.0003562738035, "Looter3": 12.42374256 }, "StageFright": { "Enforcer": 15.67090339, "Muscle1": 20.01365691, "Muscle2": 2.659259022, "Muscle3": 9.165081208, "Lookout": 6.188888612, "Sniper": 46.30221086 }, "SnowBlind": { "Hustler": 48.40533937, "Imitator": 34.56895649, "Muscle1": 8.512932288, "Muscle2": 8.512771845 }, "LeaveNoTrace": { "Techie": 29.01099583, "Negotiator": 34.1307307, "Imitator": 36.85827347 }, "NoReserve": { "CarThief": 30.50667524, "Techie": 38.37053402, "Engineer": 31.12279075 }, "CounterOffer": { "Robber": 35.94505104, "Looter": 6.998750427, "Hacker": 12.1275068, "Picklock": 16.5353262, "Engineer": 28.39336554 }, "GuardianÁngels": { "Enforcer": 27.404376861170505, "Hustler": 42.10252351813381, "Engineer": 30.49309962016114 }, "HoneyTrap": { "Enforcer": 26.98428598, "Muscle1": 30.86556191, "Muscle2": 42.15015211 }, "BiddingWar": { "Robber1": 7.100963041, "Driver": 12.5356157, "Robber2": 22.87302433, "Robber3": 31.67051915, "Bomber1": 7.846987259, "Bomber2": 17.97289051 }, "SneakyGitGrab": { "Imitator": 17.539756110007634, "Pickpocket": 50.831934101247086, "Hacker": 14.481791981545502, "Techie": 17.146517807199775 }, "BlastFromThePast": { "Picklock1": 10.84876785, "Hacker": 12.05662038, "Engineer": 24.0155975, "Bomber": 15.61710346, "Muscle": 34.58815764, "Picklock2": 2.873753178 }, "BreakTheBank": { "Robber": 12.69693448, "Muscle1": 13.51973049, "Muscle2": 10.10353513, "Thief1": 2.930695727, "Muscle3": 31.65263066, "Thief2": 29.09647352 }, "StackingTheDeck": { "CatBurglar": 23.43294188, "Driver": 2.956670602, "Hacker": 25.43825688, "Imitator": 48.17213064 }, "ClinicalPrecision": { "Imitator": 43.31533431, "CatBurglar": 18.93905648, "Assassin": 16.0581518, "Cleaner": 21.68745741 }, "ManifestCruelty": { "Hacker": 16.32001273063874, "Interrogator": 23.492099324887565, "Reviver": 46.27406770738405, "CatBurglar": 13.913820237089643 }, "AceInTheHole": { "Imitator": 21.07540412, "Muscle1": 18.29831955, "Muscle2": 24.65084339, "Hacker": 28.3434151, "Driver": 7.632017841 }, "GoneFission": { "Hijacker": 24.93974876222353, "Engineer": 15.565232594311826, "Pickpocket": 16.53377808965346, "Imitator": 24.93974876222354, "Bomber": 18.021491791587643 }, "CraneReaction": { "Sniper": 40.73886856841122, "Lookout": 16.623960934255475, "Engineer": 8.286087919744741, "Bomber": 15.8901690506963, "Muscle1": 10.683294142974866, "Muscle2": 7.777619383917385 } };
+
+            // Normalize the fallback data
+            this.weightData = {};
+            for (const [ocName, roles] of Object.entries(fallbackData)) {
+                const ocKey = this.normalize(ocName);
+                this.weightData[ocKey] = {};
+                for (const [roleName, value] of Object.entries(roles)) {
+                    this.weightData[ocKey][this.normalize(roleName)] = value;
+                }
+            }
+
+            console.log("✅ OC weights loaded from fallback data");
+            console.log(`📊 Loaded weights for ${Object.keys(this.weightData).length} OCs`);
+        },
+
 
         // Normalize names: lowercase + remove non-alphanumerics
         normalize(str) {
