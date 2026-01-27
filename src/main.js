@@ -176,6 +176,25 @@
             }
 
 
+            // Initialize Book Notifier Module
+            console.log("📚 Sidekick: Initializing Book Notifier...");
+            if (window.SidekickModules.BookNotifier?.init) {
+                await window.SidekickModules.BookNotifier.init();
+                console.log("✅ Sidekick: Book Notifier initialized");
+            } else {
+                console.warn("⚠️ Book Notifier module not available");
+            }
+
+
+            // Initialize Locked Items Module
+            console.log("🔒 Sidekick: Initializing Locked Items Manager...");
+            if (window.SidekickModules.LockedItems?.init) {
+                await window.SidekickModules.LockedItems.init();
+                console.log("✅ Sidekick: Locked Items Manager initialized");
+            } else {
+                console.warn("⚠️ Locked Items Manager module not available");
+            }
+
 
             // Initialize NPC Attack Timer Module
             console.log("⚔️ Sidekick: Initializing NPC Attack Timer...");
