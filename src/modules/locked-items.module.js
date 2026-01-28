@@ -393,10 +393,20 @@ const LockedItemsManagerModule = {
 
         if (url.includes('item.php')) {
             this.processInventoryPage();
-        } else if (url.includes('bazaar.php') || (url.includes('page.php') && url.includes('sid=ItemMarket'))) {
-            // Check bazaar or item market
-            console.log('🔒 Bazaar/Item Market detected, will process in 100ms');
-            setTimeout(() => this.processBazaarPage(), 100);
+        } else if (url.includes('bazaar.php')) {
+            // Bazaar: only hide on add/manage pages, not browse
+            const hash = window.location.hash;
+            if (hash.includes('/add') || hash.includes('/manage') || url.includes('bazaar.php#/')) {
+                console.log('🔒 Bazaar add/manage detected, will process in 100ms');
+                setTimeout(() => this.processBazaarPage(), 100);
+            }
+        } else if (url.includes('page.php') && url.includes('sid=ItemMarket')) {
+            // Item Market: only hide on add listing, not browse/search
+            const hash = window.location.hash;
+            if (hash.includes('/addListing')) {
+                console.log('🔒 Item Market add listing detected, will process in 100ms');
+                setTimeout(() => this.processBazaarPage(), 100);
+            }
         }
     },
 
@@ -422,12 +432,17 @@ const LockedItemsManagerModule = {
                     return;
                 }
 
-                // Find the clickable parent - try button, div with role button, or any parent with click handler
-                let parent = img.closest('button, [role="button"], li, div[onclick]');
+                // Find the full item container
+                // For Add Listing: virtualListing container is ~5 levels up from image
+                // For Bazaar: li element
+                let parent = img.closest('[class*="virtualListing"], li');
 
-                // If no specific clickable parent found, use the immediate parent
+                // If no virtualListing found yet, walk up 5 levels for Item Market structure
                 if (!parent) {
-                    parent = img.parentElement;
+                    const level5 = img.parentElement?.parentElement?.parentElement?.parentElement?.parentElement;
+                    if (level5) {
+                        parent = level5;
+                    }
                 }
 
                 if (parent) {
