@@ -1,12 +1,9 @@
 // Locked Items Manager Module
-// Prevents accidental trading, selling, or deleting of locked items
-const LockedItemsModule = {
+// Lock inventory items to prevent accidental trading/selling
+const LockedItemsManagerModule = {
     isEnabled: false,
     lockedItems: {},
-    mutationObserver: null,
-    bazaarObserver: null,
-    bazaarInterval: null,
-
+    observer: null,
     STORAGE_KEY: 'locked-items',
 
     // Initialize module
@@ -20,6 +17,13 @@ const LockedItemsModule = {
             this.enable();
         }
 
+        // Listen for storage changes from popup
+        chrome.storage.onChanged.addListener((changes, namespace) => {
+            if (namespace === 'local' && changes.sidekick_settings) {
+                this.loadSettings();
+            }
+        });
+
         console.log('🔒 Locked Items Manager initialized');
     },
 
@@ -28,9 +32,10 @@ const LockedItemsModule = {
         try {
             const data = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings');
             if (data && data[this.STORAGE_KEY]) {
-                this.isEnabled = data[this.STORAGE_KEY].isEnabled || false;
+                const moduleSettings = data[this.STORAGE_KEY];
+                this.isEnabled = moduleSettings.isEnabled || false;
+                console.log('🔒 Settings loaded:', { isEnabled: this.isEnabled });
             }
-            console.log('🔒 Settings loaded:', { isEnabled: this.isEnabled });
         } catch (error) {
             console.error('🔒 Failed to load settings:', error);
         }
@@ -52,9 +57,27 @@ const LockedItemsModule = {
     // Load locked items
     async loadLockedItems() {
         try {
-            const data = await window.SidekickModules.Core.ChromeStorage.get(this.STORAGE_KEY);
-            this.lockedItems = data || {};
-            console.log('🔒 Loaded locked items:', Object.keys(this.lockedItems).length);
+            const items = await window.SidekickModules.Core.ChromeStorage.get('sidekick_locked_items') || {};
+
+            // Clean up corrupted data - remove non-item properties
+            const cleanedItems = {};
+            for (const key in items) {
+                // Skip properties that aren't item IDs
+                if (key === 'isEnabled' || key === 'settings' || typeof items[key] !== 'boolean') {
+                    console.warn(`🔒 Removing invalid property from locked items: ${key}`);
+                    continue;
+                }
+                cleanedItems[key] = items[key];
+            }
+
+            this.lockedItems = cleanedItems;
+            console.log('🔒 Loaded locked items:', Object.keys(this.lockedItems));
+
+            // Save cleaned data if we removed anything
+            if (Object.keys(items).length !== Object.keys(cleanedItems).length) {
+                console.log('🔒 Cleaned corrupted storage, saving...');
+                await this.saveLockedItems();
+            }
         } catch (error) {
             console.error('🔒 Failed to load locked items:', error);
         }
@@ -63,7 +86,7 @@ const LockedItemsModule = {
     // Save locked items
     async saveLockedItems() {
         try {
-            await window.SidekickModules.Core.ChromeStorage.set(this.STORAGE_KEY, this.lockedItems);
+            await window.SidekickModules.Core.ChromeStorage.set('sidekick_locked_items', this.lockedItems);
         } catch (error) {
             console.error('🔒 Failed to save locked items:', error);
         }
@@ -75,9 +98,15 @@ const LockedItemsModule = {
         this.isEnabled = true;
         this.saveSettings();
 
-        this.injectStyles();
-        this.startObserver();
+        this.addStyles();
         this.processPage();
+        this.startObserver();
+
+        // Listen for hash changes (SPA navigation on bazaar/Item Market)
+        window.addEventListener('hashchange', () => {
+            console.log('🔒 Hash changed, reprocessing page');
+            setTimeout(() => this.processPage(), 200);
+        });
 
         console.log('🔒 Locked Items Manager enabled');
     },
@@ -88,65 +117,62 @@ const LockedItemsModule = {
         this.isEnabled = false;
         this.saveSettings();
 
-        this.stopObserver();
-        this.removeUI();
+        if (this.observer) {
+            this.observer.disconnect();
+            this.observer = null;
+        }
 
         console.log('🔒 Locked Items Manager disabled');
     },
 
-    // Inject CSS styles
-    injectStyles() {
+    // Add styles
+    addStyles() {
         if (document.getElementById('sidekick-locked-items-styles')) return;
 
         const style = document.createElement('style');
         style.id = 'sidekick-locked-items-styles';
         style.textContent = `
-            /* Padlock icons - always semi-transparent */
+            /* Padlock icons */
             .sidekick-padlock {
                 cursor: pointer;
                 margin-right: 8px;
-                font-size: 14px;
-                opacity: 0.3;
-                transition: opacity 0.2s ease;
+                font-size: 16px;
+                opacity: 0.2;
+                transition: opacity 0.2s;
+                user-select: none;
             }
             .sidekick-padlock.is-locked {
-                opacity: 1;
+                opacity: 1 !important;
             }
             .sidekick-padlock:hover {
-                opacity: 0.8;
+                opacity: 0.8 !important;
             }
 
-            /* Disable actions for locked items */
-            .sidekick-item-locked li.send,
-            .sidekick-item-locked li.sell,
-            .sidekick-item-locked li.donate,
-            .sidekick-item-locked li.dump,
-            .sidekick-item-locked li.return {
-                opacity: 0.1 !important;
-                pointer-events: none !important;
-                filter: grayscale(1) brightness(0.5) !important;
+            /* Locked item styling */
+            .sidekick-item-locked {
+                opacity: 0.6;
             }
 
-            /* Unlock/Lock All button - Torn themed */
-            #sidekick-unlock-all-btn {
-                padding: 6px 12px;
-                background: #2a2a2a;
-                color: #ddd;
-                border: 1px solid #444;
-                border-radius: 3px;
-                font-size: 11px;
-                font-weight: 500;
+            /* Unlock all button */
+            .sidekick-unlock-all-btn {
+                padding: 8px 14px;
+                background: #1a1a1a;
+                color: #fff;
+                border: 1px solid #cf4444;
+                border-radius: 4px;
                 cursor: pointer;
-                margin-left: 8px;
-                transition: all 0.2s ease;
+                font-size: 12px;
+                font-weight: bold;
+                margin-top: 10px;
+                transition: all 0.2s;
             }
-            #sidekick-unlock-all-btn:hover {
-                background: #333;
-                border-color: #666;
+            .sidekick-unlock-all-btn:hover {
+                background: #cf4444;
+                border-color: #fff;
                 color: #fff;
             }
 
-            /* Hide locked items on bazaar add page, trade, market */
+            /* Hide locked items on bazaar add, trade, market */
             .sidekick-hide-locked {
                 display: none !important;
                 visibility: hidden !important;
@@ -184,33 +210,61 @@ const LockedItemsModule = {
         document.head.appendChild(style);
     },
 
-    // Get unique ID for item
+    // Get unique ID for item (matches original Greasemonkey script)
     getItemID(element) {
-        // Priority 1: Armory IDs for weapons/armor
-        const armory = element.getAttribute('data-armoryid') || element.getAttribute('data-armory');
-        if (armory) return armory;
-
-        // Priority 2: Child armory IDs
-        const armoryChild = element.querySelector('[data-armory], [data-armoryid]');
-        if (armoryChild) {
-            const childArmory = armoryChild.getAttribute('data-armory') || armoryChild.getAttribute('data-armoryid');
-            if (childArmory) return childArmory;
-        }
-
-        // Priority 3: Armory input
-        const armoryInput = element.querySelector('input[name="armoryID"]');
-        if (armoryInput?.value) return armoryInput.value;
-
-        // Priority 4: Base item ID from image
+        // Priority 1: Base item ID from image (for stackable items like Blood Bags)
+        // We want to lock by ITEM TYPE, not specific instance
         const img = element.querySelector('img[src*="/items/"]');
         if (img) {
             const src = img.getAttribute('src');
             const match = src.match(/\/items\/(\d+)\//);
-            if (match) return match[1];
+            if (match) {
+                const baseItemId = match[1];
+                console.log(`🔒 getItemID: Found base item ID from image: ${baseItemId}`);
+                return baseItemId;
+            }
         }
 
-        // Priority 5: Data attributes
-        return element.getAttribute('data-id') || element.getAttribute('data-item');
+        // Priority 2: Data attributes (fallback for items without images)
+        const itemId = element.getAttribute('data-id') || element.getAttribute('data-item');
+        if (itemId) {
+            console.log(`🔒 getItemID: Using data attribute ID: ${itemId}`);
+            return itemId;
+        }
+
+        // Priority 3: Armory IDs for weapons/armor (instance-specific)
+        const armory = element.getAttribute('data-armoryid') || element.getAttribute('data-armory');
+        if (armory) {
+            console.log(`🔒 getItemID: Found armory ID: ${armory}`);
+            return armory;
+        }
+
+        // Priority 4: Child armory IDs
+        const armoryChild = element.querySelector('[data-armory], [data-armoryid]');
+        if (armoryChild) {
+            const childArmory = armoryChild.getAttribute('data-armory') || armoryChild.getAttribute('data-armoryid');
+            if (childArmory) {
+                console.log(`🔒 getItemID: Found child armory ID: ${childArmory}`);
+                return childArmory;
+            }
+        }
+
+        // Priority 5: Armory input
+        const armoryInput = element.querySelector('input[name="armoryID"]');
+        if (armoryInput?.value) {
+            console.log(`🔒 getItemID: Found armory input ID: ${armoryInput.value}`);
+            return armoryInput.value;
+        }
+
+        // Priority 6: ID input
+        const idInput = element.querySelector('input[name="ID"]');
+        if (idInput?.value) {
+            console.log(`🔒 getItemID: Found ID input: ${idInput.value}`);
+            return idInput.value;
+        }
+
+        console.warn('🔒 getItemID: No ID found for element:', element);
+        return null;
     },
 
     // Show toast notification
@@ -253,6 +307,10 @@ const LockedItemsModule = {
             // Add or update padlock icon
             let padlock = el.querySelector('.sidekick-padlock');
             if (!padlock) {
+                // Mark that we've processed this element
+                if (el.hasAttribute('data-sidekick-processed')) return;
+                el.setAttribute('data-sidekick-processed', 'true');
+
                 padlock = document.createElement('span');
                 padlock.className = 'sidekick-padlock';
                 padlock.onclick = (e) => {
@@ -290,43 +348,40 @@ const LockedItemsModule = {
         this.processPage();
     },
 
-    // Add unlock/lock all button next to sort button
+    // Add unlock all button for current category
     addUnlockAllButton() {
-        if (!window.location.href.includes('item.php')) return;
-        if (document.getElementById('sidekick-unlock-all-btn')) return;
+        const sortButton = document.querySelector('[class*="sort"] button');
+        if (!sortButton || sortButton.nextElementSibling?.classList.contains('sidekick-unlock-all-btn')) return;
 
-        // Find the sort button
-        const sortButton = document.querySelector('[class*="sort"] button, .item-sort-button, button[aria-label*="sort"]');
-        if (!sortButton) return;
+        const unlockBtn = document.createElement('button');
+        unlockBtn.className = 'sidekick-unlock-all-btn';
+        unlockBtn.textContent = 'Unlock All (Category)';
+        unlockBtn.onclick = async () => {
+            if (!confirm('Unlock all items in this category?')) return;
 
-        const btn = document.createElement('button');
-        btn.id = 'sidekick-unlock-all-btn';
-        btn.textContent = `Unlock All (${Object.keys(this.lockedItems).length})`;
-        btn.onclick = () => this.unlockAllInCategory();
+            const items = document.querySelectorAll('li[data-id], li[data-item]');
+            let unlockedCount = 0;
 
-        sortButton.parentElement.insertBefore(btn, sortButton.nextSibling);
-    },
+            items.forEach(el => {
+                if (el.getAttribute('data-group') === 'parent') return;
+                const itemId = this.getItemID(el);
+                if (itemId && this.lockedItems[itemId]) {
+                    delete this.lockedItems[itemId];
+                    unlockedCount++;
+                }
+            });
 
-    // Unlock all items in current category
-    async unlockAllInCategory() {
-        const visibleItems = document.querySelectorAll('li[data-id]:not([style*="display: none"]), li[data-item]:not([style*="display: none"])');
-        let unlockedCount = 0;
-
-        for (const item of visibleItems) {
-            const itemId = this.getItemID(item);
-            if (itemId && this.lockedItems[itemId]) {
-                delete this.lockedItems[itemId];
-                unlockedCount++;
-            }
-        }
-
-        if (unlockedCount > 0) {
             await this.saveLockedItems();
-            this.showToast(`Unlocked ${unlockedCount} items in this category`);
             this.processPage();
-        } else {
-            this.showToast('No locked items in this category');
-        }
+
+            if (unlockedCount > 0) {
+                this.showToast(`Unlocked ${unlockedCount} items`);
+            } else {
+                this.showToast('No locked items in this category');
+            }
+        };
+
+        sortButton.parentNode.insertBefore(unlockBtn, sortButton.nextSibling);
     },
 
     // Process current page
@@ -334,28 +389,80 @@ const LockedItemsModule = {
         if (!this.isEnabled) return;
 
         const url = window.location.href;
+        console.log('🔒 Processing page:', url);
 
         if (url.includes('item.php')) {
             this.processInventoryPage();
-        } else if (url.includes('bazaar.php') && url.includes('#/add')) {
-            this.processBazaarPage();
-        } else {
-            this.hideLockedItems();
+        } else if (url.includes('bazaar.php') || (url.includes('page.php') && url.includes('sid=ItemMarket'))) {
+            // Check bazaar or item market
+            console.log('🔒 Bazaar/Item Market detected, will process in 100ms');
+            setTimeout(() => this.processBazaarPage(), 100);
         }
     },
 
-    // Process bazaar add page
+    // Process bazaar and Item Market add/manage pages
     processBazaarPage() {
-        const items = document.querySelectorAll('li[data-group="child"]');
+        let items = [];
 
+        // Priority 1: Bazaar-specific selectors
+        items = document.querySelectorAll('li[data-group="child"]');
+
+        // Priority 2: Item Market - find ALL item images and work up to their clickable parents
+        if (items.length === 0) {
+            // Find ALL item images on the page (Add Listing doesn't use li elements)
+            const allImages = document.querySelectorAll('img.torn-item, img[src*="/items/"]');
+            console.log(`🔒 Found ${allImages.length} item images on page`);
+
+            const parentSet = new Set();
+
+            allImages.forEach(img => {
+                // Skip if it's in a dropdown or menu
+                const dropdown = img.closest('[role="option"], .menu-item-link, [data-testid^="option-"]');
+                if (dropdown) {
+                    return;
+                }
+
+                // Find the clickable parent - try button, div with role button, or any parent with click handler
+                let parent = img.closest('button, [role="button"], li, div[onclick]');
+
+                // If no specific clickable parent found, use the immediate parent
+                if (!parent) {
+                    parent = img.parentElement;
+                }
+
+                if (parent) {
+                    parentSet.add(parent);
+                }
+            });
+
+            items = Array.from(parentSet);
+        }
+
+        // Priority 3: Fallback selectors for manage page
+        if (items.length === 0) {
+            items = document.querySelectorAll('ul.items-cont > li, .items-list li');
+        }
+
+        console.log(`🔒 Bazaar: Found ${items.length} items, checking against locked:`, Object.keys(this.lockedItems));
+
+        if (items.length === 0) return;
+
+        let hiddenCount = 0;
         items.forEach(item => {
             const itemId = this.getItemID(item);
+
             if (itemId && this.lockedItems[itemId]) {
                 item.classList.add('sidekick-hide-locked');
+                item.style.display = 'none !important';
+                hiddenCount++;
+                console.log(`🔒 Hiding item ID: ${itemId}`);
             } else {
                 item.classList.remove('sidekick-hide-locked');
+                item.style.display = '';
             }
         });
+
+        console.log(`🔒 Hidden ${hiddenCount}/${items.length} items on bazaar`);
     },
 
     // Hide locked items on trade/market pages
@@ -364,39 +471,20 @@ const LockedItemsModule = {
         // Implementation would be similar to bazaar
     },
 
-    // Start mutation observer
+    // Start observer
     startObserver() {
-        if (this.mutationObserver) return;
+        if (this.observer) return;
 
-        this.mutationObserver = new MutationObserver(() => {
-            setTimeout(() => this.processPage(), 100);
+        let debounceTimer = null;
+        this.observer = new MutationObserver(() => {
+            // Debounce to prevent infinite loops
+            if (debounceTimer) clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                requestAnimationFrame(() => this.processPage());
+            }, 300);
         });
 
-        this.mutationObserver.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-    },
-
-    // Stop mutation observer
-    stopObserver() {
-        if (this.mutationObserver) {
-            this.mutationObserver.disconnect();
-            this.mutationObserver = null;
-        }
-    },
-
-    // Remove all UI elements
-    removeUI() {
-        document.getElementById('sidekick-locked-items-styles')?.remove();
-        document.getElementById('sidekick-unlock-all-btn')?.remove();
-        document.querySelectorAll('.sidekick-padlock').forEach(el => el.remove());
-        document.querySelectorAll('.sidekick-item-locked').forEach(el => {
-            el.classList.remove('sidekick-item-locked');
-        });
-        document.querySelectorAll('.sidekick-hide-locked').forEach(el => {
-            el.classList.remove('sidekick-hide-locked');
-        });
+        this.observer.observe(document.body, { childList: true, subtree: true });
     }
 };
 
@@ -404,6 +492,6 @@ const LockedItemsModule = {
 if (typeof window.SidekickModules === 'undefined') {
     window.SidekickModules = {};
 }
-window.SidekickModules.LockedItems = LockedItemsModule;
+window.SidekickModules.LockedItems = LockedItemsManagerModule;
 
 console.log('🔒 Locked Items Manager module registered');
