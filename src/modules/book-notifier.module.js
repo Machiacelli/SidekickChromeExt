@@ -120,10 +120,16 @@ const BookNotifierModule = {
                 return;
             }
 
-            const data = response.data;
+            // Check if missions data exists
+            // Note: Some API keys may not have access to missions endpoint
+            if (!response || !response.missions) {
+                // This is expected if no API key or missions access - just log quietly
+                console.log('📚 No missions data available - you may need full API access or missions to check');
+                return;
+            }
 
             // Check if there's at least one book in rewards
-            const hasBook = data.missions?.rewards?.some(reward =>
+            const hasBook = response.missions?.rewards?.some(reward =>
                 reward.details?.type === 'Book'
             );
 
