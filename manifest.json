@@ -67,6 +67,7 @@
         "src/modules/blood-bag-reminder.module.js",
         "src/modules/book-notifier.module.js",
         "src/modules/locked-items.module.js",
+        "src/modules/quick-deposit.module.js",
         "src/modules/ui.module.js",
         "src/main.js"
       ],
