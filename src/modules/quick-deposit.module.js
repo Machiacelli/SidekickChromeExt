@@ -9,7 +9,7 @@ const QuickDepositModule = {
 
     // State
     settings: {
-        priority: ['GHOST', 'FACTION', 'PROPERTY', 'COMPANY'] // Default priority order
+        target: 'FACTION' // Default deposit target: FACTION, PROPERTY, COMPANY, or GHOST
     },
 
     state: {
@@ -27,19 +27,19 @@ const QuickDepositModule = {
         try {
             const ChromeStorage = window.SidekickModules.Core.ChromeStorage;
             const stored = await ChromeStorage.get([
-                'quickDeposit_priority',
+                'quickDeposit_target',
                 'quickDeposit_ghostID'
             ]);
 
-            if (stored.quickDeposit_priority) {
-                this.settings.priority = stored.quickDeposit_priority;
+            if (stored.quickDeposit_target) {
+                this.settings.target = stored.quickDeposit_target;
             }
 
             if (stored.quickDeposit_ghostID) {
                 this.state.ghostID = stored.quickDeposit_ghostID;
             }
 
-            console.log('🏦 Priority:', this.settings.priority);
+            console.log('🏦 Deposit Target:', this.settings.target);
             console.log('🏦 Ghost ID:', this.state.ghostID || 'None');
         } catch (err) {
             console.error('🏦 Error loading settings:', err);
@@ -165,28 +165,20 @@ const QuickDepositModule = {
         let text = '[deposit]';
         let title = 'Quick Deposit';
 
-        // Determine active target based on priority
-        for (const type of this.settings.priority) {
-            if (type === 'GHOST' && this.state.ghostID && status.ghost) {
-                text = '[ghost]';
-                title = `Ghost Trade: ${this.state.ghostID}`;
-                break;
-            }
-            if (type === 'FACTION' && status.faction) {
-                text = '[deposit]';
-                title = 'Faction Vault';
-                break;
-            }
-            if (type === 'PROPERTY' && status.property) {
-                text = '[deposit]';
-                title = 'Property Vault';
-                break;
-            }
-            if (type === 'COMPANY' && status.company) {
-                text = '[deposit]';
-                title = 'Company Vault';
-                break;
-            }
+        // Show target based on settings
+        const target = this.settings.target;
+
+        if (target === 'GHOST' && this.state.ghostID && status.ghost) {
+            text = '[ghost]';
+            title = `Ghost Trade: ${this.state.ghostID}`;
+        } else if (target === 'FACTION' && status.faction) {
+            title = 'Faction Vault';
+        } else if (target === 'PROPERTY' && status.property) {
+            title = 'Property Vault';
+        } else if (target === 'COMPANY' && status.company) {
+            title = 'Company Vault';
+        } else {
+            title = 'No vault available';
         }
 
         this.state.depositButton.innerText = text;
@@ -203,43 +195,31 @@ const QuickDepositModule = {
             return;
         }
 
-        // Determine target mode
-        let target = mode;
-        if (mode === 'auto') {
-            for (const type of this.settings.priority) {
-                if (type === 'GHOST' && this.state.ghostID && status.ghost) { target = 'ghost'; break; }
-                if (type === 'FACTION' && status.faction) { target = 'faction'; break; }
-                if (type === 'PROPERTY' && status.property) { target = 'property'; break; }
-                if (type === 'COMPANY' && status.company) { target = 'company'; break; }
-            }
-            if (!target || target === 'auto') {
-                this.showToast('No vault available');
-                return;
-            }
-        }
+        // Use configured target or auto mode
+        let target = mode === 'auto' ? this.settings.target : mode;
 
-        // Validate target
-        if (target === 'ghost' && (!this.state.ghostID || !status.ghost)) {
+        // Validate target is available
+        if (target === 'GHOST' && (!this.state.ghostID || !status.ghost)) {
             this.showToast('Ghost trade not available');
             return;
         }
-        if (target === 'faction' && !status.faction) {
+        if (target === 'FACTION' && !status.faction) {
             this.showToast('Faction vault not available');
             return;
         }
-        if (target === 'company' && !status.company) {
+        if (target === 'COMPANY' && !status.company) {
             this.showToast('Company vault not available');
             return;
         }
 
         // Execute deposit based on target
-        if (target === 'ghost') {
+        if (target === 'GHOST') {
             this.depositToGhost(balance);
-        } else if (target === 'faction') {
+        } else if (target === 'FACTION') {
             this.depositToFaction(balance);
-        } else if (target === 'property') {
+        } else if (target === 'PROPERTY') {
             this.depositToProperty(balance);
-        } else if (target === 'company') {
+        } else if (target === 'COMPANY') {
             this.depositToCompany(balance);
         }
     },
@@ -347,7 +327,7 @@ const QuickDepositModule = {
         input.dispatchEvent(new Event('blur', { bubbles: true }));
     },
 
-    // Scan trade page for ghost trades
+    // Scan trades for ghost trade detection
     async scanTrades() {
         if (!window.location.href.includes('trade.php')) return;
 
@@ -400,9 +380,9 @@ const QuickDepositModule = {
 
     // Update settings
     async updateSettings(newSettings) {
-        if (newSettings.priority) {
-            this.settings.priority = newSettings.priority;
-            await window.SidekickModules.Core.ChromeStorage.set('quickDeposit_priority', newSettings.priority);
+        if (newSettings.target) {
+            this.settings.target = newSettings.target;
+            await window.SidekickModules.Core.ChromeStorage.set('quickDeposit_target', newSettings.target);
         }
         this.updateButtonText();
     },

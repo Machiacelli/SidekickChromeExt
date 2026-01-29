@@ -698,16 +698,16 @@
                 <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
                 
                 <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Deposit Priority:</label>
-                    <select id="quickdeposit-priority" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
+                    <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Deposit Target:</label>
+                    <select id="quickdeposit-target" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
                                                            border-radius: 5px; color: white; font-size: 14px; box-sizing: border-box;">
-                        <option value="GHOST,FACTION,PROPERTY,COMPANY" selected style="background: #1a1a1a; color: white;">Ghost → Faction → Property → Company</option>
-                        <option value="FACTION,GHOST,PROPERTY,COMPANY" style="background: #1a1a1a; color: white;">Faction → Ghost → Property → Company</option>
-                        <option value="FACTION,PROPERTY,COMPANY,GHOST" style="background: #1a1a1a; color: white;">Faction → Property → Company → Ghost</option>
-                        <option value="COMPANY,FACTION,PROPERTY,GHOST" style="background: #1a1a1a; color: white;">Company → Faction → Property → Company</option>
+                        <option value="FACTION" selected style="background: #1a1a1a; color: white;">Faction Vault</option>
+                        <option value="PROPERTY" style="background: #1a1a1a; color: white;">Property Vault</option>
+                        <option value="COMPANY" style="background: #1a1a1a; color: white;">Company Vault</option>
+                        <option value="GHOST" style="background: #1a1a1a; color: white;">Ghost Trade</option>
                     </select>
                     <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
-                        When you click [deposit], it deposits to the first available vault based on this priority order.
+                        Choose where your deposits go when you click the [deposit] button.
                     </div>
                 </div>
                 
