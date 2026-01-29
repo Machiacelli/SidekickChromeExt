@@ -290,8 +290,14 @@ const TravelStocksModule = {
 
         const x = savedState.x || 10;
         const y = savedState.y || 10;
-        const width = savedState.width || 380;
-        const height = savedState.height || 280;
+
+        // Cap saved dimensions to prevent oversized windows
+        let width = savedState.width || 380;
+        let height = savedState.height || 280;
+
+        // Override if saved state is too large
+        if (width > 400) width = 380;
+        if (height > 350) height = 280;
 
         const win = document.createElement('div');
         win.className = 'travel-stocks-window';
