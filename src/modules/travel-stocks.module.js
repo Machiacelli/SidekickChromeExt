@@ -279,16 +279,67 @@ const TravelStocksModule = {
         if (this.state.window) return;
 
         const win = document.createElement('div');
-        win.className = 'sidekick-window travel-stocks-window';
+        win.className = 'travel-stocks-window';
+        win.style.cssText = `
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            width: 700px;
+            height: 500px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            min-width: 500px;
+            min-height: 350px;
+            z-index: 1000;
+            resize: both;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        `;
+
         win.innerHTML = `
-            <div class="window-header">
+            <div class="window-header" style="
+                background: linear-gradient(135deg, #FF9800, #F57C00);
+                padding: 8px 12px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                cursor: move;
+                color: #fff;
+                font-weight: bold;
+                border-radius: 6px 6px 0 0;
+                font-size: 13px;
+                user-select: none;
+            ">
                 <span class="window-title">💰 Travel Stock & Profit</span>
-                <div class="window-controls">
-                    <button class="window-btn window-minimize"><</button>
-                    <button class="window-btn window-close">×</button>
+                <div class="window-controls" style="display: flex; gap: 4px;">
+                    <button class="window-close" style="
+                        background: #dc3545;
+                        border: none;
+                        color: white;
+                        cursor: pointer;
+                        font-size: 12px;
+                        padding: 0;
+                        width: 18px;
+                        height: 18px;
+                        border-radius: 50%;
+                        font-weight: bold;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">×</button>
                 </div>
             </div>
-            <div class="window-content travel-stocks-content">
+            <div class="window-content" style="
+                flex: 1;
+                overflow: hidden;
+                background: #1f1f1f;
+                color: #fff;
+                display: flex;
+                flex-direction: column;
+            ">
                 <div class="travel-controls">
                     <label>
                         Country:
