@@ -291,7 +291,7 @@ const QuickDepositModule = {
         const onPage = url.includes('properties.php');
 
         if (!onPage) {
-            window.location.href = 'https://www.torn.com/properties.php';
+            window.location.href = 'https://www.torn.com/properties.php#/p=options&tab=vault';
             return;
         }
 
