@@ -68,7 +68,7 @@
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
-                width: 950px;
+                width: 1000px;
                 height: 750px;
                 background: #1a1a1a;
                 border: 1px solid rgba(255,255,255,0.2);

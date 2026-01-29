@@ -26,21 +26,31 @@ const QuickDepositModule = {
         // Load settings from Chrome Storage
         try {
             const ChromeStorage = window.SidekickModules.Core.ChromeStorage;
-            const stored = await ChromeStorage.get([
-                'quickDeposit_target',
-                'quickDeposit_ghostID'
-            ]);
+            const targetStored = await ChromeStorage.get('quickDeposit_target');
+            const ghostStored = await ChromeStorage.get('quickDeposit_ghostID');
 
-            if (stored.quickDeposit_target) {
-                this.settings.target = stored.quickDeposit_target;
+            if (targetStored) {
+                this.settings.target = targetStored;
             }
 
-            if (stored.quickDeposit_ghostID) {
-                this.state.ghostID = stored.quickDeposit_ghostID;
+            if (ghostStored) {
+                this.state.ghostID = ghostStored;
             }
 
             console.log('🏦 Deposit Target:', this.settings.target);
             console.log('🏦 Ghost ID:', this.state.ghostID || 'None');
+
+            // Check if enabled via popup toggle
+            const settings = await ChromeStorage.get('sidekick_settings') || {};
+            const moduleSettings = settings['quick-deposit'] || {};
+            const isEnabled = moduleSettings.isEnabled !== false; // Default to true
+
+            if (isEnabled) {
+                console.log('🏦 Quick Deposit: Enabled via toggle');
+                this.enable();
+            } else {
+                console.log('🏦 Quick Deposit: Disabled via toggle');
+            }
         } catch (err) {
             console.error('🏦 Error loading settings:', err);
         }
