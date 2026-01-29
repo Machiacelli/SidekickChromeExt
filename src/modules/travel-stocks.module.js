@@ -159,67 +159,98 @@ const TravelStocksModule = {
             .travel-controls {
                 display: flex;
                 flex-wrap: wrap;
-                gap: 12px;
+                gap: 8px;
                 align-items: center;
-                padding: 10px;
-                background: rgba(0,0,0,0.3);
-                border-bottom: 1px solid rgba(255,255,255,0.1);
+                padding: 8px 10px;
+                background: linear-gradient(135deg, rgba(0,0,0,0.4), rgba(0,0,0,0.3));
+                border-bottom: 1px solid rgba(255,255,255,0.15);
             }
             .travel-controls label {
                 display: flex;
                 align-items: center;
-                gap: 6px;
-                font-size: 11px;
-                color: #ffffff;
+                gap: 4px;
+                font-size: 10px;
+                color: rgba(255,255,255,0.9);
+                font-weight: 500;
             }
             .travel-controls select {
                 padding: 4px 8px;
-                border-radius: 4px;
-                background: rgba(0,0,0,0.4);
-                border: 1px solid rgba(255,255,255,0.2);
+                border-radius: 6px;
+                background: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.15);
                 color: white;
-                font-size: 11px;
+                font-size: 10px;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            .travel-controls select:hover {
+                background: rgba(255,255,255,0.12);
+                border-color: rgba(255,255,255,0.25);
             }
             .travel-checkbox-label {
                 cursor: pointer;
-                color: #ffffff;
+                color: rgba(255,255,255,0.9);
+                font-size: 10px;
+                padding: 4px 8px;
+                border-radius: 6px;
+                background: rgba(255,255,255,0.05);
+                transition: all 0.2s;
+            }
+            .travel-checkbox-label:hover {
+                background: rgba(255,255,255,0.1);
             }
             .travel-refresh-btn {
                 padding: 5px 12px;
-                border-radius: 4px;
-                background: rgba(76, 175, 80, 0.3);
-                border: 1px solid rgba(76, 175, 80, 0.5);
+                border-radius: 6px;
+                background: linear-gradient(135deg, #4ade80, #22c55e);
+                border: none;
                 color: white;
                 cursor: pointer;
-                font-size: 11px;
+                font-size: 10px;
+                font-weight: 600;
+                transition: all 0.2s;
+                box-shadow: 0 2px 4px rgba(34, 197, 94, 0.2);
             }
             .travel-refresh-btn:hover {
-                background: rgba(76, 175, 80, 0.5);
+                transform: translateY(-1px);
+                box-shadow: 0 4px 8px rgba(34, 197, 94, 0.3);
             }
             .travel-meta {
                 margin-left: auto;
-                font-size: 10px;
-                opacity: 0.8;
-                color: #ffffff;
+                font-size: 9px;
+                color: rgba(255,255,255,0.6);
+                background: rgba(255,255,255,0.05);
+                padding: 3px 8px;
+                border-radius: 12px;
+                font-weight: 500;
             }
             .travel-table-wrap {
                 overflow: auto;
                 flex: 1;
+                scrollbar-width: none; /* Firefox */
+                -ms-overflow-style: none; /* IE/Edge */
+            }
+            .travel-table-wrap::-webkit-scrollbar {
+                display: none; /* Chrome/Safari */
             }
             .travel-table {
                 width: 100%;
                 border-collapse: collapse;
-                font-size: 11px;
+                font-size: 10px;
                 color: #ffffff;
             }
             .travel-table thead th {
                 position: sticky;
                 top: 0;
-                background: rgba(0,0,0,0.9);
-                padding: 8px;
+                background: linear-gradient(135deg, rgba(0,0,0,0.95), rgba(20,20,20,0.9));
+                padding: 6px 8px;
                 text-align: left;
-                border-bottom: 1px solid rgba(255,255,255,0.2);
-                font-weight: bold;
+                border-bottom: 2px solid rgba(255,152,0,0.3);
+                font-weight: 600;
+                font-size: 9px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: rgba(255,255,255,0.8);
                 z-index: 1;
             }
             .travel-table th.num,
@@ -227,11 +258,14 @@ const TravelStocksModule = {
                 text-align: right;
             }
             .travel-table td {
-                padding: 6px 8px;
-                border-bottom: 1px solid rgba(255,255,255,0.05);
+                padding: 5px 8px;
+                border-bottom: 1px solid rgba(255,255,255,0.03);
+            }
+            .travel-table tbody tr:nth-child(even) {
+                background: rgba(255,255,255,0.02);
             }
             .travel-table tbody tr:hover {
-                background: rgba(255,255,255,0.05);
+                background: rgba(255,152,0,0.1) !important;
             }
             .travel-loading {
                 padding: 20px;
@@ -240,25 +274,35 @@ const TravelStocksModule = {
                 color: #ffffff;
             }
             .item-name {
-                font-weight: bold;
+                font-weight: 600;
             }
             .item-id {
                 font-size: 10px;
                 opacity: 0.6;
             }
             .profit-positive {
-                color: #4caf50;
-                font-weight: bold;
+                color: #4ade80;
+                font-weight: 600;
+            }
+            .profit-positive::before {
+                content: '↑ ';
+                opacity: 0.7;
             }
             .profit-negative {
-                color: #f44336;
-                font-weight: bold;
+                color: #f87171;
+                font-weight: 600;
+            }
+            .profit-negative::before {
+                content: '↓ ';
+                opacity: 0.7;
             }
             .profit-zero {
-                color: rgba(255,255,255,0.6);
+                color: #94a3b8;
+                font-weight: 500;
             }
             .profit-unknown {
-                color: rgba(255,255,255,0.4);
+                color: rgba(255,255,255,0.3);
+                font-style: italic;
             }
         `;
         document.head.appendChild(style);
