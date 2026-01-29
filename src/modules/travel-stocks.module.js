@@ -169,7 +169,8 @@ const TravelStocksModule = {
                 display: flex;
                 align-items: center;
                 gap: 6px;
-                font-size: 12px;
+                font-size: 11px;
+                color: #ffffff;
             }
             .travel-controls select {
                 padding: 4px 8px;
@@ -177,9 +178,11 @@ const TravelStocksModule = {
                 background: rgba(0,0,0,0.4);
                 border: 1px solid rgba(255,255,255,0.2);
                 color: white;
+                font-size: 11px;
             }
             .travel-checkbox-label {
                 cursor: pointer;
+                color: #ffffff;
             }
             .travel-refresh-btn {
                 padding: 5px 12px;
@@ -188,15 +191,16 @@ const TravelStocksModule = {
                 border: 1px solid rgba(76, 175, 80, 0.5);
                 color: white;
                 cursor: pointer;
-                font-size: 12px;
+                font-size: 11px;
             }
             .travel-refresh-btn:hover {
                 background: rgba(76, 175, 80, 0.5);
             }
             .travel-meta {
                 margin-left: auto;
-                font-size: 11px;
+                font-size: 10px;
                 opacity: 0.8;
+                color: #ffffff;
             }
             .travel-table-wrap {
                 overflow: auto;
@@ -205,7 +209,8 @@ const TravelStocksModule = {
             .travel-table {
                 width: 100%;
                 border-collapse: collapse;
-                font-size: 12px;
+                font-size: 11px;
+                color: #ffffff;
             }
             .travel-table thead th {
                 position: sticky;
@@ -232,6 +237,7 @@ const TravelStocksModule = {
                 padding: 20px;
                 text-align: center;
                 opacity: 0.7;
+                color: #ffffff;
             }
             .item-name {
                 font-weight: bold;
@@ -284,8 +290,8 @@ const TravelStocksModule = {
 
         const x = savedState.x || 10;
         const y = savedState.y || 10;
-        const width = savedState.width || 600;
-        const height = savedState.height || 450;
+        const width = savedState.width || 450;
+        const height = savedState.height || 350;
 
         const win = document.createElement('div');
         win.className = 'travel-stocks-window';
