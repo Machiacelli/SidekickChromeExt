@@ -278,21 +278,30 @@ const TravelStocksModule = {
     async createWindow() {
         if (this.state.window) return;
 
+        // Load saved state
+        const ChromeStorage = window.SidekickModules.Core.ChromeStorage;
+        const savedState = await ChromeStorage.get('sidekick_travelStocksWindowState') || {};
+
+        const x = savedState.x || 10;
+        const y = savedState.y || 10;
+        const width = savedState.width || 600;
+        const height = savedState.height || 450;
+
         const win = document.createElement('div');
         win.className = 'travel-stocks-window';
         win.style.cssText = `
             position: absolute;
-            left: 10px;
-            top: 10px;
-            width: 700px;
-            height: 500px;
+            left: ${x}px;
+            top: ${y}px;
+            width: ${width}px;
+            height: ${height}px;
             background: #2a2a2a;
             border: 1px solid #444;
             border-radius: 6px;
             display: flex;
             flex-direction: column;
-            min-width: 500px;
-            min-height: 350px;
+            min-width: 350px;
+            min-height: 250px;
             z-index: 1000;
             resize: both;
             overflow: hidden;
@@ -394,6 +403,9 @@ const TravelStocksModule = {
         this.state.window = win;
         this.wireWindow(win);
 
+        // Auto-load data
+        setTimeout(() => this.renderTable(win, true), 100);
+
         // Register with WindowManager
         if (window.SidekickModules?.Core?.WindowManager) {
             window.SidekickModules.Core.WindowManager.registerWindow(win, 'travel-stocks');
@@ -460,6 +472,18 @@ const TravelStocksModule = {
             currentX = e.clientX - initialX;
             currentY = e.clientY - initialY;
 
+            // Constrain to sidebar bounds
+            const sidebar = document.getElementById('sidekick-content');
+            if (sidebar) {
+                const sidebarRect = sidebar.getBoundingClientRect();
+                const winWidth = win.offsetWidth;
+                const winHeight = win.offsetHeight;
+
+                // Keep within bounds
+                currentX = Math.max(0, Math.min(currentX, sidebarRect.width - winWidth));
+                currentY = Math.max(0, Math.min(currentY, sidebarRect.height - winHeight));
+            }
+
             win.style.left = currentX + 'px';
             win.style.top = currentY + 'px';
         };
@@ -470,6 +494,9 @@ const TravelStocksModule = {
             header.style.cursor = 'move';
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
+
+            // Save position
+            this.saveWindowState(win);
         };
 
         // Close button
@@ -512,6 +539,28 @@ const TravelStocksModule = {
         refreshBtn.addEventListener('click', () => {
             this.renderTable(win, true);
         });
+
+        // Save size on resize
+        const resizeObserver = new ResizeObserver(() => {
+            this.saveWindowState(win);
+        });
+        resizeObserver.observe(win);
+    },
+
+    // Save window state
+    async saveWindowState(win) {
+        try {
+            const ChromeStorage = window.SidekickModules.Core.ChromeStorage;
+            const state = {
+                x: parseInt(win.style.left) || 10,
+                y: parseInt(win.style.top) || 10,
+                width: win.offsetWidth,
+                height: win.offsetHeight
+            };
+            await ChromeStorage.set('sidekick_travelStocksWindowState', state);
+        } catch (err) {
+            console.error('💰 Error saving window state:', err);
+        }
     },
 
     // Apply settings to UI elements
