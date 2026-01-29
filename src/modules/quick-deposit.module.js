@@ -363,7 +363,8 @@ const QuickDepositModule = {
 
         // Check trade list
         if (!currentID && !this.state.ghostID) {
-            document.querySelectorAll('ul.trade-list-container > li').forEach(li => {
+            const tradeItems = document.querySelectorAll('ul.trade-list-container > li');
+            for (const li of tradeItems) {
                 const clone = li.cloneNode(true);
                 clone.querySelector('.user.name')?.remove();
 
@@ -376,7 +377,7 @@ const QuickDepositModule = {
                         this.showToast(`Ghost ID saved: ${match[1]}`);
                     }
                 }
-            });
+            }
         }
     },
 
