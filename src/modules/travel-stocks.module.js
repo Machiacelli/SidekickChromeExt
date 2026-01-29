@@ -290,8 +290,8 @@ const TravelStocksModule = {
 
         const x = savedState.x || 10;
         const y = savedState.y || 10;
-        const width = savedState.width || 450;
-        const height = savedState.height || 350;
+        const width = savedState.width || 380;
+        const height = savedState.height || 280;
 
         const win = document.createElement('div');
         win.className = 'travel-stocks-window';
