@@ -68,7 +68,7 @@
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
-                width: 850px;
+                width: 950px;
                 height: 750px;
                 background: #1a1a1a;
                 border: 1px solid rgba(255,255,255,0.2);
@@ -786,6 +786,9 @@
 
             // Blood Bag Reminder Tab listeners
             this.attachBloodBagTabListeners(panel);
+
+            // Quick Deposit Tab listeners
+            this.attachQuickDepositTabListeners(panel);
         },
 
         // Switch between tabs
@@ -1857,6 +1860,103 @@
             bagsInput.addEventListener('change', saveSettings);
             destinationSelect.addEventListener('change', saveSettings);
             newTabCheckbox.addEventListener('change', saveSettings);
+        },
+
+        // Attach Quick Deposit tab listeners
+        async attachQuickDepositTabListeners(panel) {
+            const targetSelect = panel.querySelector('#quickdeposit-target');
+            const ghostIdInput = panel.querySelector('#quickdeposit-ghostid');
+            const clearGhostBtn = panel.querySelector('#quickdeposit-clear-ghost');
+            const statusDiv = panel.querySelector('#sidekick-quickdeposit-status');
+
+            if (!targetSelect) {
+                console.warn('Quick Deposit settings elements not found');
+                return;
+            }
+
+            // Load current settings
+            try {
+                const stored = await window.SidekickModules.Core.ChromeStorage.get([
+                    'quickDeposit_target',
+                    'quickDeposit_ghostID'
+                ]);
+
+                // Set dropdown value
+                if (stored.quickDeposit_target) {
+                    targetSelect.value = stored.quickDeposit_target;
+                }
+
+                // Set ghost ID display
+                if (stored.quickDeposit_ghostID && ghostIdInput) {
+                    ghostIdInput.value = `Ghost Trade: ${stored.quickDeposit_ghostID}`;
+                }
+            } catch (error) {
+                console.error('Failed to load Quick Deposit settings:', error);
+            }
+
+            // Save target selection
+            if (targetSelect) {
+                targetSelect.addEventListener('change', async () => {
+                    const target = targetSelect.value;
+                    try {
+                        await window.SidekickModules.Core.ChromeStorage.set('quickDeposit_target', target);
+
+                        // Update module if loaded
+                        if (window.SidekickModules?.QuickDeposit) {
+                            await window.SidekickModules.QuickDeposit.updateSettings({ target });
+                        }
+
+                        this.showAutoSaveStatus(statusDiv, 'Target saved ✓');
+
+                        // Toast notification
+                        if (window.SidekickModules.Core.NotificationSystem) {
+                            window.SidekickModules.Core.NotificationSystem.show(
+                                'Quick Deposit',
+                                `Deposit target: ${target}`,
+                                'success',
+                                2000
+                            );
+                        }
+                    } catch (error) {
+                        console.error('Failed to save Quick Deposit target:', error);
+                        this.showStatus(statusDiv, 'Failed to save settings', 'error');
+                    }
+                });
+            }
+
+            // Clear ghost ID button
+            if (clearGhostBtn) {
+                clearGhostBtn.addEventListener('click', async () => {
+                    try {
+                        await window.SidekickModules.Core.ChromeStorage.remove('quickDeposit_ghostID');
+
+                        // Update module if loaded
+                        if (window.SidekickModules?.QuickDeposit) {
+                            await window.SidekickModules.QuickDeposit.clearGhostID();
+                        }
+
+                        // Clear display
+                        if (ghostIdInput) {
+                            ghostIdInput.value = 'No ghost ID set';
+                        }
+
+                        this.showAutoSaveStatus(statusDiv, 'Ghost ID cleared ✓');
+
+                        // Toast notification
+                        if (window.SidekickModules.Core.NotificationSystem) {
+                            window.SidekickModules.Core.NotificationSystem.show(
+                                'Quick Deposit',
+                                'Ghost ID cleared',
+                                'success',
+                                2000
+                            );
+                        }
+                    } catch (error) {
+                        console.error('Failed to clear ghost ID:', error);
+                        this.showStatus(statusDiv, 'Failed to clear ghost ID', 'error');
+                    }
+                });
+            }
         }
     };
 
