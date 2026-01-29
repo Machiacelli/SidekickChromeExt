@@ -112,12 +112,13 @@ const TravelStocksModule = {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                cursor: move;
+                cursor: move !important;
                 color: #fff;
                 font-weight: bold;
                 border-radius: 6px 6px 0 0;
                 font-size: 13px;
                 user-select: none;
+                -webkit-user-select: none;
             }
             .travel-stocks-window .window-controls {
                 display: flex;
@@ -380,12 +381,22 @@ const TravelStocksModule = {
         let currentX, currentY, initialX, initialY;
 
         header.addEventListener('mousedown', (e) => {
-            if (e.target.closest('.window-btn')) return; // Don't drag when clicking buttons
+            // Don't drag when clicking buttons
+            if (e.target.classList.contains('window-btn') ||
+                e.target.closest('.window-btn') ||
+                e.target.classList.contains('window-close') ||
+                e.target.classList.contains('window-minimize')) {
+                return;
+            }
 
+            e.preventDefault();
             isDragging = true;
-            initialX = e.clientX - (parseInt(win.style.left) || 0);
-            initialY = e.clientY - (parseInt(win.style.top) || 0);
 
+            const rect = win.getBoundingClientRect();
+            initialX = e.clientX - rect.left;
+            initialY = e.clientY - rect.top;
+
+            header.style.cursor = 'grabbing';
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mouseup', onMouseUp);
         });
@@ -393,6 +404,7 @@ const TravelStocksModule = {
         const onMouseMove = (e) => {
             if (!isDragging) return;
             e.preventDefault();
+            e.stopPropagation();
 
             currentX = e.clientX - initialX;
             currentY = e.clientY - initialY;
@@ -401,8 +413,10 @@ const TravelStocksModule = {
             win.style.top = currentY + 'px';
         };
 
-        const onMouseUp = () => {
+        const onMouseUp = (e) => {
+            if (!isDragging) return;
             isDragging = false;
+            header.style.cursor = 'move';
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
         };
