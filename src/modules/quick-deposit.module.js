@@ -286,6 +286,7 @@ const QuickDepositModule = {
 
     // Deposit to Property Vault
     depositToProperty(amount) {
+        console.log('🏦 Property Vault Deposit v2.0 - UPDATED CODE RUNNING');
         const url = window.location.href;
         const onPage = url.includes('properties.php');
 
