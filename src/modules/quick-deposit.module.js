@@ -286,7 +286,6 @@ const QuickDepositModule = {
 
     // Deposit to Property Vault
     depositToProperty(amount) {
-        // TODO: Need to inspect property vault page for correct selectors
         const url = window.location.href;
         const onPage = url.includes('properties.php');
 
@@ -295,9 +294,46 @@ const QuickDepositModule = {
             return;
         }
 
-        // Placeholder - need to find correct selectors
-        console.log('🏦 Property vault deposit - selectors needed');
-        this.showToast('Property vault support coming soon');
+        // Wait for page to load, then navigate to vault tab
+        setTimeout(() => {
+            // Look for vault tab/button
+            const vaultTab = document.querySelector('a[href*="#/p=options&tab=vault"], button[aria-label*="vault"]');
+            if (vaultTab && !url.includes('tab=vault')) {
+                vaultTab.click();
+                // Wait for tab to load, then deposit
+                setTimeout(() => this.executePropertyDeposit(amount), 500);
+                return;
+            }
+
+            // Already on vault tab, try to deposit
+            this.executePropertyDeposit(amount);
+        }, 300);
+    },
+
+    // Execute the actual property deposit
+    executePropertyDeposit(amount) {
+        // Look for money input in vault section
+        const input = document.querySelector('input[type="text"][name="money"], input.input-money[type="text"]');
+
+        if (!input) {
+            this.showToast('Property vault input not found');
+            console.log('🏦 Property vault: Could not find money input');
+            return;
+        }
+
+        this.setInputValue(input, amount);
+
+        // Find deposit button
+        const depositBtn = input.closest('.content-wrapper, form, div')?.querySelector('button.torn-btn, button[class*="deposit"]');
+
+        if (depositBtn) {
+            depositBtn.disabled = false;
+            depositBtn.click();
+            this.showToast(`Depositing $${amount.toLocaleString()} to Property Vault`);
+        } else {
+            this.showToast('Property vault button not found');
+            console.log('🏦 Property vault: Could not find deposit button');
+        }
     },
 
     // Deposit to Company Vault
