@@ -87,6 +87,7 @@
             const iconNotifications = chrome.runtime.getURL('icons/settings-notifications.png');
             const iconMugcalc = chrome.runtime.getURL('icons/settings-mugcalc.png');
             const iconBloodBag = chrome.runtime.getURL('assets/icons/blood-bag-settings.png');
+            const iconQuickDeposit = chrome.runtime.getURL('icons/settings-quickdeposit.png');
 
             panel.innerHTML = `
                 <style>
@@ -170,6 +171,13 @@
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
                                 <img src="${iconBloodBag}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
                                 <span>Blood Bags</span>
+                            </button>
+                            <button class="settings-sidebar-tab" data-tab="quickdeposit" 
+                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
+                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
+                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
+                                <img src="${iconQuickDeposit}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
+                                <span>Quick Deposit</span>
                             </button>
                         </div>
                     </div>
@@ -292,6 +300,11 @@
                             <!-- BLOOD BAG REMINDER TAB -->
                             <div class="settings-tab-content" id="settings-tab-bloodbag" style="display: none;">
                                 ${this.createBloodBagSettingsHTML()}
+                            </div>
+                            
+                            <!-- QUICK DEPOSIT TAB -->
+                            <div class="settings-tab-content" id="settings-tab-quickdeposit" style="display: none;">
+                                ${this.createQuickDepositSettingsHTML()}
                             </div>
                         </div>
                     </div>
@@ -665,6 +678,60 @@
                 <div id="sidekick-bloodbag-status" style="text-align: center; padding: 10px; border-radius: 5px; 
                                                             background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px; margin-top: 20px;">
                     Blood Bag Reminder settings loaded
+                </div>
+            `;
+        },
+
+        // Create Quick Deposit settings HTML
+        createQuickDepositSettingsHTML() {
+            return `
+                <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">🏦 Quick Deposit Settings</h4>
+                
+                <div style="background: rgba(76, 175, 80, 0.1); border-left: 3px solid #4CAF50; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
+                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                        ℹ️ Adds a [deposit] button next to your money in the sidebar for quick deposits to faction vault, company vault, or ghost trades.
+                    </div>
+                </div>
+                
+                ${this.createToggle('quick-deposit', '🏦 Enable Quick Deposit', 'Shows deposit button next to money')}
+                
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Deposit Priority:</label>
+                    <select id="quickdeposit-priority" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
+                                                           border-radius: 5px; color: white; font-size: 14px; box-sizing: border-box;">
+                        <option value="GHOST,FACTION,PROPERTY,COMPANY" selected style="background: #1a1a1a; color: white;">Ghost → Faction → Property → Company</option>
+                        <option value="FACTION,GHOST,PROPERTY,COMPANY" style="background: #1a1a1a; color: white;">Faction → Ghost → Property → Company</option>
+                        <option value="FACTION,PROPERTY,COMPANY,GHOST" style="background: #1a1a1a; color: white;">Faction → Property → Company → Ghost</option>
+                        <option value="COMPANY,FACTION,PROPERTY,GHOST" style="background: #1a1a1a; color: white;">Company → Faction → Property → Company</option>
+                    </select>
+                    <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
+                        When you click [deposit], it deposits to the first available vault based on this priority order.
+                    </div>
+                </div>
+                
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Ghost Trade:</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="quickdeposit-ghostid" readonly placeholder="No ghost ID set" 
+                               style="flex: 1; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); 
+                                      border-radius: 5px; color: #666; font-size: 14px; box-sizing: border-box; cursor: not-allowed;">
+                        <button id="quickdeposit-clear-ghost" style="padding: 10px 20px; background: rgba(220, 53, 69, 0.2); border: 1px solid rgba(220, 53, 69, 0.4); 
+                                                                      color: #dc3545; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;">
+                            Clear
+                        </button>
+                    </div>
+                    <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
+                        Ghost trade ID is auto-detected when you visit a ghost trade page. The button changes to [ghost] when set.
+                    </div>
+                </div>
+                
+                <div id="sidekick-quickdeposit-status" style="text-align: center; padding: 10px; border-radius: 5px; 
+                                                            background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px; margin-top: 20px;">
+                    Quick Deposit settings loaded
                 </div>
             `;
         },
