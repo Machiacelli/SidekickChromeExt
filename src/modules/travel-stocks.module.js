@@ -89,8 +89,71 @@ const TravelStocksModule = {
         style.id = 'travel-stocks-styles';
         style.textContent = `
             .travel-stocks-window {
-                min-width: 600px;
-                min-height: 400px;
+                position: absolute;
+                left: 10px;
+                top: 10px;
+                width: 700px;
+                height: 500px;
+                min-width: 500px;
+                min-height: 350px;
+                background: #2a2a2a;
+                border: 1px solid #444;
+                border-radius: 6px;
+                display: flex;
+                flex-direction: column;
+                z-index: 1000;
+                resize: both;
+                overflow: hidden;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            }
+            .travel-stocks-window .window-header {
+                background: linear-gradient(135deg, #FF9800, #F57C00);
+                padding: 8px 12px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                cursor: move;
+                color: #fff;
+                font-weight: bold;
+                border-radius: 6px 6px 0 0;
+                font-size: 13px;
+                user-select: none;
+            }
+            .travel-stocks-window .window-controls {
+                display: flex;
+                gap: 4px;
+            }
+            .travel-stocks-window .window-btn {
+                background: rgba(255,255,255,0.2);
+                border: none;
+                color: white;
+                cursor: pointer;
+                font-size: 12px;
+                padding: 2px 6px;
+                border-radius: 3px;
+                transition: all 0.2s;
+            }
+            .travel-stocks-window .window-btn:hover {
+                background: rgba(255,255,255,0.3);
+            }
+            .travel-stocks-window .window-close {
+                background: #dc3545;
+                width: 18px;
+                height: 18px;
+                padding: 0;
+                border-radius: 50%;
+                font-weight: bold;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .travel-stocks-window .window-content {
+                flex: 1;
+                overflow: hidden;
+                background: #1f1f1f;
+                color: #fff;
+                display: flex;
+                flex-direction: column;
             }
             .travel-controls {
                 display: flex;
@@ -284,10 +347,13 @@ const TravelStocksModule = {
             window.SidekickModules.Core.WindowManager.registerWindow(win, 'travel-stocks');
         }
 
-        // Add to sidebar
-        const sidebar = document.querySelector('#sidekick-sidebar .content-area');
-        if (sidebar) {
-            sidebar.appendChild(win);
+        // Add to sidebar content area
+        const contentArea = document.getElementById('sidekick-content');
+        if (contentArea) {
+            contentArea.appendChild(win);
+            console.log('💰 Travel Stocks window added to sidebar');
+        } else {
+            console.error('💰 Sidebar content area not found');
         }
 
         // Apply saved settings to UI
@@ -296,6 +362,51 @@ const TravelStocksModule = {
 
     // Wire event listeners
     wireWindow(win) {
+        const header = win.querySelector('.window-header');
+
+        // Click to bring to front
+        win.addEventListener('mousedown', () => {
+            const allWindows = document.querySelectorAll('.travel-stocks-window, .movable-stockadvisor, .movable-notepad, .movable-timer');
+            let maxZ = 1000;
+            allWindows.forEach(w => {
+                const z = parseInt(w.style.zIndex || 1000);
+                if (z > maxZ) maxZ = z;
+            });
+            win.style.zIndex = String(maxZ + 1);
+        });
+
+        // Make draggable
+        let isDragging = false;
+        let currentX, currentY, initialX, initialY;
+
+        header.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.window-btn')) return; // Don't drag when clicking buttons
+
+            isDragging = true;
+            initialX = e.clientX - (parseInt(win.style.left) || 0);
+            initialY = e.clientY - (parseInt(win.style.top) || 0);
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+
+        const onMouseMove = (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+
+            currentX = e.clientX - initialX;
+            currentY = e.clientY - initialY;
+
+            win.style.left = currentX + 'px';
+            win.style.top = currentY + 'px';
+        };
+
+        const onMouseUp = () => {
+            isDragging = false;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+
         // Close button
         win.querySelector('.window-close').addEventListener('click', () => {
             win.remove();
