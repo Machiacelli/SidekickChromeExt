@@ -459,6 +459,23 @@ if (typeof window.SidekickModules === 'undefined') {
 }
 window.SidekickModules.QuickDeposit = QuickDepositModule;
 
+// Listen for storage changes (popup toggle)
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.sidekick_settings) {
+        const newSettings = changes.sidekick_settings.newValue || {};
+        const moduleSettings = newSettings['quick-deposit'] || {};
+        const isEnabled = moduleSettings.isEnabled !== false;
+
+        if (isEnabled && !QuickDepositModule.state.isEnabled) {
+            console.log('🏦 Quick Deposit: Enabled via toggle');
+            QuickDepositModule.enable();
+        } else if (!isEnabled && QuickDepositModule.state.isEnabled) {
+            console.log('🏦 Quick Deposit: Disabled via toggle');
+            QuickDepositModule.disable();
+        }
+    }
+});
+
 // Auto-initialize when module loads
 (async () => {
     await QuickDepositModule.init();
