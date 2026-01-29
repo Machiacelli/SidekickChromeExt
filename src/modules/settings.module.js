@@ -1876,19 +1876,18 @@
 
             // Load current settings
             try {
-                const stored = await window.SidekickModules.Core.ChromeStorage.get([
-                    'quickDeposit_target',
-                    'quickDeposit_ghostID'
-                ]);
+                const targetStored = await window.SidekickModules.Core.ChromeStorage.get('quickDeposit_target');
+                const ghostStored = await window.SidekickModules.Core.ChromeStorage.get('quickDeposit_ghostID');
 
                 // Set dropdown value
-                if (stored.quickDeposit_target) {
-                    targetSelect.value = stored.quickDeposit_target;
+                if (targetStored) {
+                    targetSelect.value = targetStored;
+                    console.log('🏦 Loaded target:', targetStored);
                 }
 
                 // Set ghost ID display
-                if (stored.quickDeposit_ghostID && ghostIdInput) {
-                    ghostIdInput.value = `Ghost Trade: ${stored.quickDeposit_ghostID}`;
+                if (ghostStored && ghostIdInput) {
+                    ghostIdInput.value = `Ghost Trade: ${ghostStored}`;
                 }
             } catch (error) {
                 console.error('Failed to load Quick Deposit settings:', error);
