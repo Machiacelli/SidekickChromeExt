@@ -11,6 +11,7 @@
     "https://www.torn.com/*",
     "https://*.torn.com/*",
     "https://api.torn.com/*",
+    "https://yata.yt/*",
     "https://notion-bug-proxy.akaffebtd.workers.dev/*",
     "https://torn.synclayer.dev/*",
     "https://sidekick-premium.akaffebtd.workers.dev/*",
@@ -68,6 +69,7 @@
         "src/modules/book-notifier.module.js",
         "src/modules/locked-items.module.js",
         "src/modules/quick-deposit.module.js",
+        "src/modules/travel-stocks.module.js",
         "src/modules/ui.module.js",
         "src/main.js"
       ],

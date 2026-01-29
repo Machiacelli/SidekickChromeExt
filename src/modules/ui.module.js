@@ -611,6 +611,24 @@
                     ">
                         <span style="font-size: 13px; filter: grayscale(0.2);">📊</span> Stats Tracker
                     </button>
+                    <button class="module-option" data-module="travelstocks" style="
+                       background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+                        border: 1px solid rgba(255,255,255,0.06);
+                        color: rgba(255,255,255,0.92);
+                        padding: 10px 12px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        text-align: left;
+                        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                        font-size: 11px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-weight: 500;
+                        letter-spacing: 0.3px;
+                    ">
+                        <span style="font-size: 13px; filter: grayscale(0.2);">✈️</span> Travel Stocks
+                   </button>
                 </div>
             `;
 
@@ -686,6 +704,9 @@
                     break;
                 case 'statstracker':
                     this.createStatsTracker();
+                    break;
+                case 'travelstocks':
+                    this.createTravelStocks();
                     break;
                 default:
                     this.showNotification('Unknown Module', 'Module type not recognized', 'error');
@@ -865,6 +886,28 @@
             } catch (error) {
                 console.error('Failed to create stats tracker:', error);
                 this.showNotification('Stats Tracker Error', 'Failed to open stats tracker', 'error');
+            }
+        },
+
+        // Create Travel Stocks window
+        async createTravelStocks() {
+            try {
+                if (!window.SidekickModules?.TravelStocks) {
+                    this.showNotification('Travel Stocks Error', 'Travel Stocks module not loaded', 'error');
+                    return;
+                }
+
+                // Initialize if not already done
+                if (!window.SidekickModules.TravelStocks.state.isEnabled === false) {
+                    await window.SidekickModules.TravelStocks.init();
+                }
+
+                // Create window
+                await window.SidekickModules.TravelStocks.createWindow();
+                this.showNotification('Travel Stocks', 'Travel stocks window opened', 'info');
+            } catch (error) {
+                console.error('Failed to create travel stocks:', error);
+                this.showNotification('Travel Stocks Error', 'Failed to open travel stocks', 'error');
             }
         },
 
