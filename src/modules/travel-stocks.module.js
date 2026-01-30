@@ -261,12 +261,14 @@ const TravelStocksModule = {
                 border: 1px solid rgba(255,255,255,0.05);
             }
             .travel-table-wrap {
-                overflow: auto;
+                overflow-y: auto;
+                overflow-x: hidden;
                 flex: 1;
                 scrollbar-width: none; /* Firefox */
                 -ms-overflow-style: none; /* IE/Edge */
             }
             .travel-table-wrap::-webkit-scrollbar {
+                width: 0;
                 display: none; /* Chrome/Safari */
             }
             .travel-table {
@@ -309,11 +311,6 @@ const TravelStocksModule = {
                 font-weight: 600;
                 color: #ffffff;
                 font-size: 11px;
-            }
-            .item-id {
-                font-size: 9px;
-                color: rgba(255,255,255,0.45);
-                font-weight: 400;
             }
             .profit-positive {
                 color: #4ade80;
@@ -902,7 +899,6 @@ const TravelStocksModule = {
                     <td style="color: #ffffff;">${this.esc(r.country)}</td>
                     <td style="color: #ffffff;">
                         <div class="item-name" style="color: #ffffff;">${this.esc(r.name || 'Unknown')}</div>
-                        <div class="item-id" style="color: rgba(255,255,255,0.5);">#${r.id}</div>
                     </td>
                     <td class="num" style="color: #ffffff;">${this.fmtMoney(r.cost)}</td>
                     <td class="num" style="color: #ffffff;">${(typeof r.avg === 'number') ? this.fmtMoney(r.avg) : '…'}</td>
