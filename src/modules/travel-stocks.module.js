@@ -178,70 +178,87 @@ const TravelStocksModule = {
             .travel-controls {
                 display: flex;
                 flex-wrap: wrap;
-                gap: 8px;
+                gap: 10px;
                 align-items: center;
-                padding: 8px 10px;
-                background: linear-gradient(135deg, rgba(0,0,0,0.4), rgba(0,0,0,0.3));
-                border-bottom: 1px solid rgba(255,255,255,0.15);
+                padding: 12px 14px;
+                background: linear-gradient(135deg, rgba(30,30,30,0.95), rgba(20,20,20,0.9));
+                border-bottom: 1px solid rgba(255,152,0,0.2);
             }
             .travel-controls label {
                 display: flex;
                 align-items: center;
-                gap: 4px;
-                font-size: 10px;
-                color: rgba(255,255,255,0.9);
+                gap: 6px;
+                font-size: 11px;
+                color: rgba(255,255,255,0.85);
                 font-weight: 500;
+                letter-spacing: 0.3px;
             }
             .travel-controls select {
-                padding: 4px 8px;
+                padding: 5px 10px;
                 border-radius: 6px;
-                background: rgba(255,255,255,0.08);
-                border: 1px solid rgba(255,255,255,0.15);
+                background: rgba(255,255,255,0.06);
+                border: 1px solid rgba(255,255,255,0.12);
                 color: white;
-                font-size: 10px;
+                font-size: 11px;
                 cursor: pointer;
-                transition: all 0.2s;
+                transition: all 0.2s ease;
+                outline: none;
             }
             .travel-controls select:hover {
-                background: rgba(255,255,255,0.12);
-                border-color: rgba(255,255,255,0.25);
+                background: rgba(255,255,255,0.1);
+                border-color: rgba(255,152,0,0.4);
+            }
+            .travel-controls select:focus {
+                border-color: rgba(255,152,0,0.6);
+                box-shadow: 0 0 0 2px rgba(255,152,0,0.1);
             }
             .travel-checkbox-label {
                 cursor: pointer;
-                color: rgba(255,255,255,0.9);
-                font-size: 10px;
-                padding: 4px 8px;
+                color: rgba(255,255,255,0.85);
+                font-size: 11px;
+                padding: 5px 10px;
                 border-radius: 6px;
-                background: rgba(255,255,255,0.05);
-                transition: all 0.2s;
+                background: rgba(255,255,255,0.04 );
+                border: 1px solid rgba(255,255,255,0.08);
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 6px;
             }
             .travel-checkbox-label:hover {
-                background: rgba(255,255,255,0.1);
+                background: rgba(255,255,255,0.08);
+                border-color: rgba(255,152,0,0.3);
             }
             .travel-refresh-btn {
-                padding: 5px 12px;
+                padding: 6px 14px;
                 border-radius: 6px;
-                background: linear-gradient(135deg, #4ade80, #22c55e);
+                background: linear-gradient(135deg, #FF9800, #F57C00);
                 border: none;
                 color: white;
                 cursor: pointer;
-                font-size: 10px;
+                font-size: 11px;
                 font-weight: 600;
-                transition: all 0.2s;
-                box-shadow: 0 2px 4px rgba(34, 197, 94, 0.2);
+                letter-spacing: 0.3px;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 6px rgba(255,152,0,0.25);
             }
             .travel-refresh-btn:hover {
                 transform: translateY(-1px);
-                box-shadow: 0 4px 8px rgba(34, 197, 94, 0.3);
+                box-shadow: 0 4px 10px rgba(255,152,0,0.35);
+                background: linear-gradient(135deg, #FFA726, #F57C00);
+            }
+            .travel-refresh-btn:active {
+                transform: translateY(0);
             }
             .travel-meta {
                 margin-left: auto;
-                font-size: 9px;
-                color: rgba(255,255,255,0.6);
-                background: rgba(255,255,255,0.05);
-                padding: 3px 8px;
+                font-size: 10px;
+                color: rgba(255,255,255,0.55);
+                background: rgba(0,0,0,0.3);
+                padding: 4px 10px;
                 border-radius: 12px;
                 font-weight: 500;
+                border: 1px solid rgba(255,255,255,0.05);
             }
             .travel-table-wrap {
                 overflow: auto;
@@ -255,21 +272,21 @@ const TravelStocksModule = {
             .travel-table {
                 width: 100%;
                 border-collapse: collapse;
-                font-size: 10px;
+                font-size: 11px;
                 color: #ffffff;
             }
             .travel-table thead th {
                 position: sticky;
                 top: 0;
-                background: linear-gradient(135deg, rgba(0,0,0,0.95), rgba(20,20,20,0.9));
-                padding: 6px 8px;
+                background: linear-gradient(135deg, rgba(25,25,25,0.98), rgba(15,15,15,0.95));
+                padding: 8px 10px;
                 text-align: left;
-                border-bottom: 2px solid rgba(255,152,0,0.3);
+                border-bottom: 2px solid rgba(255,152,0,0.25);
                 font-weight: 600;
-                font-size: 9px;
+                font-size: 10px;
                 text-transform: uppercase;
-                letter-spacing: 0.5px;
-                color: rgba(255,255,255,0.8);
+                letter-spacing: 0.8px;
+                color: rgba(255,255,255,0.75);
                 z-index: 1;
             }
             .travel-table th.num,
@@ -277,27 +294,26 @@ const TravelStocksModule = {
                 text-align: right;
             }
             .travel-table td {
-                padding: 5px 8px;
-                border-bottom: 1px solid rgba(255,255,255,0.03);
+                padding: 8px 10px;
+                border-bottom: 1px solid rgba(255,255,255,0.04);
+                transition: all 0.15s ease;
             }
             .travel-table tbody tr:nth-child(even) {
-                background: rgba(255,255,255,0.02);
+                background: rgba(255,255,255,0.025);
             }
             .travel-table tbody tr:hover {
-                background: rgba(255,152,0,0.1) !important;
-            }
-            .travel-loading {
-                padding: 20px;
-                text-align: center;
-                opacity: 0.7;
-                color: #ffffff;
+                background: rgba(255,152,0,0.12) !important;
+                transform: scale(1.005);
             }
             .item-name {
                 font-weight: 600;
+                color: #ffffff;
+                font-size: 11px;
             }
             .item-id {
-                font-size: 10px;
-                opacity: 0.6;
+                font-size: 9px;
+                color: rgba(255,255,255,0.45);
+                font-weight: 400;
             }
             .profit-positive {
                 color: #4ade80;
