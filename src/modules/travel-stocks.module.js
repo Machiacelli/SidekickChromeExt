@@ -102,7 +102,11 @@ const TravelStocksModule = {
 
     // Inject CSS styles
     injectCSS() {
-        if (document.getElementById('travel-stocks-styles')) return;
+        // Remove existing styles to force update
+        const existingStyles = document.getElementById('travel-stocks-styles');
+        if (existingStyles) {
+            existingStyles.remove();
+        }
 
         const style = document.createElement('style');
         style.id = 'travel-stocks-styles';
