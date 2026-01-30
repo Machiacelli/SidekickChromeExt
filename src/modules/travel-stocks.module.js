@@ -79,6 +79,25 @@ const TravelStocksModule = {
 
         // Inject CSS
         this.injectCSS();
+
+        // Restore window if it was open
+        await this.restoreWindowState();
+    },
+
+    // Restore window state on page load
+    async restoreWindowState() {
+        try {
+            const ChromeStorage = window.SidekickModules.Core.ChromeStorage;
+            const windowState = await ChromeStorage.get('sidekick_travelStocksWindowState') || {};
+
+            if (windowState.isOpen) {
+                console.log('💰 Restoring Travel Stocks window');
+                // Wait for sidebar to be ready
+                setTimeout(() => this.createWindow(), 500);
+            }
+        } catch (err) {
+            console.error('💰 Error restoring window state:', err);
+        }
     },
 
     // Inject CSS styles
@@ -401,18 +420,18 @@ const TravelStocksModule = {
                 flex: 1;
                 overflow: hidden;
                 background: #1f1f1f;
-                color: #fff;
+                color: #ffffff !important;
                 display: flex;
                 flex-direction: column;
             ">
-                <div class="travel-controls">
-                    <label>
+                <div class="travel-controls" style="color: #ffffff;">
+                    <label style="color: rgba(255,255,255,0.9);">
                         Country:
                         <select class="travel-country">
                             <option value="ALL">All Countries</option>
                         </select>
                     </label>
-                    <label>
+                    <label style="color: rgba(255,255,255,0.9);">
                         Sort:
                         <select class="travel-sortby">
                             <option value="profit">Profit</option>
@@ -423,13 +442,13 @@ const TravelStocksModule = {
                             <option value="id">Item ID</option>
                         </select>
                     </label>
-                    <label>
+                    <label style="color: rgba(255,255,255,0.9);">
                         <select class="travel-sortdir">
                             <option value="desc">↓ Desc</option>
                             <option value="asc">↑ Asc</option>
                         </select>
                     </label>
-                    <label class="travel-checkbox-label">
+                    <label class="travel-checkbox-label" style="color: rgba(255,255,255,0.9);">
                         <input type="checkbox" class="travel-showprofit" />
                         Show Only Profit
                     </label>
@@ -559,6 +578,8 @@ const TravelStocksModule = {
         win.querySelector('.window-close').addEventListener('click', () => {
             win.remove();
             this.state.window = null;
+            // Save that window is closed
+            this.saveWindowState(win, false);
         });
 
         // Controls
@@ -604,10 +625,11 @@ const TravelStocksModule = {
     },
 
     // Save window state
-    async saveWindowState(win) {
+    async saveWindowState(win, isOpen = true) {
         try {
             const ChromeStorage = window.SidekickModules.Core.ChromeStorage;
             const state = {
+                isOpen: isOpen,
                 x: parseInt(win.style.left) || 10,
                 y: parseInt(win.style.top) || 10,
                 width: win.offsetWidth,
@@ -859,18 +881,19 @@ const TravelStocksModule = {
             for (const r of filtered) {
                 const tr = document.createElement('tr');
                 tr.dataset.itemId = String(r.id);
+                tr.style.color = '#ffffff';
                 tr.innerHTML = `
-                    <td>${this.esc(r.country)}</td>
-                    <td>
-                        <div class="item-name">${this.esc(r.name || 'Unknown')}</div>
-                        <div class="item-id">#${r.id}</div>
+                    <td style="color: #ffffff;">${this.esc(r.country)}</td>
+                    <td style="color: #ffffff;">
+                        <div class="item-name" style="color: #ffffff;">${this.esc(r.name || 'Unknown')}</div>
+                        <div class="item-id" style="color: rgba(255,255,255,0.5);">#${r.id}</div>
                     </td>
-                    <td class="num">${this.fmtMoney(r.cost)}</td>
-                    <td class="num">${(typeof r.avg === 'number') ? this.fmtMoney(r.avg) : '…'}</td>
+                    <td class="num" style="color: #ffffff;">${this.fmtMoney(r.cost)}</td>
+                    <td class="num" style="color: #ffffff;">${(typeof r.avg === 'number') ? this.fmtMoney(r.avg) : '…'}</td>
                     <td class="num ${this.profitClass(r.profit)}" data-profit="${r.profit || ''}">
                         ${(typeof r.profit === 'number') ? this.fmtProfit(r.profit) : '…'}
                     </td>
-                    <td class="num">${Math.trunc(r.qty).toLocaleString()}</td>
+                    <td class="num" style="color: #ffffff;">${Math.trunc(r.qty).toLocaleString()}</td>
                 `;
                 tbody.appendChild(tr);
             }
