@@ -102,9 +102,11 @@ const TravelStocksModule = {
 
     // Inject CSS styles
     injectCSS() {
+        console.log('💰 Injecting CSS styles...');
         // Remove existing styles to force update
         const existingStyles = document.getElementById('travel-stocks-styles');
         if (existingStyles) {
+            console.log('💰 Removing old styles');
             existingStyles.remove();
         }
 
@@ -998,3 +1000,26 @@ if (typeof window.SidekickModules === 'undefined') {
 window.SidekickModules.TravelStocks = TravelStocksModule;
 
 console.log('💰 Travel Stocks module registered');
+
+// Auto-initialize when Core is ready
+(async function () {
+    console.log('💰 Waiting for Sidekick Core...');
+
+    const waitForCore = () => {
+        return new Promise((resolve) => {
+            const check = () => {
+                if (window.SidekickModules?.Core?.ChromeStorage) {
+                    console.log('💰 Core ready, initializing Travel Stocks...');
+                    resolve();
+                } else {
+                    setTimeout(check, 100);
+                }
+            };
+            check();
+        });
+    };
+
+    await waitForCore();
+    await TravelStocksModule.init();
+    console.log('💰 Travel Stocks fully initialized');
+})();
