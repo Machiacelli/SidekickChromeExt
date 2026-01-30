@@ -184,9 +184,9 @@ const TravelStocksModule = {
             .travel-controls {
                 display: flex;
                 flex-wrap: wrap;
-                gap: 12px;
+                gap: 8px;
                 align-items: center;
-                padding: 16px 18px;
+                padding: 10px 12px;
                 background: linear-gradient(135deg, rgba(40,40,40,0.98), rgba(30,30,30,0.95));
                 border-bottom: 2px solid rgba(255,152,0,0.25);
                 box-shadow: 0 2px 8px rgba(0,0,0,0.2);
@@ -194,23 +194,23 @@ const TravelStocksModule = {
             .travel-controls label {
                 display: flex;
                 align-items: center;
-                gap: 8px;
-                font-size: 13px;
-                color: rgba(255,255,255,0.9);
+                gap: 6px;
+                font-size: 10px;
+                color: rgba(255,255,255,0.85);
                 font-weight: 500;
-                letter-spacing: 0.4px;
+                letter-spacing: 0.3px;
             }
             .travel-controls select {
-                padding: 7px 12px;
-                border-radius: 8px;
+                padding: 4px 8px;
+                border-radius: 6px;
                 background: rgba(255,255,255,0.08);
                 border: 1px solid rgba(255,255,255,0.15);
                 color: white;
-                font-size: 13px;
+                font-size: 10px;
                 cursor: pointer;
                 transition: all 0.25s ease;
                 outline: none;
-                min-width: 120px;
+                min-width: 90px;
             }
             .travel-controls select:hover {
                 background: rgba(255,255,255,0.12);
@@ -219,20 +219,20 @@ const TravelStocksModule = {
             }
             .travel-controls select:focus {
                 border-color: rgba(255,152,0,0.7);
-                box-shadow: 0 0 0 3px rgba(255,152,0,0.15);
+                box-shadow: 0 0 0 2px rgba(255,152,0,0.15);
             }
             .travel-checkbox-label {
                 cursor: pointer;
-                color: rgba(255,255,255,0.9);
-                font-size: 13px;
-                padding: 7px 14px;
-                border-radius: 8px;
+                color: rgba(255,255,255,0.85);
+                font-size: 10px;
+                padding: 4px 8px;
+                border-radius: 6px;
                 background: rgba(255,255,255,0.06);
                 border: 1px solid rgba(255,255,255,0.12);
                 transition: all 0.25s ease;
                 display: flex;
                 align-items: center;
-                gap: 8px;
+                gap: 5px;
             }
             .travel-checkbox-label:hover {
                 background: rgba(255,255,255,0.1);
@@ -240,21 +240,21 @@ const TravelStocksModule = {
                 transform: translateY(-1px);
             }
             .travel-refresh-btn {
-                padding: 8px 18px;
-                border-radius: 8px;
+                padding: 5px 12px;
+                border-radius: 6px;
                 background: linear-gradient(135deg, #FF9800, #F57C00);
                 border: none;
                 color: white;
                 cursor: pointer;
-                font-size: 13px;
+                font-size: 10px;
                 font-weight: 600;
-                letter-spacing: 0.5px;
+                letter-spacing: 0.4px;
                 transition: all 0.25s ease;
-                box-shadow: 0 3px 8px rgba(255,152,0,0.3);
+                box-shadow: 0 2px 6px rgba(255,152,0,0.3);
             }
             .travel-refresh-btn:hover {
                 transform: translateY(-2px);
-                box-shadow: 0 6px 16px rgba(255,152,0,0.4);
+                box-shadow: 0 4px 10px rgba(255,152,0,0.4);
                 background: linear-gradient(135deg, #FFA726, #FB8C00);
             }
             .travel-refresh-btn:active {
@@ -263,11 +263,11 @@ const TravelStocksModule = {
             }
             .travel-meta {
                 margin-left: auto;
-                font-size: 12px;
-                color: rgba(255,255,255,0.65);
+                font-size: 9px;
+                color: rgba(255,255,255,0.6);
                 background: rgba(0,0,0,0.4);
-                padding: 6px 14px;
-                border-radius: 16px;
+                padding: 4px 8px;
+                border-radius: 12px;
                 font-weight: 500;
                 border: 1px solid rgba(255,255,255,0.08);
             }
@@ -287,20 +287,20 @@ const TravelStocksModule = {
             .travel-table {
                 width: 100%;
                 border-collapse: collapse;
-                font-size: 13px;
+                font-size: 11px;
                 color: #ffffff;
             }
             .travel-table thead th {
                 position: sticky;
                 top: 0;
                 background: linear-gradient(135deg, rgba(35,35,35,1), rgba(25,25,25,0.98));
-                padding: 12px 14px;
+                padding: 8px 10px;
                 text-align: left;
                 border-bottom: 2px solid rgba(255,152,0,0.3);
                 font-weight: 600;
-                font-size: 11px;
+                font-size: 10px;
                 text-transform: uppercase;
-                letter-spacing: 1px;
+                letter-spacing: 0.8px;
                 color: rgba(255,255,255,0.85);
                 z-index: 2;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -310,7 +310,7 @@ const TravelStocksModule = {
                 text-align: right;
             }
             .travel-table td {
-                padding: 12px 14px;
+                padding: 8px 10px;
                 border-bottom: 1px solid rgba(255,255,255,0.06);
                 transition: all 0.2s ease;
             }
@@ -325,7 +325,7 @@ const TravelStocksModule = {
             .item-name {
                 font-weight: 600;
                 color: #ffffff;
-                font-size: 13px;
+                font-size: 11px;
             }
             .profit-positive {
                 color: #4ade80;
