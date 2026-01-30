@@ -178,139 +178,148 @@ const TravelStocksModule = {
             .travel-controls {
                 display: flex;
                 flex-wrap: wrap;
-                gap: 10px;
+                gap: 12px;
                 align-items: center;
-                padding: 12px 14px;
-                background: linear-gradient(135deg, rgba(30,30,30,0.95), rgba(20,20,20,0.9));
-                border-bottom: 1px solid rgba(255,152,0,0.2);
+                padding: 16px 18px;
+                background: linear-gradient(135deg, rgba(40,40,40,0.98), rgba(30,30,30,0.95));
+                border-bottom: 2px solid rgba(255,152,0,0.25);
+                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
             }
             .travel-controls label {
                 display: flex;
                 align-items: center;
-                gap: 6px;
-                font-size: 11px;
-                color: rgba(255,255,255,0.85);
+                gap: 8px;
+                font-size: 13px;
+                color: rgba(255,255,255,0.9);
                 font-weight: 500;
-                letter-spacing: 0.3px;
+                letter-spacing: 0.4px;
             }
             .travel-controls select {
-                padding: 5px 10px;
-                border-radius: 6px;
-                background: rgba(255,255,255,0.06);
-                border: 1px solid rgba(255,255,255,0.12);
+                padding: 7px 12px;
+                border-radius: 8px;
+                background: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.15);
                 color: white;
-                font-size: 11px;
+                font-size: 13px;
                 cursor: pointer;
-                transition: all 0.2s ease;
+                transition: all 0.25s ease;
                 outline: none;
+                min-width: 120px;
             }
             .travel-controls select:hover {
-                background: rgba(255,255,255,0.1);
-                border-color: rgba(255,152,0,0.4);
+                background: rgba(255,255,255,0.12);
+                border-color: rgba(255,152,0,0.5);
+                transform: translateY(-1px);
             }
             .travel-controls select:focus {
-                border-color: rgba(255,152,0,0.6);
-                box-shadow: 0 0 0 2px rgba(255,152,0,0.1);
+                border-color: rgba(255,152,0,0.7);
+                box-shadow: 0 0 0 3px rgba(255,152,0,0.15);
             }
             .travel-checkbox-label {
                 cursor: pointer;
-                color: rgba(255,255,255,0.85);
-                font-size: 11px;
-                padding: 5px 10px;
-                border-radius: 6px;
-                background: rgba(255,255,255,0.04 );
-                border: 1px solid rgba(255,255,255,0.08);
-                transition: all 0.2s ease;
+                color: rgba(255,255,255,0.9);
+                font-size: 13px;
+                padding: 7px 14px;
+                border-radius: 8px;
+                background: rgba(255,255,255,0.06);
+                border: 1px solid rgba(255,255,255,0.12);
+                transition: all 0.25s ease;
                 display: flex;
                 align-items: center;
-                gap: 6px;
+                gap: 8px;
             }
             .travel-checkbox-label:hover {
-                background: rgba(255,255,255,0.08);
-                border-color: rgba(255,152,0,0.3);
+                background: rgba(255,255,255,0.1);
+                border-color: rgba(255,152,0,0.4);
+                transform: translateY(-1px);
             }
             .travel-refresh-btn {
-                padding: 6px 14px;
-                border-radius: 6px;
+                padding: 8px 18px;
+                border-radius: 8px;
                 background: linear-gradient(135deg, #FF9800, #F57C00);
                 border: none;
                 color: white;
                 cursor: pointer;
-                font-size: 11px;
+                font-size: 13px;
                 font-weight: 600;
-                letter-spacing: 0.3px;
-                transition: all 0.2s ease;
-                box-shadow: 0 2px 6px rgba(255,152,0,0.25);
+                letter-spacing: 0.5px;
+                transition: all 0.25s ease;
+                box-shadow: 0 3px 8px rgba(255,152,0,0.3);
             }
             .travel-refresh-btn:hover {
-                transform: translateY(-1px);
-                box-shadow: 0 4px 10px rgba(255,152,0,0.35);
-                background: linear-gradient(135deg, #FFA726, #F57C00);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(255,152,0,0.4);
+                background: linear-gradient(135deg, #FFA726, #FB8C00);
             }
             .travel-refresh-btn:active {
                 transform: translateY(0);
+                box-shadow: 0 2px 4px rgba(255,152,0,0.3);
             }
             .travel-meta {
                 margin-left: auto;
-                font-size: 10px;
-                color: rgba(255,255,255,0.55);
-                background: rgba(0,0,0,0.3);
-                padding: 4px 10px;
-                border-radius: 12px;
+                font-size: 12px;
+                color: rgba(255,255,255,0.65);
+                background: rgba(0,0,0,0.4);
+                padding: 6px 14px;
+                border-radius: 16px;
                 font-weight: 500;
-                border: 1px solid rgba(255,255,255,0.05);
+                border: 1px solid rgba(255,255,255,0.08);
             }
             .travel-table-wrap {
+                flex: 1;
                 overflow-y: auto;
                 overflow-x: hidden;
-                flex: 1;
-                scrollbar-width: none; /* Firefox */
-                -ms-overflow-style: none; /* IE/Edge */
+                max-height: 100%;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
             }
             .travel-table-wrap::-webkit-scrollbar {
                 width: 0;
-                display: none; /* Chrome/Safari */
+                height: 0;
+                display: none;
             }
             .travel-table {
                 width: 100%;
                 border-collapse: collapse;
-                font-size: 11px;
+                font-size: 13px;
                 color: #ffffff;
             }
             .travel-table thead th {
                 position: sticky;
                 top: 0;
-                background: linear-gradient(135deg, rgba(25,25,25,0.98), rgba(15,15,15,0.95));
-                padding: 8px 10px;
+                background: linear-gradient(135deg, rgba(35,35,35,1), rgba(25,25,25,0.98));
+                padding: 12px 14px;
                 text-align: left;
-                border-bottom: 2px solid rgba(255,152,0,0.25);
+                border-bottom: 2px solid rgba(255,152,0,0.3);
                 font-weight: 600;
-                font-size: 10px;
+                font-size: 11px;
                 text-transform: uppercase;
-                letter-spacing: 0.8px;
-                color: rgba(255,255,255,0.75);
-                z-index: 1;
+                letter-spacing: 1px;
+                color: rgba(255,255,255,0.85);
+                z-index: 2;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
             .travel-table th.num,
             .travel-table td.num {
                 text-align: right;
             }
             .travel-table td {
-                padding: 8px 10px;
-                border-bottom: 1px solid rgba(255,255,255,0.04);
-                transition: all 0.15s ease;
+                padding: 12px 14px;
+                border-bottom: 1px solid rgba(255,255,255,0.06);
+                transition: all 0.2s ease;
             }
             .travel-table tbody tr:nth-child(even) {
-                background: rgba(255,255,255,0.025);
+                background: rgba(255,255,255,0.03);
             }
             .travel-table tbody tr:hover {
-                background: rgba(255,152,0,0.12) !important;
-                transform: scale(1.005);
+                background: linear-gradient(135deg, rgba(255,152,0,0.15), rgba(255,152,0,0.1)) !important;
+                transform: translateX(2px);
+                box-shadow: inset 3px 0 0 rgba(255,152,0,0.6);
             }
             .item-name {
                 font-weight: 600;
                 color: #ffffff;
-                font-size: 11px;
+                font-size: 13px;
             }
             .profit-positive {
                 color: #4ade80;
