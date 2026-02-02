@@ -938,12 +938,17 @@ const TravelStocksModule = {
 
     // Fetch averages for visible items
     async fetchAverages(win, rows) {
+        console.log('💰 fetchAverages called with', rows.length, 'rows');
         const toFetch = rows
             .slice(0, this.MAX_VISIBLE_FETCH)
             .filter(r => typeof this.getCachedAvg(r.id) !== 'number')
             .map(r => r.id);
 
-        if (!toFetch.length) return;
+        console.log('💰 Items to fetch averages for:', toFetch.length);
+        if (!toFetch.length) {
+            console.log('💰 No items to fetch (all cached)');
+            return;
+        }
 
         const meta = win.querySelector('.travel-meta');
         let completed = 0;
@@ -963,18 +968,20 @@ const TravelStocksModule = {
                     const cost = Number((tds[2]?.textContent || '').replace(/[^0-9]/g, '')) || 0;
                     const profit = avg - cost;
 
-                    if (tds[3]) tds[3].textContent = this.fmtMoney(avg);
-                    if (tds[4]) {
-                        tds[4].textContent = this.fmtProfit(profit);
-                        tds[4].className = 'num ' + this.profitClass(profit);
-                        tds[4].dataset.profit = String(profit);
+                    // Update profit cell (now at index 3 after AVG removal)
+                    if (tds[3]) {
+                        tds[3].textContent = this.fmtProfit(profit);
+                        tds[3].className = 'num ' + this.profitClass(profit);
+                        tds[3].dataset.profit = String(profit);
+                        console.log(`💰 Updated profit for item ${itemId}: ${this.fmtProfit(profit)}`);
                     }
 
                     meta.textContent = `Loading avg prices… ${completed}/${toFetch.length} • Queue: ${this.state.queue.length}`;
                 })
-                .catch(() => {
+                .catch(err => {
                     completed++;
                     meta.textContent = `Loading avg prices… ${completed}/${toFetch.length} (some errors)`;
+                    console.error(`💰 Error fetching avg for item ${itemId}:`, err);
                 });
         }
     },
