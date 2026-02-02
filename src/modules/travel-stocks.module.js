@@ -463,7 +463,6 @@ const TravelStocksModule = {
                         Sort:
                         <select class="travel-sortby">
                             <option value="profit">Profit</option>
-                            <option value="avg">Avg Price</option>
                             <option value="cost">Cost</option>
                             <option value="qty">Stock</option>
                             <option value="country">Country</option>
@@ -490,13 +489,12 @@ const TravelStocksModule = {
                                 <th>Country</th>
                                 <th>Item</th>
                                 <th class="num">Cost</th>
-                                <th class="num">Avg</th>
                                 <th class="num">Profit</th>
                                 <th class="num">Stock</th>
                             </tr>
                         </thead>
                         <tbody class="travel-tbody">
-                            <tr><td colspan="6" class="travel-loading">Click Refresh to load data</td></tr>
+                            <tr><td colspan="5" class="travel-loading">Click Refresh to load data</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -859,7 +857,7 @@ const TravelStocksModule = {
         const countrySel = win.querySelector('.travel-country');
         const meta = win.querySelector('.travel-meta');
 
-        tbody.innerHTML = '<tr><td colspan="6" class="travel-loading">Loading YATA data…</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="travel-loading">Loading YATA data…</td></tr>';
         meta.textContent = 'Fetching...';
 
         try {
@@ -916,7 +914,6 @@ const TravelStocksModule = {
                         <div class="item-name" style="color: #ffffff;">${this.esc(r.name || 'Unknown')}</div>
                     </td>
                     <td class="num" style="color: #ffffff;">${this.fmtMoney(r.cost)}</td>
-                    <td class="num" style="color: #ffffff;">${(typeof r.avg === 'number') ? this.fmtMoney(r.avg) : '…'}</td>
                     <td class="num ${this.profitClass(r.profit)}" data-profit="${r.profit || ''}">
                         ${(typeof r.profit === 'number') ? this.fmtProfit(r.profit) : '…'}
                     </td>
@@ -933,7 +930,7 @@ const TravelStocksModule = {
             }
 
         } catch (err) {
-            tbody.innerHTML = `<tr><td colspan="6" class="travel-loading">Error: ${err.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" class="travel-loading">Error: ${err.message}</td></tr>`;
             meta.textContent = 'Error loading data';
             console.error('💰 Render error:', err);
         }
