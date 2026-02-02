@@ -212,6 +212,10 @@ const TravelStocksModule = {
                 outline: none;
                 min-width: 90px;
             }
+            .travel-controls select option {
+                background: #2a2a2a;
+                color: white;
+            }
             .travel-controls select:hover {
                 background: rgba(255,255,255,0.12);
                 border-color: rgba(255,152,0,0.5);
@@ -466,7 +470,6 @@ const TravelStocksModule = {
                             <option value="cost">Cost</option>
                             <option value="qty">Stock</option>
                             <option value="country">Country</option>
-                            <option value="id">Item ID</option>
                         </select>
                     </label>
                     <label style="color: rgba(255,255,255,0.9);">
