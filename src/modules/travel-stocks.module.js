@@ -10,13 +10,12 @@ const TravelStocksModule = {
     state: {
         isEnabled: false,
         window: null,
-        cache: {
-            yata: null,
-            yataFetchedMs: 0,
-            avgById: {} // itemId -> { avg, tMs }
-        },
+        yataCache: null,
+        yataCacheTime: 0,
+        avgPriceCache: {},
         queue: [],
-        inFlight: 0
+        inFlight: 0,
+        lastUpdated: null  // Track last data fetch time
     },
 
     settings: {
@@ -84,16 +83,20 @@ const TravelStocksModule = {
         await this.restoreWindowState();
     },
 
+
     // Restore window state on page load
     async restoreWindowState() {
         try {
             const ChromeStorage = window.SidekickModules.Core.ChromeStorage;
+            const StateManager = window.SidekickModules.Core.StateManager;
             const windowState = await ChromeStorage.get('sidekick_travelStocksWindowState') || {};
 
             if (windowState.isOpen) {
                 console.log('💰 Restoring Travel Stocks window');
                 // Wait for sidebar to be ready
-                setTimeout(() => this.createWindow(), 500);
+                setTimeout(() => {
+                    this.createWindow();
+                }, 100);
             }
         } catch (err) {
             console.error('💰 Error restoring window state:', err);
@@ -515,13 +518,33 @@ const TravelStocksModule = {
             window.SidekickModules.Core.WindowManager.registerWindow(win, 'travel-stocks');
         }
 
-        // Add to sidebar content area
+        // Add to DOM - use sidebar content area directly  
         const contentArea = document.getElementById('sidekick-content');
         if (contentArea) {
             contentArea.appendChild(win);
-            console.log('💰 Travel Stocks window added to sidebar');
         } else {
-            console.error('💰 Sidebar content area not found');
+            // Fallback to sidebarroot
+            document.getElementById('sidebarroot')?.appendChild(win);
+        }
+
+        console.log('💰 Travel Stocks window added to sidebar');
+        this.state.window = win;
+
+        // THEN restore position/size (after DOM insertion for proper dragging)
+        const StateManager = window.SidekickModules.Core.StateManager;
+        const savedGeometry = await StateManager?.loadModuleState?.('travel-stocks');
+        if (savedGeometry?.geometry) {
+            const { size, position } = savedGeometry.geometry;
+            if (size) {
+                win.style.width = size.width + 'px';
+                win.style.height = size.height + 'px';
+                console.log(`💰 Restored window size: ${size.width}x${size.height}`);
+            }
+            if (position) {
+                win.style.left = position.x + 'px';
+                win.style.top = position.y + 'px';
+                console.log(`💰 Restored window position: ${position.x}, ${position.y}`);
+            }
         }
 
         // Apply saved settings to UI
@@ -643,12 +666,22 @@ const TravelStocksModule = {
         });
 
         refreshBtn.addEventListener('click', () => {
+            console.log('💰 REFRESH BUTTON CLICKED');
+            this.state.lastUpdated = new Date();
             this.renderTable(win, true);
         });
 
-        // Save size on resize
+        // Save ONLY size on resize, not position (prevents jumping)
         const resizeObserver = new ResizeObserver(() => {
-            this.saveWindowState(win);
+            const rect = win.getBoundingClientRect();
+            const StateManager = window.SidekickModules.Core.StateManager;
+            if (StateManager && StateManager.saveModuleState) {
+                StateManager.saveModuleState('travel-stocks', {
+                    geometry: {
+                        size: { width: Math.round(rect.width), height: Math.round(rect.height) }
+                    }
+                }, 500);
+            }
         });
         resizeObserver.observe(win);
     },
@@ -766,10 +799,9 @@ const TravelStocksModule = {
         const cached = this.getCachedAvg(itemId);
         if (typeof cached === 'number') return cached;
 
-        // Get API key from settings
+        // Get global API key
         const ChromeStorage = window.SidekickModules.Core.ChromeStorage;
-        const settings = await ChromeStorage.get('sidekick_settings') || {};
-        const apiKey = settings.apiKey;
+        const apiKey = await ChromeStorage.get('sidekick_api_key');
 
         if (!apiKey) throw new Error('API key not set');
 
@@ -856,6 +888,7 @@ const TravelStocksModule = {
 
     // Render table
     async renderTable(win, forceYata = false) {
+        console.log('💰 renderTable called, forceYata:', forceYata);
         const tbody = win.querySelector('.travel-tbody');
         const countrySel = win.querySelector('.travel-country');
         const meta = win.querySelector('.travel-meta');
@@ -864,17 +897,23 @@ const TravelStocksModule = {
         meta.textContent = 'Fetching...';
 
         try {
+            console.log('💰 Fetching YATA data...');
             const yata = await this.fetchYATA(forceYata);
+            console.log('💰 YATA data received, row count:', Object.keys(yata || {}).length);
             let rows = this.normalizeYATA(yata);
+            console.log('💰 Normalized rows:', rows.length);
 
             // Decorate with cached avg/profit
+            console.log('💰 Decorating rows with cached data...');
             rows = rows.map(r => {
                 const avg = this.getCachedAvg(r.id);
                 const profit = (typeof avg === 'number') ? (avg - r.cost) : null;
                 return { ...r, avg, profit };
             });
+            console.log('💰 Rows decorated, sample:', rows[0]);
 
             // Populate country dropdown
+            console.log('💰 Populating country dropdown...');
             const countries = [...new Set(rows.map(r => r.country))].sort();
             if (countrySel.options.length === 1) {
                 for (const c of countries) {
@@ -885,8 +924,10 @@ const TravelStocksModule = {
                 }
                 countrySel.value = this.settings.country;
             }
+            console.log('💰 Country dropdown populated, found', countries.length, 'countries');
 
             // Filter
+            console.log('💰 Filtering rows...');
             let filtered = rows;
             if (this.settings.country !== 'ALL') {
                 filtered = filtered.filter(x => x.country === this.settings.country);
@@ -894,19 +935,24 @@ const TravelStocksModule = {
             if (this.settings.showOnlyProfit) {
                 filtered = filtered.filter(x => x.profit && x.profit > 0);
             }
+            console.log('💰 Filtered down to', filtered.length, 'rows');
 
             // Limit & sort
+            console.log('💰 Sorting rows by', this.settings.sortBy, this.settings.sortDir);
             filtered = filtered.slice(0, this.settings.limit);
             filtered = this.sortRows(filtered, this.settings.sortBy, this.settings.sortDir);
+            console.log('💰 Sorted, final count:', filtered.length);
 
             tbody.innerHTML = '';
 
             if (!filtered.length) {
-                tbody.innerHTML = '<tr><td colspan="6" class="travel-loading">No items match filters</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="travel-loading">No items match filters</td></tr>';
                 meta.textContent = 'Rows: 0';
+                console.log('💰 No items to display after filtering');
                 return;
             }
 
+            console.log('💰 Rendering', filtered.length, 'table rows...');
             for (const r of filtered) {
                 const tr = document.createElement('tr');
                 tr.dataset.itemId = String(r.id);
@@ -914,23 +960,28 @@ const TravelStocksModule = {
                 tr.innerHTML = `
                     <td style="color: #ffffff;">${this.esc(r.country)}</td>
                     <td style="color: #ffffff;">
-                        <div class="item-name" style="color: #ffffff;">${this.esc(r.name || 'Unknown')}</div>
+                        <a href="https://www.torn.com/travelagency.php" target="_blank" style="color: #90caf9; text-decoration: none;">
+                            ${this.esc(r.name)}
+                        </a>
                     </td>
                     <td class="num" style="color: #ffffff;">${this.fmtMoney(r.cost)}</td>
-                    <td class="num ${this.profitClass(r.profit)}" data-profit="${r.profit || ''}">
-                        ${(typeof r.profit === 'number') ? this.fmtProfit(r.profit) : '…'}
-                    </td>
-                    <td class="num" style="color: #ffffff;">${Math.trunc(r.qty).toLocaleString()}</td>
+                    <td class="num" data-profit="${r.profit || ''}" style="color: #ffffff;">${this.fmtProfit(r.profit)}</td>
+                    <td class="num" style="color: #ffffff;">${r.qty || ''}</td>
                 `;
                 tbody.appendChild(tr);
             }
+            console.log('💰 Rows rendered successfully');
 
-            meta.textContent = `Rows: ${filtered.length} • Queue: ${this.state.queue.length} • In-flight: ${this.state.inFlight}`;
+            // Update meta badge
+            const lastUpdate = this.state.lastUpdated ? new Date(this.state.lastUpdated).toLocaleTimeString() : 'Never';
+            meta.textContent = `${filtered.length} rows • Last Updated: ${lastUpdate}`;
+            meta.title = `Rows: Number of items shown\nQueue: ${this.state.queue.length} API requests waiting\nIn-flight: ${this.state.inFlight} API requests processing`;
+            console.log('💰 Meta updated:', meta.textContent);
 
-            // Fetch averages if sorting by profit/avg
-            if (this.settings.sortBy === 'profit' || this.settings.sortBy === 'avg') {
-                await this.fetchAverages(win, filtered);
-            }
+            // ALWAYS fetch profit data (user expects to see profit)
+            console.log('💰 Fetching profit data for all items...');
+            await this.fetchAverages(win, filtered);
+            console.log('💰 renderTable completed successfully');
 
         } catch (err) {
             tbody.innerHTML = `<tr><td colspan="5" class="travel-loading">Error: ${err.message}</td></tr>`;
@@ -965,18 +1016,28 @@ const TravelStocksModule = {
                     completed++;
 
                     const rowEl = win.querySelector(`tr[data-item-id="${itemId}"]`);
-                    if (!rowEl) return;
+                    if (!rowEl) {
+                        console.warn(`💰 Row not found for item ${itemId}`);
+                        return;
+                    }
 
+                    console.log(`💰 Updating row for item ${itemId}, avg=${avg}`);
                     const tds = rowEl.querySelectorAll('td');
+                    console.log(`💰 Row has ${tds.length} cells:`, Array.from(tds).map((td, i) => `[${i}]=${td.textContent.substring(0, 20)}`));
+
                     const cost = Number((tds[2]?.textContent || '').replace(/[^0-9]/g, '')) || 0;
                     const profit = avg - cost;
+                    console.log(`💰 Item ${itemId}: cost=${cost}, avg=${avg}, profit=${profit}`);
 
-                    // Update profit cell (now at index 3 after AVG removal)
+                    // Update profit cell (index 3: Country, Name, Cost, PROFIT, Qty)
                     if (tds[3]) {
+                        console.log(`💰 BEFORE update - cell[3] content: "${tds[3].textContent}"`);
                         tds[3].textContent = this.fmtProfit(profit);
                         tds[3].className = 'num ' + this.profitClass(profit);
                         tds[3].dataset.profit = String(profit);
-                        console.log(`💰 Updated profit for item ${itemId}: ${this.fmtProfit(profit)}`);
+                        console.log(`💰 AFTER update - cell[3] content: "${tds[3].textContent}", class: ${tds[3].className}`);
+                    } else {
+                        console.error(`💰 ERROR: Cell[3] not found! Row has ${tds.length} cells`);
                     }
 
                     meta.textContent = `Loading avg prices… ${completed}/${toFetch.length} • Queue: ${this.state.queue.length}`;
