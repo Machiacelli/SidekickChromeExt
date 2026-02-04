@@ -580,23 +580,25 @@ const TravelStocksModule = {
             e.preventDefault();
             e.stopPropagation();
 
-            currentX = e.clientX - initialX;
-            currentY = e.clientY - initialY;
-
-            // Constrain to sidebar bounds
+            // Calculate position relative to sidebar
             const sidebar = document.getElementById('sidekick-content');
             if (sidebar) {
                 const sidebarRect = sidebar.getBoundingClientRect();
+
+                // New position relative to sidebar
+                currentX = e.clientX - sidebarRect.left - initialX;
+                currentY = e.clientY - sidebarRect.top - initialY;
+
                 const winWidth = win.offsetWidth;
                 const winHeight = win.offsetHeight;
 
                 // Keep within bounds
                 currentX = Math.max(0, Math.min(currentX, sidebarRect.width - winWidth));
                 currentY = Math.max(0, Math.min(currentY, sidebarRect.height - winHeight));
-            }
 
-            win.style.left = currentX + 'px';
-            win.style.top = currentY + 'px';
+                win.style.left = currentX + 'px';
+                win.style.top = currentY + 'px';
+            }
         };
 
         const onMouseUp = (e) => {
