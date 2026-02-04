@@ -816,7 +816,8 @@
                 x: 10,
                 y: 10,
                 width: 300,
-                height: 250
+                height: 250,
+                showEndDate: false  // Default to showing only countdown
             };
 
             this.timers.push(timer);
@@ -1135,7 +1136,8 @@
                 created: new Date().toISOString(),
                 modified: new Date().toISOString(),
                 isApiTimer: false,
-                cooldownType: null
+                cooldownType: null,
+                showEndDate: false  // Default to showing only countdown
             };
 
             this.timers.push(timer);
@@ -2181,24 +2183,49 @@
                         align-items: center;
                         gap: 4px;
                     `;
-                    singleCooldownDiv.innerHTML = `
-                        <div style="
-                            color: ${this.getCooldownColor(type)};
-                            font-family: 'Courier New', monospace;
-                            font-weight: 700;
-                            font-size: 24px;
-                        ">${this.formatTime(time)}</div>
-                        <div style="
-                            color: #888;
-                            font-size: 11px;
-                            font-family: 'Courier New', monospace;
-                            margin-top: 2px;
-                        ">Ends at: ${endTimeData.time}</div>
-                        <div style="
-                            color: #666;
-                            font-size: 10px;
-                        ">${endTimeData.date}</div>
+
+                    // Countdown display with click cursor
+                    const countdownDiv = document.createElement('div');
+                    countdownDiv.className = 'timer-countdown-display';
+                    countdownDiv.style.cssText = `
+                        color: ${this.getCooldownColor(type)};
+                        font-family: 'Courier New', monospace;
+                        font-weight: 700;
+                        font-size: 24px;
+                        cursor: pointer;
+                        user-select: none;
                     `;
+                    countdownDiv.textContent = this.formatTime(time);
+                    countdownDiv.title = 'Click to toggle end date display';
+                    singleCooldownDiv.appendChild(countdownDiv);
+
+                    // End date display (conditional)
+                    if (timer.showEndDate) {
+                        const endDateContainer = document.createElement('div');
+                        endDateContainer.innerHTML = `
+                            <div style="
+                                color: #888;
+                                font-size: 11px;
+                                font-family: 'Courier New', monospace;
+                                margin-top: 2px;
+                            ">Ends at: ${endTimeData.time}</div>
+                            <div style="
+                                color: #666;
+                                font-size: 10px;
+                            ">${endTimeData.date}</div>
+                        `;
+                        singleCooldownDiv.appendChild(endDateContainer);
+                    }
+
+                    // Add click handler to countdown to toggle end date
+                    countdownDiv.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        timer.showEndDate = !timer.showEndDate;
+                        console.log(`🔄 Toggled end date display for timer ${timer.id}: ${timer.showEndDate}`);
+                        this.saveTimers();
+                        this.updateTimerDisplay(timer.id);
+                    });
+
                     contentArea.appendChild(singleCooldownDiv);
                 } else if (timer.cooldowns && Object.keys(timer.cooldowns).length > 1) {
                     // Multi-cooldown display
@@ -2217,12 +2244,16 @@
                             padding: 5px 8px 6px 8px;
                             margin: 2px 0;
                             width: 90%;
-                            min-height: 60px;
+                            min-height: ${timer.showEndDate ? '60px' : '45px'};
                             display: flex;
                             flex-direction: column;
                             position: relative;
-                            `;
-                        cooldownDiv.innerHTML = `
+                            cursor: pointer;
+                            user-select: none;
+                        `;
+
+                        // Build HTML conditionally
+                        let cooldownHTML = `
                             <div style="
                                 display: flex;
                                 justify-content: space-between;
@@ -2257,13 +2288,17 @@
                                 gap: 2px;
                                 padding-left: 4px;
                             ">
-                                <span style="
+                                <span class="timer-countdown-display" style="
                                     color: ${this.getCooldownColor(type)};
                                     font-family: 'Courier New', monospace;
                                     font-weight: 700;
                                     font-size: 15px;
                                     line-height: 1.2;
-                                ">${this.formatTime(time)}</span>
+                                ">${this.formatTime(time)}</span>`;
+
+                        // Conditionally add end date
+                        if (timer.showEndDate) {
+                            cooldownHTML += `
                                 <span style="
                                     color: #aaa;
                                     font-size: 11px;
@@ -2274,9 +2309,14 @@
                                     color: #999;
                                     font-size: 10px;
                                     line-height: 1.3;
-                                ">${endTimeData.date}</span>
+                                ">${endTimeData.date}</span>`;
+                        }
+
+                        cooldownHTML += `
                             </div>
                         `;
+
+                        cooldownDiv.innerHTML = cooldownHTML;
 
                         // Add click handler to toggle end date
                         cooldownDiv.addEventListener('click', (e) => {
