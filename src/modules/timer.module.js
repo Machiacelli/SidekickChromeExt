@@ -2428,22 +2428,37 @@
 
         // Attach click handlers to toggle end date display
         attachToggleClickHandlers(contentArea, timer) {
+            console.log(`🖱️ Attaching click handlers for timer ${timer.id}`);
+
             // Remove old listeners first to prevent duplicates
             const oldListener = contentArea._toggleClickHandler;
             if (oldListener) {
                 contentArea.removeEventListener('click', oldListener);
+                console.log(`🗑️ Removed old listener for timer ${timer.id}`);
             }
 
             // Create new listener
             const toggleHandler = (e) => {
+                console.log(`🖱️ Click detected on contentArea for timer ${timer.id}`, e.target);
+
                 // Check if clicking on clickable countdown element
                 const countdown = e.target.closest('.timer-countdown-display');
-                if (!countdown) return;
+                console.log(`🔍 Countdown element:`, countdown);
+
+                if (!countdown) {
+                    console.log(`❌ Not a countdown element, ignoring`);
+                    return;
+                }
 
                 // Don't toggle if clicking remove button
-                if (e.target.closest('.remove-cooldown-btn')) return;
+                if (e.target.closest('.remove-cooldown-btn')) {
+                    console.log(`❌ Clicked remove button, ignoring`);
+                    return;
+                }
 
+                console.log(`✅ Valid countdown click, toggling!`);
                 e.stopPropagation();
+                e.preventDefault(); // Prevent text selection
                 timer.showEndDate = !timer.showEndDate;
                 console.log(`🔄 Toggled end date display for timer ${timer.id}: ${timer.showEndDate}`);
                 this.saveTimers();
@@ -2453,6 +2468,7 @@
             // Store reference and attach
             contentArea._toggleClickHandler = toggleHandler;
             contentArea.addEventListener('click', toggleHandler);
+            console.log(`✅ Click handler attached for timer ${timer.id}`);
         },
 
 
