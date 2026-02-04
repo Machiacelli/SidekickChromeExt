@@ -466,21 +466,6 @@ const TravelStocksModule = {
                             <option value="ALL">All Countries</option>
                         </select>
                     </label>
-                    <label style="color: rgba(255,255,255,0.9);">
-                        Sort:
-                        <select class="travel-sortby">
-                            <option value="profit">Profit</option>
-                            <option value="cost">Cost</option>
-                            <option value="qty">Stock</option>
-                            <option value="country">Country</option>
-                        </select>
-                    </label>
-                    <label style="color: rgba(255,255,255,0.9);">
-                        <select class="travel-sortdir">
-                            <option value="desc">↓ Desc</option>
-                            <option value="asc">↑ Asc</option>
-                        </select>
-                    </label>
                     <label class="travel-checkbox-label" style="color: rgba(255,255,255,0.9);">
                         <input type="checkbox" class="travel-showprofit" />
                         Show Only Profit
@@ -488,15 +473,14 @@ const TravelStocksModule = {
                     <button class="travel-refresh-btn">Refresh</button>
                     <span class="travel-meta"></span>
                 </div>
-                <div class="travel-table-wrap">
                     <table class="travel-table">
                         <thead>
                             <tr>
-                                <th>Country</th>
-                                <th>Item</th>
-                                <th class="num">Cost</th>
-                                <th class="num">Profit</th>
-                                <th class="num">Stock</th>
+                                <th data-sort="country" style="cursor: pointer;">Country <span class="sort-ind"></span></th>
+                                <th data-sort="name" style="cursor: pointer;">Item <span class="sort-ind"></span></th>
+                                <th class="num" data-sort="cost" style="cursor: pointer;">Cost <span class="sort-ind"></span></th>
+                                <th class="num" data-sort="profit" style="cursor: pointer;">Profit <span class="sort-ind"></span></th>
+                                <th class="num" data-sort="qty" style="cursor: pointer;">Stock <span class="sort-ind"></span></th>
                             </tr>
                         </thead>
                         <tbody class="travel-tbody">
@@ -636,10 +620,9 @@ const TravelStocksModule = {
 
         // Controls
         const countrySel = win.querySelector('.travel-country');
-        const sortBySel = win.querySelector('.travel-sortby');
-        const sortDirSel = win.querySelector('.travel-sortdir');
         const showProfitChk = win.querySelector('.travel-showprofit');
         const refreshBtn = win.querySelector('.travel-refresh-btn');
+        const tableHeaders = win.querySelectorAll('th[data-sort]');
 
         countrySel.addEventListener('change', async (e) => {
             this.settings.country = e.target.value;
@@ -647,16 +630,22 @@ const TravelStocksModule = {
             this.renderTable(win, false);
         });
 
-        sortBySel.addEventListener('change', async (e) => {
-            this.settings.sortBy = e.target.value;
-            await this.saveSettings();
-            this.renderTable(win, false);
-        });
+        // Table header click for sorting
+        tableHeaders.forEach(th => {
+            th.addEventListener('click', async () => {
+                const sortField = th.dataset.sort;
 
-        sortDirSel.addEventListener('change', async (e) => {
-            this.settings.sortDir = e.target.value;
-            await this.saveSettings();
-            this.renderTable(win, false);
+                // Toggle direction if same field, otherwise default to desc
+                if (this.settings.sortBy === sortField) {
+                    this.settings.sortDir = this.settings.sortDir === 'desc' ? 'asc' : 'desc';
+                } else {
+                    this.settings.sortBy = sortField;
+                    this.settings.sortDir = 'desc';
+                }
+
+                await this.saveSettings();
+                this.renderTable(win, false);
+            });
         });
 
         showProfitChk.addEventListener('change', async (e) => {
@@ -971,6 +960,17 @@ const TravelStocksModule = {
                 tbody.appendChild(tr);
             }
             console.log('💰 Rows rendered successfully');
+
+            // Update sort indicators
+            const allHeaders = win.querySelectorAll('th[data-sort]');
+            allHeaders.forEach(th => {
+                const indicator = th.querySelector('.sort-ind');
+                if (th.dataset.sort === this.settings.sortBy) {
+                    indicator.textContent = this.settings.sortDir === 'desc' ? ' ↓' : ' ↑';
+                } else {
+                    indicator.textContent = '';
+                }
+            });
 
             // Update meta badge
             const lastUpdate = this.state.lastUpdated ? new Date(this.state.lastUpdated).toLocaleTimeString() : 'Never';
