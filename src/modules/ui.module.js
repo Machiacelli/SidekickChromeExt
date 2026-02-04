@@ -253,7 +253,7 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                z-index: 10000;
+                z-index: 20000;
                 opacity: 0.85;
             `;
 
@@ -459,7 +459,7 @@
                 box-shadow: 0 6px 24px rgba(0,0,0,0.7);
                 backdrop-filter: blur(20px);
                 border: 1px solid rgba(255,255,255,0.12);
-                z-index: 1000;
+                z-index: 19999;
                 transform: translateY(10px);
                 opacity: 0;
                 transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);

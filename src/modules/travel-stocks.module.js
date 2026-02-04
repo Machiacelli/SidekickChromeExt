@@ -531,8 +531,8 @@ const TravelStocksModule = {
             }
         }
 
-        // Apply saved settings to UI
-        this.applySettingsToUI(win);
+        // Initial render
+        this.renderTable(win, true);
     },
 
     // Wire event listeners
@@ -955,7 +955,7 @@ const TravelStocksModule = {
                     </td>
                     <td class="num" style="color: #ffffff;">${this.fmtMoney(r.cost)}</td>
                     <td class="num" data-profit="${r.profit || ''}" style="color: #ffffff;">${this.fmtProfit(r.profit)}</td>
-                    <td class="num" style="color: #ffffff;">${r.qty || ''}</td>
+                    <td class="num" style="color: #ffffff; padding-right: 5px;">${typeof r.qty === 'number' ? r.qty : ''}</td>
                 `;
                 tbody.appendChild(tr);
             }
