@@ -338,10 +338,10 @@ const LockedItemsManagerModule = {
 
         if (this.lockedItems[itemId]) {
             delete this.lockedItems[itemId];
-            this.showToast(`${itemName} Unlocked`);
+            window.SidekickModules?.UI?.showNotification('Item Unlocked', `${itemName} unlocked`, 'success');
         } else {
             this.lockedItems[itemId] = true;
-            this.showToast(`${itemName} Locked`, true);
+            window.SidekickModules?.UI?.showNotification('Item Locked', `${itemName} locked`, 'info');
         }
 
         await this.saveLockedItems();
@@ -375,9 +375,9 @@ const LockedItemsManagerModule = {
             this.processPage();
 
             if (unlockedCount > 0) {
-                this.showToast(`Unlocked ${unlockedCount} items`);
+                window.SidekickModules?.UI?.showNotification('Items Unlocked', `Unlocked ${unlockedCount} items`, 'success');
             } else {
-                this.showToast('No locked items in this category');
+                window.SidekickModules?.UI?.showNotification('No Locked Items', 'No locked items in this category', 'info');
             }
         };
 

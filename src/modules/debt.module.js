@@ -73,7 +73,7 @@
                 await this.loadDebtsAndLoans();
                 await this.loadApiKey(); // This will start API monitoring if key is available
                 this.startInterestUpdates();
-            this.startAlertMonitoring(); // Start checking for due date and inactivity alerts
+                this.startAlertMonitoring(); // Start checking for due date and inactivity alerts
 
                 // Restore window state if it was open before
                 this.restoreWindowState();
@@ -1661,24 +1661,20 @@
                     </div>
                 </div>
                 
+                
                 <div style="font-size: 11px; color: #ccc; margin-bottom: 6px;">
                     Original: $${entry.originalAmount.toLocaleString()} • 
                     ${entry.interestRate > 0 ? `${entry.interestRate}% ${entry.interestType}` : 'No interest'} • 
-                    ${this.getTimeAgo(entry.createdAt)}
-                </div>
-                
-                ${entry.dueDate ? (() => {
+                    ${this.getTimeAgo(entry.createdAt)}${entry.dueDate ? (() => {
                     const dueDate = new Date(entry.dueDate);
                     const now = new Date();
                     const daysUntilDue = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
                     const isOverdue = daysUntilDue < 0;
-                    const dueDateStr = dueDate.toLocaleDateString();
-
-                    return `<div style="font-size: 11px; color: ${isOverdue ? '#f44336' : daysUntilDue <= 3 ? '#ff9800' : '#4caf50'}; margin-bottom: 6px;">
-                        📅 Due: ${dueDateStr} ${isOverdue ? `(${Math.abs(daysUntilDue)} days overdue!)` : `(${daysUntilDue} day${daysUntilDue === 1 ? '' : 's'} remaining)`}
-                    </div>`;
+                    const color = isOverdue ? '#f44336' : daysUntilDue <= 3 ? '#ff9800' : '#4caf50';
+                    return ` • <span style="color: ${color};">${dueDate.toLocaleDateString()}</span>`;
                 })() : ''}
-                
+                </div>
+
                 ${entry.notes ? `<div style="font-size: 11px; color: #bbb; font-style: italic; margin-bottom: 6px;">"${entry.notes}"</div>` : ''}
                 
                 <div style="display: flex; gap: 4px; justify-content: flex-end; flex-wrap: wrap; margin-top: 4px;">
