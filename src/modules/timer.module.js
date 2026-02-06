@@ -634,15 +634,17 @@
                 // This prevents automatic API spam
             }, 300000);
 
+            // DISABLED: Automatic virus checking - only check when user manually selects from dropdown
             // Check virus coding status every 5 minutes (only if user has opted in)
-            setInterval(() => {
-                this.checkVirusCoding();
-            }, 300000);
+            // setInterval(() => {
+            //     this.checkVirusCoding();
+            // }, 300000);
 
+            // DISABLED: Initial automatic virus check
             // Initial virus check after 10 seconds (only if user has opted in)
-            setTimeout(() => {
-                this.checkVirusCoding();
-            }, 10000);
+            // setTimeout(() => {
+            //     this.checkVirusCoding();
+            // }, 10000);
 
             console.log('⏰ Periodic synchronization and virus checking started');
 
@@ -2753,18 +2755,21 @@
                 return;
             }
 
+            // DISABLED: Automatic API cooldown checking - only check when user manually selects from dropdown
             // Start interval to check API for cooldown updates every 30 seconds
-            if (!this.apiCheckInterval) {
-                console.log('🔍 Starting API cooldown monitoring...');
-                this.apiCheckInterval = setInterval(() => {
-                    this.checkApiForCooldowns();
-                }, 30000); // Check every 30 seconds
+            // if (!this.apiCheckInterval) {
+            //     console.log('🔍 Starting API cooldown monitoring...');
+            //     this.apiCheckInterval = setInterval(() => {
+            //         this.checkApiForCooldowns();
+            //     }, 30000); // Check every 30 seconds
+            //
+            //     // Do immediate check
+            //     setTimeout(() => {
+            //         this.checkApiForCooldowns();
+            //     }, 2000);
+            // }
 
-                // Do immediate check
-                setTimeout(() => {
-                    this.checkApiForCooldowns();
-                }, 2000);
-            }
+            console.log('ℹ️ Automatic API cooldown monitoring DISABLED - use dropdown to manually add cooldowns');
         },
 
         // Check API for new/updated cooldowns
