@@ -2197,6 +2197,18 @@
                     `;
                     countdownDiv.textContent = this.formatTime(time);
                     countdownDiv.title = 'Click to toggle end date display';
+
+                    // Attach click handler directly to countdown
+                    countdownDiv.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        console.log(`🔄 Single cooldown clicked for timer ${timer.id}`);
+                        timer.showEndDate = !timer.showEndDate;
+                        console.log(`🔄 Toggled to: ${timer.showEndDate}`);
+                        this.saveTimers();
+                        this.updateTimerDisplay(timer.id);
+                    });
+
                     singleCooldownDiv.appendChild(countdownDiv);
 
                     // End date display (conditional)
@@ -2218,9 +2230,6 @@
                     }
 
                     contentArea.appendChild(singleCooldownDiv);
-
-                    // Attach click handler after rendering
-                    this.attachToggleClickHandlers(contentArea, timer);
                 } else if (timer.cooldowns && Object.keys(timer.cooldowns).length > 1) {
                     // Multi-cooldown display
                     const cooldownNames = {
@@ -2350,11 +2359,29 @@
                             });
                         }
 
+                        // Add click handler to countdown display
+                        const countdownSpan = cooldownDiv.querySelector('.timer-countdown-display');
+                        if (countdownSpan) {
+                            // Add user-select: none and cursor
+                            countdownSpan.style.cursor = 'pointer';
+                            countdownSpan.style.userSelect = 'none';
+
+                            countdownSpan.addEventListener('click', (e) => {
+                                // Don't toggle if clicking remove button
+                                if (e.target.closest('.remove-cooldown-btn')) return;
+
+                                e.stopPropagation();
+                                e.preventDefault();
+                                console.log(`🔄 Multi-cooldown clicked for timer ${timer.id}`);
+                                timer.showEndDate = !timer.showEndDate;
+                                console.log(`🔄 Toggled to: ${timer.showEndDate}`);
+                                this.saveTimers();
+                                this.updateTimerDisplay(timer.id);
+                            });
+                        }
+
                         contentArea.appendChild(cooldownDiv);
                     });
-
-                    // Attach click handlers after all cooldowns are rendered
-                    this.attachToggleClickHandlers(contentArea, timer);
                 } else {
                     // Single cooldown display
                     const display = document.createElement('div');
