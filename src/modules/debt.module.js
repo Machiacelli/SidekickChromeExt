@@ -73,6 +73,7 @@
                 await this.loadDebtsAndLoans();
                 await this.loadApiKey(); // This will start API monitoring if key is available
                 this.startInterestUpdates();
+            this.startAlertMonitoring(); // Start checking for due date and inactivity alerts
 
                 // Restore window state if it was open before
                 this.restoreWindowState();
