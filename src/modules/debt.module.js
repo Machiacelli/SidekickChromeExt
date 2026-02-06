@@ -8,16 +8,16 @@
 (function () {
     'use strict';
 
-    console.log("=É∆¶ Loading Sidekick Debt Module...");
+    console.log("üí∞ Loading Sidekick Debt Module...");
 
     // Wait for Core module to be available
     function waitForCore() {
         return new Promise((resolve) => {
             const checkCore = () => {
-                console.log("=ÉˆÏ Checking for Core module...");
+                console.log("üîç Checking for Core module...");
 
                 if (window.SidekickModules?.Core?.ChromeStorage) {
-                    console.log("=É∆¶ Core module with ChromeStorage ready for Debt");
+                    console.log("üí∞ Core module with ChromeStorage ready for Debt");
                     resolve();
                 } else {
                     setTimeout(checkCore, 100);
@@ -61,25 +61,24 @@
         // Initialize the debt module
         async init() {
             if (this.isInitialized) {
-                console.log("=É∆¶ Debt Module already initialized");
+                console.log("üí∞ Debt Module already initialized");
                 return;
             }
 
             try {
                 await waitForCore();
 
-                console.log("=É∆¶ Debt Module: Starting initialization...");
+                console.log("üí∞ Debt Module: Starting initialization...");
 
                 await this.loadDebtsAndLoans();
                 await this.loadApiKey(); // This will start API monitoring if key is available
                 this.startInterestUpdates();
-            this.startAlertMonitoring(); // Start checking for due date and inactivity alerts
 
                 // Restore window state if it was open before
                 this.restoreWindowState();
 
                 this.isInitialized = true;
-                console.log("=É∆¶ Debt Module initialized successfully");
+                console.log("üí∞ Debt Module initialized successfully");
 
             } catch (error) {
                 console.error('Failed to initialize Debt Module:', error);
@@ -98,45 +97,45 @@
                         try {
                             this.apiKey = await window.SidekickModules.Settings.getApiKey();
                         } catch (error) {
-                            console.log(`=É∆¶ Attempt ${attempts + 1} failed:`, error.message);
+                            console.log(`üí∞ Attempt ${attempts + 1} failed:`, error.message);
                         }
                     }
 
                     if (!this.apiKey) {
                         attempts++;
                         if (attempts < maxAttempts) {
-                            console.log(`=É∆¶ Waiting for Settings module... attempt ${attempts}/${maxAttempts}`);
+                            console.log(`üí∞ Waiting for Settings module... attempt ${attempts}/${maxAttempts}`);
                             await new Promise(resolve => setTimeout(resolve, 100)); // Changed from 1000ms to 100ms
                         }
                     }
                 }
 
                 if (this.apiKey) {
-                    console.log("=É∆¶ API Key loaded: G£Ù");
+                    console.log("üí∞ API Key loaded: ‚úì");
 
                     // Start API monitoring now that we have the key
                     this.startApiMonitoring();
                 } else {
-                    console.log("=É∆¶ No API key found after all attempts");
-                    console.log("=É∆¶ Manual testing: You can call window.SidekickModules.Debt.testPaymentDetection() to test patterns");
+                    console.log("üí∞ No API key found after all attempts");
+                    console.log("üí∞ Manual testing: You can call window.SidekickModules.Debt.testPaymentDetection() to test patterns");
 
                     // Show user-friendly notification about missing API key
                     if (window.SidekickModules?.UI?.showNotification) {
                         window.SidekickModules.UI.showNotification(
                             'Debt Tracker - API Key Required',
-                            'Automatic payment detection requires an API key. Please add your API key in Settings (G‹÷n+≈ button).',
+                            'Automatic payment detection requires an API key. Please add your API key in Settings (‚öôÔ∏è button).',
                             'warning'
                         );
                     }
                 }
             } catch (error) {
-                console.error("=É∆¶ Error loading API key:", error);
+                console.error("üí∞ Error loading API key:", error);
             }
         },
 
         // Manual test function for debugging payment detection
         testPaymentDetection() {
-            console.log("=É∆¶ === Testing Payment Detection Patterns ===");
+            console.log("üí∞ === Testing Payment Detection Patterns ===");
 
             // Test with your specific log format
             const testLogs = [
@@ -144,45 +143,45 @@
                 { log: "You sent $100 to cybex with the message: loan payment", timestamp: Math.floor(Date.now() / 1000) }
             ];
 
-            console.log("=É∆¶ Current debts/loans:", this.debtsAndLoans);
+            console.log("üí∞ Current debts/loans:", this.debtsAndLoans);
 
             testLogs.forEach((log, index) => {
-                console.log(`=É∆¶ Testing log ${index + 1}: ${log.log}`);
+                console.log(`üí∞ Testing log ${index + 1}: ${log.log}`);
                 this.handleMoneyTransfer(log);
             });
         },
 
         // Test background script communication
         async testBackgroundConnection() {
-            console.log("=É∆¶ === Testing Background Script Communication ===");
+            console.log("üí∞ === Testing Background Script Communication ===");
 
             if (!window.SidekickModules?.Core?.SafeMessageSender?.isExtensionContextValid()) {
-                console.error('=É∆¶ Extension context not available');
+                console.error('üí∞ Extension context not available');
                 return false;
             }
 
             try {
-                console.log('=É∆¶ Testing simple ping to background script...');
+                console.log('üí∞ Testing simple ping to background script...');
 
                 const response = await window.SidekickModules.Core.SafeMessageSender.sendToBackground({ action: 'ping' });
-                console.log('=É∆¶ Background script ping response:', response);
+                console.log('üí∞ Background script ping response:', response);
 
                 if (this.apiKey) {
-                    console.log('=É∆¶ Testing API call via background script...');
+                    console.log('üí∞ Testing API call via background script...');
                     const apiResponse = await this.makeApiCallViaBackground(this.apiKey, ['logs']);
-                    console.log('=É∆¶ API call response:', apiResponse);
+                    console.log('üí∞ API call response:', apiResponse);
                     return true;
                 } else {
-                    console.log('=É∆¶ No API key available for testing');
+                    console.log('üí∞ No API key available for testing');
                     return false;
                 }
 
             } catch (error) {
                 if (error.message.includes('Extension context invalidated')) {
-                    console.warn('=É∆¶ Extension context invalidated during test');
+                    console.warn('üí∞ Extension context invalidated during test');
                     window.SidekickModules?.Core?.SafeMessageSender?.showExtensionReloadNotification();
                 } else {
-                    console.error('=É∆¶ Background script test failed:', error);
+                    console.error('üí∞ Background script test failed:', error);
                 }
                 return false;
             }
@@ -190,17 +189,17 @@
 
         // Search ALL logs for loan payments (no time restriction)
         searchAllLogsForPayments() {
-            console.log("=É∆¶ === Searching ALL logs for loan payments ===");
+            console.log("üí∞ === Searching ALL logs for loan payments ===");
 
             if (!this.apiKey) {
-                console.log("=É∆¶ No API key available");
+                console.log("üí∞ No API key available");
                 return;
             }
 
             // Force a manual search of all logs
             this.makeApiCallViaBackground(this.apiKey, ['logs']).then(result => {
                 if (result.success && result.logs) {
-                    console.log(`=É∆¶ Searching ${Object.keys(result.logs).length} total logs...`);
+                    console.log(`üí∞ Searching ${Object.keys(result.logs).length} total logs...`);
 
                     const logsArray = Object.values(result.logs);
                     let moneyTransferLogs = 0;
@@ -216,7 +215,7 @@
                                 if (log.log.toLowerCase().includes('loan')) {
                                     loanPayments++;
                                     const logDate = new Date(log.timestamp * 1000);
-                                    console.log(`=É∆¶ LOAN PAYMENT FOUND (${logDate.toLocaleString()}): ${log.log}`);
+                                    console.log(`üí∞ LOAN PAYMENT FOUND (${logDate.toLocaleString()}): ${log.log}`);
                                     // Process this payment
                                     this.handleMoneyTransfer(log);
                                 }
@@ -224,19 +223,19 @@
                         }
                     }
 
-                    console.log(`=É∆¶ Search complete: ${moneyTransferLogs} money transfers, ${loanPayments} loan payments found`);
+                    console.log(`üí∞ Search complete: ${moneyTransferLogs} money transfers, ${loanPayments} loan payments found`);
                 } else {
-                    console.log("=É∆¶ Failed to fetch logs for search");
+                    console.log("üí∞ Failed to fetch logs for search");
                 }
             }).catch(error => {
-                console.error("=É∆¶ Error searching logs:", error);
+                console.error("üí∞ Error searching logs:", error);
             });
         },
 
         // Load debts and loans from storage
         async loadDebtsAndLoans() {
             try {
-                console.log("=É∆¶ Loading debts and loans from storage...");
+                console.log("üí∞ Loading debts and loans from storage...");
 
                 if (window.SidekickModules?.Core?.ChromeStorage?.get) {
                     const debtData = await window.SidekickModules.Core.ChromeStorage.get('sidekick_debt_data');
@@ -244,14 +243,14 @@
                     if (debtData) {
                         this.debtsAndLoans = debtData.debtsAndLoans || [];
                         this.processedPayments = new Set(debtData.processedPayments || []);
-                        console.log(`=É∆¶ Loaded ${this.debtsAndLoans.length} debt/loan entries and ${this.processedPayments.size} processed payments`);
+                        console.log(`üí∞ Loaded ${this.debtsAndLoans.length} debt/loan entries and ${this.processedPayments.size} processed payments`);
 
                         // Debug: Show what debts/loans we have
                         if (this.debtsAndLoans.length > 0) {
-                            console.log("=É∆¶ Current debts/loans:");
+                            console.log("üí∞ Current debts/loans:");
                             this.debtsAndLoans.forEach(entry => {
                                 const type = entry.isDebt ? 'DEBT' : 'LOAN';
-                                console.log(`=É∆¶   ${type}: ${entry.playerName} (ID: ${entry.playerId}) - $${entry.currentAmount.toLocaleString()}`);
+                                console.log(`üí∞   ${type}: ${entry.playerName} (ID: ${entry.playerId}) - $${entry.currentAmount.toLocaleString()}`);
                             });
                         }
 
@@ -259,7 +258,7 @@
                         setTimeout(() => {
                             this.debtsAndLoans.forEach(entry => {
                                 if (entry.playerName && entry.playerName.startsWith('Player [') && entry.playerId) {
-                                    console.log(`=É∆¶ Fetching name for existing entry: ${entry.playerName}`);
+                                    console.log(`üí∞ Fetching name for existing entry: ${entry.playerName}`);
                                     this.fetchPlayerName(entry.playerId, entry.id);
                                 }
                             });
@@ -267,10 +266,10 @@
 
                         // Don't auto-create panels - only show when tracker window is opened
                     } else {
-                        console.log("=É∆¶ No existing debt data found");
+                        console.log("üí∞ No existing debt data found");
                     }
                 } else {
-                    console.error("=É∆¶ ChromeStorage not available");
+                    console.error("üí∞ ChromeStorage not available");
                 }
 
             } catch (error) {
@@ -290,7 +289,7 @@
 
                 if (window.SidekickModules?.Core?.ChromeStorage?.set) {
                     await window.SidekickModules.Core.ChromeStorage.set('sidekick_debt_data', data);
-                    console.log("=É∆¶ Debt data saved successfully");
+                    console.log("üí∞ Debt data saved successfully");
                 }
             } catch (error) {
                 console.error('Failed to save debt data:', error);
@@ -326,11 +325,11 @@
 
             // Immediately trigger name fetch for better UX
             if (playerId && playerName.startsWith('Player [')) {
-                console.log(`=É∆¶ Starting immediate name fetch for player ${playerId}`);
+                console.log(`üí∞ Starting immediate name fetch for player ${playerId}`);
                 this.fetchPlayerName(playerId, debt.id);
             }
 
-            console.log(`=É∆¶ Created new debt: ${playerName} owes $${amount.toLocaleString()}`);
+            console.log(`üí∞ Created new debt: ${playerName} owes $${amount.toLocaleString()}`);
             return debt;
         },
 
@@ -363,18 +362,18 @@
 
             // Immediately trigger name fetch for better UX
             if (playerId && playerName.startsWith('Player [')) {
-                console.log(`=É∆¶ Starting immediate name fetch for player ${playerId}`);
+                console.log(`üí∞ Starting immediate name fetch for player ${playerId}`);
                 this.fetchPlayerName(playerId, loan.id);
             }
 
-            console.log(`=É∆¶ Created new loan: You owe ${playerName} $${amount.toLocaleString()}`);
+            console.log(`üí∞ Created new loan: You owe ${playerName} $${amount.toLocaleString()}`);
             return loan;
         },
 
         // Fetch real player name from Torn API
         async fetchPlayerName(playerId, entryId) {
             try {
-                console.log(`=É∆¶ fetchPlayerName called for player ${playerId}, entry ${entryId}`);
+                console.log(`üí∞ fetchPlayerName called for player ${playerId}, entry ${entryId}`);
 
                 // Get API key using Settings module
                 let apiKey;
@@ -385,7 +384,7 @@
                             apiKey = await window.SidekickModules.Settings.getApiKey();
                         }
                     } catch (error) {
-                        console.log(`=É∆¶ Waiting for Settings module... attempt ${attempts + 1}/20`);
+                        console.log(`üí∞ Waiting for Settings module... attempt ${attempts + 1}/20`);
                     }
                     if (!apiKey) {
                         await new Promise(resolve => setTimeout(resolve, 250));
@@ -394,18 +393,18 @@
                 }
 
                 if (!apiKey) {
-                    console.log(`=É∆¶ No API key available after ${attempts} attempts for player ${playerId}`);
+                    console.log(`üí∞ No API key available after ${attempts} attempts for player ${playerId}`);
                     return;
                 }
 
-                console.log(`=É∆¶ API key ready, fetching name for player ID: ${playerId}`);
+                console.log(`üí∞ API key ready, fetching name for player ID: ${playerId}`);
                 const response = await fetch(`https://api.torn.com/user/${playerId}?selections=basic,profile&key=${apiKey}`);
                 const data = await response.json();
 
-                console.log(`=É∆¶ API response for player ${playerId}:`, data);
+                console.log(`üí∞ API response for player ${playerId}:`, data);
 
                 if (data && data.error) {
-                    console.error(`=É∆¶ API Error fetching player ${playerId}:`, data.error);
+                    console.error(`üí∞ API Error fetching player ${playerId}:`, data.error);
                     return;
                 }
 
@@ -416,7 +415,7 @@
                         const oldName = entry.playerName;
                         entry.playerName = data.name;
 
-                        console.log(`=É∆¶ Updating player name: ${oldName} GÂ∆ ${data.name}`);
+                        console.log(`üí∞ Updating player name: ${oldName} ‚Üí ${data.name}`);
 
                         // Save updated data
                         await this.saveDebtsAndLoans();
@@ -424,16 +423,16 @@
                         // Force update display immediately
                         this.populateDebtTrackerWindow();
 
-                        console.log(`=É∆¶ Successfully updated player name: ${oldName} GÂ∆ ${data.name}`);
+                        console.log(`üí∞ Successfully updated player name: ${oldName} ‚Üí ${data.name}`);
                     } else {
-                        console.log(`=É∆¶ Entry ${entryId} not found when trying to update name`);
+                        console.log(`üí∞ Entry ${entryId} not found when trying to update name`);
                     }
                 } else {
-                    console.log(`=É∆¶ No name data received for player ${playerId}`);
+                    console.log(`üí∞ No name data received for player ${playerId}`);
                 }
 
             } catch (error) {
-                console.error(`=É∆¶ Error fetching player name for ${playerId}:`, error);
+                console.error(`üí∞ Error fetching player name for ${playerId}:`, error);
             }
         },
 
@@ -490,7 +489,7 @@
                     entry.lastInterestUpdate = now;
                     hasUpdates = true;
                     const type = entry.isDebt ? 'debt from' : 'loan to';
-                    console.log(`=É∆¶ Applied $${interest.toFixed(2)} interest to ${type} ${entry.playerName}`);
+                    console.log(`üí∞ Applied $${interest.toFixed(2)} interest to ${type} ${entry.playerName}`);
                 }
             }
 
@@ -507,13 +506,13 @@
                 this.updateAllInterest();
             }, 10 * 60 * 1000);
 
-            console.log("=É∆¶ Interest update interval started (every 10 minutes)");
+            console.log("üí∞ Interest update interval started (every 10 minutes)");
         },
 
         // Start API monitoring for automatic repayment detection
         startApiMonitoring() {
             if (!this.apiKey) {
-                console.log("=É∆¶ No API key available for payment monitoring");
+                console.log("üí∞ No API key available for payment monitoring");
                 return;
             }
 
@@ -521,7 +520,7 @@
             this.apiCheckInterval = setInterval(() => {
                 // Stop monitoring if module is disabled due to context error
                 if (this.moduleDisabled) {
-                    console.log("=É∆¶ Module disabled, stopping API monitoring");
+                    console.log("üí∞ Module disabled, stopping API monitoring");
                     if (this.apiCheckInterval) {
                         clearInterval(this.apiCheckInterval);
                         this.apiCheckInterval = null;
@@ -534,48 +533,48 @@
             // Do immediate check after 2 seconds
             setTimeout(() => {
                 if (!this.moduleDisabled) {
-                    console.log("=É∆¶ Starting immediate payment check...");
+                    console.log("üí∞ Starting immediate payment check...");
                     this.checkForPayments();
                 }
             }, 2000);
 
-            console.log("=É∆¶ API payment monitoring started (checking every minute)");
+            console.log("üí∞ API payment monitoring started (checking every minute)");
         },
 
         // Check for incoming/outgoing payments using background script or direct fetch
         async checkForPayments() {
             try {
                 if (!this.apiKey) {
-                    console.log("=É∆¶ No API key available for payment monitoring");
+                    console.log("üí∞ No API key available for payment monitoring");
                     return;
                 }
 
-                console.log("=É∆¶ Checking for payment logs...");
+                console.log("üí∞ Checking for payment logs...");
 
                 // Try background script approach first (better for CORS issues)
                 if (chrome?.runtime?.sendMessage) {
                     try {
-                        console.log('=É∆¶ Attempting background script API call...');
+                        console.log('üí∞ Attempting background script API call...');
                         const backgroundResult = await this.makeApiCallViaBackground(this.apiKey, ['logs']);
-                        console.log('=É∆¶ Background script result:', backgroundResult);
+                        console.log('üí∞ Background script result:', backgroundResult);
 
                         if (backgroundResult && backgroundResult.success && backgroundResult.logs) {
-                            console.log('G£‡ Background script logs API call successful');
+                            console.log('‚úÖ Background script logs API call successful');
                             this.processPaymentLogs(backgroundResult.logs);
                             return;
                         } else {
-                            console.log('G‹·n+≈ Background script failed or returned no logs:', backgroundResult);
+                            console.log('‚ö†Ô∏è Background script failed or returned no logs:', backgroundResult);
                         }
                     } catch (bgError) {
-                        console.error('G•Ó Background script logs API failed:', bgError);
+                        console.error('‚ùå Background script logs API failed:', bgError);
                     }
                 } else {
-                    console.log('G‹·n+≈ Chrome runtime not available for background script calls');
+                    console.log('‚ö†Ô∏è Chrome runtime not available for background script calls');
                 }
 
                 // Since we're in a Chrome extension content script, direct fetch to Torn API will fail due to CORS
                 // The background script approach should be the primary method
-                console.log('=É∆¶ Background script approach failed, payment monitoring disabled until next check');
+                console.log('üí∞ Background script approach failed, payment monitoring disabled until next check');
 
                 // Show a user-friendly notification about the API issue
                 if (window.SidekickModules?.UI?.showNotification) {
@@ -586,7 +585,7 @@
                 }
 
             } catch (error) {
-                console.error("=É∆¶ Error checking payments:", error);
+                console.error("üí∞ Error checking payments:", error);
 
                 // Show user-friendly error notification
                 if (window.SidekickModules?.UI?.showNotification) {
@@ -623,13 +622,13 @@
 
                     // Only log once
                     if (!this.contextInvalidatedLogged) {
-                        console.warn('=É∆¶ Extension context invalidated - Debt module disabled until page refresh');
+                        console.warn('üí∞ Extension context invalidated - Debt module disabled until page refresh');
                         this.contextInvalidatedLogged = true;
                     }
                     throw new Error('Extension context invalidated - please refresh page');
                 }
 
-                console.log('=É∆¶ Sending message to background script:', { action: 'fetchTornApi', selections });
+                console.log('üí∞ Sending message to background script:', { action: 'fetchTornApi', selections });
 
                 const response = await window.SidekickModules.Core.SafeMessageSender.sendToBackground({
                     action: 'fetchTornApi',
@@ -637,7 +636,7 @@
                     selections: selections
                 });
 
-                console.log('=É∆¶ Background script response received:', response);
+                console.log('üí∞ Background script response received:', response);
                 return response;
 
             } catch (error) {
@@ -647,24 +646,24 @@
 
                     // Only log once
                     if (!this.contextErrorLogged) {
-                        console.warn('=É∆¶ Extension context lost - Debt module disabled');
+                        console.warn('üí∞ Extension context lost - Debt module disabled');
                         this.contextErrorLogged = true;
                     }
                     // Show user a helpful message in the debt tracker
                     if (window.SidekickModules?.UI?.showNotification) {
                         window.SidekickModules.UI.showNotification(
                             'EXTENSION_ERROR',
-                            '=É∆¶ Debt tracker lost connection to extension. Please refresh the page to restore auto-payment detection.'
+                            'üí∞ Debt tracker lost connection to extension. Please refresh the page to restore auto-payment detection.'
                         );
                     }
                 } else {
-                    console.error('=É∆¶ Error sending message to background script:', error);
+                    console.error('üí∞ Error sending message to background script:', error);
 
                     // Show generic error to user
                     if (window.SidekickModules?.UI?.showNotification) {
                         window.SidekickModules.UI.showNotification(
                             'ERROR',
-                            `=É∆¶ Failed to check payment logs: ${error.message}`
+                            `üí∞ Failed to check payment logs: ${error.message}`
                         );
                     }
                 }
@@ -678,7 +677,7 @@
             const now = Date.now();
             const twoHoursAgo = now - (2 * 60 * 60 * 1000); // Check last 2 hours
 
-            console.log(`=É∆¶ Processing ${logsArray.length} logs for automatic payment detection...`);
+            console.log(`üí∞ Processing ${logsArray.length} logs for automatic payment detection...`);
 
             let recentLogs = 0;
             let moneyTransferLogs = 0;
@@ -690,7 +689,7 @@
 
                 // Debug: Show ALL recent log entries to see the format
                 if (recentLogs <= 5) {
-                    console.log(`=É∆¶ DEBUG - Recent log ${recentLogs}:`);
+                    console.log(`üí∞ DEBUG - Recent log ${recentLogs}:`);
                     console.log(`  timestamp: ${log.timestamp}`);
                     console.log(`  log text: "${log.log}"`);
                     console.log(`  log type: ${typeof log.log}`);
@@ -703,13 +702,13 @@
                     // Check if this looks like a money transfer
                     if (log.title === 'Money receive' || log.title === 'Money send') {
                         moneyTransferLogs++;
-                        console.log(`=É∆¶ Found money transfer log (${log.timestamp}): ${log.title} - $${log.data?.money || 0}`);
+                        console.log(`üí∞ Found money transfer log (${log.timestamp}): ${log.title} - $${log.data?.money || 0}`);
                     }
                     this.handleMoneyTransfer(log);
                 }
             }
 
-            console.log(`=É∆¶ Processed: ${recentLogs} recent logs (last 2 hours), ${moneyTransferLogs} money transfers found`);
+            console.log(`üí∞ Processed: ${recentLogs} recent logs (last 2 hours), ${moneyTransferLogs} money transfers found`);
         },
 
 
@@ -726,7 +725,7 @@
                 const title = log.title || '';
                 const data = log.data || {};
 
-                console.log(`=É∆¶ Checking money transfer log: ${title}`, data);
+                console.log(`üí∞ Checking money transfer log: ${title}`, data);
 
                 // Pattern 1: Money received (someone paying us)
                 // Title: "Money receive", data: { sender: ID, money: amount, message: "text" }
@@ -739,32 +738,32 @@
                     // Create unique payment ID to prevent duplicates
                     const paymentId = `receive_${senderId}_${amount}_${logTimestamp}`;
                     if (this.processedPayments.has(paymentId)) {
-                        console.log(`=É∆¶ Skipping duplicate received payment: ${paymentId}`);
+                        console.log(`üí∞ Skipping duplicate received payment: ${paymentId}`);
                         return;
                     }
 
-                    console.log(`=É∆¶ Detected RECEIVED payment: $${amount} from sender ID ${senderId} with message: "${message}" (ID: ${paymentId})`);
+                    console.log(`üí∞ Detected RECEIVED payment: $${amount} from sender ID ${senderId} with message: "${message}" (ID: ${paymentId})`);
 
                     // Check if message contains "loan" (case insensitive)
                     if (message.toLowerCase().includes('loan')) {
-                        console.log('=É∆¶ Received payment contains "loan" - checking for matching loan entries (money you loaned out)');
+                        console.log('üí∞ Received payment contains "loan" - checking for matching loan entries (money you loaned out)');
 
                         // Debug: Show all current loans YOU gave (others owe YOU)
                         const allLoans = this.debtsAndLoans.filter(e => !e.isDebt);
-                        console.log(`=É∆¶ Current loans given: ${allLoans.map(l => `${l.playerName} (ID: ${l.playerId})`).join(', ')}`);
+                        console.log(`üí∞ Current loans given: ${allLoans.map(l => `${l.playerName} (ID: ${l.playerId})`).join(', ')}`);
 
                         // Find loan entries where YOU loaned money to this sender (they owe YOU)
                         const matchingEntries = this.debtsAndLoans.filter(entry => {
                             const matches = !entry.isDebt && (entry.playerId == senderId);
                             if (!entry.isDebt) {
-                                console.log(`=É∆¶ Checking loan given: ${entry.playerName} (ID: ${entry.playerId}) vs sender ID ${senderId} - matches: ${matches}`);
+                                console.log(`üí∞ Checking loan given: ${entry.playerName} (ID: ${entry.playerId}) vs sender ID ${senderId} - matches: ${matches}`);
                             }
                             return matches;
                         });
 
                         if (matchingEntries.length > 0) {
                             const entry = matchingEntries[0];
-                            console.log(`=É∆¶ Auto-applying received payment of $${amount} to debt from ${entry.playerName}`);
+                            console.log(`üí∞ Auto-applying received payment of $${amount} to debt from ${entry.playerName}`);
 
                             // Mark as processed ONLY after successfully applying it
                             this.processedPayments.add(paymentId);
@@ -773,11 +772,11 @@
                             this.addRepayment(entry.id, amount, `Auto-detected payment: ${message}`, true);
                             return;
                         } else {
-                            console.log(`=É∆¶ No matching debt entries found for received payment from sender ID ${senderId}`);
+                            console.log(`üí∞ No matching debt entries found for received payment from sender ID ${senderId}`);
                             // Don't mark as processed if we didn't find a matching debt/loan
                         }
                     } else {
-                        console.log(`=É∆¶ Payment message does not contain "loan": "${message}"`);
+                        console.log(`üí∞ Payment message does not contain "loan": "${message}"`);
                     }
                 }
 
@@ -792,32 +791,32 @@
                     // Create unique payment ID to prevent duplicates
                     const paymentId = `send_${receiverId}_${amount}_${logTimestamp}`;
                     if (this.processedPayments.has(paymentId)) {
-                        console.log(`=É∆¶ Skipping duplicate sent payment: ${paymentId}`);
+                        console.log(`üí∞ Skipping duplicate sent payment: ${paymentId}`);
                         return; // Exit the function early to prevent further processing
                     }
 
-                    console.log(`=É∆¶ Detected SENT payment: $${amount} to receiver ID ${receiverId} with message: "${message}" (ID: ${paymentId})`);
+                    console.log(`üí∞ Detected SENT payment: $${amount} to receiver ID ${receiverId} with message: "${message}" (ID: ${paymentId})`);
 
                     // Check if message contains "loan" (case insensitive)
                     if (message.toLowerCase().includes('loan')) {
-                        console.log('=É∆¶ Sent payment contains "loan" - checking for matching debt entries (money you owe)');
+                        console.log('üí∞ Sent payment contains "loan" - checking for matching debt entries (money you owe)');
 
                         // Debug: Show all current debts YOU owe
                         const allDebts = this.debtsAndLoans.filter(e => e.isDebt);
-                        console.log(`=É∆¶ Current debts owed: ${allDebts.map(d => `${d.playerName} (ID: ${d.playerId})`).join(', ')}`);
+                        console.log(`üí∞ Current debts owed: ${allDebts.map(d => `${d.playerName} (ID: ${d.playerId})`).join(', ')}`);
 
                         // Find debt entries where YOU owe this person money
                         const matchingEntries = this.debtsAndLoans.filter(entry => {
                             const matches = entry.isDebt && (entry.playerId == receiverId);
                             if (entry.isDebt) {
-                                console.log(`=É∆¶ Checking debt owed: ${entry.playerName} (ID: ${entry.playerId}) vs receiver ID ${receiverId} - matches: ${matches}`);
+                                console.log(`üí∞ Checking debt owed: ${entry.playerName} (ID: ${entry.playerId}) vs receiver ID ${receiverId} - matches: ${matches}`);
                             }
                             return matches;
                         });
 
                         if (matchingEntries.length > 0) {
                             const entry = matchingEntries[0];
-                            console.log(`=É∆¶ Auto-applying sent payment of $${amount} to loan to ${entry.playerName}`);
+                            console.log(`üí∞ Auto-applying sent payment of $${amount} to loan to ${entry.playerName}`);
 
                             // Mark as processed ONLY after successfully applying it
                             this.processedPayments.add(paymentId);
@@ -826,14 +825,14 @@
                             this.addRepayment(entry.id, amount, `Auto-detected payment: ${message}`, true);
                             return;
                         } else {
-                            console.log(`=É∆¶ No matching loan entries found for sent payment to receiver ID ${receiverId}`);
+                            console.log(`üí∞ No matching loan entries found for sent payment to receiver ID ${receiverId}`);
                             // Don't mark as processed if we didn't find a matching debt/loan
                         }
                     }
                 }
 
             } catch (error) {
-                console.error('=É∆¶ Error handling money transfer:', error);
+                console.error('üí∞ Error handling money transfer:', error);
             }
         },
 
@@ -884,7 +883,7 @@
             this.renderAllDebtPanels();
 
             const type = entry.type === 'debt' ? 'debt' : 'loan';
-            console.log(`=É∆¶ Added $${amount} repayment to ${type} with ${entry.playerName}`);
+            console.log(`üí∞ Added $${amount} repayment to ${type} with ${entry.playerName}`);
 
             // Show notification
             if (window.SidekickModules?.UI?.showNotification) {
@@ -907,7 +906,7 @@
 
         // Render all debt panels
         renderAllDebtPanels() {
-            console.log("=É∆¶ Rendering all debt panels...");
+            console.log("üí∞ Rendering all debt panels...");
 
             // Remove existing panels
             const existingPanels = document.querySelectorAll('.sidekick-debt-panel');
@@ -982,7 +981,7 @@
                             cursor: pointer;
                             font-size: 12px;
                             outline: none;
-                        ">G‹÷n+≈</button>
+                        ">‚öôÔ∏è</button>
                         <button class="debt-close-btn" data-entry-id="${entry.id}" style="
                             background: #dc3545;
                             border: none;
@@ -1002,7 +1001,7 @@
                             min-width: 14px;
                             outline: none;
                         " onmouseover="this.style.background='#c82333'; this.style.transform='scale(1.1)'; this.style.boxShadow='0 0 8px rgba(220, 53, 69, 0.6)'" 
-                           onmouseout="this.style.background='#dc3545'; this.style.transform='scale(1)'; this.style.boxShadow='none'">+˘</button>
+                           onmouseout="this.style.background='#dc3545'; this.style.transform='scale(1)'; this.style.boxShadow='none'">√ó</button>
                     </div>
                 </div>
                 
@@ -1151,13 +1150,13 @@
             this.saveDebtsAndLoans();
             this.populateDebtTrackerWindow();
 
-            console.log(`=É∆¶ ${entry.frozen ? 'Frozen' : 'Unfrozen'} interest for ${entry.playerName}`);
+            console.log(`üí∞ ${entry.frozen ? 'Frozen' : 'Unfrozen'} interest for ${entry.playerName}`);
         },
 
         // Show settings dialog
         showSettingsDialog(entryId) {
             // TODO: Implement comprehensive settings dialog
-            console.log("=É∆¶ Settings dialog for entry:", entryId);
+            console.log("üí∞ Settings dialog for entry:", entryId);
         },
 
         // Mark debt/loan as completed
@@ -1173,7 +1172,7 @@
                 // Refresh tracker window if open
                 this.populateDebtTrackerWindow();
 
-                console.log(`=É∆¶ Marked ${entry.type} with ${entry.playerName} as completed`);
+                console.log(`üí∞ Marked ${entry.type} with ${entry.playerName} as completed`);
             }
         },
 
@@ -1192,7 +1191,7 @@
                 clearTimeout(saveTimeout);
                 saveTimeout = setTimeout(() => {
                     this.saveDebtsAndLoans();
-                    console.log('=É∆¶ Debt panel position saved:', { x: entry.x, y: entry.y });
+                    console.log('üí∞ Debt panel position saved:', { x: entry.x, y: entry.y });
                 }, 250);
             };
 
@@ -1239,7 +1238,7 @@
                     entry.width = newWidth;
                     entry.height = newHeight;
                     this.saveDebtsAndLoans();
-                    console.log('=É∆¶ Debt panel size saved:', { width: entry.width, height: entry.height });
+                    console.log('üí∞ Debt panel size saved:', { width: entry.width, height: entry.height });
                 }
             }, 300));
 
@@ -1269,11 +1268,11 @@
 
         // Show unified debt tracker in sidebar
         async showDebtTrackerWindow() {
-            console.log('=É∆¶ Creating debt tracker in sidebar');
+            console.log('üí∞ Creating debt tracker in sidebar');
 
             const contentArea = document.getElementById('sidekick-content');
             if (!contentArea) {
-                console.error('=É∆¶ Sidebar content area not found');
+                console.error('üí∞ Sidebar content area not found');
                 return;
             }
 
@@ -1305,7 +1304,7 @@
             const x = savedState?.position?.x || 10;
             const y = savedState?.position?.y || 10;
 
-            console.log("=É∆¶ Using window state:", { x, y, width, height, savedState });
+            console.log("üí∞ Using window state:", { x, y, width, height, savedState });
 
             const trackerElement = document.createElement('div');
             trackerElement.className = 'sidekick-debt-tracker movable-panel';
@@ -1361,7 +1360,7 @@
                                 outline: none;
                                 padding: 0;
                                 transition: background 0.2s;
-                            " onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'">G‹÷n+≈</button>
+                            " onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'">‚öôÔ∏è</button>
                             <div class="debt-cogwheel-menu" style="
                                 position: absolute;
                                 top: 25px;
@@ -1382,7 +1381,7 @@
                                     border-bottom: 1px solid #444;
                                 " onmouseover="this.style.background='rgba(255,255,255,0.1)'" 
                                    onmouseout="this.style.background='none'">
-                                    ${state.pinned ? '=ÉÙÓ Unpin' : '=ÉÙÓ Pin'}
+                                    ${state.pinned ? 'üìå Unpin' : 'üìå Pin'}
                                 </div>
                                 <div class="debt-menu-option" data-action="debt" style="
                                     padding: 8px 12px;
@@ -1418,7 +1417,7 @@
                             min-width: 14px;
                             outline: none;
                         " onmouseover="this.style.background='#c82333'; this.style.transform='scale(1.1)'; this.style.boxShadow='0 0 8px rgba(220, 53, 69, 0.6)'" 
-                           onmouseout="this.style.background='#dc3545'; this.style.transform='scale(1)'; this.style.boxShadow='none'">+˘</button>
+                           onmouseout="this.style.background='#dc3545'; this.style.transform='scale(1)'; this.style.boxShadow='none'">√ó</button>
                     </div>
                 </div>
                 
@@ -1535,7 +1534,7 @@
             // Populate with existing entries
             this.populateDebtTrackerWindow();
 
-            console.log('=É∆¶ Debt tracker created in sidebar');
+            console.log('üí∞ Debt tracker created in sidebar');
         },
 
         // Populate debt tracker window with existing entries
@@ -1662,8 +1661,8 @@
                 </div>
                 
                 <div style="font-size: 11px; color: #ccc; margin-bottom: 6px;">
-                    Original: $${entry.originalAmount.toLocaleString()} G«Û 
-                    ${entry.interestRate > 0 ? `${entry.interestRate}% ${entry.interestType}` : 'No interest'} G«Û 
+                    Original: $${entry.originalAmount.toLocaleString()} ‚Ä¢ 
+                    ${entry.interestRate > 0 ? `${entry.interestRate}% ${entry.interestType}` : 'No interest'} ‚Ä¢ 
                     ${this.getTimeAgo(entry.createdAt)}
                 </div>
                 
@@ -1675,7 +1674,7 @@
                     const dueDateStr = dueDate.toLocaleDateString();
 
                     return `<div style="font-size: 11px; color: ${isOverdue ? '#f44336' : daysUntilDue <= 3 ? '#ff9800' : '#4caf50'}; margin-bottom: 6px;">
-                        =ÉÙ‡ Due: ${dueDateStr} ${isOverdue ? `(${Math.abs(daysUntilDue)} days overdue!)` : `(${daysUntilDue} day${daysUntilDue === 1 ? '' : 's'} remaining)`}
+                        üìÖ Due: ${dueDateStr} ${isOverdue ? `(${Math.abs(daysUntilDue)} days overdue!)` : `(${daysUntilDue} day${daysUntilDue === 1 ? '' : 's'} remaining)`}
                     </div>`;
                 })() : ''}
                 
@@ -1714,7 +1713,7 @@
                         font-size: 9px;
                         white-space: nowrap;
                         flex-shrink: 0;
-                    ">=ÉÙÔ Receipt</button>
+                    ">üìã Receipt</button>
                     <button class="entry-delete-btn" data-entry-id="${entry.id}" style="
                         background: #d32f2f;
                         border: 1px solid #f44336;
@@ -1857,14 +1856,14 @@
                 element.style.left = currentX + 'px';
                 element.style.top = currentY + 'px';
 
-                console.log(`=É∆¶ Dragging to: ${currentX}, ${currentY}`);
+                console.log(`üí∞ Dragging to: ${currentX}, ${currentY}`);
             });
 
             document.addEventListener('mouseup', () => {
                 if (isDragging) {
                     element.style.zIndex = '1000'; // Reset z-index
                     // Save position after dragging
-                    console.log(`=É∆¶ Drag ended at: ${currentX}, ${currentY}`);
+                    console.log(`üí∞ Drag ended at: ${currentX}, ${currentY}`);
                     this.saveWindowState(true, element);
                 }
                 isDragging = false;
@@ -1881,7 +1880,7 @@
                 // Update pin button text
                 const pinButton = trackerElement.querySelector('[data-action="pin"]');
                 if (pinButton) {
-                    pinButton.textContent = state.pinned ? '=ÉÙÓ Unpin' : '=ÉÙÓ Pin';
+                    pinButton.textContent = state.pinned ? 'üìå Unpin' : 'üìå Pin';
                 }
 
                 // Update visual indication (optional - add a pinned style)
@@ -1894,7 +1893,7 @@
                 }
 
                 await this.saveWindowState(true, trackerElement);
-                console.log(`=É∆¶ Debt tracker ${state.pinned ? 'pinned' : 'unpinned'}`);
+                console.log(`üí∞ Debt tracker ${state.pinned ? 'pinned' : 'unpinned'}`);
             }
         },
 
@@ -1958,7 +1957,7 @@
                         border-radius: 4px;
                         cursor: pointer;
                         font-size: 16px;
-                    ">+˘</button>
+                    ">√ó</button>
                 </div>
                 
                 <div style="padding: 20px;">
@@ -2120,7 +2119,7 @@
                 // Close dialog
                 closeDialog();
 
-                console.log(`=É∆¶ ${isDebt ? 'Debt' : 'Loan'} added for player ${playerName}`);
+                console.log(`üí∞ ${isDebt ? 'Debt' : 'Loan'} added for player ${playerName}`);
             });
 
             // Handle due date form interactions
@@ -2265,7 +2264,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
             // Copy to clipboard
             navigator.clipboard.writeText(receipt).then(() => {
                 // Show success notification
-                this.showToast(`=ÉÙÔ Receipt copied to clipboard for ${entry.playerName}!`);
+                this.showToast(`üìã Receipt copied to clipboard for ${entry.playerName}!`);
             }).catch(err => {
                 console.error('Failed to copy receipt:', err);
                 alert('Failed to copy receipt to clipboard. Please try again.');
@@ -2336,7 +2335,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
                     // Use global storage key (not tab-specific) so window state is shared
                     const storageKey = 'debt_tracker_window_state';
                     await window.SidekickModules.Core.ChromeStorage.set(storageKey, state);
-                    console.log('=É∆¶ Window state saved (shared across tabs):', state);
+                    console.log('üí∞ Window state saved (shared across tabs):', state);
                 }
             } catch (error) {
                 console.error('Failed to save window state:', error);
@@ -2350,7 +2349,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
                     // Use global storage key (not tab-specific) so window state is shared
                     const storageKey = 'debt_tracker_window_state';
                     const state = await window.SidekickModules.Core.ChromeStorage.get(storageKey);
-                    console.log('=É∆¶ Loaded window state (shared across tabs):', state);
+                    console.log('üí∞ Loaded window state (shared across tabs):', state);
                     return state || { isOpen: false, pinned: false };
                 }
             } catch (error) {
@@ -2363,7 +2362,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
         async restoreWindowState() {
             const state = await this.loadWindowState();
             if (state.isOpen) {
-                console.log("=É∆¶ Restoring debt tracker window state", state);
+                console.log("üí∞ Restoring debt tracker window state", state);
                 // Check if sidebar is ready, if not wait briefly
                 this.waitForSidebarAndShow();
             }
@@ -2377,13 +2376,13 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
             const checkAndShow = () => {
                 const contentArea = document.getElementById('sidekick-content');
                 if (contentArea && contentArea.offsetWidth > 0) {
-                    console.log("=É∆¶ Sidebar ready, showing debt tracker immediately");
+                    console.log("üí∞ Sidebar ready, showing debt tracker immediately");
                     this.showDebtTrackerWindow();
                 } else if (attempts < maxAttempts) {
                     attempts++;
                     setTimeout(checkAndShow, 100); // Check every 100ms
                 } else {
-                    console.warn("=É∆¶ Sidebar not ready after 5 seconds, showing anyway");
+                    console.warn("üí∞ Sidebar not ready after 5 seconds, showing anyway");
                     this.showDebtTrackerWindow();
                 }
             };
@@ -2393,7 +2392,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
 
         // Add resize observer for debt tracker
         addResizeObserver(element) {
-            console.log("=É∆¶ Adding resize observer to debt tracker");
+            console.log("üí∞ Adding resize observer to debt tracker");
 
             // Flag to prevent saving during initial layout
             let isInitializing = true;
@@ -2405,11 +2404,11 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
                 for (let entry of entries) {
                     const { width, height } = entry.contentRect;
 
-                    console.log(`=É∆¶ Debt tracker resized to: ${width}x${height}`);
+                    console.log(`üí∞ Debt tracker resized to: ${width}x${height}`);
 
                     // Don't save during initial layout phase
                     if (isInitializing) {
-                        console.log('=É∆¶ Skipping save during initialization');
+                        console.log('üí∞ Skipping save during initialization');
                         return;
                     }
 
@@ -2417,7 +2416,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
                     clearTimeout(element._resizeTimeout);
                     element._resizeTimeout = setTimeout(() => {
                         this.saveWindowState(true, element);
-                        console.log(`=É∆¶ Debt tracker size saved: ${width}x${height}`);
+                        console.log(`üí∞ Debt tracker size saved: ${width}x${height}`);
                     }, 500); // Save after resize settles
                 }
             });
@@ -2456,7 +2455,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
             panels.forEach(panel => panel.remove());
 
             this.isInitialized = false;
-            console.log('=É∆¶ Debt Module destroyed');
+            console.log('üí∞ Debt Module destroyed');
         }
     };
 
@@ -2467,9 +2466,9 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
     window.SidekickModules.Debt = DebtModule;
 
     // Debug: Log registration status
-    console.log("G£‡ Debt Module loaded and ready");
-    console.log("=ÉˆÏ Debug: SidekickModules.Debt available:", !!window.SidekickModules.Debt);
-    console.log("=ÉˆÏ Debug: Available modules:", Object.keys(window.SidekickModules));
+    console.log("‚úÖ Debt Module loaded and ready");
+    console.log("üîç Debug: SidekickModules.Debt available:", !!window.SidekickModules.Debt);
+    console.log("üîç Debug: Available modules:", Object.keys(window.SidekickModules));
 
     // Alert System Methods
     DebtModule.getEntryAlerts = function (entry) {
@@ -2486,7 +2485,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
                     type: 'overdue',
                     severity: 'high',
                     message: `${entry.isDebt ? 'Debt' : 'Loan'} is ${Math.abs(daysUntilDue)} days overdue!`,
-                    icon: '=Éˆ¶',
+                    icon: 'üî¥',
                     entry: entry
                 });
             } else if (daysUntilDue <= 3) {
@@ -2494,7 +2493,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
                     type: 'due_soon',
                     severity: 'medium',
                     message: `${entry.isDebt ? 'Debt' : 'Loan'} due in ${daysUntilDue} day${daysUntilDue === 1 ? '' : 's'}`,
-                    icon: '=ÉÉÌ',
+                    icon: 'üü°',
                     entry: entry
                 });
             } else if (daysUntilDue <= 7) {
@@ -2502,7 +2501,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
                     type: 'due_week',
                     severity: 'low',
                     message: `${entry.isDebt ? 'Debt' : 'Loan'} due in ${daysUntilDue} days`,
-                    icon: '=ÉÉ·',
+                    icon: 'üü†',
                     entry: entry
                 });
             }
@@ -2518,7 +2517,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
                     type: 'player_inactive',
                     severity: 'low',
                     message: `Player last seen ${daysSinceLastSeen} days ago`,
-                    icon: '=Éˇ¶',
+                    icon: 'üò¥',
                     entry: entry
                 });
             }
@@ -2561,7 +2560,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
 
         dialog.innerHTML = `
             <div style="padding: 15px; border-bottom: 1px solid #666;">
-                <h3 style="margin: 0; color: #fff; font-size: 16px;">=É‹ø Alerts for ${entry.playerName}</h3>
+                <h3 style="margin: 0; color: #fff; font-size: 16px;">üö® Alerts for ${entry.playerName}</h3>
                 <button id="alert-dialog-close" style="
                     position: absolute;
                     top: 10px;
@@ -2574,7 +2573,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
                     border-radius: 4px;
                     cursor: pointer;
                     font-size: 14px;
-                ">+˘</button>
+                ">√ó</button>
             </div>
             
             <div style="padding: 15px;">
@@ -2637,7 +2636,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
                 try {
                     await this.updatePlayerActivity(entry.playerId, entry.id);
                 } catch (error) {
-                    console.log(`=É∆¶ Could not update activity for player ${entry.playerId}:`, error);
+                    console.log(`üí∞ Could not update activity for player ${entry.playerId}:`, error);
                 }
             }
         }
@@ -2653,7 +2652,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
             // Use Core module's makeApiCall if available
             const apiMethod = window.SidekickModules?.Core?.makeApiCall || this.makeApiCall?.bind(this);
             if (!apiMethod) {
-                console.log('=É∆¶ No API method available for player activity update');
+                console.log('üí∞ No API method available for player activity update');
                 return;
             }
 
@@ -2665,11 +2664,11 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
                     this.debtsAndLoans[entryIndex].lastAction = data.last_action.timestamp;
                     this.debtsAndLoans[entryIndex].lastActionFetched = Date.now();
                     this.saveDebtsAndLoans();
-                    console.log(`=É∆¶ Updated activity for ${this.debtsAndLoans[entryIndex].playerName}: last seen ${new Date(data.last_action.timestamp * 1000).toLocaleDateString()}`);
+                    console.log(`üí∞ Updated activity for ${this.debtsAndLoans[entryIndex].playerName}: last seen ${new Date(data.last_action.timestamp * 1000).toLocaleDateString()}`);
                 }
             }
         } catch (error) {
-            console.log(`=É∆¶ Failed to fetch activity for player ${playerId}:`, error);
+            console.log(`üí∞ Failed to fetch activity for player ${playerId}:`, error);
         }
     };
 
@@ -2750,7 +2749,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
 
     // Make sure functions are accessible
     setTimeout(() => {
-        console.log("=ÉˆÏ Debug: Debt module functions available:");
+        console.log("üîç Debug: Debt module functions available:");
         console.log("  - testPaymentDetection:", typeof window.SidekickModules.Debt.testPaymentDetection);
         console.log("  - searchAllLogsForPayments:", typeof window.SidekickModules.Debt.searchAllLogsForPayments);
         console.log("  - checkForPayments:", typeof window.SidekickModules.Debt.checkForPayments);
@@ -2759,7 +2758,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
 
     // Create a global debug function for easier access
     window.debugDebtModule = function () {
-        console.log("=ÉˆÏ Debt Module Debug Information:");
+        console.log("üîç Debt Module Debug Information:");
         console.log("  SidekickModules exists:", typeof window.SidekickModules);
         console.log("  Available modules:", window.SidekickModules ? Object.keys(window.SidekickModules) : 'none');
         console.log("  Debt module exists:", !!window.SidekickModules?.Debt);
@@ -2778,7 +2777,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
         if (window.SidekickModules?.Debt) {
             return window.SidekickModules.Debt.testPaymentDetection();
         } else {
-            console.error("G•Ó Debt module not available");
+            console.error("‚ùå Debt module not available");
         }
     };
 
@@ -2786,7 +2785,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
         if (window.SidekickModules?.Debt) {
             return window.SidekickModules.Debt.searchAllLogsForPayments();
         } else {
-            console.error("G•Ó Debt module not available");
+            console.error("‚ùå Debt module not available");
         }
     };
 
@@ -2794,7 +2793,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
         if (window.SidekickModules?.Debt) {
             return window.SidekickModules.Debt.checkForPayments();
         } else {
-            console.error("G•Ó Debt module not available");
+            console.error("‚ùå Debt module not available");
         }
     };
 
@@ -2802,7 +2801,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
         if (window.SidekickModules?.Debt) {
             return window.SidekickModules.Debt.testBackgroundConnection();
         } else {
-            console.error("G•Ó Debt module not available");
+            console.error("‚ùå Debt module not available");
         }
     };
 
