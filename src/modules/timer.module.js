@@ -439,7 +439,8 @@
                             'drug': 'Drug Cooldown',
                             'medical': 'Medical Cooldown',
                             'booster': 'Booster Cooldown',
-                            'Bank': 'Bank Investment'
+                            'Bank': 'Bank Investment',
+                            'Virus': 'Virus Timer'
                         };
 
                         // Find existing cooldown timer or use current timer
@@ -508,7 +509,8 @@
                         'drug': 'drug cooldown',
                         'medical': 'medical cooldown',
                         'booster': 'booster cooldown',
-                        'Bank': 'bank investment'
+                        'Bank': 'bank investment',
+                        'Virus': 'virus timer'
                     };
                     const typeName = cooldownTypeNames[cooldownType] || cooldownType;
                     console.log(`🔍 No ${typeName} found in response or value is 0`);
@@ -1826,6 +1828,10 @@
                                         timer.type = 'countdown';
                                         timer.isRunning = true;
 
+                                        // Set timer name and color
+                                        timer.name = 'Virus Timer';
+                                        timer.color = self.getCooldownColor('Virus');
+
                                         console.log(`🦠 Added virus cooldown: ${virusName}, ${remainingSeconds}s`);
 
                                         self.saveTimers();
@@ -2216,6 +2222,7 @@
                     // End date display (conditional)
                     if (timer.showEndDate) {
                         const endDateContainer = document.createElement('div');
+                        endDateContainer.className = 'timer-end-date-container';
                         endDateContainer.innerHTML = `
                             <div style="
                                 color: #888;
@@ -2304,17 +2311,19 @@
                         // Conditionally add end date
                         if (timer.showEndDate) {
                             cooldownHTML += `
-                                <span style="
-                                    color: #aaa;
-                                    font-size: 11px;
-                                    font-family: 'Courier New', monospace;
-                                    line-height: 1.3;
-                                ">Ends at: ${endTimeData.time}</span>
-                                <span style="
-                                    color: #999;
-                                    font-size: 10px;
-                                    line-height: 1.3;
-                                ">${endTimeData.date}</span>`;
+                                <div class="timer-end-date-container">
+                                    <span style="
+                                        color: #aaa;
+                                        font-size: 11px;
+                                        font-family: 'Courier New', monospace;
+                                        line-height: 1.3;
+                                    ">Ends at: ${endTimeData.time}</span>
+                                    <span style="
+                                        color: #999;
+                                        font-size: 10px;
+                                        line-height: 1.3;
+                                    ">${endTimeData.date}</span>
+                                </div>`;
                         }
 
                         cooldownHTML += `
@@ -2385,20 +2394,68 @@
                         contentArea.appendChild(cooldownDiv);
                     });
                 } else {
-                    // Single cooldown display
+                    // Custom timer display (non-cooldown) - with end date toggle support
+                    const endTimeData = this.getEndTime(timer.remainingTime);
+
+                    const customTimerDiv = document.createElement('div');
+                    customTimerDiv.style.cssText = `
+                        text-align: center;
+                        padding: 10px;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 4px;
+                    `;
+
+                    // Countdown display with click handler
                     const display = document.createElement('div');
                     display.className = 'timer-display';
                     display.style.cssText = `
-                        text-align: center;
-                        font-size: 24px;
-                        font-weight: 700;
                         color: ${timer.color || '#666'};
                         font-family: 'Courier New', monospace;
+                        font-weight: 700;
+                        font-size: 24px;
+                        cursor: pointer;
+                        user-select: none;
                     `;
                     const timeText = timer.remainingTime > 0 ? this.formatTime(timer.remainingTime) : '00:00:00';
                     display.textContent = timeText;
-                    contentArea.appendChild(display);
-                    console.log(`🔍 Updated timer display to: ${timeText}`);
+                    display.title = 'Click to toggle end date display';
+
+                    // Attach click handler for toggle
+                    display.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        console.log(`🔄 Custom timer clicked for timer ${timer.id}`);
+                        timer.showEndDate = !timer.showEndDate;
+                        console.log(`🔄 Toggled to: ${timer.showEndDate}`);
+                        this.saveTimers();
+                        this.updateTimerDisplay(timer.id);
+                    });
+
+                    customTimerDiv.appendChild(display);
+
+                    // End date display (conditional)
+                    if (timer.showEndDate) {
+                        const endDateContainer = document.createElement('div');
+                        endDateContainer.className = 'timer-end-date-container';
+                        endDateContainer.innerHTML = `
+                            <div style="
+                                color: #888;
+                                font-size: 11px;
+                                font-family: 'Courier New', monospace;
+                                margin-top: 2px;
+                            ">Ends at: ${endTimeData.time}</div>
+                            <div style="
+                                color: #666;
+                                font-size: 10px;
+                            ">${endTimeData.date}</div>
+                        `;
+                        customTimerDiv.appendChild(endDateContainer);
+                    }
+
+                    contentArea.appendChild(customTimerDiv);
+                    console.log(`🔍 Updated custom timer display to: ${timeText}`);
                 }
             } else {
                 console.error(`🔍 Could not find content area for timer ${id}`);
@@ -2407,6 +2464,16 @@
 
         // Helper method to check if timer display needs rebuilding
         checkIfRebuildNeeded(contentArea, timer) {
+            // CRITICAL: Check if showEndDate changed - this requires rebuild
+            const endDateContainer = contentArea.querySelector('.timer-end-date-container');
+            const hasEndDate = endDateContainer !== null;
+            const shouldHaveEndDate = timer.showEndDate === true;
+
+            if (hasEndDate !== shouldHaveEndDate) {
+                console.log(`🔄 End date visibility changed (has: ${hasEndDate}, should: ${shouldHaveEndDate}), rebuilding...`);
+                return true;
+            }
+
             if (timer.cooldowns && Object.keys(timer.cooldowns).length > 1) {
                 // Check if we have the right cooldown elements for multi-cooldown display
                 const existingCooldowns = contentArea.querySelectorAll('[data-cooldown-type]');
@@ -3143,6 +3210,20 @@
                     <label style="display: block; font-size: 12px; margin-bottom: 6px; color: #aaa;">Duration</label>
                     <div style="display: flex; gap: 10px;">
                         <div style="flex: 1;">
+                            <label style="font-size: 11px; color: #888; display: block; margin-bottom: 4px;">Days</label>
+                            <input id="custom-timer-days" type="number" min="0" max="365" value="0" style="
+                                width: 100%;
+                                padding: 10px;
+                                background: #1a1a1a;
+                                border: 1px solid #444;
+                                border-radius: 6px;
+                                color: #fff;
+                                font-size: 14px;
+                                text-align: center;
+                                box-sizing: border-box;
+                            ">
+                        </div>
+                        <div style="flex: 1;">
                             <label style="font-size: 11px; color: #888; display: block; margin-bottom: 4px;">Hours</label>
                             <input id="custom-timer-hours" type="number" min="0" max="23" value="0" style="
                                 width: 100%;
@@ -3158,7 +3239,7 @@
                         </div>
                         <div style="flex: 1;">
                             <label style="font-size: 11px; color: #888; display: block; margin-bottom: 4px;">Minutes</label>
-                            <input id="custom-timer-minutes" type="number" min="0" max="59" value="5" style="
+                            <input id="custom-timer-minutes" type="number" min="0" max="59" value="0" style="
                                 width: 100%;
                                 padding: 10px;
                                 background: #1a1a1a;
@@ -3228,11 +3309,12 @@
             // Handle start
             document.getElementById('custom-timer-start').addEventListener('click', () => {
                 const name = document.getElementById('custom-timer-name').value.trim() || 'Custom Timer';
+                const days = parseInt(document.getElementById('custom-timer-days').value) || 0;
                 const hours = parseInt(document.getElementById('custom-timer-hours').value) || 0;
                 const minutes = parseInt(document.getElementById('custom-timer-minutes').value) || 0;
                 const seconds = parseInt(document.getElementById('custom-timer-seconds').value) || 0;
 
-                const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
+                const totalSeconds = (days * 86400) + (hours * 3600) + (minutes * 60) + seconds;
 
                 if (totalSeconds <= 0) {
                     alert('Please enter a duration greater than 0');

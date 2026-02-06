@@ -31,6 +31,8 @@
         originalTitle: document.title,
         updateInterval: null,
         observer: null,
+        showChain: true, // Alternates between chain and page timer
+        lastAlternate: Date.now(), // Track last alternation time
 
         // Initialize the module
         async init() {
@@ -163,17 +165,38 @@
             });
         },
 
-        // Update the tab title with timer information (simplified - no clock/emojis)
+        // Update the tab title with timer information - alternates chain with page timer
         updateTabTitle() {
             if (!this.isEnabled) {
                 this.restoreTitle();
                 return;
             }
 
-            const timerInfo = this.getActiveTimerInfo();
+            // Alternate every 3 seconds between chain timer and page-specific timer
+            const now = Date.now();
+            if (now - this.lastAlternate >= 3000) {
+                this.showChain = !this.showChain;
+                this.lastAlternate = now;
+            }
+
+            // Get page-specific timer (hospital, jail, racing, travel)
+            const pageTimer = this.getPageSpecificTimer();
+
+            // Get chain timer separately
+            const chainTimer = this.getChainTimer();
+
+            let timerInfo = null;
+
+            // If both exist, alternate. Otherwise show whichever exists
+            if (chainTimer && pageTimer) {
+                timerInfo = this.showChain ? chainTimer : pageTimer;
+            } else if (chainTimer) {
+                timerInfo = chainTimer;
+            } else if (pageTimer) {
+                timerInfo = pageTimer;
+            }
 
             if (timerInfo) {
-                // Only update if we have an actual active timer
                 const newTitle = `${timerInfo} | TORN`;
                 if (document.title !== newTitle) {
                     document.title = newTitle;
@@ -186,8 +209,8 @@
             }
         },
 
-        // Get active timer information (only specific important timers)
-        getActiveTimerInfo() {
+        // Get page-specific timer (hospital, jail, racing, travel)
+        getPageSpecificTimer() {
             // Hospital timer (highest priority) - only check on hospital page
             if (window.location.href.includes('hospitalview.php')) {
                 const hospitalTimer = document.querySelector('#theCounter');
@@ -196,23 +219,6 @@
                     if (hospitalTime.match(/\d+:\d+/) && hospitalTime !== '00:00' && hospitalTime !== '0:00') {
                         return `Hospital: ${hospitalTime}`;
                     }
-                }
-            }
-
-            // Chain timer - only show if chain is actually active
-            const chainTimer = document.querySelector('p.bar-timeleft___B9RGV');
-            const chainValue = document.querySelector('.bar-value___uxnah');
-
-            if (chainTimer && chainTimer.textContent.trim()) {
-                const chainTime = chainTimer.textContent.trim();
-                const chainLength = chainValue ? chainValue.textContent.trim() : '0';
-
-                // Only show if there's an active chain (not 00:00 and chain length >= 25)
-                if (chainTime.match(/\d+:\d+/) &&
-                    chainTime !== '00:00' &&
-                    chainTime !== '0:00' &&
-                    parseInt(chainLength) >= 25) {
-                    return `Chain ${chainLength}: ${chainTime}`;
                 }
             }
 
@@ -234,7 +240,7 @@
                 }
             }
 
-            // Travel timer - only on travel page with specific selector
+            // Travel timer - only on travel page
             if (window.location.href.includes('page.php?sid=travel')) {
                 const travelTimer = document.querySelector("#travel-root > div.flightProgressSection___fhrD5 > div.progressText___qJFfY > span > span:nth-child(2) > time");
                 if (travelTimer && travelTimer.textContent.trim()) {
@@ -244,6 +250,27 @@
                         travelTime !== '0:00') {
                         return `Travel: ${travelTime}`;
                     }
+                }
+            }
+
+            return null;
+        },
+
+        // Get chain timer only (separated so we can alternate with page timer)
+        getChainTimer() {
+            const chainTimer = document.querySelector('p.bar-timeleft___B9RGV');
+            const chainValue = document.querySelector('.bar-value___uxnah');
+
+            if (chainTimer && chainTimer.textContent.trim()) {
+                const chainTime = chainTimer.textContent.trim();
+                const chainLength = chainValue ? chainValue.textContent.trim() : '0';
+
+                // Only show if there's an active chain (not 00:00 and chain length >= 25)
+                if (chainTime.match(/\d+:\d+/) &&
+                    chainTime !== '00:00' &&
+                    chainTime !== '0:00' &&
+                    parseInt(chainLength) >= 25) {
+                    return `Chain ${chainLength}: ${chainTime}`;
                 }
             }
 

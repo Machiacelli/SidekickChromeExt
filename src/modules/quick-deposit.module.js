@@ -138,60 +138,72 @@ const QuickDepositModule = {
         return status;
     },
 
-    // Inject deposit button next to money
+    // Create invisible overlay button over money display
     injectButton() {
         const moneyEl = document.getElementById('user-money');
         if (!moneyEl) return;
 
-        // Don't inject if button already exists
+        // Don't inject if overlay already exists
         if (this.state.depositButton && this.state.depositButton.parentNode) return;
 
-        const button = document.createElement('a');
-        button.id = 'sk-quick-deposit';
-        button.href = '#';
-        button.className = 'use___wM1PI'; // Match TORN's [use] button style
-        button.style.marginLeft = '10px';
-        button.style.cursor = 'pointer';
+        // Create invisible overlay button
+        const overlay = document.createElement('div');
+        overlay.id = 'sk-quick-deposit-overlay';
+        overlay.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            cursor: pointer;
+            z-index: 10;
+        `;
 
-        button.addEventListener('click', (e) => {
+        overlay.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
+            console.log('🏦 Quick Deposit overlay clicked');
             this.executeDeposit('auto');
         });
 
-        // Insert after money element
-        if (moneyEl.parentNode) {
-            moneyEl.parentNode.insertBefore(button, moneyEl.nextSibling);
-            this.state.depositButton = button;
+        // Make money element's parent container position relative
+        const container = moneyEl.parentElement;
+        if (container) {
+            const computedStyle = window.getComputedStyle(container);
+            if (computedStyle.position === 'static') {
+                container.style.position = 'relative';
+            }
+
+            container.appendChild(overlay);
+            this.state.depositButton = overlay;
             this.updateButtonText();
+
+            console.log('🏦 Quick Deposit: Invisible overlay created over money display');
         }
     },
 
-    // Update button text based on current status
+    // Update overlay tooltip based on current status
     updateButtonText() {
         if (!this.state.depositButton) return;
 
         const status = this.getStatus();
-        let text = '[deposit]';
-        let title = 'Quick Deposit';
+        let title = 'Click to quick deposit';
 
         // Show target based on settings
         const target = this.settings.target;
 
         if (target === 'GHOST' && this.state.ghostID && status.ghost) {
-            text = '[ghost]';
-            title = `Ghost Trade: ${this.state.ghostID}`;
+            title = `Click to deposit via Ghost Trade: ${this.state.ghostID}`;
         } else if (target === 'FACTION' && status.faction) {
-            title = 'Faction Vault';
+            title = 'Click to deposit to Faction Vault';
         } else if (target === 'PROPERTY' && status.property) {
-            title = 'Property Vault';
+            title = 'Click to deposit to Property Vault';
         } else if (target === 'COMPANY' && status.company) {
-            title = 'Company Vault';
+            title = 'Click to deposit to Company Vault';
         } else {
             title = 'No vault available';
         }
 
-        this.state.depositButton.innerText = text;
         this.state.depositButton.title = title;
     },
 

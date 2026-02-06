@@ -689,11 +689,11 @@
                 
                 <div style="background: rgba(76, 175, 80, 0.1); border-left: 3px solid #4CAF50; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
                     <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
-                        ℹ️ Adds a [deposit] button next to your money in the sidebar for quick deposits to faction vault, company vault, or ghost trades.
+                        ℹ️ Click your money display in the sidebar for quick deposits to faction vault, property vault, company vault, or ghost trades.
                     </div>
                 </div>
                 
-                ${this.createToggle('quick-deposit', '🏦 Enable Quick Deposit', 'Shows deposit button next to money')}
+                ${this.createToggle('quick-deposit', '🏦 Enable Quick Deposit', 'Makes money display clickable for deposits')}
                 
                 <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
                 
@@ -707,7 +707,7 @@
                         <option value="GHOST" style="background: #1a1a1a; color: white;">Ghost Trade</option>
                     </select>
                     <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
-                        Choose where your deposits go when you click the [deposit] button.
+                        Choose where your deposits go when you click your money display.
                     </div>
                 </div>
                 
@@ -725,7 +725,7 @@
                         </button>
                     </div>
                     <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
-                        Ghost trade ID is auto-detected when you visit a ghost trade page. The button changes to [ghost] when set.
+                        Ghost trade ID is auto-detected when you visit a ghost trade page.
                     </div>
                 </div>
                 
