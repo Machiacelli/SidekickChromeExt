@@ -206,6 +206,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse({ success: true });
             break;
 
+        case 'crimeNotifierAlert':
+            // Handle Crime Notifier alerts with browser notifications and badge
+            handleCrimeNotifierAlert(request.data)
+                .then(result => sendResponse(result))
+                .catch(error => sendResponse({ success: false, error: error.message }));
+            return true;
+
         default:
             console.warn('Unknown action:', request.action);
             sendResponse({ success: false, error: 'Unknown action' });
@@ -641,6 +648,96 @@ async function handleBugReport(bugData) {
             success: false,
             error: error.message
         };
+    }
+}
+
+// ========================================
+// CRIME NOTIFIER - Badge & Notification Handler
+// ========================================
+
+// Handle Crime Notifier alerts - creates browser notification and updates badge
+async function handleCrimeNotifierAlert(alertData) {
+    try {
+        const { title, message, type, timestamp } = alertData;
+
+        console.log('🚨 Crime Notifier Alert:', { title, message, type });
+
+        // 1. Create browser notification
+        await chrome.notifications.create({
+            type: 'basic',
+            iconUrl: '../assets/icons/swissknife-48.png',
+            title: title || '🚨 Crime Notifier',
+            message: message || 'Alert from Crime Notifier',
+            priority: 2, // High priority
+            requireInteraction: false // Auto-dismiss after a few seconds
+        });
+
+        // 2. Increment badge counter
+        await incrementBadge();
+
+        // 3. Store notification in NotificationCenter storage
+        await storeNotification({
+            id: `crime_${timestamp}`,
+            moduleId: 'crime-notifier',
+            type: type || 'warning',
+            title: title,
+            message: message,
+            timestamp: timestamp,
+            read: false
+        });
+
+        console.log('✅ Crime Notifier alert handled successfully');
+        return { success: true };
+
+    } catch (error) {
+        console.error('❌ Failed to handle Crime Notifier alert:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Badge management functions
+async function incrementBadge() {
+    try {
+        const result = await chrome.storage.local.get('crime_notifier_unread_count');
+        const currentCount = result.crime_notifier_unread_count || 0;
+        const newCount = currentCount + 1;
+
+        await chrome.storage.local.set({ crime_notifier_unread_count: newCount });
+        await chrome.action.setBadgeText({ text: String(newCount) });
+        await chrome.action.setBadgeBackgroundColor({ color: '#FF6B6B' }); // Red color
+
+        console.log(`📛 Badge updated: ${newCount}`);
+    } catch (error) {
+        console.error('❌ Failed to update badge:', error);
+    }
+}
+
+async function clearBadge() {
+    try {
+        await chrome.storage.local.set({ crime_notifier_unread_count: 0 });
+        await chrome.action.setBadgeText({ text: '' });
+        console.log('📛 Badge cleared');
+    } catch (error) {
+        console.error('❌ Failed to clear badge:', error);
+    }
+}
+
+// Store notification in the existing notification center system
+async function storeNotification(notification) {
+    try {
+        const result = await chrome.storage.local.get('sidekick_notifications');
+        const notifications = result.sidekick_notifications || [];
+
+        // Add new notification at the start (most recent first)
+        notifications.unshift(notification);
+
+        // Keep only last 50 notifications
+        const trimmed = notifications.slice(0, 50);
+
+        await chrome.storage.local.set({ sidekick_notifications: trimmed });
+        console.log('💾 Notification stored in NotificationCenter');
+    } catch (error) {
+        console.error('❌ Failed to store notification:', error);
     }
 }
 

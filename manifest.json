@@ -5,7 +5,8 @@
     "description": "Enhanced sidebar and tools for Torn.com",
     "permissions": [
         "storage",
-        "activeTab"
+        "activeTab",
+        "notifications"
     ],
     "host_permissions": [
         "https://www.torn.com/*",
@@ -67,6 +68,12 @@
                 "src/modules/book-notifier.module.js",
                 "src/modules/locked-items.module.js",
                 "src/modules/quick-deposit.module.js",
+                "src/modules/crime-notifier.module.js",
+                "src/modules/war-monitor.module.js",
+                "src/modules/chat-alert.module.js",
+                "src/modules/mug-warning.module.js",
+                "src/modules/bunker-bucks-market.module.js",
+                "src/modules/auto-gym-switch.module.js",
                 "src/modules/travel-stocks.module.js",
                 "src/modules/ui.module.js",
                 "src/main.js"

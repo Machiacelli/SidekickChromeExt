@@ -325,6 +325,60 @@
                 console.warn("⚠️ Debt Module not available");
             }
 
+            // Initialize Crime Notifier Module
+            console.log("🚨 Sidekick: Initializing Crime Notifier...");
+            if (window.SidekickModules.CrimeNotifier?.init) {
+                await window.SidekickModules.CrimeNotifier.init();
+                console.log("✅ Sidekick: Crime Notifier initialized");
+            } else {
+                console.warn("⚠️ Crime Notifier module not available");
+            }
+
+            // Initialize War Monitor Module
+            console.log("⚔️ Sidekick: Initializing War Monitor...");
+            if (window.SidekickModules.WarMonitor?.init) {
+                await window.SidekickModules.WarMonitor.init();
+                console.log("✅ Sidekick: War Monitor initialized");
+            } else {
+                console.warn("⚠️ War Monitor module not available");
+            }
+
+            // Initialize Chat Alert Module
+            console.log("💬 Sidekick: Initializing Chat Alert...");
+            if (window.SidekickModules.ChatAlert?.init) {
+                await window.SidekickModules.ChatAlert.init();
+                console.log("✅ Sidekick: Chat Alert initialized");
+            } else {
+                console.warn("⚠️ Chat Alert module not available");
+            }
+
+            // Initialize Mug Warning Module
+            console.log("⚠️ Sidekick: Initializing Mug Warning...");
+            if (window.SidekickModules.MugWarning?.init) {
+                await window.SidekickModules.MugWarning.init();
+                console.log("✅ Sidekick: Mug Warning initialized");
+            } else {
+                console.warn("⚠️ Mug Warning module not available");
+            }
+
+            // Initialize Bunker Bucks Market
+            console.log('💰 Sidekick: Initializing Bunker Bucks Market...');
+            if (window.SidekickModules.BunkerBucksMarket?.init) {
+                await window.SidekickModules.BunkerBucksMarket.init();
+                console.log('✅ Sidekick: Bunker Bucks Market initialized');
+            } else {
+                console.warn('⚠️ Bunker Bucks Market module not available');
+            }
+
+            // Initialize Auto Gym Switch
+            console.log('💪 Sidekick: Initializing Auto Gym Switch...');
+            if (window.SidekickModules.AutoGymSwitch?.init) {
+                await window.SidekickModules.AutoGymSwitch.init();
+                console.log('✅ Sidekick: Auto Gym Switch initialized');
+            } else {
+                console.warn('⚠️ Auto Gym Switch module not available');
+            }
+
 
             // REMOVED: Vault Tracker Module
             // Vault Tracker has been removed from the extension

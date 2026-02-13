@@ -88,6 +88,7 @@
             const iconMugcalc = chrome.runtime.getURL('icons/settings-mugcalc.png');
             const iconBloodBag = chrome.runtime.getURL('assets/icons/blood-bag-settings.png');
             const iconQuickDeposit = chrome.runtime.getURL('icons/settings-quickdeposit.png');
+            const iconCrimeNotifier = chrome.runtime.getURL('icons/settings-crimenotifier.png');
 
             panel.innerHTML = `
                 <style>
@@ -178,6 +179,20 @@
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
                                 <img src="${iconQuickDeposit}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
                                 <span>Quick Deposit</span>
+                            </button>
+                            <button class="settings-sidebar-tab" data-tab="crimenotifier" 
+                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
+                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
+                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
+                                <img src="${iconCrimeNotifier}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
+                                <span>Crime Notifier</span>
+                            </button>
+                            <button class="settings-sidebar-tab" data-tab="mugwarning" 
+                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
+                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
+                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
+                                <div style="font-size: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">⚠️</div>
+                                <span>Mug Warning</span>
                             </button>
                         </div>
                     </div>
@@ -305,6 +320,16 @@
                             <!-- QUICK DEPOSIT TAB -->
                             <div class="settings-tab-content" id="settings-tab-quickdeposit" style="display: none;">
                                 ${this.createQuickDepositSettingsHTML()}
+                            </div>
+                            
+                            <!-- CRIME NOTIFIER TAB -->
+                            <div class="settings-tab-content" id="settings-tab-crimenotifier" style="display: none;">
+                                ${this.createCrimeNotifierSettingsHTML()}
+                            </div>
+                            
+                            <!-- MUG WARNING TAB -->
+                            <div class="settings-tab-content" id="settings-tab-mugwarning" style="display: none;">
+                                ${this.createMugWarningSettingsHTML()}
                             </div>
                         </div>
                     </div>
@@ -736,6 +761,109 @@
             `;
         },
 
+        // Create Crime Notifier settings HTML
+        createCrimeNotifierSettingsHTML() {
+            return `
+                <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">🚨 Crime Notifier Settings</h4>
+                
+                ${this.createToggle('crime-notifier', '🚨 Enable Crime Notifier', 'Monitor shoplifting security and search-for-cash percentages')}
+                
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Check Interval:</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" id="crime-notifier-interval" min="10" max="300" value="30" 
+                               style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
+                                      border-radius: 5px; color: white; font-size: 14px; box-sizing: border-box;">
+                        <span style="color: #aaa;">seconds</span>
+                    </div>
+                    <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
+                        How often to check the Torn API (minimum 10s, recommended 30s)
+                    </div>
+                </div>
+                
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
+                
+                <h5 style="color: #fff; font-size: 14px; margin-bottom: 10px;">🏪 Shoplifting Monitoring</h5>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px; color: #ccc; cursor: pointer;">
+                        <input type="checkbox" id="crime-notifier-security" style="accent-color: #FF6B6B;" checked>
+                        <span>Enable shoplifting alerts</span>
+                    </label>
+                </div>
+                
+                <!-- Shop-Specific Security Selection -->
+                <div style="margin-bottom: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="color: #fff; font-weight: bold;">Select Shop Security:</span>
+                        <div style="display: flex; gap: 5px;">
+                            <button type="button" id="crime-shops-security-all" style="padding: 4px 8px; background: rgba(76, 175, 80, 0.2); border: 1px solid #4CAF50; color: #4CAF50; border-radius: 3px; cursor: pointer; font-size: 11px;">All</button>
+                            <button type="button" id="crime-shops-security-none" style="padding: 4px 8px; background: rgba(255, 107, 107, 0.2); border: 1px solid #FF6B6B; color: #FF6B6B; border-radius: 3px; cursor: pointer; font-size: 11px;">None</button>
+                        </div>
+                    </div>
+                    <div id="crime-shop-security-list" style="display: flex; flex-direction: column; gap: 10px;">
+                        <!-- Shop security checkboxes will be dynamically populated -->
+                        <div style="text-align: center; color: #aaa; font-size: 12px; padding: 20px;">
+                            Loading shop security data...
+                        </div>
+                    </div>
+                    <div style="font-size: 11px; color: #888; margin-top: 8px; font-style: italic;">
+                        Leave empty to monitor all shops and security measures
+                    </div>
+                </div>
+                
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
+                
+                <h5 style="color: #fff; font-size: 14px; margin-bottom: 10px;">💰 Search For Cash Monitoring</h5>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px; color: #ccc; cursor: pointer;">
+                        <input type="checkbox" id="crime-notifier-searchcash" style="accent-color: #4CAF50;" checked>
+                        <span>Enable search for cash alerts</span>
+                    </label>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Threshold Percentage:</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="range" id="crime-notifier-threshold" min="50" max="100" value="80" 
+                               style="flex: 1; accent-color: #4CAF50;">
+                        <span id="crime-notifier-threshold-display" style="color: #fff; min-width: 50px; text-align: right; font-weight: bold;">80%</span>
+                    </div>
+                    <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
+                        Alert when search percentage reaches or exceeds this value
+                    </div>
+                </div>
+                
+                <!-- Search Location Selection -->
+                <div style="margin-bottom: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="color: #fff; font-weight: bold;">Select Locations:</span>
+                        <div style="display: flex; gap: 5px;">
+                            <button type="button" id="crime-search-all" style="padding: 4px 8px; background: rgba(76, 175, 80, 0.2); border: 1px solid #4CAF50; color: #4CAF50; border-radius: 3px; cursor: pointer; font-size: 11px;">All</button>
+                            <button type="button" id="crime-search-none" style="padding: 4px 8px; background: rgba(255, 107, 107, 0.2); border: 1px solid #FF6B6B; color: #FF6B6B; border-radius: 3px; cursor: pointer; font-size: 11px;">None</button>
+                        </div>
+                    </div>
+                    <div id="crime-search-checkboxes" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
+                        <!-- Search location checkboxes will be dynamically populated -->
+                        <div style="grid-column: 1 / -1; text-align: center; color: #aaa; font-size: 12px; padding: 10px;">
+                            Loading search locations...
+                        </div>
+                    </div>
+                    <div style="font-size: 11px; color: #888; margin-top: 8px; font-style: italic;">
+                        Leave empty to monitor all locations
+                    </div>
+                </div>
+                
+                <div id="sidekick-crime-notifier-status" style="text-align: center; padding: 10px; border-radius: 5px; 
+                                                              background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px; margin-top: 20px;">
+                    Crime Notifier settings loaded
+                </div>
+            `;
+        },
+
         // Attach all event listeners
         attachEventListeners(panel) {
             // Tab switching for sidebar
@@ -789,6 +917,12 @@
 
             // Quick Deposit Tab listeners
             this.attachQuickDepositTabListeners(panel);
+
+            // Crime Notifier Tab listeners
+            this.attachCrimeNotifierTabListeners(panel);
+
+            // Mug Warning Tab listeners
+            this.attachMugWarningTabListeners(panel);
         },
 
         // Switch between tabs
@@ -1955,6 +2089,540 @@
                         this.showStatus(statusDiv, 'Failed to clear ghost ID', 'error');
                     }
                 });
+            }
+        },
+
+        // Attach Crime Notifier tab listeners
+        async attachCrimeNotifierTabListeners(panel) {
+            const intervalInput = panel.querySelector('#crime-notifier-interval');
+            const securityCheckbox = panel.querySelector('#crime-notifier-security');
+            const searchCashCheckbox = panel.querySelector('#crime-notifier-searchcash');
+            const thresholdSlider = panel.querySelector('#crime-notifier-threshold');
+            const thresholdDisplay = panel.querySelector('#crime-notifier-threshold-display');
+            const statusDiv = panel.querySelector('#sidekick-crime-notifier-status');
+
+            if (!intervalInput) {
+                console.warn('Crime Notifier settings elements not found');
+                return;
+            }
+
+            // Auto-save helper function
+            const autoSaveCrimeSettings = async () => {
+                try {
+                    const data = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings') || {};
+                    data['crime-notifier'] = {
+                        isEnabled: data['crime-notifier']?.isEnabled || false,
+                        checkInterval: parseInt(intervalInput.value) * 1000,  // Convert to ms
+                        notifySecurityDown: securityCheckbox.checked,
+                        notifySearchCash: searchCashCheckbox.checked,
+                        searchCashThreshold: parseInt(thresholdSlider.value)
+                    };
+                    await window.SidekickModules.Core.ChromeStorage.set('sidekick_settings', data);
+
+                    // Update module if loaded
+                    if (window.SidekickModules?.CrimeNotifier) {
+                        await window.SidekickModules.CrimeNotifier.loadSettings();
+                    }
+
+                    this.showAutoSaveStatus(statusDiv, 'Settings saved ✓');
+                } catch (error) {
+                    console.error('Failed to save Crime Notifier settings:', error);
+                    this.showStatus(statusDiv, 'Failed to save settings', 'error');
+                }
+            };
+
+            // Load current settings
+            try {
+                const data = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings');
+                if (data && data['crime-notifier']) {
+                    const settings = data['crime-notifier'];
+                    intervalInput.value = (settings.checkInterval || 30000) / 1000;  // Convert from ms
+                    securityCheckbox.checked = settings.notifySecurityDown !== false;
+                    searchCashCheckbox.checked = settings.notifySearchCash !== false;
+                    thresholdSlider.value = settings.searchCashThreshold || 80;
+                    thresholdDisplay.textContent = `${thresholdSlider.value}%`;
+                }
+            } catch (error) {
+                console.error('Failed to load Crime Notifier settings:', error);
+            }
+
+            // Update threshold display on change
+            if (thresholdSlider && thresholdDisplay) {
+                thresholdSlider.addEventListener('input', () => {
+                    thresholdDisplay.textContent = `${thresholdSlider.value}%`;
+                });
+                thresholdSlider.addEventListener('change', autoSaveCrimeSettings);
+            }
+
+            // Attach listeners
+            if (intervalInput) {
+                intervalInput.addEventListener('change', autoSaveCrimeSettings);
+            }
+            if (securityCheckbox) {
+                securityCheckbox.addEventListener('change', autoSaveCrimeSettings);
+            }
+            if (searchCashCheckbox) {
+                searchCashCheckbox.addEventListener('change', autoSaveCrimeSettings);
+            }
+        },
+
+        // Attach Crime Notifier tab listeners
+        async attachCrimeNotifierTabListeners(panel) {
+            const intervalInput = panel.querySelector('#crime-notifier-interval');
+            const securityCheckbox = panel.querySelector('#crime-notifier-security');
+            const searchCashCheckbox = panel.querySelector('#crime-notifier-searchcash');
+            const thresholdSlider = panel.querySelector('#crime-notifier-threshold');
+            const thresholdDisplay = panel.querySelector('#crime-notifier-threshold-display');
+            const statusDiv = panel.querySelector('#sidekick-crime-notifier-status');
+
+            // Search location controls
+            const searchAllBtn = panel.querySelector('#crime-search-all');
+            const searchNoneBtn = panel.querySelector('#crime-search-none');
+
+            if (!intervalInput) {
+                console.warn('Crime Notifier settings elements not found');
+                return;
+            }
+
+            // Auto-save helper function
+            const autoSaveCrimeSettings = async () => {
+                try {
+                    const data = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings') || {};
+
+                    // Preserve existing shop security and search location selections
+                    const existingShopSecurity = data['crime-notifier']?.selectedShopSecurity || [];
+                    const existingSearchLocations = data['crime-notifier']?.selectedSearchLocations || [];
+
+                    data['crime-notifier'] = {
+                        isEnabled: data['crime-notifier']?.isEnabled || false,
+                        checkInterval: parseInt(intervalInput.value) * 1000,  // Convert to ms
+                        notifySecurityDown: securityCheckbox.checked,
+                        notifySearchCash: searchCashCheckbox.checked,
+                        searchCashThreshold: parseInt(thresholdSlider.value),
+                        selectedShopSecurity: existingShopSecurity,
+                        selectedSearchLocations: existingSearchLocations
+                    };
+                    await window.SidekickModules.Core.ChromeStorage.set('sidekick_settings', data);
+
+                    // Update module if loaded
+                    if (window.SidekickModules?.CrimeNotifier) {
+                        await window.SidekickModules.CrimeNotifier.loadSettings();
+                    }
+
+                    this.showAutoSaveStatus(statusDiv, 'Settings saved ✓');
+                } catch (error) {
+                    console.error('Failed to save Crime Notifier settings:', error);
+                    this.showStatus(statusDiv, 'Failed to save settings', 'error');
+                }
+            };
+
+            // Load current settings
+            try {
+                const data = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings');
+                if (data && data['crime-notifier']) {
+                    const settings = data['crime-notifier'];
+                    intervalInput.value = (settings.checkInterval || 30000) / 1000;  // Convert from ms
+                    securityCheckbox.checked = settings.notifySecurityDown !== false;
+                    searchCashCheckbox.checked = settings.notifySearchCash !== false;
+                    thresholdSlider.value = settings.searchCashThreshold || 80;
+                    thresholdDisplay.textContent = `${thresholdSlider.value}%`;
+
+                    // Set shop checkboxes
+                    if (settings.selectedShops) {
+                        shopCheckboxes.forEach(cb => {
+                            cb.checked = settings.selectedShops.includes(cb.value);
+                        });
+                    }
+
+                    // Set security type checkboxes
+                    if (settings.selectedSecurityTypes) {
+                        securityCheckboxes.forEach(cb => {
+                            cb.checked = settings.selectedSecurityTypes.includes(cb.value);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load Crime Notifier settings:', error);
+            }
+
+            // Load shop security data and search locations from API
+            await this.loadShopSecurityData(panel, statusDiv);
+            await this.loadSearchLocations(panel, statusDiv);
+
+            // Update threshold display on change
+            if (thresholdSlider && thresholdDisplay) {
+                thresholdSlider.addEventListener('input', () => {
+                    thresholdDisplay.textContent = `${thresholdSlider.value}%`;
+                });
+                thresholdSlider.addEventListener('change', autoSaveCrimeSettings);
+            }
+
+            // Attach listeners for basic settings
+            if (intervalInput) {
+                intervalInput.addEventListener('change', autoSaveCrimeSettings);
+            }
+            if (securityCheckbox) {
+                securityCheckbox.addEventListener('change', autoSaveCrimeSettings);
+            }
+            if (searchCashCheckbox) {
+                searchCashCheckbox.addEventListener('change', autoSaveCrimeSettings);
+            }
+
+            // Search location Select All/None buttons
+            if (searchAllBtn) {
+                searchAllBtn.addEventListener('click', () => {
+                    const searchCbs = panel.querySelectorAll('.crime-search-checkbox');
+                    searchCbs.forEach(cb => cb.checked = true);
+                    autoSaveCrimeSettings();
+                });
+            }
+            if (searchNoneBtn) {
+                searchNoneBtn.addEventListener('click', () => {
+                    const searchCbs = panel.querySelectorAll('.crime-search-checkbox');
+                    searchCbs.forEach(cb => cb.checked = false);
+                    autoSaveCrimeSettings();
+                });
+            }
+
+            // Shop-security All/None buttons
+            const shopsSecurityAllBtn = panel.querySelector('#crime-shops-security-all');
+            const shopsSecurityNoneBtn = panel.querySelector('#crime-shops-security-none');
+
+            if (shopsSecurityAllBtn) {
+                shopsSecurityAllBtn.addEventListener('click', () => {
+                    const cbs = panel.querySelectorAll('.crime-shop-security-checkbox');
+                    cbs.forEach(cb => cb.checked = true);
+                    const event = new Event('change');
+                    cbs[0]?.dispatchEvent(event);
+                });
+            }
+            if (shopsSecurityNoneBtn) {
+                shopsSecurityNoneBtn.addEventListener('click', () => {
+                    const cbs = panel.querySelectorAll('.crime-shop-security-checkbox');
+                    cbs.forEach(cb => cb.checked = false);
+                    const event = new Event('change');
+                    cbs[0]?.dispatchEvent(event);
+                });
+            }
+        },
+
+        // Load shop security data dynamically from API
+        async loadShopSecurityData(panel, statusDiv) {
+            try {
+                const apiKey = await window.SidekickModules.Core.ChromeStorage.get('sidekick_api_key');
+                if (!apiKey) {
+                    console.warn('No API key - cannot load shop security data');
+                    return;
+                }
+
+                const response = await fetch(`https://api.torn.com/torn/?selections=shoplifting&key=${apiKey}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    console.error('API error loading shop security:', data.error);
+                    return;
+                }
+
+                const container = panel.querySelector('#crime-shop-security-list');
+                if (!container) return;
+
+                // Load saved selections
+                const settings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings');
+                const selectedShopSecurity = settings?.['crime-notifier']?.selectedShopSecurity || [];
+
+                // SHOPS order
+                const shopKeys = ['sallys_sweet_shop', 'Bits_n_bobs', 'tc_clothing', 'super_store', 'pharmacy', 'cyber_force', 'jewelry_store', 'big_als'];
+                const shopNames = {
+                    'sallys_sweet_shop': "Sally's Sweet Shop",
+                    'Bits_n_bobs': "Bits 'n' Bobs",
+                    'tc_clothing': "TC Clothing",
+                    'super_store': "Super Store",
+                    'pharmacy': "Pharmacy",
+                    'cyber_force': "Cyber Force",
+                    'jewelry_store': "Jewelry Store",
+                    'big_als': "Big Al's Gun Shop"
+                };
+
+                // Build HTML for each shop
+                let html = '';
+                shopKeys.forEach(shopKey => {
+                    const shopData = data.shoplifting[shopKey];
+                    if (!shopData) return;
+
+                    const shopName = shopNames[shopKey];
+
+                    // Build shop section
+                    html += `
+                        <div style="border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; padding: 8px;">
+                            <div style="color: #fff; font-weight: bold; margin-bottom: 6px; font-size: 13px;">${shopName}</div>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px;">
+                    `;
+
+                    // Add checkbox for each security measure
+                    shopData.forEach(security => {
+                        const comboKey = `${shopKey}_${security.title}`;
+                        const checked = selectedShopSecurity.length === 0 || selectedShopSecurity.includes(comboKey) ? 'checked' : '';
+                        html += `
+                            <label style="display: flex; align-items: center; gap: 4px; color: #ccc; cursor: pointer; font-size: 12px;">
+                                <input type="checkbox" class="crime-shop-security-checkbox" value="${comboKey}" ${checked} style="accent-color: #FF6B6B;">
+                                <span>${security.title}</span>
+                            </label>
+                        `;
+                    });
+
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+
+                // Attach listeners to shop security checkboxes
+                const shopSecurityCheckboxes = panel.querySelectorAll('.crime-shop-security-checkbox');
+                shopSecurityCheckboxes.forEach(cb => {
+                    cb.addEventListener('change', async () => {
+                        try {
+                            const data = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings') || {};
+                            const cbs = panel.querySelectorAll('.crime-shop-security-checkbox');
+                            const selected = Array.from(cbs).filter(c => c.checked).map(c => c.value);
+
+                            if (!data['crime-notifier']) {
+                                data['crime-notifier'] = {};
+                            }
+                            data['crime-notifier'].selectedShopSecurity = selected;
+                            await window.SidekickModules.Core.ChromeStorage.set('sidekick_settings', data);
+
+                            if (window.SidekickModules?.CrimeNotifier) {
+                                await window.SidekickModules.CrimeNotifier.loadSettings();
+                            }
+
+                            this.showAutoSaveStatus(statusDiv, 'Settings saved ✓');
+                        } catch (error) {
+                            console.error('Failed to save shop security selection:', error);
+                        }
+                    });
+                });
+
+            } catch (error) {
+                console.error('Failed to load shop security data:', error);
+            }
+        },
+
+        // Load search locations dynamically from API
+        async loadSearchLocations(panel, statusDiv) {
+            try {
+                const apiKey = await window.SidekickModules.Core.ChromeStorage.get('sidekick_api_key');
+                if (!apiKey) {
+                    console.warn('No API key - cannot load search locations');
+                    return;
+                }
+
+                const response = await fetch(`https://api.torn.com/torn/?selections=searchforcash&key=${apiKey}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    console.error('API error loading search locations:', data.error);
+                    return;
+                }
+
+                const container = panel.querySelector('#crime-search-checkboxes');
+                if (!container) return;
+
+                // Build checkboxes from API data
+                let html = '';
+                const sortedLocations = Object.entries(data.searchforcash).sort((a, b) =>
+                    a[1].title.localeCompare(b[1].title)
+                );
+
+                // Load saved selections
+                const settings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings');
+                const selectedLocations = settings?.['crime-notifier']?.selectedSearchLocations || [];
+
+                sortedLocations.forEach(([key, info]) => {
+                    const checked = selectedLocations.length === 0 || selectedLocations.includes(key) ? 'checked' : '';
+                    html += `
+                        <label style="display:  flex; align-items: center; gap: 6px; color: #ccc; cursor: pointer; font-size: 13px;">
+                            <input type="checkbox" class="crime-search-checkbox" value="${key}" ${checked} style="accent-color: #4CAF50;">
+                            <span>${info.title}</span>
+                        </label>
+                    `;
+                });
+
+                container.innerHTML = html;
+
+                // Attach listeners to search checkboxes
+                const searchCheckboxes = panel.querySelectorAll('.crime-search-checkbox');
+                searchCheckboxes.forEach(cb => {
+                    cb.addEventListener('change', async () => {
+                        try {
+                            const data = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings') || {};
+                            const searchCbs = panel.querySelectorAll('.crime-search-checkbox');
+                            const selected = Array.from(searchCbs).filter(c => c.checked).map(c => c.value);
+
+                            if (data['crime-notifier']) {
+                                data['crime-notifier'].selectedSearchLocations = selected;
+                                await window.SidekickModules.Core.ChromeStorage.set('sidekick_settings', data);
+
+                                if (window.SidekickModules?.CrimeNotifier) {
+                                    await window.SidekickModules.CrimeNotifier.loadSettings();
+                                }
+
+                                this.showAutoSaveStatus(statusDiv, 'Settings saved ✓');
+                            }
+                        } catch (error) {
+                            console.error('Failed to save search location:', error);
+                        }
+                    });
+                });
+
+            } catch (error) {
+                console.error('Failed to load search locations:', error);
+            }
+        },
+
+        //Create Mug Warning Settings HTML
+        createMugWarningSettingsHTML() {
+            return `
+            <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">⚠️ Mug Warning Settings</h4>
+            
+            <div style="background: rgba(255, 77, 77, 0.1); border-left: 3px solid #ff4d4d; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
+                <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                    ⚠️ <strong>Prevent Double-Mugging:</strong> Alerts appear when you view a profile or attack page for someone you mugged recently.
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; color: #fff; font-weight: 600;">⏰ Hours Threshold:</label>
+                <input type="number" id="mug-warning-hours" min="1" max="168" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 5px; color: #fff; font-size: 14px;">
+                <div style="font-size: 12px; color: #aaa; margin-top: 4px;">Warn if mugged within this many hours (default: 24)</div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 12px; color: #fff; font-weight: 600;">🎨 Warning Modal Colors:</label>
+                <div style="display: flex; gap: 15px; align-items: flex-start;">
+                    <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+                        <input type="color" id="mug-warning-modal-bg" style="width: 80px; height: 80px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3); cursor: pointer;">
+                        <div style="font-size: 11px; color: #aaa; margin-top: 6px; text-align: center;">Background</div>
+                    </div>
+                    <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+                        <input type="color" id="mug-warning-modal-text" style="width: 80px; height: 80px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3); cursor: pointer;">
+                        <div style="font-size: 11px; color: #aaa; margin-top: 6px; text-align: center;">Text</div>
+                    </div>
+                    <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+                        <input type="color" id="mug-warning-button-color" style="width: 80px; height: 80px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3); cursor: pointer;">
+                        <div style="font-size: 11px; color: #aaa; margin-top: 6px; text-align: center;">Buttons Border</div>
+                    </div>
+                </div>
+                <div style="font-size: 12px; color: #aaa; margin-top: 8px;">Customize the warning modal that appears on profile/attack pages</div>
+            </div>
+            
+            <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 25px 0;">
+            
+            <h5 style="margin: 0 0 10px 0; color: #fff; font-size: 14px;">🎯 Mug Targets (Won't Warn)</h5>
+            <div id="mug-targets-list" style="max-height: 200px; overflow-y: auto; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 10px; min-height: 50px;">
+                <!-- Populated dynamically -->
+            </div>
+            
+            <button id="manage-mug-targets" style="width: 100%; padding: 10px; background: #2196F3; border: none; color: white; border-radius: 5px; font-weight: bold; cursor: pointer;">
+                🗂️ Manage Mug Targets
+            </button>
+        `;
+        },
+
+        // Attach Mug Warning Tab Listeners
+        attachMugWarningTabListeners(panel) {
+            const hoursInput = panel.querySelector('#mug-warning-hours');
+            const modalBgInput = panel.querySelector('#mug-warning-modal-bg');
+            const modalTextInput = panel.querySelector('#mug-warning-modal-text');
+            const buttonColorInput = panel.querySelector('#mug-warning-button-color');
+            const manageBtn = panel.querySelector('#manage-mug-targets');
+
+            if (!hoursInput || !modalBgInput || !modalTextInput || !buttonColorInput) return;
+
+            // Load current settings
+            this.loadMugWarningSettings(panel);
+
+            // Auto-save on hours change
+            hoursInput.addEventListener('change', async () => {
+                try {
+                    const data = await window.SidekickModules.Core.ChromeStorage.get('mug-warning') || {};
+                    data.hoursThreshold = parseInt(hoursInput.value) || 24;
+                    await window.SidekickModules.Core.ChromeStorage.set('mug-warning', data);
+                    if (window.SidekickModules?.MugWarning) {
+                        await window.SidekickModules.MugWarning.loadSettings();
+                    }
+                } catch (error) {
+                    console.error('Failed to save hours threshold:', error);
+                }
+            });
+
+            // Auto-save on color changes
+            [modalBgInput, modalTextInput, buttonColorInput].forEach(input => {
+                input.addEventListener('change', async () => {
+                    try {
+                        const data = await window.SidekickModules.Core.ChromeStorage.get('mug-warning') || {};
+                        data.modalBgColor = modalBgInput.value;
+                        data.modalTextColor = modalTextInput.value;
+                        data.buttonTextColor = buttonColorInput.value;
+                        await window.SidekickModules.Core.ChromeStorage.set('mug-warning', data);
+                        if (window.SidekickModules?.MugWarning) {
+                            await window.SidekickModules.MugWarning.loadSettings();
+                        }
+                    } catch (error) {
+                        console.error('Failed to save colors:', error);
+                    }
+                });
+            });
+
+            // Manage targets button
+            if (manageBtn) {
+                manageBtn.addEventListener('click', async () => {
+                    try {
+                        const targets = await window.SidekickModules.Core.ChromeStorage.get('mug_targets') || {};
+                        const ids = Object.keys(targets);
+                        const message = ids.length > 0
+                            ? `Current mug targets (${ids.length}):\n${ids.join(', ')}\n\nEnter IDs to add (comma-separated) or leave blank to clear all:`
+                            : 'No mug targets set.\n\nEnter player IDs to add as mug targets (comma-separated):';
+
+                        const input = prompt(message, '');
+                        if (input === null) return; // Cancelled
+
+                        if (input.trim() === '') {
+                            // Clear all
+                            await window.SidekickModules.Core.ChromeStorage.set('mug_targets', {});
+                            alert('All mug targets cleared!');
+                        } else {
+                            // Add new targets
+                            const newIds = input.split(',').map(id => id.trim()).filter(id => id);
+                            const newTargets = {};
+                            newIds.forEach(id => newTargets[id] = true);
+                            await window.SidekickModules.Core.ChromeStorage.set('mug_targets', newTargets);
+                            alert(`${newIds.length} mug target(s) saved!`);
+                        }
+                    } catch (error) {
+                        console.error('Failed to manage targets:', error);
+                        alert('Error managing targets: ' + error.message);
+                    }
+                });
+            }
+        },
+
+        // Load Mug Warning Settings
+        async loadMugWarningSettings(panel) {
+            try {
+                const data = await window.SidekickModules.Core.ChromeStorage.get('mug-warning') || {};
+                const hoursInput = panel.querySelector('#mug-warning-hours');
+                const modalBgInput = panel.querySelector('#mug-warning-modal-bg');
+                const modalTextInput = panel.querySelector('#mug-warning-modal-text');
+                const buttonColorInput = panel.querySelector('#mug-warning-button-color');
+
+                if (hoursInput) hoursInput.value = data.hoursThreshold || 24;
+                if (modalBgInput) modalBgInput.value = data.modalBgColor || '#ff4d4d';
+                if (modalTextInput) modalTextInput.value = data.modalTextColor || '#ffffff';
+                if (buttonColorInput) buttonColorInput.value = data.buttonTextColor || '#ffffff';
+            } catch (error) {
+                console.error('Failed to load mug warning settings:', error);
             }
         }
     };
