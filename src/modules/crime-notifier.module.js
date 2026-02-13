@@ -234,40 +234,57 @@ const CrimeNotifierModule = {
             console.log('🚨 Shoplifting data received. Selected combos:', this.selectedShopSecurity);
             console.log('🚨 Has previous data:', Object.keys(this.previousShopsData).length > 0);
 
-            // Check each shop
+            // Process each shop independently
             for (const [shopKey, shopData] of Object.entries(currentShopsData)) {
                 if (!this.SHOPS[shopKey]) continue;
 
                 const shopName = this.SHOPS[shopKey];
                 const previousShop = this.previousShopsData[shopKey] || [];
 
-                // Check each security measure in the shop
+                // Find which countermeasures are selected for THIS shop
+                const selectedForThisShop = [];
                 for (let i = 0; i < shopData.length; i++) {
                     const currentSecurity = shopData[i];
-                    const previousSecurity = previousShop[i] || {};
-
-                    // Skip if this specific shop+security combo is not selected (when selections exist)
                     const comboKey = `${shopKey}_${currentSecurity.title}`;
-                    if (this.selectedShopSecurity.length > 0 && !this.selectedShopSecurity.includes(comboKey)) {
-                        continue;
+
+                    if (this.selectedShopSecurity.length === 0 || this.selectedShopSecurity.includes(comboKey)) {
+                        selectedForThisShop.push(i);
+                    }
+                }
+
+                // Skip if no countermeasures selected for this shop
+                if (selectedForThisShop.length === 0) continue;
+
+                // Check if ALL selected countermeasures for this shop are down
+                let allSelectedAreDown = true;
+                let anyWasPreviouslyUp = false;
+
+                for (const index of selectedForThisShop) {
+                    const currentSecurity = shopData[index];
+                    const previousSecurity = previousShop[index] || {};
+
+                    if (!currentSecurity.disabled) {
+                        allSelectedAreDown = false;
+                        break;
                     }
 
-                    // Log state for debugging
-                    console.log(`  ${shopName} - ${currentSecurity.title}:`, {
-                        currentDisabled: currentSecurity.disabled,
-                        previousDisabled: previousSecurity.disabled,
-                        willAlert: !previousSecurity.disabled && currentSecurity.disabled
-                    });
-
-                    // Detect transition from enabled to disabled
-                    // Only trigger if we have previous data AND there's a real transition
-                    if (previousShop.length > 0 && !previousSecurity.disabled && currentSecurity.disabled) {
-                        alerts.push(`${shopName}: ${currentSecurity.title} is now disabled!`);
+                    // Check if this one transitioned from up to down
+                    if (previousShop.length > 0 && !previousSecurity.disabled) {
+                        anyWasPreviouslyUp = true;
                     }
+                }
+
+                // Only alert if:
+                // 1. ALL selected countermeasures are currently down
+                // 2. At least one of them transitioned (wasn't already down)
+                if (allSelectedAreDown && anyWasPreviouslyUp) {
+                    const downList = selectedForThisShop.map(i => shopData[i].title).join(' + ');
+                    alerts.push(`${shopName}: ${downList} ALL DOWN!`);
+                    console.log(`🚨 ** ALERT: ${shopName} - All selected countermeasures down! **`);
                 }
             }
 
-            // Show notification if any security went down
+            // Show notification if any shops have all selected countermeasures down
             if (alerts.length > 0) {
                 const message = alerts.join('\n');
 
@@ -284,7 +301,7 @@ const CrimeNotifierModule = {
             // Save current state for next check
             this.previousShopsData = currentShopsData;
             await this.savePreviousState();
-            console.log('🚨shoplifting check complete, state saved');
+            console.log('🚨 Shoplifting check complete, state saved');
 
         } catch (error) {
             console.error('🚨 Failed to check shoplifting security:', error);
