@@ -356,6 +356,9 @@
                 ${this.createToggle('refill-blocker', '🛡️ Refill Blocker', 'Prevents accidental refills when bars aren\'t empty')}
                 ${this.createToggle('extended-chain-view', '⛓️ Extended Chain View', 'Shows more than 10 chain attacks on faction page')}
                 ${this.createToggle('mug-calculator', '🥊 Mug Calculator', 'Shows mug value calculations on Item Market and Bazaars')}
+                ${this.createToggle('weapon-exp-tracker', '📊 Weapon XP Tracker', 'Displays weapon experience tracking')}
+                ${this.createToggle('bunker-bucks-market', '💰 Bunker Bucks Market', 'Shows bunker buck values on item market listings')}
+                ${this.createToggle('auto-gym-switch', '💪 Auto Gym Switch', 'Automatically switches to best gym before training')}
                 ${this.createToggle('book-notifier', '📚 Mission Book Notifier', 'Alerts when books are available in mission rewards (checks every 12 hours)')}
                 ${this.createToggle('locked-items', '🔒 Locked Items Manager', 'Lock inventory items to prevent accidental trading, selling, or deleting')}
                 ${this.createWeaponXpToggle()}
