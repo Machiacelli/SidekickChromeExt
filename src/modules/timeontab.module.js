@@ -172,7 +172,7 @@
                 return;
             }
 
-            // Alternate every 3 seconds between chain timer and page-specific timer
+            // Alternate every 3 seconds between chain timer and page-specific timer/profile name
             const now = Date.now();
             if (now - this.lastAlternate >= 3000) {
                 this.showChain = !this.showChain;
@@ -185,15 +185,30 @@
             // Get chain timer separately
             const chainTimer = this.getChainTimer();
 
+            // Get profile name if on profile page
+            const profileName = this.getProfileName();
+
             let timerInfo = null;
 
-            // If both exist, alternate. Otherwise show whichever exists
-            if (chainTimer && pageTimer) {
+            // Priority logic:
+            // 1. If chain active AND on profile page: alternate between chain and profile name
+            // 2. If chain active AND page timer exists: alternate between chain and page timer
+            // 3. If only chain: show chain
+            // 4. If only page timer: show page timer
+            // 5. If only profile: show profile name
+
+            if (chainTimer && profileName) {
+                // Chain active + on profile: alternate chain with profile name
+                timerInfo = this.showChain ? chainTimer : `Profile: ${profileName}`;
+            } else if (chainTimer && pageTimer) {
+                // Chain active + page timer: alternate chain with page timer
                 timerInfo = this.showChain ? chainTimer : pageTimer;
             } else if (chainTimer) {
                 timerInfo = chainTimer;
             } else if (pageTimer) {
                 timerInfo = pageTimer;
+            } else if (profileName) {
+                timerInfo = `Profile: ${profileName}`;
             }
 
             if (timerInfo) {
@@ -271,6 +286,39 @@
                     chainTime !== '0:00' &&
                     parseInt(chainLength) >= 25) {
                     return `Chain ${chainLength}: ${chainTime}`;
+                }
+            }
+
+            return null;
+        },
+
+        // Get profile name if on profile page
+        getProfileName() {
+            // Check if we're on a profile page
+            if (!window.location.href.includes('profiles.php') && !window.location.href.includes('loader.php?sid=attack')) {
+                return null;
+            }
+
+            // Try to get the profile name from various locations
+            // Method 1: Profile header name
+            const profileHeader = document.querySelector('.profile-container .profile-name') ||
+                document.querySelector('.basic-information .user-info-value .name') ||
+                document.querySelector('[class*="userName"]') ||
+                document.querySelector('[class*="profile"] [class*="name"]');
+
+            if (profileHeader && profileHeader.textContent) {
+                const name = profileHeader.textContent.trim();
+                if (name && name.length > 0 && name !== 'TORN') {
+                    return name;
+                }
+            }
+
+            // Method 2: Title meta tag or page title
+            const titleMatch = document.title.match(/^(.+?)\s*\[/);
+            if (titleMatch && titleMatch[1]) {
+                const name = titleMatch[1].trim();
+                if (name && name !== 'TORN' && !name.includes(':')) {
+                    return name;
                 }
             }
 
