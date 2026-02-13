@@ -248,9 +248,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Clear All button
     document.getElementById('clearAllNotifications')?.addEventListener('click', async () => {
-        await NotificationCenter.clearAll();
-        loadNotifications();
-        showMessage('All notifications cleared', 'info');
+        try {
+            await chrome.storage.local.set({ 'sidekick_notifications': [] });
+            loadNotifications();
+            showMessage('All notifications cleared', 'info');
+        } catch (error) {
+            console.error('Failed to clear notifications:', error);
+        }
     });
 
     // Preferences toggle
