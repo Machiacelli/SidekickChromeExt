@@ -75,6 +75,13 @@
                 this.startInterestUpdates();
                 this.startAlertMonitoring(); // Start checking for due date and inactivity alerts
 
+                // Update user activities for inactive alerts (if API key available)
+                if (this.apiKey && this.debtsAndLoans.length > 0) {
+                    console.log('💰 Scheduling user activity updates for inactive alerts');
+                    setTimeout(() => this.updateAllUserActivities(), 5000); // Initial update after 5s
+                    setInterval(() => this.updateAllUserActivities(), 2 * 60 * 60 * 1000); // Refresh every 2 hours
+                }
+
                 // Restore window state if it was open before
                 this.restoreWindowState();
 
@@ -328,6 +335,20 @@
                 console.error('Failed to load debts and loans:', error);
                 this.debtsAndLoans = [];
             }
+        },
+
+        // Start monitoring alerts and sending to notification system
+        startAlertMonitoring() {
+            console.log('💰 Starting alert monitoring...');
+
+            // Check alerts immediately
+            this.sendAlertsToNotificationSystem();
+
+            // Check alerts every 5 minutes
+            this.alertCheckInterval = setInterval(() => {
+                console.log('💰 Checking for debt alerts...');
+                this.sendAlertsToNotificationSystem();
+            }, 5 * 60 * 1000);
         },
 
         // Save debts and loans to storage
@@ -2583,6 +2604,55 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
             allAlerts.push(...entryAlerts);
         });
         return allAlerts;
+    };
+
+    // Send all active alerts to the notification system (popup)
+    DebtModule.sendAlertsToNotificationSystem = async function () {
+        const allAlerts = this.getAllAlerts();
+
+        if (allAlerts.length === 0) {
+            console.log('💰 No debt alerts to send to notification system');
+            return;
+        }
+
+        console.log(`💰 Sending ${allAlerts.length} debt alerts to notification system`);
+
+        try {
+            for (const alert of allAlerts) {
+                const notification = {
+                    id: `debt_${alert.entry.id}_${alert.type}_${Date.now()}`,
+                    timestamp: Date.now(),
+                    type: 'debt',
+                    title: alert.entry.isDebt ? 'Debt Alert' : 'Loan Alert',
+                    message: `${alert.icon} ${alert.message} - ${alert.entry.otherPartyName}`,
+                    severity: alert.severity,
+                    data: {
+                        entryId: alert.entry.id,
+                        alertType: alert.type
+                    }
+                };
+
+                // Add to storage notifications
+                const result = await chrome.storage.local.get('sidekick_notifications');
+                const notifications = result.sidekick_notifications || [];
+
+                // Check if this alert already exists
+                const exists = notifications.some(n =>
+                    n.data?.entryId === alert.entry.id &&
+                    n.data?.alertType === alert.type &&
+                    (Date.now() - n.timestamp) < 24 * 60 * 60 * 1000 // Within last 24 hours
+                );
+
+                if (!exists) {
+                    notifications.unshift(notification);
+                    const trimmed = notifications.slice(0, 50);
+                    await chrome.storage.local.set({ sidekick_notifications: trimmed });
+                    console.log(`💰 Added notification for ${alert.entry.otherPartyName}: ${alert.message}`);
+                }
+            }
+        } catch (error) {
+            console.error('💰 Failed to send alerts to notification system:', error);
+        }
     };
 
     DebtModule.showEntryAlertsDialog = function (entryId) {

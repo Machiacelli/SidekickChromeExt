@@ -7,7 +7,7 @@
 const ExtendedChainViewModule = (() => {
     // Module state
     let isEnabled = false;
-    let maxExtLength = 20;
+    let maxExtLength = 10;
     let initialState = 'closed';
     let listObserver = null;
     let nodeObserver = null;
@@ -29,7 +29,7 @@ const ExtendedChainViewModule = (() => {
             // Check if module is enabled
             const settings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_extended_chain_view');
             isEnabled = settings?.isEnabled === true;
-            maxExtLength = settings?.maxExtLength || 20;
+            maxExtLength = settings?.maxExtLength || 10;
             initialState = settings?.initialState || 'closed';
 
             if (!isEnabled) {
