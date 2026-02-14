@@ -78,12 +78,11 @@ const ExtendedChainViewModule = (() => {
         },
 
         getListHdr() {
-            const caretState = (initialState === 'closed') ? 'fa-caret-right' : 'fa-caret-down';
-            const caretNode = `<span class="caret-wrap" style="float:right;"><i id="ext-hdr-caret" class="icon fas ${caretState}"></i></span>`;
+            // Auto-expand when module is enabled - no dropdown needed
             return `
                 <div id="hdr-extended" class="sortable-box t-blue-cont h">
                      <div class="title main-title title-black active box" role="table" aria-level="5" style="height: 20px;">
-                         ${caretNode}
+                         <span style="padding-left: 10px; color: #4a9eff; font-size: 11px;">Extended Chain History</span>
                      </div>
                  </div>
             `;
@@ -229,24 +228,13 @@ const ExtendedChainViewModule = (() => {
 
             // Create extended view if it doesn't exist
             if (!document.getElementById('ext-chain-view')) {
-                const hideState = (initialState === 'closed') ? 'hdr-none' : 'hdr-blk';
+                // Always visible when module is enabled
                 const rootClone = rootUL.cloneNode(false);
                 rootClone.id = 'ext-chain-view';
-                rootClone.classList.add(hideState);
+                rootClone.classList.add('hdr-blk'); // Always show
 
                 rootUL.insertAdjacentHTML('afterend', this.getListHdr());
                 document.getElementById('hdr-extended').appendChild(rootClone);
-            }
-
-            // Add caret click handler
-            const caret = document.getElementById('ext-hdr-caret');
-            if (caret) {
-                caret.addEventListener('click', () => {
-                    caret.classList.toggle('fa-caret-right');
-                    caret.classList.toggle('fa-caret-down');
-                    document.getElementById('ext-chain-view').classList.toggle('hdr-none');
-                    document.getElementById('ext-chain-view').classList.toggle('hdr-blk');
-                });
             }
 
             this.installObserver(rootUL);

@@ -2489,7 +2489,9 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
                 alerts.push({
                     type: 'due_soon',
                     severity: 'medium',
-                    message: `${entry.isDebt ? 'Debt' : 'Loan'} due in ${daysUntilDue} day${daysUntilDue === 1 ? '' : 's'}`,
+                    message: daysUntilDue === 0
+                        ? `Your ${entry.isDebt ? 'debt' : 'loan'} is due today`
+                        : `${entry.isDebt ? 'Debt' : 'Loan'} due in ${daysUntilDue} day${daysUntilDue === 1 ? '' : 's'}`,
                     icon: '🟡',
                     entry: entry
                 });
