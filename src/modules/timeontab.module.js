@@ -31,8 +31,6 @@
         originalTitle: document.title,
         updateInterval: null,
         observer: null,
-        showChain: true, // Alternates between chain and page timer
-        lastAlternate: Date.now(), // Track last alternation time
 
         // Initialize the module
         async init() {
@@ -172,11 +170,14 @@
                 return;
             }
 
-            // Alternate every 3 seconds between chain timer and page-specific timer/profile name
+            // Get global alternation state (synchronized across all tabs)
+            const globalState = this.getGlobalAlternationState();
             const now = Date.now();
-            if (now - this.lastAlternate >= 3000) {
-                this.showChain = !this.showChain;
-                this.lastAlternate = now;
+            const showChain = globalState.showChain;
+
+            // Update global state every 3 seconds
+            if (now - globalState.lastAlternate >= 3000) {
+                this.toggleGlobalAlternation();
             }
 
             // Get page-specific timer (hospital, jail, racing, travel)
@@ -199,10 +200,10 @@
 
             if (chainTimer && profileName) {
                 // Chain active + on profile: alternate chain with profile name
-                timerInfo = this.showChain ? chainTimer : `Profile: ${profileName}`;
+                timerInfo = showChain ? chainTimer : `Profile: ${profileName}`;
             } else if (chainTimer && pageTimer) {
                 // Chain active + page timer: alternate chain with page timer
-                timerInfo = this.showChain ? chainTimer : pageTimer;
+                timerInfo = showChain ? chainTimer : pageTimer;
             } else if (chainTimer) {
                 timerInfo = chainTimer;
             } else if (pageTimer) {
@@ -289,17 +290,64 @@
                 }
             }
 
-            return null;
+        },
+
+        // Get global alternation state (synchronized across all open tabs)
+        getGlobalAlternationState() {
+            if (!window.sidekickGlobalAlternation) {
+                window.sidekickGlobalAlternation = {
+                    showChain: true,
+                    lastAlternate: Date.now()
+                };
+            }
+            return window.sidekickGlobalAlternation;
+        },
+
+        // Toggle global alternation state
+        toggleGlobalAlternation() {
+            const state = this.getGlobalAlternationState();
+            state.showChain = !state.showChain;
+            state.lastAlternate = Date.now();
         },
 
         // Get profile name if on profile page
         getProfileName() {
-            // Check if we're on a profile page
-            if (!window.location.href.includes('profiles.php') && !window.location.href.includes('loader.php?sid=attack')) {
+            // Check if we're on a profile page or attack page
+            const onProfilePage = window.location.href.includes('profiles.php');
+            const onAttackPage = window.location.href.includes('loader.php?sid=attack');
+
+            if (!onProfilePage && !onAttackPage) {
                 return null;
             }
 
-            // Try to get the profile name from various locations
+            // For attack pages, try to get target name from URL or page content
+            if (onAttackPage) {
+                // Method 1: Get from URL parameter (user2ID or XID)
+                const urlParams = new URLSearchParams(window.location.search);
+                const targetId = urlParams.get('user2ID') || urlParams.get('XID');
+
+                if (targetId) {
+                    // Try to get name from attack interface
+                    const targetNameElement = document.querySelector('[class*="target"] [class*="name"]') ||
+                        document.querySelector('[class*="opponent"] [class*="name"]') ||
+                        document.querySelector('.user.name');
+
+                    if (targetNameElement && targetNameElement.textContent) {
+                        const name = targetNameElement.textContent.trim();
+                        if (name && name.length > 0 && name !== 'TORN') {
+                            return name;
+                        }
+                    }
+                }
+
+                // Fallback: try page title for attack page
+                const attackTitleMatch = document.title.match(/Attack\s+(.+?)\s*\[/);
+                if (attackTitleMatch && attackTitleMatch[1]) {
+                    return attackTitleMatch[1].trim();
+                }
+            }
+
+            // For regular profile pages
             // Method 1: Profile header name
             const profileHeader = document.querySelector('.profile-container .profile-name') ||
                 document.querySelector('.basic-information .user-info-value .name') ||
@@ -317,7 +365,7 @@
             const titleMatch = document.title.match(/^(.+?)\s*\[/);
             if (titleMatch && titleMatch[1]) {
                 const name = titleMatch[1].trim();
-                if (name && name !== 'TORN' && !name.includes(':')) {
+                if (name && name !== 'TORN' && !name.includes(':') && !name.includes('Attack')) {
                     return name;
                 }
             }

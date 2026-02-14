@@ -7,7 +7,7 @@
 const ExtendedChainViewModule = (() => {
     // Module state
     let isEnabled = false;
-    let maxExtLength = 5;
+    let maxExtLength = 20;
     let initialState = 'closed';
     let listObserver = null;
     let nodeObserver = null;
@@ -29,7 +29,7 @@ const ExtendedChainViewModule = (() => {
             // Check if module is enabled
             const settings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_extended_chain_view');
             isEnabled = settings?.isEnabled === true;
-            maxExtLength = settings?.maxExtLength || 5;
+            maxExtLength = settings?.maxExtLength || 20;
             initialState = settings?.initialState || 'closed';
 
             if (!isEnabled) {
@@ -78,11 +78,10 @@ const ExtendedChainViewModule = (() => {
         },
 
         getListHdr() {
-            // Auto-expand when module is enabled - no dropdown needed
+            // Auto-expand when module is enabled - no header text needed
             return `
                 <div id="hdr-extended" class="sortable-box t-blue-cont h">
-                     <div class="title main-title title-black active box" role="table" aria-level="5" style="height: 20px;">
-                         <span style="padding-left: 10px; color: #4a9eff; font-size: 11px;">Extended Chain History</span>
+                     <div class="title main-title title-black active box" role="table" aria-level="5" style="height: 5px;">
                      </div>
                  </div>
             `;
