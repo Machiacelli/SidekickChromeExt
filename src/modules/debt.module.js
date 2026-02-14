@@ -233,6 +233,57 @@
             });
         },
 
+        // Fetch user activity data from API
+        async fetchUserActivity(userId) {
+            if (!this.apiKey) {
+                console.log(`💰 Cannot fetch user activity for ${userId}: No API key`);
+                return null;
+            }
+
+            try {
+                const response = await fetch(`https://api.torn.com/user/${userId}?selections=timestamp&key=${this.apiKey}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    console.error(`💰 API error fetching user ${userId}:`, data.error);
+                    return null;
+                }
+
+                return data.last_action?.timestamp || null;
+            } catch (error) {
+                console.error(`💰 Failed to fetch user activity for ${userId}:`, error);
+                return null;
+            }
+        },
+
+        // Update last_action for all debtors/lenders
+        async updateAllUserActivities() {
+            if (!this.apiKey) {
+                console.log('💰 Cannot update user activities: No API key');
+                return;
+            }
+
+            console.log('💰 Updating last_action data for all debtors/lenders...');
+            let updatedCount = 0;
+
+            for (const entry of this.debtsAndLoans) {
+                if (entry.userId) {
+                    const lastAction = await this.fetchUserActivity(entry.userId);
+                    if (lastAction) {
+                        entry.lastAction = lastAction;
+                        updatedCount++;
+                    }
+                    // Add small delay to avoid API rate limiting
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+            }
+
+            console.log(`💰 Updated last_action for ${updatedCount} users`);
+
+            // Save updated data
+            await this.saveDebtsAndLoans();
+        },
+
         // Load debts and loans from storage
         async loadDebtsAndLoans() {
             try {
