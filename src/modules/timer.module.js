@@ -1515,6 +1515,16 @@
                                     font-size: 11px;
                                     transition: background 0.2s;
                                 ">Virus Coding</button>
+                                <button class="cooldown-option" data-type="Book" style="
+                                    background: none;
+                                    border: none;
+                                    color: #fff;
+                                    padding: 6px 12px;
+                                    width: 100%;
+                                    text-align: left;
+                                    font-size: 11px;
+                                    transition: background 0.2s;
+                                ">📚 Book Reading</button>
                                 <div style="border-top: 1px solid #555; margin: 4px 0;"></div>
                                 <button class="custom-timer-option" style="
                                     background: none;
@@ -1863,6 +1873,106 @@
                                     } else {
                                         console.log('🦠 No active virus coding detected');
                                         alert('No active virus coding detected. Start coding a virus in Torn first!');
+                                    }
+                                } else if (cooldownType === 'Book') {
+                                    // Book Reading timer
+                                    // Strategy 1: Read from Torn taskbar DOM — the book icon tooltip/title element
+                                    let bookSeconds = null;
+                                    let bookName = 'Book Reading';
+
+                                    // Try the Torn taskbar — look for book-related countdown elements
+                                    const bookSelectors = [
+                                        '[class*="book"] [class*="time"]',
+                                        '[class*="bookIcon"] [class*="countdown"]',
+                                        '[class*="item-book"] [class*="timer"]',
+                                        // Torn's sidebar/taskbar uses title attributes for hover tooltips
+                                        '[data-tooltip*="Book"]',
+                                        '[data-tooltip*="book"]',
+                                        '[title*="book"]',
+                                    ];
+
+                                    for (const sel of bookSelectors) {
+                                        const el = document.querySelector(sel);
+                                        if (el) {
+                                            const text = (el.textContent || el.title || el.getAttribute('data-tooltip') || '').trim();
+                                            // Parse "Xd Xh Xm" or "Xh Xm" or "Xd" format
+                                            const match = text.match(/(\d+)d\s*(\d+)h\s*(\d+)m|(\d+)h\s*(\d+)m|(\d+)d\s*(\d+)h|(\d+)d/);
+                                            if (match) {
+                                                bookSeconds = 0;
+                                                if (match[1]) bookSeconds += parseInt(match[1]) * 86400; // days
+                                                if (match[2]) bookSeconds += parseInt(match[2]) * 3600;  // hours
+                                                if (match[3]) bookSeconds += parseInt(match[3]) * 60;    // mins
+                                                if (!match[1] && match[4]) bookSeconds += parseInt(match[4]) * 3600;
+                                                if (!match[1] && match[5]) bookSeconds += parseInt(match[5]) * 60;
+                                                if (!match[1] && !match[4] && match[6]) bookSeconds += parseInt(match[6]) * 86400;
+                                                if (!match[1] && !match[4] && !match[6] && match[7]) bookSeconds += parseInt(match[7]) * 3600;
+                                                if (!match[1] && !match[4] && !match[6] && !match[7] && match[8]) bookSeconds += parseInt(match[8]) * 86400;
+                                                console.log(`📚 Found book timer via DOM (${sel}): ${bookSeconds}s`);
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    // Strategy 2: Try Torn API education endpoint
+                                    if (bookSeconds === null && self.apiKey) {
+                                        try {
+                                            const eduResp = await fetch(`https://api.torn.com/v2/user?selections=education&key=${self.apiKey}`, {
+                                                headers: { 'accept': 'application/json' }
+                                            });
+                                            const eduData = await eduResp.json();
+                                            console.log('📚 Education API response:', eduData);
+
+                                            // The API may return education.current.finish_time (unix timestamp)
+                                            const edu = eduData.education || eduData.user?.education;
+                                            if (edu?.finish_time) {
+                                                bookSeconds = Math.max(0, Math.floor((edu.finish_time * 1000 - Date.now()) / 1000));
+                                                bookName = edu.current?.name ? `Book: ${edu.current.name}` : 'Book Reading';
+                                                console.log(`📚 Got book timer from education API: ${bookSeconds}s`);
+                                            } else if (edu?.time_left) {
+                                                bookSeconds = edu.time_left;
+                                                console.log(`📚 Got book timer from education time_left: ${bookSeconds}s`);
+                                            }
+                                        } catch (apiErr) {
+                                            console.warn('📚 Education API call failed:', apiErr);
+                                        }
+                                    }
+
+                                    // Strategy 3: Prompt the user (books are 31 days = 2,678,400s)
+                                    if (bookSeconds === null) {
+                                        const input = prompt(
+                                            'Book Reading Timer\n\nCould not auto-detect remaining time.\n\nEnter remaining time in days (e.g. 28.5 for 28 days 12 hours):\n(Standard books are 31 days total)',
+                                            '31'
+                                        );
+                                        if (!input) return;
+                                        const days = parseFloat(input);
+                                        if (isNaN(days) || days <= 0) {
+                                            alert('Invalid input. Please enter a number of days.');
+                                            return;
+                                        }
+                                        bookSeconds = Math.round(days * 86400);
+                                    }
+
+                                    if (bookSeconds > 0) {
+                                        timer.name = bookName;
+                                        timer.color = '#8B6914'; // warm brown/gold for book
+                                        timer.duration = bookSeconds;
+                                        timer.remainingTime = bookSeconds;
+                                        timer.endTime = Date.now() + bookSeconds * 1000;
+                                        timer.cooldownType = 'Book';
+                                        timer.type = 'countdown';
+                                        timer.isRunning = true;
+                                        timer.isApiTimer = true;
+
+                                        self.saveTimers();
+                                        self.renderTimer(timer);
+                                        self.startTimer(timer.id);
+
+                                        const daysLeft = Math.ceil(bookSeconds / 86400);
+                                        if (window.SidekickModules?.UI?.showNotification) {
+                                            window.SidekickModules.UI.showNotification('SUCCESS', `Book Reading Timer Started - ${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining`);
+                                        }
+                                    } else {
+                                        alert('No active book reading detected or the book has already finished!');
                                     }
                                 } else {
                                     // Call the cooldown check with proper context
