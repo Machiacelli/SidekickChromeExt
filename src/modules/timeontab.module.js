@@ -170,15 +170,11 @@
                 return;
             }
 
-            // Get global alternation state (synchronized across all tabs)
-            const globalState = this.getGlobalAlternationState();
+            // Synchronized alternation: derive show/hide from wall-clock time
+            // All tabs share the same phase because they all use Date.now() % 6000
+            // First 3 seconds of every 6-second window = show chain, last 3 = show label
             const now = Date.now();
-            const showChain = globalState.showChain;
-
-            // Update global state every 3 seconds
-            if (now - globalState.lastAlternate >= 3000) {
-                this.toggleGlobalAlternation();
-            }
+            const showChain = (now % 6000) < 3000;
 
             // Get page-specific timer (hospital, jail, racing, travel)
             const pageTimer = this.getPageSpecificTimer();
@@ -274,8 +270,23 @@
 
         // Get chain timer only (separated so we can alternate with page timer)
         getChainTimer() {
+            const chainBar = document.querySelector('[class*="chainBar"], [class*="chain-bar"], [class*="chainBar___"]');
             const chainTimer = document.querySelector('p.bar-timeleft___B9RGV');
             const chainValue = document.querySelector('.bar-value___uxnah');
+
+            // Exclude cooldown — if the chain bar has a cooldown class, skip
+            if (chainBar) {
+                const classList = [...chainBar.classList].join(' ');
+                if (classList.toLowerCase().includes('cooldown') || classList.toLowerCase().includes('ended')) {
+                    return null;
+                }
+            }
+
+            // Also skip if the label says 'cooldown' near the timer
+            const chainLabel = document.querySelector('[class*="bar-label"], [class*="chainLabel"]');
+            if (chainLabel && chainLabel.textContent.toLowerCase().includes('cooldown')) {
+                return null;
+            }
 
             if (chainTimer && chainTimer.textContent.trim()) {
                 const chainTime = chainTimer.textContent.trim();
@@ -320,32 +331,57 @@
                 return null;
             }
 
-            // For attack pages, try to get target name from URL or page content
+            // For attack pages, get the TARGET's name (not user's own profile)
             if (onAttackPage) {
-                // Method 1: Get from URL parameter (user2ID or XID)
-                const urlParams = new URLSearchParams(window.location.search);
-                const targetId = urlParams.get('user2ID') || urlParams.get('XID');
+                // Method 1: Torn attack page - right side is usually the target
+                // Try selectors that specifically target the opponent/defender
+                const selectors = [
+                    '[class*="defender"] [class*="name"]',
+                    '[class*="rightPlayer"] [class*="name"]',
+                    '[class*="right-player"] [class*="name"]',
+                    '[class*="target"] [class*="playerName"]',
+                    '[class*="opponent"] [class*="name"]',
+                    // Generic: second player name in the fight UI
+                    '[class*="playerInfo"] [class*="name"]:last-child',
+                ];
 
-                if (targetId) {
-                    // Try to get name from attack interface
-                    const targetNameElement = document.querySelector('[class*="target"] [class*="name"]') ||
-                        document.querySelector('[class*="opponent"] [class*="name"]') ||
-                        document.querySelector('.user.name');
-
-                    if (targetNameElement && targetNameElement.textContent) {
-                        const name = targetNameElement.textContent.trim();
+                for (const sel of selectors) {
+                    const el = document.querySelector(sel);
+                    if (el && el.textContent) {
+                        const name = el.textContent.trim();
                         if (name && name.length > 0 && name !== 'TORN') {
                             return name;
                         }
                     }
                 }
 
-                // Fallback: try page title for attack page
-                const attackTitleMatch = document.title.match(/Attack\s+(.+?)\s*\[/);
+                // Method 2: Read the page's *original* title from the <title> meta, not document.title
+                // which may already be overwritten by this module
+                const metaTitle = document.querySelector('title')?.textContent || '';
+                // Torn attack titles often look like: "Attack PlayerName [xxx] | TORN"
+                const attackTitleMatch = metaTitle.match(/Attack[\s:]+([^\[|]+)/i);
                 if (attackTitleMatch && attackTitleMatch[1]) {
-                    return attackTitleMatch[1].trim();
+                    const name = attackTitleMatch[1].trim();
+                    if (name && name !== 'TORN' && !name.includes('|')) {
+                        return name;
+                    }
                 }
+
+                // Method 3: Store the original title on first detection
+                if (!this._attackTargetName) {
+                    // Try to extract from ORIGINAL (unmodified) page title stored at init
+                    const origMatch = this.originalTitle.match(/Attack[\s:]+([^\[|\-]+)/i);
+                    if (origMatch && origMatch[1]) {
+                        this._attackTargetName = origMatch[1].trim();
+                    }
+                }
+                if (this._attackTargetName) return this._attackTargetName;
+
+                return null; // Don't show own profile on attack page
             }
+
+            // Reset attack target cache when not on attack page
+            this._attackTargetName = null;
 
             // For regular profile pages
             // Method 1: Profile header name
@@ -361,11 +397,11 @@
                 }
             }
 
-            // Method 2: Title meta tag or page title
-            const titleMatch = document.title.match(/^(.+?)\s*\[/);
+            // Method 2: Page title (safe here since we're on a profile page not attack)
+            const titleMatch = this.originalTitle.match(/^([^\[|]+)/);
             if (titleMatch && titleMatch[1]) {
                 const name = titleMatch[1].trim();
-                if (name && name !== 'TORN' && !name.includes(':') && !name.includes('Attack')) {
+                if (name && name !== 'TORN' && !name.includes(':') && !name.toLowerCase().includes('attack')) {
                     return name;
                 }
             }
