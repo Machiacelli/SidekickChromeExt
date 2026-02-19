@@ -1452,7 +1452,7 @@
                                 align-items: center;
                                 justify-content: center;
                             " title="Cooldowns">⚙️</button>
-                            <div class="dropdown-content" style="
+                            <div class="dropdown-content timer-dropdown-content" style="
                                 display: none;
                                 position: fixed;
                                 background: #333;
@@ -1515,16 +1515,6 @@
                                     font-size: 11px;
                                     transition: background 0.2s;
                                 ">Virus Coding</button>
-                                <button class="cooldown-option" data-type="Book" style="
-                                    background: none;
-                                    border: none;
-                                    color: #fff;
-                                    padding: 6px 12px;
-                                    width: 100%;
-                                    text-align: left;
-                                    font-size: 11px;
-                                    transition: background 0.2s;
-                                ">📚 Book Reading</button>
                                 <div style="border-top: 1px solid #555; margin: 4px 0;"></div>
                                 <button class="custom-timer-option" style="
                                     background: none;
@@ -1743,59 +1733,45 @@
             if (dropdownBtn && dropdownContent) {
                 console.log('🔍 Setting up dropdown for timer:', timer.id);
 
+                // Portal the dropdown to document.body to escape timer window's stacking context
+                dropdownContent.style.position = 'fixed';
+                dropdownContent.style.zIndex = '2147483647';
+                dropdownContent.style.display = 'none';
+                document.body.appendChild(dropdownContent);
+
                 dropdownBtn.addEventListener('click', function (e) {
                     e.stopPropagation();
                     console.log('🔍 Dropdown button clicked');
 
-                    // Close all other dropdowns first
-                    document.querySelectorAll('.timer-dropdown .dropdown-content').forEach(dropdown => {
-                        if (dropdown !== dropdownContent) {
-                            dropdown.style.display = 'none';
-                        }
+                    // Close all other timer dropdowns first
+                    document.querySelectorAll('.timer-dropdown-content').forEach(dd => {
+                        if (dd !== dropdownContent) dd.style.display = 'none';
                     });
 
                     // Toggle this dropdown
                     const isVisible = dropdownContent.style.display === 'block';
                     dropdownContent.style.display = isVisible ? 'none' : 'block';
-                    console.log('🔍 Dropdown visibility:', dropdownContent.style.display);
 
-                    // Position dropdown using fixed positioning
                     if (!isVisible) {
-                        // Hide scrollbar while keeping scroll functionality
-                        dropdownContent.style.scrollbarWidth = 'none';
-                        dropdownContent.style.msOverflowStyle = 'none';
+                        const btnRect = dropdownBtn.getBoundingClientRect();
+                        const ddWidth = dropdownContent.offsetWidth || 160;
+                        const ddHeight = dropdownContent.offsetHeight || 300;
+                        let left = btnRect.right - ddWidth;
+                        let top = btnRect.bottom + 2;
 
-                        setTimeout(() => {
-                            const btnRect = dropdownBtn.getBoundingClientRect();
-                            const viewportWidth = window.innerWidth;
-                            const viewportHeight = window.innerHeight;
+                        // Clamp to viewport
+                        if (left < 4) left = 4;
+                        if (left + ddWidth > window.innerWidth - 4) left = window.innerWidth - ddWidth - 4;
+                        if (top + ddHeight > window.innerHeight - 4) top = btnRect.top - ddHeight - 2;
 
-                            // Position dropdown below button
-                            dropdownContent.style.top = (btnRect.bottom + 2) + 'px';
-                            dropdownContent.style.left = (btnRect.right - 140) + 'px'; // Align right edge with new width
-
-                            // Check if dropdown goes off right edge
-                            const dropdownRect = dropdownContent.getBoundingClientRect();
-                            if (dropdownRect.right > viewportWidth) {
-                                dropdownContent.style.left = (viewportWidth - dropdownRect.width - 10) + 'px';
-                            }
-
-                            // Check if dropdown goes off left edge
-                            if (dropdownRect.left < 0) {
-                                dropdownContent.style.left = '10px';
-                            }
-
-                            // Check if dropdown goes off bottom
-                            if (dropdownRect.bottom > viewportHeight) {
-                                dropdownContent.style.top = (btnRect.top - dropdownRect.height - 2) + 'px';
-                            }
-                        }, 10);
+                        dropdownContent.style.left = left + 'px';
+                        dropdownContent.style.top = top + 'px';
                     }
                 });
 
-                // Close dropdown when clicking outside (use a more specific approach)
+                // Close when clicking outside
                 document.addEventListener('click', function (e) {
-                    if (!element.contains(e.target)) {
+                    if (!element.contains(e.target) && !dropdownContent.contains(e.target)) {
                         dropdownContent.style.display = 'none';
                     }
                 });
@@ -1873,106 +1849,6 @@
                                     } else {
                                         console.log('🦠 No active virus coding detected');
                                         alert('No active virus coding detected. Start coding a virus in Torn first!');
-                                    }
-                                } else if (cooldownType === 'Book') {
-                                    // Book Reading timer
-                                    // Strategy 1: Read from Torn taskbar DOM — the book icon tooltip/title element
-                                    let bookSeconds = null;
-                                    let bookName = 'Book Reading';
-
-                                    // Try the Torn taskbar — look for book-related countdown elements
-                                    const bookSelectors = [
-                                        '[class*="book"] [class*="time"]',
-                                        '[class*="bookIcon"] [class*="countdown"]',
-                                        '[class*="item-book"] [class*="timer"]',
-                                        // Torn's sidebar/taskbar uses title attributes for hover tooltips
-                                        '[data-tooltip*="Book"]',
-                                        '[data-tooltip*="book"]',
-                                        '[title*="book"]',
-                                    ];
-
-                                    for (const sel of bookSelectors) {
-                                        const el = document.querySelector(sel);
-                                        if (el) {
-                                            const text = (el.textContent || el.title || el.getAttribute('data-tooltip') || '').trim();
-                                            // Parse "Xd Xh Xm" or "Xh Xm" or "Xd" format
-                                            const match = text.match(/(\d+)d\s*(\d+)h\s*(\d+)m|(\d+)h\s*(\d+)m|(\d+)d\s*(\d+)h|(\d+)d/);
-                                            if (match) {
-                                                bookSeconds = 0;
-                                                if (match[1]) bookSeconds += parseInt(match[1]) * 86400; // days
-                                                if (match[2]) bookSeconds += parseInt(match[2]) * 3600;  // hours
-                                                if (match[3]) bookSeconds += parseInt(match[3]) * 60;    // mins
-                                                if (!match[1] && match[4]) bookSeconds += parseInt(match[4]) * 3600;
-                                                if (!match[1] && match[5]) bookSeconds += parseInt(match[5]) * 60;
-                                                if (!match[1] && !match[4] && match[6]) bookSeconds += parseInt(match[6]) * 86400;
-                                                if (!match[1] && !match[4] && !match[6] && match[7]) bookSeconds += parseInt(match[7]) * 3600;
-                                                if (!match[1] && !match[4] && !match[6] && !match[7] && match[8]) bookSeconds += parseInt(match[8]) * 86400;
-                                                console.log(`📚 Found book timer via DOM (${sel}): ${bookSeconds}s`);
-                                                break;
-                                            }
-                                        }
-                                    }
-
-                                    // Strategy 2: Try Torn API education endpoint
-                                    if (bookSeconds === null && self.apiKey) {
-                                        try {
-                                            const eduResp = await fetch(`https://api.torn.com/v2/user?selections=education&key=${self.apiKey}`, {
-                                                headers: { 'accept': 'application/json' }
-                                            });
-                                            const eduData = await eduResp.json();
-                                            console.log('📚 Education API response:', eduData);
-
-                                            // The API may return education.current.finish_time (unix timestamp)
-                                            const edu = eduData.education || eduData.user?.education;
-                                            if (edu?.finish_time) {
-                                                bookSeconds = Math.max(0, Math.floor((edu.finish_time * 1000 - Date.now()) / 1000));
-                                                bookName = edu.current?.name ? `Book: ${edu.current.name}` : 'Book Reading';
-                                                console.log(`📚 Got book timer from education API: ${bookSeconds}s`);
-                                            } else if (edu?.time_left) {
-                                                bookSeconds = edu.time_left;
-                                                console.log(`📚 Got book timer from education time_left: ${bookSeconds}s`);
-                                            }
-                                        } catch (apiErr) {
-                                            console.warn('📚 Education API call failed:', apiErr);
-                                        }
-                                    }
-
-                                    // Strategy 3: Prompt the user (books are 31 days = 2,678,400s)
-                                    if (bookSeconds === null) {
-                                        const input = prompt(
-                                            'Book Reading Timer\n\nCould not auto-detect remaining time.\n\nEnter remaining time in days (e.g. 28.5 for 28 days 12 hours):\n(Standard books are 31 days total)',
-                                            '31'
-                                        );
-                                        if (!input) return;
-                                        const days = parseFloat(input);
-                                        if (isNaN(days) || days <= 0) {
-                                            alert('Invalid input. Please enter a number of days.');
-                                            return;
-                                        }
-                                        bookSeconds = Math.round(days * 86400);
-                                    }
-
-                                    if (bookSeconds > 0) {
-                                        timer.name = bookName;
-                                        timer.color = '#8B6914'; // warm brown/gold for book
-                                        timer.duration = bookSeconds;
-                                        timer.remainingTime = bookSeconds;
-                                        timer.endTime = Date.now() + bookSeconds * 1000;
-                                        timer.cooldownType = 'Book';
-                                        timer.type = 'countdown';
-                                        timer.isRunning = true;
-                                        timer.isApiTimer = true;
-
-                                        self.saveTimers();
-                                        self.renderTimer(timer);
-                                        self.startTimer(timer.id);
-
-                                        const daysLeft = Math.ceil(bookSeconds / 86400);
-                                        if (window.SidekickModules?.UI?.showNotification) {
-                                            window.SidekickModules.UI.showNotification('SUCCESS', `Book Reading Timer Started - ${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining`);
-                                        }
-                                    } else {
-                                        alert('No active book reading detected or the book has already finished!');
                                     }
                                 } else {
                                     // Call the cooldown check with proper context

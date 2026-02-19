@@ -361,15 +361,6 @@
                 console.warn("⚠️ Mug Warning module not available");
             }
 
-            // Initialize Bunker Bucks Market
-            console.log('💰 Sidekick: Initializing Bunker Bucks Market...');
-            if (window.SidekickModules.BunkerBucksMarket?.init) {
-                await window.SidekickModules.BunkerBucksMarket.init();
-                console.log('✅ Sidekick: Bunker Bucks Market initialized');
-            } else {
-                console.warn('⚠️ Bunker Bucks Market module not available');
-            }
-
             // Initialize Auto Gym Switch
             console.log('💪 Sidekick: Initializing Auto Gym Switch...');
             if (window.SidekickModules.AutoGymSwitch?.init) {

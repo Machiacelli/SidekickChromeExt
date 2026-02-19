@@ -72,7 +72,6 @@
                 "src/modules/war-monitor.module.js",
                 "src/modules/chat-alert.module.js",
                 "src/modules/mug-warning.module.js",
-                "src/modules/bunker-bucks-market.module.js",
                 "src/modules/auto-gym-switch.module.js",
                 "src/modules/travel-stocks.module.js",
                 "src/modules/ui.module.js",
