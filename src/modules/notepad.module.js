@@ -568,6 +568,12 @@
 
             // Dropdown functionality
             if (dropdownBtn && dropdownContent) {
+                // Portal to body so it escapes parent overflow/stacking context
+                dropdownContent.style.position = 'fixed';
+                dropdownContent.style.zIndex = '2147483647';
+                dropdownContent.style.display = 'none';
+                document.body.appendChild(dropdownContent);
+
                 dropdownBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const isVisible = dropdownContent.style.display === 'block';
@@ -577,37 +583,17 @@
                         dropdown.style.display = 'none';
                     });
 
-                    dropdownContent.style.display = isVisible ? 'none' : 'block';
-
-                    // Smart positioning: prevent clipping at edges
                     if (!isVisible) {
-                        setTimeout(() => {
-                            const buttonRect = dropdownBtn.getBoundingClientRect();
-                            const viewportWidth = window.innerWidth;
-                            const viewportHeight = window.innerHeight;
-
-                            // Position below the button
-                            let top = buttonRect.bottom + 2;
-                            let left = buttonRect.right - 120; // Align right edge with button
-
-                            // Check if dropdown clips on the right
-                            if (left + 120 > viewportWidth) {
-                                left = viewportWidth - 120 - 5;
-                            }
-
-                            // Check if dropdown clips on the left
-                            if (left < 5) {
-                                left = 5;
-                            }
-
-                            // Check if clips on bottom
-                            if (top + 100 > viewportHeight) {
-                                top = buttonRect.top - 100 - 2; // Position above button
-                            }
-
-                            dropdownContent.style.top = `${top}px`;
-                            dropdownContent.style.left = `${left}px`;
-                        }, 0);
+                        dropdownContent.style.display = 'block';
+                        const btnRect = dropdownBtn.getBoundingClientRect();
+                        const ddWidth = dropdownContent.offsetWidth || 120;
+                        let left = btnRect.right - ddWidth;
+                        let top = btnRect.bottom + 2;
+                        if (left < 4) left = 4;
+                        if (left + ddWidth > window.innerWidth - 4) left = window.innerWidth - ddWidth - 4;
+                        if (top + dropdownContent.offsetHeight > window.innerHeight - 4) top = btnRect.top - dropdownContent.offsetHeight - 2;
+                        dropdownContent.style.left = left + 'px';
+                        dropdownContent.style.top = top + 'px';
                     }
                 });
 

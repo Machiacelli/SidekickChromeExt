@@ -675,35 +675,58 @@
             let hasChanges = false;
 
             for (const timer of this.timers) {
-                if (timer.lastUpdated && timer.isRunning && timer.type === 'countdown') {
-                    const elapsed = Math.floor((now - new Date(timer.lastUpdated).getTime()) / 1000);
-
-                    if (elapsed > 2) { // Only sync if more than 2 seconds elapsed
-                        console.log(`⏰ Timer ${timer.name}: correcting ${elapsed} seconds of drift`);
+                if (timer.isRunning && timer.type === 'countdown') {
+                    // Prefer endTime (absolute) over elapsed calculation to avoid double-counting
+                    if (timer.endTime) {
+                        const secsRemaining = Math.max(0, Math.round((timer.endTime - now) / 1000));
+                        console.log(`⏰ Timer ${timer.name}: syncing via endTime → ${secsRemaining}s remaining`);
 
                         if (timer.cooldowns) {
-                            // Update multiple cooldowns
-                            for (let cooldownType in timer.cooldowns) {
-                                timer.cooldowns[cooldownType] = Math.max(0, timer.cooldowns[cooldownType] - elapsed);
+                            // Distribute time across cooldowns proportionally based on stored ratio
+                            // The longest cooldown should match secsRemaining
+                            const maxCooldown = Math.max(...Object.values(timer.cooldowns));
+                            if (maxCooldown > 0) {
+                                const ratio = secsRemaining / maxCooldown;
+                                for (let cooldownType in timer.cooldowns) {
+                                    timer.cooldowns[cooldownType] = Math.max(0, Math.round(timer.cooldowns[cooldownType] * ratio));
+                                }
                             }
-                            timer.remainingTime = Math.max(...Object.values(timer.cooldowns));
+                            timer.remainingTime = secsRemaining;
                         } else {
-                            // Single timer
-                            timer.remainingTime = Math.max(0, timer.remainingTime - elapsed);
+                            timer.remainingTime = secsRemaining;
                         }
 
-                        // Check if timer expired while away
-                        if (timer.remainingTime <= 0) {
+                        if (secsRemaining <= 0) {
                             timer.isRunning = false;
+                            timer.remainingTime = 0;
                             console.log(`⏰ Timer ${timer.name} expired while away`);
                         }
-
                         hasChanges = true;
+                    } else if (timer.lastUpdated) {
+                        // Fallback for old timers without endTime
+                        const elapsed = Math.floor((now - new Date(timer.lastUpdated).getTime()) / 1000);
+                        if (elapsed > 2 && elapsed < 86400) { // Cap at 1 day to prevent massive jumps on old data
+                            console.log(`⏰ Timer ${timer.name}: fallback sync, ${elapsed}s elapsed`);
+                            if (timer.cooldowns) {
+                                for (let cooldownType in timer.cooldowns) {
+                                    timer.cooldowns[cooldownType] = Math.max(0, timer.cooldowns[cooldownType] - elapsed);
+                                }
+                                timer.remainingTime = Math.max(...Object.values(timer.cooldowns));
+                            } else {
+                                timer.remainingTime = Math.max(0, timer.remainingTime - elapsed);
+                            }
+                            // Assign endTime now so future syncs use it
+                            timer.endTime = now + timer.remainingTime * 1000;
+                            if (timer.remainingTime <= 0) timer.isRunning = false;
+                            hasChanges = true;
+                        }
                     }
                 }
 
-                // Update last updated time
-                timer.lastUpdated = new Date().toISOString();
+                // Update lastUpdated only for running timers (avoid stale timestamps)
+                if (timer.isRunning) {
+                    timer.lastUpdated = new Date(now).toISOString();
+                }
             }
 
             if (hasChanges) {
@@ -2050,6 +2073,13 @@
             timer.isRunning = true;
             timer.modified = new Date().toISOString();
             timer.lastUpdated = new Date().toISOString();
+            // Store absolute end time for drift-free synchronization
+            if (timer.type === 'countdown') {
+                const secsRemaining = timer.cooldowns
+                    ? Math.max(...Object.values(timer.cooldowns))
+                    : (timer.remainingTime || 0);
+                timer.endTime = Date.now() + secsRemaining * 1000;
+            }
 
             // Clear existing interval
             if (this.intervals.has(id)) {

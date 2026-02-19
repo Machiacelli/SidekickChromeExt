@@ -292,6 +292,11 @@
                 const chainTime = chainTimer.textContent.trim();
                 const chainLength = chainValue ? chainValue.textContent.trim() : '0';
 
+                // Skip if chain length is 0 (happens during chain cooldown period)
+                if (chainLength === '0' || chainLength === '') {
+                    return null;
+                }
+
                 // Only show if there's an active chain (not 00:00 and chain length >= 25)
                 if (chainTime.match(/\d+:\d+/) &&
                     chainTime !== '00:00' &&
@@ -333,8 +338,12 @@
 
             // For attack pages, get the TARGET's name (not user's own profile)
             if (onAttackPage) {
-                // Method 1: Torn attack page - right side is usually the target
-                // Try selectors that specifically target the opponent/defender
+                // Method 1: URL param user2ID — attack page URL contains the target's ID
+                // Torn attack URL: loader.php?sid=attack&user2ID=12345
+                const urlParams = new URLSearchParams(window.location.search);
+                const user2ID = urlParams.get('user2ID');
+
+                // Method 2: Torn attack page — try selectors that specifically target the opponent/defender
                 const selectors = [
                     '[class*="defender"] [class*="name"]',
                     '[class*="rightPlayer"] [class*="name"]',
@@ -343,6 +352,9 @@
                     '[class*="opponent"] [class*="name"]',
                     // Generic: second player name in the fight UI
                     '[class*="playerInfo"] [class*="name"]:last-child',
+                    // Torn attack page often has two player blocks side by side
+                    '[class*="attackFighter"]:last-child [class*="name"]',
+                    '[class*="playerBox"]:last-child [class*="name"]',
                 ];
 
                 for (const sel of selectors) {
@@ -350,24 +362,26 @@
                     if (el && el.textContent) {
                         const name = el.textContent.trim();
                         if (name && name.length > 0 && name !== 'TORN') {
+                            this._attackTargetName = name; // cache it
                             return name;
                         }
                     }
                 }
 
-                // Method 2: Read the page's *original* title from the <title> meta, not document.title
+                // Method 3: Read the page's *original* title from the <title> meta
                 // which may already be overwritten by this module
                 const metaTitle = document.querySelector('title')?.textContent || '';
                 // Torn attack titles often look like: "Attack PlayerName [xxx] | TORN"
                 const attackTitleMatch = metaTitle.match(/Attack[\s:]+([^\[|]+)/i);
                 if (attackTitleMatch && attackTitleMatch[1]) {
                     const name = attackTitleMatch[1].trim();
-                    if (name && name !== 'TORN' && !name.includes('|')) {
+                    if (name && name !== 'TORN' && !name.includes('|') && !name.includes(':')) {
+                        this._attackTargetName = name;
                         return name;
                     }
                 }
 
-                // Method 3: Store the original title on first detection
+                // Method 4: Store the original title on first detection
                 if (!this._attackTargetName) {
                     // Try to extract from ORIGINAL (unmodified) page title stored at init
                     const origMatch = this.originalTitle.match(/Attack[\s:]+([^\[|\-]+)/i);
@@ -376,6 +390,11 @@
                     }
                 }
                 if (this._attackTargetName) return this._attackTargetName;
+
+                // Method 5: Fall back to showing target ID if we have it
+                if (user2ID) {
+                    return `Player ${user2ID}`;
+                }
 
                 return null; // Don't show own profile on attack page
             }

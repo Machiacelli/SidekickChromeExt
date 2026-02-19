@@ -2026,49 +2026,40 @@
                 this.saveTodoLists();
             });
 
-            // Todo list dropdown menu - using working pattern from timer module
+            // Todo list dropdown menu
             const dropdownBtn = element.querySelector('.todolist-dropdown-btn');
             const dropdownContent = element.querySelector('.todolist-dropdown-content');
 
             if (dropdownBtn && dropdownContent) {
                 console.log('🔧 Setting up dropdown for todolist:', todoList.id);
 
+                // Portal to body so it escapes all stacking contexts
+                dropdownContent.style.position = 'fixed';
+                dropdownContent.style.zIndex = '2147483647';
+                dropdownContent.style.display = 'none';
+                document.body.appendChild(dropdownContent);
+
                 dropdownBtn.addEventListener('click', function (e) {
                     e.stopPropagation();
-                    console.log('🔧 Dropdown button clicked');
+                    const isVisible = dropdownContent.style.display === 'block';
 
-                    // Close all other dropdowns first
-                    document.querySelectorAll('.todolist-dropdown .todolist-dropdown-content').forEach(dropdown => {
-                        if (dropdown !== dropdownContent) {
-                            dropdown.style.display = 'none';
-                        }
+                    // Close all portaled dropdowns
+                    document.querySelectorAll('.todolist-dropdown-content, .linkgroup-dropdown-content, .attacklist-dropdown-content').forEach(dd => {
+                        dd.style.display = 'none';
                     });
 
-                    // Toggle this dropdown
-                    const isVisible = dropdownContent.style.display === 'block';
-                    dropdownContent.style.display = isVisible ? 'none' : 'block';
-
-                    console.log('🔧 Dropdown toggled to:', dropdownContent.style.display);
-
-                    // Smart positioning: prevent clipping at edges
                     if (!isVisible) {
-                        setTimeout(() => {
-                            const dropdownRect = dropdownContent.getBoundingClientRect();
-                            const todoRect = element.getBoundingClientRect();
-                            const viewportWidth = window.innerWidth;
-
-                            // Check if dropdown clips on the right
-                            if (dropdownRect.right > viewportWidth) {
-                                dropdownContent.style.right = '0';
-                                dropdownContent.style.left = 'auto';
-                            }
-
-                            // Check if dropdown clips on the left
-                            if (dropdownRect.left < 0) {
-                                dropdownContent.style.left = '0';
-                                dropdownContent.style.right = 'auto';
-                            }
-                        }, 0);
+                        dropdownContent.style.display = 'block';
+                        const btnRect = dropdownBtn.getBoundingClientRect();
+                        const ddWidth = dropdownContent.offsetWidth || 160;
+                        let left = btnRect.right - ddWidth;
+                        let top = btnRect.bottom + 2;
+                        if (left < 4) left = 4;
+                        if (left + ddWidth > window.innerWidth - 4) left = window.innerWidth - ddWidth - 4;
+                        if (top + dropdownContent.offsetHeight > window.innerHeight - 4) top = btnRect.top - dropdownContent.offsetHeight - 2;
+                        dropdownContent.style.left = left + 'px';
+                        dropdownContent.style.top = top + 'px';
+                        console.log('🔧 Dropdown positioned at', left, top);
                     }
                 });
 
@@ -2128,7 +2119,7 @@
             // Close dropdown when clicking outside
             document.addEventListener('click', function (e) {
                 if (!element.contains(e.target)) {
-                    dropdownContent.style.display = 'none';
+                    if (dropdownContent) dropdownContent.style.display = 'none';
                 }
             });
 

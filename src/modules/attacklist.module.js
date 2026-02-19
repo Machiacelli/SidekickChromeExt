@@ -464,16 +464,33 @@
             const dropdownContent = element.querySelector('.attacklist-dropdown-content');
 
             if (dropdownBtn && dropdownContent) {
+                // Portal to body so it escapes all stacking contexts
+                dropdownContent.style.position = 'fixed';
+                dropdownContent.style.zIndex = '2147483647';
+                dropdownContent.style.display = 'none';
+                document.body.appendChild(dropdownContent);
+
                 dropdownBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const isVisible = dropdownContent.style.display === 'block';
 
-                    // Close all other dropdowns first
-                    document.querySelectorAll('.attacklist-dropdown-content').forEach(dropdown => {
-                        dropdown.style.display = 'none';
+                    // Close all portaled dropdowns first
+                    document.querySelectorAll('.attacklist-dropdown-content, .linkgroup-dropdown-content, .todolist-dropdown-content').forEach(dd => {
+                        dd.style.display = 'none';
                     });
 
-                    dropdownContent.style.display = isVisible ? 'none' : 'block';
+                    if (!isVisible) {
+                        dropdownContent.style.display = 'block';
+                        const btnRect = dropdownBtn.getBoundingClientRect();
+                        const ddWidth = dropdownContent.offsetWidth || 120;
+                        let left = btnRect.right - ddWidth;
+                        let top = btnRect.bottom + 2;
+                        if (left < 4) left = 4;
+                        if (left + ddWidth > window.innerWidth - 4) left = window.innerWidth - ddWidth - 4;
+                        if (top + dropdownContent.offsetHeight > window.innerHeight - 4) top = btnRect.top - dropdownContent.offsetHeight - 2;
+                        dropdownContent.style.left = left + 'px';
+                        dropdownContent.style.top = top + 'px';
+                    }
                 });
 
                 // Close dropdown when clicking outside
