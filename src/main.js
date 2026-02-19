@@ -361,6 +361,15 @@
                 console.warn("⚠️ Mug Warning module not available");
             }
 
+            // Initialize Mug Calculator Module
+            console.log("🥊 Sidekick: Initializing Mug Calculator...");
+            if (window.SidekickModules.MugCalculator?.initialize) {
+                await window.SidekickModules.MugCalculator.initialize();
+                console.log("✅ Sidekick: Mug Calculator initialized");
+            } else {
+                console.warn("⚠️ Mug Calculator module not available");
+            }
+
             // Initialize Auto Gym Switch
             console.log('💪 Sidekick: Initializing Auto Gym Switch...');
             if (window.SidekickModules.AutoGymSwitch?.init) {
