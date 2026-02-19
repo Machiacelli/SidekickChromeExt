@@ -1696,7 +1696,7 @@
                 min-height: 200px;
                 z-index: 1000;
                 resize: ${todoList.pinned ? 'none' : 'both'};
-                overflow: hidden;
+                overflow: visible;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.4);
             `;
 

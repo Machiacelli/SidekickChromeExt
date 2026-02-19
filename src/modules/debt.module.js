@@ -274,8 +274,8 @@
             let updatedCount = 0;
 
             for (const entry of this.debtsAndLoans) {
-                if (entry.userId) {
-                    const lastAction = await this.fetchUserActivity(entry.userId);
+                if (entry.playerId) {
+                    const lastAction = await this.fetchUserActivity(entry.playerId);
                     if (lastAction) {
                         entry.lastAction = lastAction;
                         updatedCount++;
@@ -2624,7 +2624,7 @@ ${entry.frozen ? '\nStatus: FROZEN' : ''}`;
                     timestamp: Date.now(),
                     type: 'debt',
                     title: alert.entry.isDebt ? 'Debt Alert' : 'Loan Alert',
-                    message: `${alert.icon} ${alert.message} - ${alert.entry.otherPartyName}`,
+                    message: `${alert.icon} ${alert.message} - ${alert.entry.playerName}`,
                     severity: alert.severity,
                     data: {
                         entryId: alert.entry.id,
