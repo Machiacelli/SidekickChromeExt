@@ -2,7 +2,7 @@
  * Mug Calculator Module
  * Calculates potential mug value from Item Market and Bazaar listings
  * 100% client-side - uses only Torn's official API, no third-party backends
- * Version: 2.0.0 - Fully Local Implementation
+ * Version: 2.1.0 - Rich popup with life/faction/revivable/last-action
  */
 
 const MugCalculatorModule = (() => {
@@ -12,20 +12,17 @@ const MugCalculatorModule = (() => {
     const processedRows = new Set();
     let isEnabled = false;
 
-    // Module API
     return {
         name: 'MugCalculator',
 
         async initialize() {
             console.log('[Sidekick] Initializing Mug Calculator Module...');
 
-            // Check if Core module is available
             if (!window.SidekickModules?.Core?.ChromeStorage) {
                 console.warn('[Sidekick] Core module not available, Mug Calculator disabled');
                 return;
             }
 
-            // Check if module is enabled
             const storageKey = 'sidekick_mug_calculator';
             const settings = await window.SidekickModules.Core.ChromeStorage.get(storageKey) || {};
             isEnabled = settings.isEnabled === true;
@@ -38,7 +35,6 @@ const MugCalculatorModule = (() => {
             this.addGlobalStyles();
             this.setupURLChangeListener();
 
-            // Wait for page load and setup
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', () => this.setup());
             } else {
@@ -61,7 +57,6 @@ const MugCalculatorModule = (() => {
                 setInterval(() => this.processAllMarketRows(), 2000);
             }, 1000);
 
-            // Close popups when clicking outside
             document.addEventListener('click', (e) => {
                 if (!currentPopups.some(popup => popup.contains(e.target))) {
                     this.closeAllPopups();
@@ -71,7 +66,7 @@ const MugCalculatorModule = (() => {
 
         addGlobalStyles() {
             const css = `
-            .infoIcon {
+            .mugInfoIcon {
                 margin-left: 5px;
                 cursor: pointer;
                 display: inline-flex;
@@ -82,48 +77,69 @@ const MugCalculatorModule = (() => {
                 border-radius: 50%;
                 width: 16px;
                 height: 16px;
-                font-size: 12px;
+                font-size: 11px;
+                font-weight: bold;
                 text-align: center;
                 line-height: 16px;
                 z-index: 1000 !important;
+                flex-shrink: 0;
             }
-            .infoPopup {
-                position: absolute;
-                color: black;
+            .mugInfoIcon:hover { background: #0056b3; }
+            .mugInfoPopup {
+                position: fixed;
+                color: #333;
                 border: 1px solid #ccc;
-                padding: 10px;
-                border-radius: 5px;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                padding: 12px;
+                border-radius: 6px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.18);
                 font-size: 12px;
-                z-index: 2000;
+                z-index: 99999;
                 display: none;
-                background-color: white;
+                background-color: #fff;
+                min-width: 220px;
+                max-width: 260px;
+                font-family: Arial, sans-serif;
+                line-height: 1.5;
             }
-            .infoPopup.visible {
-                display: block !important;
-            }
-            .popupCloseButton {
+            .mugInfoPopup.visible { display: block !important; }
+            .mugPopupClose {
                 position: absolute;
-                top: 5px;
-                right: 5px;
+                top: 6px;
+                right: 6px;
                 background: #d9534f;
                 color: white;
                 border: none;
                 border-radius: 50%;
-                width: 20px;
-                height: 20px;
-                font-size: 14px;
-                line-height: 20px;
+                width: 18px;
+                height: 18px;
+                font-size: 13px;
+                line-height: 18px;
                 text-align: center;
                 cursor: pointer;
+                padding: 0;
             }
-            .popupCloseButton:hover {
-                background: #c9302c;
+            .mugPopupClose:hover { background: #c9302c; }
+            .mugLifeBar {
+                height: 6px;
+                border-radius: 3px;
+                margin: 2px 0 6px 0;
+                background: #e0e0e0;
+                overflow: hidden;
+            }
+            .mugLifeBarFill {
+                height: 100%;
+                border-radius: 3px;
+                transition: width 0.3s;
+            }
+            .mugSection {
+                border-top: 1px solid #eee;
+                margin-top: 8px;
+                padding-top: 8px;
             }
             `;
-            const styleElement = document.createElement('style');
-            styleElement.textContent = css;
-            document.head.appendChild(styleElement);
+            const el = document.createElement('style');
+            el.textContent = css;
+            document.head.appendChild(el);
         },
 
         waitForElements(selector, callback, maxAttempts = 10, interval = 500) {
@@ -145,457 +161,354 @@ const MugCalculatorModule = (() => {
             return match ? match[1] : null;
         },
 
-        // Calculate mug amount based on merits and plunder percentage
-        calculateMugAmount(totalMoney, mugMerits, plunderPercent, hasClothingStoreProtection = false) {
-            console.log('[Sidekick] Mug Calculator: calculateMugAmount inputs:', {
-                totalMoney,
-                mugMerits,
-                plunderPercent,
-                hasClothingStoreProtection
-            });
-
-            // Base plunder percentage
-            const basePlunder = plunderPercent / 100;
-
-            // Each mug merit adds 25% to the plunder
-            const meritBonus = 1 + (mugMerits * 0.25);
-
-            // Calculate base mug amount
-            let mugAmount = Math.floor(totalMoney * basePlunder * meritBonus);
-
-            console.log('[Sidekick] Mug Calculator: Base calculation:', {
-                basePlunder,
-                meritBonus,
-                mugAmount
-            });
-
-            // Apply Clothing Store 7+ stars protection (75% reduction)
-            if (hasClothingStoreProtection) {
-                mugAmount = Math.floor(mugAmount * 0.25);
-                console.log('[Sidekick] Mug Calculator: Applied 75% Clothing Store protection');
+        // Mug formula matching Torn's actual mechanics:
+        // Base steal = 10% + 1% per merit (capped at 20% with 10 merits)
+        // Plunder add-on: extra flat % if wearing plunder equipment
+        // Clothing Store 7+ stars: 75% reduction on the stolen amount
+        calculateMugAmount(cashOnHand, mugMerits, plunderPercent, hasClothingProtection) {
+            const baseRate = 0.10 + (Math.min(mugMerits, 10) * 0.01); // 10–20%
+            const plunderRate = plunderPercent > 0 ? (plunderPercent / 100) : 0;
+            let mugAmount = Math.floor(cashOnHand * (baseRate + plunderRate));
+            if (hasClothingProtection) {
+                mugAmount = Math.floor(mugAmount * 0.25); // 75% reduction
             }
-
             return mugAmount;
         },
 
-        // Determine background color based on status
-        getStatusColor(status) {
-            const statusLower = status.toLowerCase();
-            if (statusLower.includes('hospital')) return '#ffcccc'; // Light red
-            if (statusLower.includes('jail')) return '#ffe6cc'; // Light orange
-            if (statusLower.includes('okay') || statusLower.includes('idle')) return '#ccffcc'; // Light green
-            if (statusLower.includes('traveling') || statusLower.includes('abroad')) return '#cce6ff'; // Light blue
-            return '#f0f0f0'; // Light gray default
+        getStatusColor(state) {
+            if (!state) return '#f0f0f0';
+            const s = state.toLowerCase();
+            if (s.includes('hospital')) return '#ffd6d6';
+            if (s.includes('jail')) return '#ffe5cc';
+            if (s.includes('traveling') || s.includes('abroad')) return '#d6eaff';
+            if (s.includes('okay') || s.includes('idle')) return '#d6f5d6';
+            return '#f0f0f0';
         },
 
-        // Format status text
-        formatStatus(statusObj) {
-            if (!statusObj) return 'Unknown';
-
-            const { state, description, until } = statusObj;
-
-            if (state === 'Okay' || state === 'Idle') {
-                return 'Online';
-            }
-
-            if (state === 'Hospital') {
-                const timeLeft = until ? Math.max(0, until - Date.now() / 1000) : 0;
-                const hours = Math.floor(timeLeft / 3600);
-                const minutes = Math.floor((timeLeft % 3600) / 60);
-                if (hours > 0) {
-                    return `Hospital (${hours}h ${minutes}m)`;
-                } else if (minutes > 0) {
-                    return `Hospital (${minutes}m)`;
-                }
-                return 'Hospital';
-            }
-
-            return description || state || 'Unknown';
+        // Format a relative "last action" string from a unix timestamp
+        formatRelativeTime(unixTs) {
+            if (!unixTs) return 'Unknown';
+            const diff = Math.floor((Date.now() / 1000) - unixTs);
+            if (diff < 60) return `${diff}s ago`;
+            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+            return `${Math.floor(diff / 86400)}d ago`;
         },
 
-        createInfoPopup(playerData, mugAmount, newCostPerItem, totalMoney) {
-            const popup = document.createElement("div");
-            popup.className = "infoPopup";
+        createInfoPopup(player, mugAmount, newCostPerItem, cashOnHand) {
+            const popup = document.createElement('div');
+            popup.className = 'mugInfoPopup';
 
-            const status = this.formatStatus(playerData.status);
-            const backgroundColor = this.getStatusColor(status);
-            const mugPercentage = totalMoney > 0 ? (mugAmount / totalMoney * 100) : 0;
+            const state = player.status?.state || 'Unknown';
+            const statusDesc = player.status?.description || state;
+            const until = player.status?.until || 0;
+            const bgColor = this.getStatusColor(state);
 
-            // Add protection warning if applicable
-            const protectionWarning = playerData.hasClothingStoreProtection
-                ? `<div style="background: #fff3cd; padding: 5px; margin-top: 5px; border-radius: 3px; border: 1px solid #ffc107;">
-                    ⚠️ <strong>75% Mug Protection Active</strong><br>
-                    <small>Clothing Store (7+ stars)</small>
-                   </div>`
+            // Status countdown
+            let statusLine = `<strong>Status:</strong> ${statusDesc}`;
+            if (until > Date.now() / 1000 && until > 0) {
+                const secsLeft = Math.max(0, Math.floor(until - Date.now() / 1000));
+                const m = Math.floor(secsLeft / 60);
+                const s = secsLeft % 60;
+                statusLine += ` <span style="font-weight:normal;font-size:11px">(${m}m ${s}s)</span>`;
+            }
+
+            // Life bar
+            const lifeMax = player.life?.maximum || player.life?.max_life || 0;
+            const lifeCur = player.life?.current || player.life?.current_life || 0;
+            const lifePct = lifeMax > 0 ? Math.round((lifeCur / lifeMax) * 100) : 0;
+            const lifeColor = lifePct < 33 ? '#d9534f' : lifePct < 66 ? '#f0ad4e' : '#5cb85c';
+            const revivable = player.revivable ? '<span style="color:#5cb85c;font-weight:bold">YES</span>'
+                : '<span style="color:#d9534f;font-weight:bold">NO</span>';
+
+            // Faction
+            const factionLine = player.faction?.faction_name
+                ? `<strong>Faction:</strong> ${player.faction.faction_tag ? `[${player.faction.faction_tag}] ` : ''}${player.faction.faction_name}<br>`
                 : '';
 
-            popup.innerHTML = `
-                <button class="popupCloseButton">×</button>
-                <strong>Level:</strong> ${playerData.level || 'Unknown'}<br>
-                <strong>Status:</strong> ${status}<br>
-                <strong>Total Money:</strong> $${totalMoney.toLocaleString()}<br>
-                <strong>Potential Mug:</strong> ~${mugPercentage.toFixed(2)}% ≈ $${mugAmount.toLocaleString()}<br>
-                <strong>New Cost Per Item:</strong> $${newCostPerItem.toLocaleString()}
-                ${protectionWarning}
-            `;
-            popup.style.backgroundColor = backgroundColor;
+            // Clothing protection warning
+            const protectionNote = player.hasClothingProtection
+                ? `<div style="background:#fff3cd;padding:4px 6px;border-radius:3px;border:1px solid #ffc107;margin-top:6px;font-size:11px;">⚠️ <strong>75% Mug Protection</strong> (Clothing Store 7★)</div>`
+                : '';
 
-            const closeButton = popup.querySelector(".popupCloseButton");
-            closeButton.addEventListener("click", () => {
+            const mugPct = cashOnHand > 0 ? (mugAmount / cashOnHand * 100).toFixed(2) : '0.00';
+
+            popup.innerHTML = `
+                <button class="mugPopupClose" title="Close">×</button>
+                <div>
+                    <strong>Level:</strong> ${player.level || '?'}<br>
+                    ${statusLine}<br>
+                    <strong>Last Action:</strong> ${this.formatRelativeTime(player.last_action?.timestamp)}<br>
+                    ${factionLine}
+                </div>
+                <div class="mugSection">
+                    <strong>Life:</strong> <span style="color:${lifeColor};font-weight:bold">${lifeCur.toLocaleString()}</span> / ${lifeMax.toLocaleString()} &nbsp;<small>(Revive: ${revivable})</small>
+                    <div class="mugLifeBar"><div class="mugLifeBarFill" style="width:${lifePct}%;background:${lifeColor}"></div></div>
+                </div>
+                <div class="mugSection">
+                    <strong>Cash on hand:</strong> $${cashOnHand.toLocaleString()}<br>
+                    <strong>Mug:</strong> ~${mugPct}% ≈ <strong>$${mugAmount.toLocaleString()}</strong><br>
+                    <strong>Item cost after mug:</strong> $${newCostPerItem.toLocaleString()}
+                    ${protectionNote}
+                </div>
+            `;
+
+            popup.style.borderLeft = `5px solid ${lifeColor}`;
+            popup.style.backgroundColor = bgColor;
+
+            popup.querySelector('.mugPopupClose').addEventListener('click', () => {
                 popup.remove();
-                const index = currentPopups.indexOf(popup);
-                if (index > -1) {
-                    currentPopups.splice(index, 1);
-                }
+                const idx = currentPopups.indexOf(popup);
+                if (idx > -1) currentPopups.splice(idx, 1);
             });
+
             return popup;
         },
 
         positionPopup(icon, popup) {
             const rect = icon.getBoundingClientRect();
-            let top = rect.bottom + window.scrollY + 5;
-            let left = rect.left + window.scrollX;
-
             popup.style.visibility = 'hidden';
             popup.style.display = 'block';
-            const popupHeight = popup.offsetHeight;
-            const popupWidth = popup.offsetWidth;
+            const ph = popup.offsetHeight;
+            const pw = popup.offsetWidth;
             popup.style.display = '';
             popup.style.visibility = '';
 
-            if (rect.bottom + popupHeight + 5 > window.innerHeight) {
-                top = rect.top + window.scrollY - popupHeight - 5;
-            }
-            if (left + popupWidth > window.innerWidth) {
-                left = window.innerWidth - popupWidth - 5;
-            }
+            let top = rect.bottom + 5;
+            let left = rect.left;
+            if (top + ph > window.innerHeight - 5) top = rect.top - ph - 5;
+            if (left + pw > window.innerWidth - 5) left = window.innerWidth - pw - 5;
+            if (left < 5) left = 5;
             popup.style.top = `${top}px`;
             popup.style.left = `${left}px`;
         },
 
         closeAllPopups() {
-            currentPopups.forEach(popup => popup.remove());
+            currentPopups.forEach(p => p.remove());
             currentPopups = [];
         },
 
-        // Fetch player data from Torn API (client-side, no third-party backend)
+        // Fetch player profile from Torn API via background script
         async fetchPlayerData(playerId) {
-            // Get API key from Chrome storage
             const apiKey = await window.SidekickModules.Core.ChromeStorage.get('sidekick_api_key');
             if (!apiKey) {
-                console.error('[Sidekick] Mug Calculator: No API key found');
-                if (window.SidekickModules?.Core?.NotificationSystem) {
-                    window.SidekickModules.Core.NotificationSystem.show('Mug Calculator', 'Please set your API key in settings', 'error', 3000);
-                }
+                console.error('[MugCalc] No API key found');
                 return null;
             }
 
-            // Check cache first
-            const cacheKey = `player_${playerId}`;
+            const cacheKey = `mc_${playerId}`;
             const now = Date.now();
-
-            if (dataCache[cacheKey] && (now - dataCache[cacheKey].timestamp < CACHE_DURATION)) {
-                console.log('[Sidekick] Mug Calculator: Using cached data for player', playerId);
+            if (dataCache[cacheKey] && (now - dataCache[cacheKey].ts < CACHE_DURATION)) {
                 return dataCache[cacheKey].data;
             }
 
             try {
-                console.log('[Sidekick] Mug Calculator: Fetching player data from Torn API...', playerId);
-
-                // Fetch directly from Torn API using background script
+                // profile selection returns: level, status, life, faction, last_action, revivable, job
                 const response = await new Promise((resolve, reject) => {
                     chrome.runtime.sendMessage({
                         action: 'fetchTornApi',
-                        apiKey: apiKey,
+                        apiKey,
                         selections: ['profile'],
                         userId: playerId
-                    }, (response) => {
-                        if (chrome.runtime.lastError) {
-                            reject(new Error(chrome.runtime.lastError.message));
-                        } else {
-                            resolve(response);
-                        }
+                    }, (res) => {
+                        if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+                        else resolve(res);
                     });
                 });
 
-                console.log('[Sidekick] Mug Calculator: Raw API response:', response);
+                if (!response?.success) throw new Error(response?.error || 'API fetch failed');
 
-                if (!response.success) {
-                    throw new Error(response.error || 'Failed to fetch player data');
-                }
+                const p = response.profile;
+                if (!p) throw new Error('No profile in response');
 
-                // Extract profile data from the response
-                const profile = response.profile;
-                if (!profile) {
-                    throw new Error('No profile data in response');
-                }
-
-                // Check for Clothing Store company with 7+ stars (75% mug protection)
-                let hasClothingStoreProtection = false;
-                if (profile.job && profile.job.company_id) {
-                    console.log('[Sidekick] Mug Calculator: Player has job:', profile.job);
-
-                    // Fetch company details to check if it's a Clothing Store with 7+ stars
+                // Check Clothing Store 7+ star protection
+                let hasClothingProtection = false;
+                if (p.job?.company_id) {
                     try {
-                        const companyId = profile.job.company_id;
-                        const companyResponse = await new Promise((resolve, reject) => {
+                        const cr = await new Promise((resolve, reject) => {
                             chrome.runtime.sendMessage({
                                 action: 'fetchTornApi',
-                                apiKey: apiKey,
+                                apiKey,
                                 selections: [],
-                                endpoint: `company/${companyId}`
-                            }, (response) => {
-                                if (chrome.runtime.lastError) {
-                                    reject(new Error(chrome.runtime.lastError.message));
-                                } else {
-                                    resolve(response);
-                                }
+                                endpoint: `company/${p.job.company_id}`
+                            }, (res) => {
+                                if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+                                else resolve(res);
                             });
                         });
-
-                        if (companyResponse.success && companyResponse.company) {
-                            const company = companyResponse.company;
-                            const companyType = company.company_type || 0;
-                            const stars = company.stars || 0;
-
-                            console.log(`[Sidekick] Mug Calculator: Company type: ${companyType}, stars: ${stars}`);
-
-                            // Company type 5 is Clothing Store
-                            // 7+ stars provides 75% mug protection
-                            if (companyType === 5 && stars >= 7) {
-                                hasClothingStoreProtection = true;
-                                console.log('[Sidekick] Mug Calculator: ⚠️ Player has 75% Clothing Store protection!');
-                            }
+                        if (cr?.success && cr.company?.company_type === 5 && (cr.company?.stars || 0) >= 7) {
+                            hasClothingProtection = true;
                         }
-                    } catch (error) {
-                        console.warn('[Sidekick] Mug Calculator: Failed to fetch company data:', error);
-                    }
+                    } catch { /* ignore — non-critical */ }
                 }
 
-                // Extract relevant data from profile
-                const playerData = {
-                    level: profile.level || 0,
-                    status: profile.status || { state: 'Unknown', description: 'Unknown' },
-                    name: profile.name || 'Unknown',
-                    player_id: profile.player_id || playerId,
-                    faction: profile.faction || null,
-                    job: profile.job || null,
-                    hasClothingStoreProtection: hasClothingStoreProtection
+                // money_onhand from personalstats is the cleanest "cash in pocket" field
+                // It comes from the profile selection under personal_stats in some API versions.
+                // Fall back to 0 — caller will use the market listing value instead.
+                const cashOnHand = p.money_onhand || p.moneyOnHand || p.personal_stats?.moneyOnHand || 0;
+
+                const data = {
+                    level: p.level || 0,
+                    status: p.status || { state: 'Unknown' },
+                    life: p.life || { current: 0, maximum: 0 },
+                    last_action: p.last_action || null,
+                    revivable: p.revivable || false,
+                    faction: p.faction || null,
+                    cashOnHand,
+                    hasClothingProtection
                 };
 
-                console.log('[Sidekick] Mug Calculator: Processed player data:', playerData);
+                dataCache[cacheKey] = { data, ts: now };
+                return data;
 
-                // Cache the result
-                dataCache[cacheKey] = { data: playerData, timestamp: now };
-
-                return playerData;
-
-            } catch (error) {
-                console.error("[Sidekick] Mug Calculator: Error fetching player data:", error);
-                if (window.SidekickModules?.Core?.NotificationSystem) {
-                    window.SidekickModules.Core.NotificationSystem.show('Mug Calculator', `Failed to fetch data: ${error.message}`, 'error', 3000);
-                }
+            } catch (err) {
+                console.error('[MugCalc] fetchPlayerData error:', err);
                 return null;
             }
         },
 
-        async handleMugIconClick(totalMoney, quantity, threshold, sellerLink, icon) {
+        async handleMugIconClick(listingTotal, quantity, threshold, sellerLink, icon) {
             try {
-                // Get settings from Chrome storage
                 const mugMerits = parseInt(await window.SidekickModules.Core.ChromeStorage.get('mugMerits') || 0, 10);
-                const plunderPercent = parseFloat(await window.SidekickModules.Core.ChromeStorage.get('mugPlunder') || 0);
-
-                console.log('[Sidekick] Mug Calculator: Settings loaded:', { mugMerits, plunderPercent, threshold });
+                const plunderPct = parseFloat(await window.SidekickModules.Core.ChromeStorage.get('mugPlunder') || 0);
 
                 const playerId = this.extractUserId(sellerLink.href);
-                if (!playerId) {
-                    console.error('[Sidekick] Mug Calculator: Could not extract player ID from link');
-                    if (window.SidekickModules?.Core?.NotificationSystem) {
-                        window.SidekickModules.Core.NotificationSystem.show('Mug Calculator', 'Could not find player ID', 'error', 3000);
-                    }
-                    return;
-                }
+                if (!playerId) { console.error('[MugCalc] No player ID'); return; }
 
-                console.log('[Sidekick] Mug Calculator: Fetching data for player:', playerId);
+                const player = await this.fetchPlayerData(playerId);
+                if (!player) return;
 
-                // Fetch player data from Torn API
-                const playerData = await this.fetchPlayerData(playerId);
+                // Use cash on hand from API if available; otherwise use listing total as a proxy
+                const cashOnHand = player.cashOnHand > 0 ? player.cashOnHand : listingTotal;
 
-                if (playerData) {
-                    // Calculate mug amount client-side (with protection check)
-                    const mugAmount = this.calculateMugAmount(
-                        totalMoney,
-                        mugMerits,
-                        plunderPercent,
-                        playerData.hasClothingStoreProtection
-                    );
-                    const newCostPerItem = Math.floor((totalMoney - mugAmount) / quantity);
+                const mugAmount = this.calculateMugAmount(cashOnHand, mugMerits, plunderPct, player.hasClothingProtection);
+                const newCostPerItem = quantity > 0 ? Math.floor((listingTotal - mugAmount) / quantity) : 0;
 
-                    // Create and display popup
-                    const popup = this.createInfoPopup(playerData, mugAmount, newCostPerItem, totalMoney);
-                    document.body.appendChild(popup);
-                    this.positionPopup(icon, popup);
-                    popup.classList.add("visible");
-                    currentPopups.push(popup);
-                    console.log('[Sidekick] Mug Calculator: Popup displayed successfully');
-                } else {
-                    console.error('[Sidekick] Mug Calculator: No data returned from fetchUserData');
-                    if (window.SidekickModules?.Core?.NotificationSystem) {
-                        window.SidekickModules.Core.NotificationSystem.show('Mug Calculator', 'Failed to fetch user data', 'error', 3000);
-                    }
-                }
-            } catch (error) {
-                console.error('[Sidekick] Mug Calculator: Error in handleMugIconClick:', error);
-                if (window.SidekickModules?.Core?.NotificationSystem) {
-                    window.SidekickModules.Core.NotificationSystem.show('Mug Calculator', `Error: ${error.message}`, 'error', 3000);
-                }
+                const popup = this.createInfoPopup(player, mugAmount, newCostPerItem, cashOnHand);
+                document.body.appendChild(popup);
+                this.positionPopup(icon, popup);
+                popup.classList.add('visible');
+                currentPopups.push(popup);
+
+            } catch (err) {
+                console.error('[MugCalc] handleMugIconClick error:', err);
             }
         },
 
         async attachInfoIconForMarketRow(row) {
-            if (processedRows.has(row) && row.querySelector(".infoIcon")) return;
-            if (processedRows.has(row) && !row.querySelector(".infoIcon")) {
-                processedRows.delete(row);
-            }
+            if (processedRows.has(row) && row.querySelector('.mugInfoIcon')) return;
+            if (processedRows.has(row) && !row.querySelector('.mugInfoIcon')) processedRows.delete(row);
 
             const honorElem = row.querySelector('.honorWrap___BHau4 a.linkWrap___ZS6r9');
-            const priceElement = row.querySelector(".price___Uwiv2") || row.querySelector(".price___v8rRx");
+            const priceElement = row.querySelector('.price___Uwiv2') || row.querySelector('.price___v8rRx');
             if (!honorElem || !priceElement) return;
 
-            const price = parseInt(priceElement.textContent.replace("$", "").replace(/,/g, ""), 10);
-            const availableText = row.querySelector(".available___xegv_")?.textContent.replace(/ available|,/g, "") ||
-                row.querySelector(".available___jtANf")?.textContent.replace(/ available|,/g, "") || "0";
-            const available = parseInt(availableText, 10);
-            const totalMoney = price * available;
+            const price = parseInt(priceElement.textContent.replace('$', '').replace(/,/g, ''), 10);
+            const availText = row.querySelector('.available___xegv_')?.textContent.replace(/ available|,/g, '')
+                || row.querySelector('.available___jtANf')?.textContent.replace(/ available|,/g, '')
+                || '0';
+            const available = parseInt(availText, 10);
+            const listingTotal = price * available;
 
             const threshold = parseInt(await window.SidekickModules.Core.ChromeStorage.get('mugThreshold') || 0, 10);
+            if (listingTotal < threshold) return;
+            if (row.querySelector('.mugInfoIcon')) { processedRows.add(row); return; }
 
-            if (totalMoney < threshold) return;
-            if (row.querySelector(".infoIcon")) {
-                processedRows.add(row);
-                return;
-            }
+            const icon = document.createElement('div');
+            icon.className = 'mugInfoIcon';
+            icon.textContent = 'i';
+            priceElement.parentNode.insertBefore(icon, priceElement.nextSibling);
 
-            const infoIcon = document.createElement("div");
-            infoIcon.className = "infoIcon";
-            infoIcon.textContent = "i";
-            priceElement.parentNode.insertBefore(infoIcon, priceElement.nextSibling);
-
-            infoIcon.addEventListener("click", (e) => {
+            icon.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.closeAllPopups();
-                this.handleMugIconClick(totalMoney, available, threshold, honorElem, infoIcon);
+                this.handleMugIconClick(listingTotal, available, threshold, honorElem, icon);
             });
 
             processedRows.add(row);
         },
 
         async attachInfoIconForBazaarRow(row) {
-            if (processedRows.has(row) && row.querySelector(".infoIcon")) return;
-            if (processedRows.has(row) && !row.querySelector(".infoIcon")) {
-                processedRows.delete(row);
-            }
+            if (processedRows.has(row) && row.querySelector('.mugInfoIcon')) return;
+            if (processedRows.has(row) && !row.querySelector('.mugInfoIcon')) processedRows.delete(row);
 
-            const cells = row.querySelectorAll("td");
+            const cells = row.querySelectorAll('td');
             if (cells.length < 4) return;
 
-            const priceText = cells[0].innerText;
-            const quantityText = cells[1].innerText;
-            const price = parseInt(priceText.replace("$", "").replace(/,/g, ""), 10);
-            const quantity = parseInt(quantityText.replace(/,/g, ""), 10);
-            const totalMoney = price * quantity;
+            const price = parseInt(cells[0].innerText.replace('$', '').replace(/,/g, ''), 10);
+            const quantity = parseInt(cells[1].innerText.replace(/,/g, ''), 10);
+            const listingTotal = price * quantity;
 
             const threshold = parseInt(await window.SidekickModules.Core.ChromeStorage.get('mugThreshold') || 0, 10);
-
-            if (totalMoney < threshold) return;
+            if (listingTotal < threshold) return;
 
             const sellerLink = cells[3].querySelector("a[href*='profiles.php?XID=']");
             if (!sellerLink) return;
+            if (row.querySelector('.mugInfoIcon')) { processedRows.add(row); return; }
 
-            if (row.querySelector(".infoIcon")) {
-                processedRows.add(row);
-                return;
-            }
+            const icon = document.createElement('div');
+            icon.className = 'mugInfoIcon';
+            icon.textContent = 'i';
+            cells[3].appendChild(icon);
 
-            const infoIcon = document.createElement("div");
-            infoIcon.className = "infoIcon";
-            infoIcon.textContent = "i";
-            cells[3].appendChild(infoIcon);
-
-            infoIcon.addEventListener("click", (e) => {
+            icon.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.closeAllPopups();
-                this.handleMugIconClick(totalMoney, quantity, threshold, sellerLink, infoIcon);
+                this.handleMugIconClick(listingTotal, quantity, threshold, sellerLink, icon);
             });
 
             processedRows.add(row);
         },
 
         processAllMarketRows() {
-            const allRows = document.querySelectorAll('.rowWrapper___me3Ox, .sellerRow___Ca2pK');
-            allRows.forEach(row => this.attachInfoIconForMarketRow(row));
+            document.querySelectorAll('.rowWrapper___me3Ox, .sellerRow___Ca2pK')
+                .forEach(row => this.attachInfoIconForMarketRow(row));
         },
 
         observeMarketRows() {
             const container = document.querySelector('.sellerListWrapper___PN32N');
             if (!container) return;
-
-            const observer = new MutationObserver((mutations) => {
-                mutations.forEach(mutation => {
-                    mutation.addedNodes.forEach(node => {
-                        if (node.nodeType === 1) {
-                            if (node.matches('.rowWrapper___me3Ox, .sellerRow___Ca2pK')) {
-                                this.attachInfoIconForMarketRow(node);
-                            } else {
-                                const newRows = node.querySelectorAll?.('.rowWrapper___me3Ox, .sellerRow___Ca2pK');
-                                newRows?.forEach(row => this.attachInfoIconForMarketRow(row));
-                            }
-                        }
-                    });
-                });
-            });
-            observer.observe(container, { childList: true, subtree: true });
+            new MutationObserver((mutations) => {
+                mutations.forEach(m => m.addedNodes.forEach(node => {
+                    if (node.nodeType !== 1) return;
+                    if (node.matches('.rowWrapper___me3Ox, .sellerRow___Ca2pK')) {
+                        this.attachInfoIconForMarketRow(node);
+                    } else {
+                        node.querySelectorAll?.('.rowWrapper___me3Ox, .sellerRow___Ca2pK')
+                            ?.forEach(r => this.attachInfoIconForMarketRow(r));
+                    }
+                }));
+            }).observe(container, { childList: true, subtree: true });
         },
 
         processAllBazaarRows() {
-            const bazaarRows = document.querySelectorAll('#fullListingsView table tbody tr, #topCheapestView table tbody tr');
-            bazaarRows.forEach(row => this.attachInfoIconForBazaarRow(row));
+            document.querySelectorAll('#fullListingsView table tbody tr, #topCheapestView table tbody tr')
+                .forEach(row => this.attachInfoIconForBazaarRow(row));
         },
 
         observeBazaarRows() {
-            const bazaarContainers = document.querySelectorAll('#fullListingsView, #topCheapestView');
-            bazaarContainers.forEach(container => {
-                const observer = new MutationObserver((mutations) => {
-                    mutations.forEach(mutation => {
-                        mutation.addedNodes.forEach(node => {
-                            if (node.nodeType === 1 && node.matches("table tbody tr")) {
-                                this.attachInfoIconForBazaarRow(node);
-                            } else if (node.nodeType === 1) {
-                                const newRows = node.querySelectorAll?.("table tbody tr");
-                                newRows?.forEach(row => this.attachInfoIconForBazaarRow(row));
-                            }
-                        });
-                    });
-                });
-                observer.observe(container, { childList: true, subtree: true });
+            document.querySelectorAll('#fullListingsView, #topCheapestView').forEach(container => {
+                new MutationObserver((mutations) => {
+                    mutations.forEach(m => m.addedNodes.forEach(node => {
+                        if (node.nodeType !== 1) return;
+                        if (node.matches('table tbody tr')) {
+                            this.attachInfoIconForBazaarRow(node);
+                        } else {
+                            node.querySelectorAll?.('table tbody tr')?.forEach(r => this.attachInfoIconForBazaarRow(r));
+                        }
+                    }));
+                }).observe(container, { childList: true, subtree: true });
             });
         },
 
         setupURLChangeListener() {
-            const originalPushState = history.pushState;
+            const origPush = history.pushState;
             history.pushState = function () {
-                originalPushState.apply(history, arguments);
+                origPush.apply(history, arguments);
                 window.dispatchEvent(new Event('locationchange'));
             };
-
-            window.addEventListener('popstate', () => {
-                window.dispatchEvent(new Event('locationchange'));
-            });
-
-            window.addEventListener('hashchange', () => {
-                window.dispatchEvent(new Event('locationchange'));
-            });
-
+            window.addEventListener('popstate', () => window.dispatchEvent(new Event('locationchange')));
+            window.addEventListener('hashchange', () => window.dispatchEvent(new Event('locationchange')));
             window.addEventListener('locationchange', () => {
                 processedRows.clear();
                 this.processAllMarketRows();
@@ -605,16 +518,9 @@ const MugCalculatorModule = (() => {
         async destroy() {
             this.closeAllPopups();
             processedRows.clear();
-            console.log('[Sidekick] Mug Calculator Module destroyed');
         }
     };
 })();
 
-// Register module
 if (!window.SidekickModules) window.SidekickModules = {};
 window.SidekickModules.MugCalculator = MugCalculatorModule;
-
-// Export for use in main.js
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = MugCalculatorModule;
-}

@@ -1456,14 +1456,14 @@
                                 display: none;
                                 position: fixed;
                                 background: #333;
-                                min-width: 140px;
+                                width: 160px;
                                 box-shadow: 0px 8px 16px rgba(0,0,0,0.3);
                                 z-index: 99999;
                                 border-radius: 4px;
                                 border: 1px solid #555;
                                 padding: 4px 0;
                                 overflow-y: auto;
-                                max-height: 300px;
+                                max-height: 260px;
                             ">
                                 <button class="cooldown-option" data-type="drug" style="
                                     background: none;
