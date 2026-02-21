@@ -2,7 +2,7 @@
 // Shows hospital timers, travel status, and auto-sorts enemies
 const WarMonitorModule = {
     isEnabled: false,
-    STORAGE_KEY: 'war-monitor',
+    STORAGE_KEY: 'sidekick_war_monitor',
     apiKey: null,
 
     running: true,
@@ -31,8 +31,11 @@ const WarMonitorModule = {
 
         // Listen for storage changes
         chrome.storage.onChanged.addListener((changes, area) => {
-            if (area === 'local' && changes[this.STORAGE_KEY]) {
-                this.loadSettings();
+            if (area === 'local' && (changes[this.STORAGE_KEY] || changes['sidekick_war_monitor'])) {
+                this.loadSettings().then(() => {
+                    if (this.isEnabled) this.enable();
+                    else this.disable();
+                });
             }
         });
 
@@ -43,7 +46,7 @@ const WarMonitorModule = {
     async loadSettings() {
         try {
             const settings = await window.SidekickModules.Core.ChromeStorage.get(this.STORAGE_KEY) || {};
-            this.isEnabled = settings.enabled || false;
+            this.isEnabled = settings.isEnabled === true;
             this.apiKey = await window.SidekickModules.Core.ChromeStorage.get('sidekick_api_key') || '';
         } catch (error) {
             console.error('⚔️ Failed to load settings:', error);
@@ -54,7 +57,7 @@ const WarMonitorModule = {
     async saveSettings() {
         try {
             await window.SidekickModules.Core.ChromeStorage.set(this.STORAGE_KEY, {
-                enabled: this.isEnabled
+                isEnabled: this.isEnabled
             });
         } catch (error) {
             console.error('⚔️ Failed to save settings:', error);
