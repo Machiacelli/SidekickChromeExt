@@ -958,6 +958,11 @@
             const type = entry.type === 'debt' ? 'debt' : 'loan';
             console.log(`💰 Added $${amount} repayment to ${type} with ${entry.playerName}`);
 
+            // If fully paid, refresh the tracker window so the payoff card appears
+            if (entry.completed && this.isDebtTrackerOpen) {
+                this.populateDebtTrackerWindow();
+            }
+
             // Show notification
             if (window.SidekickModules?.UI?.showNotification) {
                 window.SidekickModules.UI.showNotification(
@@ -1646,6 +1651,16 @@
                 });
 
                 sortedEntries.forEach(entry => {
+                    // Skip entries that are completed AND dismissed (user chose Keep or Remove)
+                    if (entry.completed && entry.dismissed) return;
+
+                    // Newly completed but not yet acknowledged → show payoff card
+                    if (entry.completed && !entry.dismissed) {
+                        const payoffCard = this.createPayoffCard(entry);
+                        listContainer.appendChild(payoffCard);
+                        return; // Don't count in totals
+                    }
+
                     const entryElement = this.createDebtTrackerEntry(entry);
                     listContainer.appendChild(entryElement);
 
@@ -1828,6 +1843,73 @@
             });
 
             return entryDiv;
+        },
+
+        // Create payoff card shown inline in tracker when a debt/loan reaches zero
+        createPayoffCard(entry) {
+            const typeLabel = entry.isDebt ? 'Debt' : 'Loan';
+            const card = document.createElement('div');
+            card.style.cssText = `
+                background: linear-gradient(135deg, rgba(46,125,50,0.25), rgba(27,94,32,0.35));
+                border: 2px solid #4caf50;
+                border-radius: 8px;
+                padding: 14px 14px 10px 14px;
+                margin-bottom: 8px;
+                position: relative;
+                box-shadow: 0 0 12px rgba(76,175,80,0.25);
+            `;
+
+            const totalPaid = entry.repayments.reduce((s, r) => s + r.amount, 0);
+
+            card.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                    <span style="font-size: 20px;">✅</span>
+                    <div>
+                        <div style="font-weight: bold; font-size: 13px; color: #69f0ae;">${typeLabel} with ${entry.playerName} is fully paid off!</div>
+                        <div style="font-size: 11px; color: #aaa; margin-top: 2px;">Total paid: $${totalPaid.toLocaleString()} over ${entry.repayments.length} payment${entry.repayments.length !== 1 ? 's' : ''}</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="payoff-remove-btn" data-entry-id="${entry.id}" style="
+                        flex: 1;
+                        background: #4caf50;
+                        border: none;
+                        color: #fff;
+                        padding: 6px 10px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 12px;
+                        font-weight: bold;
+                        transition: background 0.2s;
+                    " onmouseover="this.style.background='#388e3c'" onmouseout="this.style.background='#4caf50'">Remove Entry</button>
+                    <button class="payoff-keep-btn" data-entry-id="${entry.id}" style="
+                        flex: 1;
+                        background: rgba(255,255,255,0.08);
+                        border: 1px solid #555;
+                        color: #ccc;
+                        padding: 6px 10px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 12px;
+                        transition: background 0.2s;
+                    " onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">Keep Record</button>
+                </div>
+            `;
+
+            card.querySelector('.payoff-remove-btn')?.addEventListener('click', () => {
+                // Fully remove the entry
+                this.deleteEntry(entry.id);
+                this.populateDebtTrackerWindow();
+            });
+
+            card.querySelector('.payoff-keep-btn')?.addEventListener('click', () => {
+                // Dismiss the payoff card — entry stays in storage as completed record
+                entry.dismissed = true;
+                this.saveDebtsAndLoans();
+                this.populateDebtTrackerWindow();
+            });
+
+            return card;
         },
 
         // Helper method to get time ago string

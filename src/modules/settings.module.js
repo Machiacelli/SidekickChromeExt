@@ -625,12 +625,16 @@
                 </div>
                 
                 <div style="margin-bottom: 20px;">
+                    <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: #ccc; font-weight: bold; cursor: pointer;">
+                        <input type="checkbox" id="noPlunderCheckbox" style="accent-color: #FFC107; width: 16px; height: 16px;">
+                        <span>No plunder weapon (disables plunder bonus)</span>
+                    </label>
                     <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Plunder % (20% to 49%):</label>
                     <input type="number" id="plunderInput" min="20" max="49" step="0.01" placeholder="Plunder %"
                            style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
                                   border-radius: 5px; color: white; font-size: 14px; box-sizing: border-box;">
                     <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
-                        Enter your plunder percentage (based on your stats and bonuses)
+                        Check the box if you don't use a plunder weapon — this sets plunder to 0. Otherwise enter your plunder % (20–49%).
                     </div>
                 </div>
                 
@@ -1691,8 +1695,24 @@
         attachMugCalculatorTabListeners(panel) {
             const mugMeritsInput = panel.querySelector('#mugMeritsInput');
             const plunderInput = panel.querySelector('#plunderInput');
+            const noPlunderCheckbox = panel.querySelector('#noPlunderCheckbox');
             const thresholdInput = panel.querySelector('#thresholdInput');
             const mugCalcStatusDiv = panel.querySelector('#sidekick-mugcalc-status');
+
+            // Helper to apply disabled state to plunder input
+            const applyPlunderDisabledState = (disabled) => {
+                if (!plunderInput) return;
+                plunderInput.disabled = disabled;
+                plunderInput.style.opacity = disabled ? '0.35' : '1';
+                plunderInput.style.cursor = disabled ? 'not-allowed' : '';
+            };
+
+            // Load stored noPlunder flag and sync checkbox + input
+            window.SidekickModules.Core.ChromeStorage.get('mugNoPlunder').then(stored => {
+                const noPlunder = stored === true;
+                if (noPlunderCheckbox) noPlunderCheckbox.checked = noPlunder;
+                applyPlunderDisabledState(noPlunder);
+            });
 
             // Auto-save helper function
             const autoSaveMugCalcSettings = async () => {
@@ -1703,19 +1723,24 @@
                         await window.SidekickModules.Core.ChromeStorage.set('mugMerits', isNaN(mugMeritsVal) ? 0 : Math.min(Math.max(mugMeritsVal, 0), 10));
                     }
 
-                    // Save plunder percentage
-                    if (plunderInput) {
-                        let plunderInputVal = parseFloat(plunderInput.value.trim());
-                        if (plunderInputVal === '' || parseFloat(plunderInputVal) === 0) {
-                            plunderInputVal = 0;
+                    // Save noPlunder flag
+                    const noPlunder = noPlunderCheckbox ? noPlunderCheckbox.checked : false;
+                    await window.SidekickModules.Core.ChromeStorage.set('mugNoPlunder', noPlunder);
+
+                    // Save plunder percentage (always 0 when noPlunder is checked)
+                    if (noPlunder) {
+                        await window.SidekickModules.Core.ChromeStorage.set('mugPlunder', 0);
+                    } else if (plunderInput) {
+                        const raw = plunderInput.value.trim();
+                        const plunderInputVal = parseFloat(raw);
+                        if (raw === '' || isNaN(plunderInputVal) || plunderInputVal === 0) {
+                            await window.SidekickModules.Core.ChromeStorage.set('mugPlunder', 0);
+                        } else if (plunderInputVal < 20 || plunderInputVal > 49) {
+                            this.showStatus(mugCalcStatusDiv, 'Plunder % must be between 20 and 49', 'error');
+                            return;
                         } else {
-                            plunderInputVal = parseFloat(plunderInputVal);
-                            if (plunderInputVal < 20 || plunderInputVal > 50) {
-                                this.showStatus(mugCalcStatusDiv, 'Plunder percentage must be between 20% and 49%', 'error');
-                                return;
-                            }
+                            await window.SidekickModules.Core.ChromeStorage.set('mugPlunder', plunderInputVal);
                         }
-                        await window.SidekickModules.Core.ChromeStorage.set('mugPlunder', plunderInputVal);
                     }
 
                     // Save threshold
@@ -1726,7 +1751,6 @@
 
                     this.showAutoSaveStatus(mugCalcStatusDiv, 'Settings saved ✓');
 
-                    // Toast notification
                     if (window.SidekickModules.Core.NotificationSystem) {
                         window.SidekickModules.Core.NotificationSystem.show(
                             'Mug Calculator',
@@ -1748,6 +1772,13 @@
                 mugCalcSaveTimeout = setTimeout(autoSaveMugCalcSettings, 500);
             };
 
+            // Checkbox instantly toggles disabled state and saves
+            if (noPlunderCheckbox) {
+                noPlunderCheckbox.addEventListener('change', () => {
+                    applyPlunderDisabledState(noPlunderCheckbox.checked);
+                    debouncedAutoSave();
+                });
+            }
             if (mugMeritsInput) {
                 mugMeritsInput.addEventListener('input', debouncedAutoSave);
             }
@@ -1816,6 +1847,28 @@
 
                 // NOTE: Notification settings are now loaded in attachNotificationsTabListeners()
                 // to ensure proper initialization before click handler is attached
+
+                // Load Mug Calculator settings into UI
+                const [storedMerits, storedPlunder, storedThreshold, storedNoPlunder] = await Promise.all([
+                    window.SidekickModules.Core.ChromeStorage.get('mugMerits'),
+                    window.SidekickModules.Core.ChromeStorage.get('mugPlunder'),
+                    window.SidekickModules.Core.ChromeStorage.get('mugThreshold'),
+                    window.SidekickModules.Core.ChromeStorage.get('mugNoPlunder')
+                ]);
+                const mugMeritsInputEl = document.querySelector('#mugMeritsInput');
+                const plunderInputEl = document.querySelector('#plunderInput');
+                const noPlunderCheckboxEl = document.querySelector('#noPlunderCheckbox');
+                const thresholdInputEl = document.querySelector('#thresholdInput');
+                if (mugMeritsInputEl != null) mugMeritsInputEl.value = storedMerits ?? '';
+                if (plunderInputEl != null) plunderInputEl.value = storedPlunder != null && storedPlunder > 0 ? storedPlunder : '';
+                if (noPlunderCheckboxEl != null) {
+                    noPlunderCheckboxEl.checked = storedNoPlunder === true;
+                    if (plunderInputEl) {
+                        plunderInputEl.disabled = storedNoPlunder === true;
+                        plunderInputEl.style.opacity = storedNoPlunder === true ? '0.35' : '1';
+                    }
+                }
+                if (thresholdInputEl != null) thresholdInputEl.value = storedThreshold ?? '';
 
             } catch (error) {
                 console.error('Failed to load settings:', error);
@@ -2521,13 +2574,14 @@
             
             <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 25px 0;">
             
-            <h5 style="margin: 0 0 10px 0; color: #fff; font-size: 14px;">🎯 Mug Targets (Won't Warn)</h5>
+            <h5 style="margin: 0 0 10px 0; color: #fff; font-size: 14px;">🎯 Exclusions</h5>
+            <div style="font-size: 12px; color: #aaa; margin-bottom: 8px;">Players on this list will never trigger the mug warning, even if you mugged them recently.</div>
             <div id="mug-targets-list" style="max-height: 200px; overflow-y: auto; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 10px; min-height: 50px;">
                 <!-- Populated dynamically -->
             </div>
             
             <button id="manage-mug-targets" style="width: 100%; padding: 10px; background: #2196F3; border: none; color: white; border-radius: 5px; font-weight: bold; cursor: pointer;">
-                🗂️ Manage Mug Targets
+                🗂️ Manage Exclusions
             </button>
         `;
         },

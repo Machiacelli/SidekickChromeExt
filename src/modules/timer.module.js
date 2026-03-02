@@ -1769,7 +1769,7 @@
                     }
                 });
 
-                // Close when clicking outside
+                // Close when clicking outside (also allow clicks inside the portalled dropdown)
                 document.addEventListener('click', function (e) {
                     if (!element.contains(e.target) && !dropdownContent.contains(e.target)) {
                         dropdownContent.style.display = 'none';
@@ -1777,7 +1777,8 @@
                 });
 
                 // Handle cooldown option clicks
-                const cooldownOptions = element.querySelectorAll('.cooldown-option');
+                // Note: query dropdownContent, not element — it was portalled to document.body
+                const cooldownOptions = dropdownContent.querySelectorAll('.cooldown-option');
                 console.log(`🔍 Found ${cooldownOptions.length} cooldown options`);
 
                 cooldownOptions.forEach((option, index) => {
@@ -1874,7 +1875,7 @@
                 });
 
                 // Handle timer pin option click
-                const pinOption = element.querySelector('.timer-pin-option');
+                const pinOption = dropdownContent.querySelector('.timer-pin-option');
                 if (pinOption) {
                     pinOption.addEventListener('mouseenter', function () {
                         pinOption.style.background = 'rgba(255,255,255,0.1)';
@@ -1908,7 +1909,7 @@
                 }
 
                 // Handle custom timer option click
-                const customOption = element.querySelector('.custom-timer-option');
+                const customOption = dropdownContent.querySelector('.custom-timer-option');
                 if (customOption) {
                     customOption.addEventListener('mouseenter', function () {
                         customOption.style.background = 'rgba(255,215,0,0.1)';
@@ -1929,7 +1930,7 @@
                 }
 
                 // Handle timer color option click
-                const colorOption = element.querySelector('.timer-color-option');
+                const colorOption = dropdownContent.querySelector('.timer-color-option');
                 if (colorOption) {
                     colorOption.addEventListener('mouseenter', function () {
                         colorOption.style.background = 'rgba(255,255,255,0.1)';

@@ -60,7 +60,6 @@
                 "src/modules/stockadvisor.module.js",
                 "src/modules/travelarc.module.js",
                 "src/modules/statstracker.module.js",
-                "src/modules/premium.module.js",
                 "src/modules/notionBugReporter.js",
                 "src/modules/oc-weights.module.js",
                 "src/modules/bunker-bucks.module.js",

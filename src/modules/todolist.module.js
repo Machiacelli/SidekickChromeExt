@@ -263,9 +263,13 @@
 
             // CRITICAL: Before clearing baselines, store yesterday's final values for smart recovery
             // This allows correct tracking even if extension isn't running at midnight
-            if (this.apiBaselines.xantaken !== undefined) {
-                this.apiBaselines.yesterdayFinalXantaken = this.apiBaselines.xantaken;
-                console.log(`📦 Stored yesterday's final xantaken: ${this.apiBaselines.yesterdayFinalXantaken}`);
+            // Use lastKnownXantaken (actual cumulative value) if available, otherwise fall back to baseline
+            const finalXantakenToStore = this.apiBaselines.lastKnownXantaken !== undefined
+                ? this.apiBaselines.lastKnownXantaken
+                : this.apiBaselines.xantaken;
+            if (finalXantakenToStore !== undefined) {
+                this.apiBaselines.yesterdayFinalXantaken = finalXantakenToStore;
+                console.log(`📦 Stored yesterday's final xantaken: ${this.apiBaselines.yesterdayFinalXantaken} (from ${this.apiBaselines.lastKnownXantaken !== undefined ? 'lastKnown' : 'baseline'})`);
             }
 
             // Force reset ALL tasks to incomplete state
@@ -286,6 +290,7 @@
             // Clear current day's API baselines (but keep yesterday's final values)
             // This will trigger smart recovery on next API check
             delete this.apiBaselines.xantaken;
+            delete this.apiBaselines.lastKnownXantaken;
             console.log("🧹 Cleared today's xantaken baseline - will use smart recovery on next API check");
 
             // Set last reset date to current UTC date (not time)
@@ -854,6 +859,9 @@
 
                     this.saveDailyTasks();
                 }
+
+                // Always update lastKnownXantaken so resets use the actual final value
+                this.apiBaselines.lastKnownXantaken = currentXan;
 
                 const baselineXan = this.apiBaselines.xantaken;
                 const xanUsedToday = Math.max(0, currentXan - baselineXan);

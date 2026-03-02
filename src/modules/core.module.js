@@ -161,8 +161,11 @@
                         notification.element.parentNode.removeChild(notification.element);
                     }
 
-                    // Remove from array
-                    this.notifications.splice(notificationIndex, 1);
+                    // Re-lookup the index now (array may have shifted during animation)
+                    const currentIndex = this.notifications.findIndex(n => n.id === notificationId);
+                    if (currentIndex !== -1) {
+                        this.notifications.splice(currentIndex, 1);
+                    }
 
                     // Reposition remaining notifications to fill gaps
                     this.repositionNotifications();

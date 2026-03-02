@@ -1,113 +1,116 @@
 // Mission Rewards Book Notifier Module
-// Checks for books in mission rewards every 12 hours and displays a notification
+// Shows a "Book: None" or "Book: [Name]" line after the Company Addiction section
 const BookNotifierModule = {
     isEnabled: false,
     checkInterval: null,
-    notificationElement: null,
-    CHECK_INTERVAL_MS: 12 * 60 * 60 * 1000, // 12 hours in milliseconds
+    statusElement: null,
+    CHECK_INTERVAL_MS: 12 * 60 * 60 * 1000, // 12 hours
     STORAGE_KEY: 'book-notifier',
 
-    // Initialize module
     async init() {
-        console.log('📚 Book Notifier module initializing...');
-
+        console.log('[BookNotifier] Initializing...');
         await this.loadSettings();
-
-        if (this.isEnabled) {
-            this.enable();
-        }
-
-        console.log('📚 Book Notifier module initialized');
+        if (this.isEnabled) this.enable();
+        console.log('[BookNotifier] Initialized');
     },
 
-    // Load settings from Chrome storage
     async loadSettings() {
         try {
             const data = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings');
             if (data && data[this.STORAGE_KEY]) {
-                const moduleSettings = data[this.STORAGE_KEY];
-                this.isEnabled = moduleSettings.isEnabled || false;
-                console.log('📚 Loaded settings:', { isEnabled: this.isEnabled });
-            } else {
-                console.log('📚 No existing settings, module disabled by default');
+                this.isEnabled = data[this.STORAGE_KEY].isEnabled || false;
             }
         } catch (error) {
-            console.error('📚 Failed to load Book Notifier settings:', error);
+            console.error('[BookNotifier] Failed to load settings:', error);
         }
     },
 
-    // Save settings to Chrome storage
     async saveSettings() {
         try {
             const data = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings') || {};
-            data[this.STORAGE_KEY] = {
-                isEnabled: this.isEnabled
-            };
+            data[this.STORAGE_KEY] = { isEnabled: this.isEnabled };
             await window.SidekickModules.Core.ChromeStorage.set('sidekick_settings', data);
         } catch (error) {
-            console.error('📚 Failed to save Book Notifier settings:', error);
+            console.error('[BookNotifier] Failed to save settings:', error);
         }
     },
 
-    // Enable module
     enable() {
-        console.log('📚 Enable called, current state:', { isEnabled: this.isEnabled });
-
-        if (this.isEnabled) {
-            console.log('📚 Already enabled, re-initializing...');
-        }
-
-        console.log('📚 Enabling Book Notifier');
         this.isEnabled = true;
         this.saveSettings();
-
-        // Do immediate check
+        this.insertStatusLine();
+        this.showStatusLine(null, true); // "Checking..."
         this.checkForBook();
-
-        // Start 12-hour interval
-        this.checkInterval = setInterval(() => {
-            this.checkForBook();
-        }, this.CHECK_INTERVAL_MS);
-
-        console.log('📚 Book Notifier enabled successfully (12-hour interval)');
+        if (this.checkInterval) clearInterval(this.checkInterval);
+        this.checkInterval = setInterval(() => this.checkForBook(), this.CHECK_INTERVAL_MS);
+        console.log('[BookNotifier] Enabled');
     },
 
-    // Disable module
     disable() {
-        console.log('📚 Disable called, current state:', { isEnabled: this.isEnabled });
+        if (!this.isEnabled) return;
+        this.isEnabled = false;
+        this.saveSettings();
+        if (this.checkInterval) { clearInterval(this.checkInterval); this.checkInterval = null; }
+        this.removeStatusLine();
+        console.log('[BookNotifier] Disabled');
+    },
 
-        if (!this.isEnabled) {
-            console.log('📚 Already disabled');
+    // Insert the status <section> right after #companyAddictionLevel
+    insertStatusLine() {
+        if (document.getElementById('sidekick-book-status')) return;
+
+        const tryInsert = () => {
+            const anchor = document.getElementById('companyAddictionLevel');
+            if (!anchor || !anchor.parentNode) return false;
+
+            const section = document.createElement('section');
+            section.id = 'sidekick-book-status';
+            section.style.cssText = 'font-size: 12px; padding: 2px 0;';
+            anchor.parentNode.insertBefore(section, anchor.nextSibling);
+            this.statusElement = section;
+            return true;
+        };
+
+        if (!tryInsert()) {
+            // Page might not have rendered yet — poll for up to 15s
+            let tries = 0;
+            const poll = setInterval(() => {
+                tries++;
+                if (tryInsert() || tries >= 30) clearInterval(poll);
+            }, 500);
+        }
+    },
+
+    showStatusLine(bookName, checking) {
+        const section = document.getElementById('sidekick-book-status');
+        if (!section) { this.insertStatusLine(); return; }
+
+        if (checking) {
+            section.style.color = '#888';
+            section.innerHTML = '<span class="title">Book: </span><span>Checking...</span>';
             return;
         }
 
-        console.log('📚 Disabling Book Notifier');
-        this.isEnabled = false;
-        this.saveSettings();
-
-        if (this.checkInterval) {
-            clearInterval(this.checkInterval);
-            this.checkInterval = null;
+        if (bookName && !['No API key', 'API error', 'No missions data', 'Check failed'].includes(bookName)) {
+            // Book found — green, hyperlinked
+            section.style.color = '#4CAF50';
+            section.innerHTML = `<span class="title">Book: </span><a href="/loader.php?sid=missions" style="color:#4CAF50;font-weight:bold;text-decoration:none;">${bookName}</a>`;
+        } else if (bookName) {
+            // Error state
+            section.style.color = '#e57373';
+            section.innerHTML = `<span class="title">Book: </span><span>${bookName}</span>`;
+        } else {
+            // No book — dim/neutral, no link
+            section.style.color = '';
+            section.innerHTML = '<span class="title">Book: </span><span style="color:#777;">None</span>';
         }
-
-        this.clearNotification();
-
-        console.log('📚 Book Notifier disabled successfully');
     },
 
-    // Check for books in mission rewards via background script
     async checkForBook() {
         try {
-            console.log('📚 Checking for books in mission rewards...');
-
-            // Get API key from storage
             const apiKey = await window.SidekickModules.Core.ChromeStorage.get('sidekick_api_key');
-            if (!apiKey) {
-                console.warn('📚 No API key configured - skipping book check');
-                return;
-            }
+            if (!apiKey) { this.showStatusLine('No API key', false); return; }
 
-            // Use background script for API call
             const response = await chrome.runtime.sendMessage({
                 action: 'fetchTornApi',
                 apiKey: apiKey,
@@ -115,111 +118,29 @@ const BookNotifierModule = {
                 comment: 'BookNotifierModule'
             });
 
-            if (!response.success || response.error) {
-                console.error('📚 API call failed:', response.error || 'Unknown error');
-                return;
+            if (!response || !response.success || response.error) {
+                this.showStatusLine('API error', false); return;
+            }
+            if (!response.missions) {
+                this.showStatusLine(null, false); return; // No missions data = treat as no book
             }
 
-            // Check if missions data exists
-            // Note: Some API keys may not have access to missions endpoint
-            if (!response || !response.missions) {
-                // This is expected if no API key or missions access - just log quietly
-                console.log('📚 No missions data available - you may need full API access or missions to check');
-                return;
-            }
-
-            // Check if there's at least one book in rewards
-            const hasBook = response.missions?.rewards?.some(reward =>
-                reward.details?.type === 'Book'
-            );
-
-            console.log('📚 Check complete. Book found:', hasBook);
-
-            if (hasBook) {
-                this.showNotification();
-            } else {
-                this.clearNotification();
-            }
+            const bookRewards = (response.missions?.rewards || []).filter(r => r.details?.type === 'Book');
+            const bookName = bookRewards.length > 0 ? (bookRewards[0].details?.name || 'Book Available') : null;
+            this.showStatusLine(bookName, false);
 
         } catch (error) {
-            console.error('📚 Error checking for book:', error);
+            console.error('[BookNotifier] Error:', error);
+            this.showStatusLine('Check failed', false);
         }
     },
 
-    // Show notification in sidebar
-    showNotification() {
-        try {
-            // Don't create duplicate notification
-            if (this.notificationElement) {
-                console.log('📚 Notification already visible');
-                return;
-            }
-
-            // Find sidebar or content area
-            let parent = document.querySelector('div.sidebar');
-            if (!parent) {
-                parent = document.querySelector('div.content-wrapper');
-            }
-            if (!parent) {
-                console.warn('📚 Could not find parent element for notification');
-                return;
-            }
-
-            // Create notification element matching Torn's style
-            const section = document.createElement('div');
-            section.id = 'sidekick-book-notif';
-            section.className = 'cont-gray bottom-round';
-            section.style.cssText = `
-                padding: 10px;
-                margin: 5px 0;
-                background: rgba(56, 142, 60, 0.15);
-                border: 1px solid rgba(76, 175, 80, 0.5);
-                border-radius: 5px;
-            `;
-
-            const link = document.createElement('a');
-            link.style.cssText = `
-                color: #4CAF50;
-                font-weight: bold;
-                text-decoration: none;
-                font-size: 13px;
-                display: block;
-            `;
-            link.href = 'https://www.torn.com/loader.php?sid=missions';
-            link.innerHTML = '📚 Book available in mission rewards!';
-            link.onmouseover = () => link.style.color = '#66BB6A';
-            link.onmouseout = () => link.style.color = '#4CAF50';
-
-            section.appendChild(link);
-            parent.insertBefore(section, parent.firstChild);
-
-            this.notificationElement = section;
-            console.log('📚 Notification displayed');
-
-        } catch (error) {
-            console.error('📚 Error showing notification:', error);
-        }
-    },
-
-    // Clear notification
-    clearNotification() {
-        try {
-            const elem = document.getElementById('sidekick-book-notif');
-            if (elem) {
-                elem.remove();
-                this.notificationElement = null;
-                console.log('📚 Notification cleared');
-            }
-        } catch (error) {
-            console.error('📚 Error clearing notification:', error);
-        }
+    removeStatusLine() {
+        const el = document.getElementById('sidekick-book-status');
+        if (el) { el.remove(); this.statusElement = null; }
     }
 };
 
-// Register module
-if (typeof window.SidekickModules === 'undefined') {
-    window.SidekickModules = {};
-}
+if (typeof window.SidekickModules === 'undefined') window.SidekickModules = {};
 window.SidekickModules.BookNotifier = BookNotifierModule;
-
-console.log('📚 Book Notifier module registered on window.SidekickModules');
+console.log('[BookNotifier] Module registered');

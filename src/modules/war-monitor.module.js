@@ -171,57 +171,60 @@ const WarMonitorModule = {
     },
 
     setupObservers() {
-        const factionsWarCheck = (node) => {
-            if (node.classList && node.classList.contains('faction-war')) {
-                console.log('⚔️ Found faction-war element');
-                this.foundWar = true;
-                this.extractAllMemberLis();
-                this.updateStatuses();
-            }
+        let initialized = false;
+
+        const tryInit = () => {
+            if (initialized) return;
+            // Try broad selectors for Torn's React hashed class names
+            const warEl = document.querySelector(
+                '.faction-war, [class*="faction-war"], #faction_war_list_id .descriptions'
+            );
+            if (!warEl) return;
+
+            // Also accept if the war members list is present
+            const hasMemberList = document.querySelector('ul.members-list');
+            if (!warEl && !hasMemberList) return;
+
+            console.log('[WarMonitor] Found war element, initializing...');
+            initialized = true;
+            this.foundWar = true;
+            this.extractAllMemberLis();
+            this.updateStatuses();
         };
 
-        const descriptionsObserver = new MutationObserver((muts) => {
-            for (const mut of muts) {
-                for (const node of mut.addedNodes) {
-                    factionsWarCheck(node);
-                }
+        // Try immediately
+        tryInit();
+
+        // Observe for dynamic additions (Torn SPA navigations)
+        const observer = new MutationObserver(() => tryInit());
+        observer.observe(document.body, { subtree: true, childList: true });
+
+        // Polling fallback — try every 1.5s for 45s
+        // This covers slow React renders that the observer might miss
+        let attempts = 0;
+        const MAX_ATTEMPTS = 30;
+        const poll = setInterval(() => {
+            attempts++;
+            tryInit();
+            if (initialized || attempts >= MAX_ATTEMPTS) {
+                clearInterval(poll);
+                if (!initialized) console.log('[WarMonitor] War list not found after 45s polling');
             }
+        }, 1500);
+
+        // Also observe for member list mutations (re-renders)
+        const memberListObserver = new MutationObserver(() => {
+            if (!initialized) { tryInit(); return; }
+            this.extractAllMemberLis();
         });
 
-        const docObserver = new MutationObserver(() => {
-            const factWarList = document.querySelector('#faction_war_list_id');
-            if (factWarList) {
-                const descriptions = factWarList.querySelector('.descriptions');
-                if (descriptions) {
-                    descriptionsObserver.observe(descriptions, { childList: true, subtree: true });
-                    // Check if already exists
-                    const factWar = descriptions.querySelector('.faction-war');
-                    if (factWar) {
-                        factionsWarCheck(factWar);
-                    }
-                }
-                docObserver.disconnect();
+        const recheckMemberObserver = setInterval(() => {
+            const memberLists = document.querySelectorAll('ul.members-list');
+            if (memberLists.length > 0) {
+                memberLists.forEach(ul => memberListObserver.observe(ul, { childList: true }));
+                clearInterval(recheckMemberObserver);
             }
-        });
-
-        // Check if already exists
-        const factWarList = document.querySelector('#faction_war_list_id');
-        if (factWarList) {
-            const factWar = factWarList.querySelector('.faction-war');
-            if (factWar) {
-                factionsWarCheck(factWar);
-            } else {
-                const descriptions = factWarList.querySelector('.descriptions');
-                if (descriptions) {
-                    descriptionsObserver.observe(descriptions, { childList: true, subtree: true });
-                }
-            }
-        } else {
-            docObserver.observe(document.body, { subtree: true, childList: true });
-        }
-
-        // Cleanup after 10 seconds
-        setTimeout(() => docObserver.disconnect(), 10000);
+        }, 2000);
     },
 
     extractAllMemberLis() {

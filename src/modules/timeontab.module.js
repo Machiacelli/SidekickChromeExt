@@ -163,18 +163,18 @@
             });
         },
 
-        // Update the tab title with timer information - alternates chain with page timer
+        // Update the tab title with timer information - alternates info with a short page label
         updateTabTitle() {
             if (!this.isEnabled) {
                 this.restoreTitle();
                 return;
             }
 
-            // Synchronized alternation: derive show/hide from wall-clock time
-            // All tabs share the same phase because they all use Date.now() % 6000
-            // First 3 seconds of every 6-second window = show chain, last 3 = show label
+            // Synchronized alternation via wall-clock: 5-second window
+            // First 3s = show timer/info, last 2s = show short page label
             const now = Date.now();
-            const showChain = (now % 6000) < 3000;
+            const phase = now % 5000;
+            const showInfo = phase < 3000;
 
             // Get page-specific timer (hospital, jail, racing, travel)
             const pageTimer = this.getPageSpecificTimer();
@@ -185,28 +185,31 @@
             // Get profile name if on profile page
             const profileName = this.getProfileName();
 
+            // Short page label for tab identification (e.g. "Market", "Faction", "Profile")
+            const pageLabel = this.getPageLabel(profileName);
+
             let timerInfo = null;
 
             // Priority logic:
-            // 1. If chain active AND on profile page: alternate between chain and profile name
-            // 2. If chain active AND page timer exists: alternate between chain and page timer
-            // 3. If only chain: show chain
-            // 4. If only page timer: show page timer
-            // 5. If only profile: show profile name
+            // 1. Chain + profile page: alternate between chain and profile name
+            // 2. Chain + page timer: alternate between chain and page timer
+            // 3. Chain only: alternate chain with page label
+            // 4. Page timer only: alternate page timer with page label
+            // 5. Profile name only: show profile name with page label
+            // 6. Page label only: alternate between the Torn page title and the label
 
             if (chainTimer && profileName) {
-                // Chain active + on profile: alternate chain with profile name
-                timerInfo = showChain ? chainTimer : `Profile: ${profileName}`;
+                timerInfo = showInfo ? chainTimer : `Profile: ${profileName}`;
             } else if (chainTimer && pageTimer) {
-                // Chain active + page timer: alternate chain with page timer
-                timerInfo = showChain ? chainTimer : pageTimer;
+                timerInfo = showInfo ? chainTimer : pageTimer;
             } else if (chainTimer) {
-                timerInfo = chainTimer;
+                timerInfo = showInfo ? chainTimer : pageLabel;
             } else if (pageTimer) {
-                timerInfo = pageTimer;
+                timerInfo = showInfo ? pageTimer : pageLabel;
             } else if (profileName) {
                 timerInfo = `Profile: ${profileName}`;
             }
+            // No timers: show original page title without alternating
 
             if (timerInfo) {
                 const newTitle = `${timerInfo} | TORN`;
@@ -214,11 +217,52 @@
                     document.title = newTitle;
                 }
             } else {
-                // No active timers - restore original title
+                // No active timers / label phase showing original title
                 if (document.title !== this.originalTitle) {
                     document.title = this.originalTitle;
                 }
             }
+        },
+
+        // Get a short label identifying the current page (for tab disambiguation)
+        getPageLabel(profileName) {
+            const url = window.location.href;
+            const path = window.location.pathname;
+            const params = new URLSearchParams(window.location.search);
+            const sid = params.get('sid') || params.get('step') || '';
+            const tab = params.get('tab') || '';
+
+            // Profile page — use the name
+            if (path.includes('profiles.php')) {
+                return profileName ? profileName : 'Profile';
+            }
+            if (path.includes('imarket.php')) return 'Market';
+            if (url.includes('bazaar.php') || url.includes('step=list')) return 'Bazaar';
+            if (path.includes('pmarket.php')) return 'Points Market';
+            if (path.includes('factions.php')) return 'Faction';
+            if (url.includes('crimes2.php') || url.includes('crimes.php')) return 'Crimes';
+            if (sid.includes('travel') || path.includes('travel')) return 'Travel';
+            if (path.includes('hospitalview.php') || url.includes('hospital')) return 'Hospital';
+            if (url.includes('jailview.php')) return 'Jail';
+            if (url.includes('loader.php') && sid.includes('racing')) return 'Racing';
+            if (url.includes('gym.php')) return 'Gym';
+            if (path.includes('city.php')) return 'City';
+            if (path.includes('properties.php')) return 'Property';
+            if (url.includes('bank.php') || url.includes('atm')) return 'Bank';
+            if (url.includes('missions')) return 'Missions';
+            if (url.includes('companies.php')) return 'Company';
+            if (url.includes('forums.php')) return 'Forums';
+            if (path === '/' || path.includes('index.php') || url.endsWith('torn.com/')) return 'Home';
+
+            // Fallback: try to extract a readable name from the page <title>
+            const pageTitle = this.originalTitle || document.title;
+            if (pageTitle && pageTitle !== 'TORN') {
+                // Strip " | TORN" suffix and return up to 20 chars
+                const stripped = pageTitle.replace(/\s*\|\s*TORN.*$/, '').trim();
+                if (stripped) return stripped.length > 20 ? stripped.substring(0, 18) + '…' : stripped;
+            }
+
+            return null;
         },
 
         // Get page-specific timer (hospital, jail, racing, travel)
@@ -391,12 +435,34 @@
                 }
                 if (this._attackTargetName) return this._attackTargetName;
 
-                // Method 5: Fall back to showing target ID if we have it
-                if (user2ID) {
-                    return `Player ${user2ID}`;
+                // Method 5: Async API lookup for player name (only triggers once per user2ID)
+                if (user2ID && !this._attackNameLookupPending) {
+                    this._attackNameLookupPending = user2ID;
+                    (async () => {
+                        try {
+                            const apiKey = await window.SidekickModules?.Core?.ChromeStorage?.get('sidekick_api_key');
+                            if (apiKey) {
+                                const response = await fetch(`https://api.torn.com/user/${user2ID}?selections=profile&key=${apiKey}`);
+                                const data = await response.json();
+                                if (!data.error && data.name) {
+                                    this._attackTargetName = data.name;
+                                    console.log(`⏰ TimeOnTab: Resolved attack target name via API: ${data.name}`);
+                                } else {
+                                    // API failed — show ID as last resort
+                                    this._attackTargetName = `Player ${user2ID}`;
+                                }
+                            } else {
+                                this._attackTargetName = `Player ${user2ID}`;
+                            }
+                        } catch (e) {
+                            this._attackTargetName = `Player ${user2ID}`;
+                        }
+                        this._attackNameLookupPending = null;
+                    })();
                 }
 
-                return null; // Don't show own profile on attack page
+                // While API lookup is pending, return null so we don't pollute the title
+                return this._attackTargetName || null;
             }
 
             // Reset attack target cache when not on attack page

@@ -54,6 +54,13 @@ const MugCalculatorModule = (() => {
                     this.processAllBazaarRows();
                     this.observeBazaarRows();
                 });
+                // Point market support
+                if (window.location.pathname.includes('pmarket.php')) {
+                    this.waitForElements('.pmarket-table___row, .row___points, [class*="pointsOffersList"] tr, [class*="pmarket"] tr', () => {
+                        this.processAllPMarketRows();
+                        this.observePMarketRows();
+                    }, 15, 600);
+                }
                 setInterval(() => this.processAllMarketRows(), 2000);
             }, 1000);
 
@@ -370,7 +377,8 @@ const MugCalculatorModule = (() => {
         async handleMugIconClick(listingTotal, quantity, threshold, sellerLink, icon) {
             try {
                 const mugMerits = parseInt(await window.SidekickModules.Core.ChromeStorage.get('mugMerits') || 0, 10);
-                const plunderPct = parseFloat(await window.SidekickModules.Core.ChromeStorage.get('mugPlunder') || 0);
+                const noPlunder = await window.SidekickModules.Core.ChromeStorage.get('mugNoPlunder');
+                const plunderPct = noPlunder === true ? 0 : parseFloat(await window.SidekickModules.Core.ChromeStorage.get('mugPlunder') || 0);
 
                 const playerId = this.extractUserId(sellerLink.href);
                 if (!playerId) { console.error('[MugCalc] No player ID'); return; }
@@ -499,6 +507,170 @@ const MugCalculatorModule = (() => {
                     }));
                 }).observe(container, { childList: true, subtree: true });
             });
+        },
+
+        // Point Market (pmarket.php) support
+        // Torn's pmarket columns: Name (col 0, has seller link) | Points (col 1, qty) | Cost Each (col 2) | Total Price (col 3) | Action (col 4)
+        async attachInfoIconForPMarketRow(row) {
+            if (processedRows.has(row) && row.querySelector('.mugInfoIcon')) return;
+            if (processedRows.has(row) && !row.querySelector('.mugInfoIcon')) processedRows.delete(row);
+
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 4) return;
+
+            // Seller link is in the Name cell (col 0)
+            const sellerLink = cells[0].querySelector("a[href*='profiles.php?XID='], a[href*='XID=']");
+            if (!sellerLink) return;
+
+            const parseNum = (el) => parseInt((el?.innerText || el?.textContent || '0').replace(/[^0-9]/g, ''), 10);
+
+            const quantity = parseNum(cells[1]);  // Points column
+            const costEach = parseNum(cells[2]);  // Cost Each column
+            const totalPrice = parseNum(cells[3]); // Total Price column (use directly)
+
+            if (!quantity || !costEach) return;
+            const listingTotal = totalPrice > 0 ? totalPrice : costEach * quantity;
+
+            const threshold = parseInt(await window.SidekickModules.Core.ChromeStorage.get('mugThreshold') || 0, 10);
+            if (threshold > 0 && listingTotal < threshold) return;
+
+            if (row.querySelector('.mugInfoIcon')) { processedRows.add(row); return; }
+
+            // Attach icon to Cost Each cell (col 2) for visibility
+            const priceCell = cells[2];
+            const icon = document.createElement('div');
+            icon.className = 'mugInfoIcon';
+            icon.textContent = 'i';
+            icon.title = 'Mug info';
+            priceCell.style.position = 'relative';
+            priceCell.appendChild(icon);
+
+            icon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.closeAllPopups();
+                this.handlePMarketIconClick(listingTotal, quantity, costEach, threshold, sellerLink, icon);
+            });
+
+            processedRows.add(row);
+        },
+
+        async handlePMarketIconClick(listingTotal, quantity, costEach, threshold, sellerLink, icon) {
+            try {
+                const mugMerits = parseInt(await window.SidekickModules.Core.ChromeStorage.get('mugMerits') || 0, 10);
+                const noPlunder = await window.SidekickModules.Core.ChromeStorage.get('mugNoPlunder');
+                const plunderPct = noPlunder === true ? 0 : parseFloat(await window.SidekickModules.Core.ChromeStorage.get('mugPlunder') || 0);
+
+                const playerId = this.extractUserId(sellerLink.href);
+                if (!playerId) return;
+
+                const player = await this.fetchPlayerData(playerId);
+                if (!player) return;
+
+                const cashOnHand = player.cashOnHand > 0 ? player.cashOnHand : listingTotal;
+                const mugAmount = this.calculateMugAmount(cashOnHand, mugMerits, plunderPct, player.hasClothingProtection);
+
+                // "Effective cost per point after mug"
+                const netCash = Math.max(0, listingTotal - mugAmount);
+                const effectiveCostEach = quantity > 0 ? Math.floor(netCash / quantity) : 0;
+
+                const popup = this.createPMarketPopup(player, mugAmount, effectiveCostEach, costEach, quantity, cashOnHand);
+                document.body.appendChild(popup);
+                this.positionPopup(icon, popup);
+                popup.classList.add('visible');
+                currentPopups.push(popup);
+            } catch (err) {
+                console.error('[MugCalc] handlePMarketIconClick error:', err);
+            }
+        },
+
+        createPMarketPopup(player, mugAmount, effectiveCostEach, originalCostEach, quantity, cashOnHand) {
+            const popup = document.createElement('div');
+            popup.className = 'mugInfoPopup';
+
+            const state = player.status?.state || 'Unknown';
+            const statusDesc = player.status?.description || state;
+            const until = player.status?.until || 0;
+            const bgColor = this.getStatusColor(state);
+
+            let statusLine = `<strong>Status:</strong> ${statusDesc}`;
+            if (until > Date.now() / 1000 && until > 0) {
+                const secsLeft = Math.max(0, Math.floor(until - Date.now() / 1000));
+                const m = Math.floor(secsLeft / 60);
+                const s = secsLeft % 60;
+                statusLine += ` <span style="font-weight:normal;font-size:11px">(${m}m ${s}s)</span>`;
+            }
+
+            const lifeMax = player.life?.maximum || player.life?.max_life || 0;
+            const lifeCur = player.life?.current || player.life?.current_life || 0;
+            const lifePct = lifeMax > 0 ? Math.round((lifeCur / lifeMax) * 100) : 0;
+            const lifeColor = lifePct < 33 ? '#d9534f' : lifePct < 66 ? '#f0ad4e' : '#5cb85c';
+            const revivable = player.revivable
+                ? '<span style="color:#5cb85c;font-weight:bold">YES</span>'
+                : '<span style="color:#d9534f;font-weight:bold">NO</span>';
+
+            const factionLine = player.faction?.faction_name
+                ? `<strong>Faction:</strong> ${player.faction.faction_tag ? `[${player.faction.faction_tag}] ` : ''}${player.faction.faction_name}<br>`
+                : '';
+
+            const mugPct = cashOnHand > 0 ? (mugAmount / cashOnHand * 100).toFixed(2) : '0.00';
+            const saving = originalCostEach - effectiveCostEach;
+
+            popup.innerHTML = `
+                <button class="mugPopupClose" title="Close">&times;</button>
+                <div>
+                    <strong>Level:</strong> ${player.level || '?'}<br>
+                    ${statusLine}<br>
+                    <strong>Last Action:</strong> ${this.formatRelativeTime(player.last_action?.timestamp)}<br>
+                    ${factionLine}
+                </div>
+                <div class="mugSection">
+                    <strong>Life:</strong> <span style="color:${lifeColor};font-weight:bold">${lifeCur.toLocaleString()}</span> / ${lifeMax.toLocaleString()} &nbsp;<small>(Revive: ${revivable})</small>
+                    <div class="mugLifeBar"><div class="mugLifeBarFill" style="width:${lifePct}%;background:${lifeColor}"></div></div>
+                </div>
+                <div class="mugSection">
+                    <strong>Cash on hand:</strong> $${cashOnHand.toLocaleString()}<br>
+                    <strong>Mug:</strong> ~${mugPct}% &asymp; <strong>$${mugAmount.toLocaleString()}</strong><br>
+                    <strong>Listed:</strong> $${originalCostEach.toLocaleString()}/pt &times; ${quantity.toLocaleString()} pts<br>
+                    <strong>Effective cost/pt after mug:</strong> $${effectiveCostEach.toLocaleString()}
+                    ${saving > 0 ? `<span style="color:#5cb85c;font-size:11px"> (save $${saving.toLocaleString()}/pt)</span>` : ''}
+                </div>
+            `;
+
+            popup.style.borderLeft = `5px solid ${lifeColor}`;
+            popup.style.backgroundColor = bgColor;
+
+            popup.querySelector('.mugPopupClose').addEventListener('click', () => {
+                popup.remove();
+                const idx = currentPopups.indexOf(popup);
+                if (idx > -1) currentPopups.splice(idx, 1);
+            });
+
+            return popup;
+        },
+
+        processAllPMarketRows() {
+            // Try several selectors — Torn's pmarket uses React so class names may vary
+            const rows = document.querySelectorAll(
+                '[class*="pmarket"] tr, [class*="pointsOffer"] tr, [class*="offers"] tr, table.offers-table tbody tr'
+            );
+            rows.forEach(row => this.attachInfoIconForPMarketRow(row));
+        },
+
+        observePMarketRows() {
+            const container = document.querySelector(
+                '[class*="pmarket"], [class*="pointsOffer"], [class*="offers"]'
+            );
+            if (!container) return;
+            new MutationObserver((mutations) => {
+                mutations.forEach(m => m.addedNodes.forEach(node => {
+                    if (node.nodeType !== 1) return;
+                    if (node.matches('tr')) {
+                        this.attachInfoIconForPMarketRow(node);
+                    } else {
+                        node.querySelectorAll?.('tr')?.forEach(r => this.attachInfoIconForPMarketRow(r));
+                    }
+                }));
+            }).observe(container, { childList: true, subtree: true });
         },
 
         setupURLChangeListener() {

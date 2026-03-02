@@ -57,16 +57,20 @@
             const text = progressText.textContent || '';
             console.log('✈️ TravelArc: Progress text found:', text);
 
-            // Parse "Torn to Zurich" or "Zurich to Torn"
-            const match = text.match(/(Torn|torn)\s+to\s+([A-Za-z\s]+)/i) ||
-                text.match(/([A-Za-z\s]+)\s+to\s+(Torn|torn)/i);
+            // Parse "Torn to Zurich" (outbound) or "Zurich to Torn" (return)
+            const toMatch = text.match(/Torn\s+to\s+([A-Za-z\s]+)/i);
+            const fromMatch = text.match(/([A-Za-z\s]+)\s+to\s+Torn/i);
 
-            if (match) {
-                let dest = match[2].toLowerCase().trim();
-                // Remove trailing punctuation
-                dest = dest.replace(/[.,;:]$/, '');
-                console.log('✈️ TravelArc: Detected destination:', dest);
-                return { origin: 'torn', destination: dest, returning: match[1].toLowerCase() !== 'torn' };
+            if (toMatch) {
+                // Outbound: "Torn to Zurich" — destination is the foreign city
+                let dest = toMatch[1].toLowerCase().trim().replace(/[.,;:]$/, '');
+                console.log('✈️ TravelArc: Outbound flight to:', dest);
+                return { origin: 'torn', destination: dest, returning: false };
+            } else if (fromMatch) {
+                // Return: "Zurich to Torn" — origin is the foreign city, dest is Torn
+                let city = fromMatch[1].toLowerCase().trim().replace(/[.,;:]$/, '');
+                console.log('✈️ TravelArc: Return flight from:', city);
+                return { origin: 'torn', destination: city, returning: true };
             }
         }
 
@@ -203,11 +207,13 @@
         const midX = (originX + destX) / 2;
         const midY = (originY + destY) / 2;
 
-        // Calculate perpendicular direction for arc (always curves upward relative to travel direction)
+        // Calculate perpendicular direction for arc (curves above/northward — Y is inverted on screen)
+        // The perpendicular to (dx, dy) is (-dy, dx). Since Y increases downward,
+        // we negate to get the "above" direction: (dy, -dx) normalized.
         const dx = destX - originX;
         const dy = destY - originY;
-        const perpX = -dy / distance; // Perpendicular X component
-        const perpY = dx / distance;  // Perpendicular Y component
+        const perpX = dy / distance;   // Perpendicular X component (negated to curve "above")
+        const perpY = -dx / distance;  // Perpendicular Y component (negated to curve "above")
 
         // Apply arc offset perpendicular to travel direction
         const controlX = midX + perpX * arcHeight;
