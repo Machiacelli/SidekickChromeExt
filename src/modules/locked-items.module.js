@@ -172,11 +172,11 @@ const LockedItemsManagerModule = {
                 color: #fff;
             }
 
-            /* Hide locked items on bazaar add, trade, market */
-            .sidekick-hide-locked {
+            /* Hide dangerous action buttons on locked items */
+            li.sidekick-item-locked li.sell,
+            li.sidekick-item-locked li.send,
+            li.sidekick-item-locked li.dump {
                 display: none !important;
-                visibility: hidden !important;
-                opacity: 0 !important;
             }
 
             /* Toast notifications */
@@ -304,28 +304,37 @@ const LockedItemsManagerModule = {
             // Toggle locked class
             el.classList.toggle('sidekick-item-locked', isLocked);
 
-            // Add or update padlock icon
+            // Add padlock icon only once per element (tracks injection, not lock state)
             let padlock = el.querySelector('.sidekick-padlock');
             if (!padlock) {
-                // Mark that we've processed this element
-                if (el.hasAttribute('data-sidekick-processed')) return;
-                el.setAttribute('data-sidekick-processed', 'true');
+                if (!el.hasAttribute('data-sidekick-processed')) {
+                    el.setAttribute('data-sidekick-processed', 'true');
 
-                padlock = document.createElement('span');
-                padlock.className = 'sidekick-padlock';
-                padlock.onclick = (e) => {
-                    e.stopPropagation();
-                    this.toggleLock(itemId, el);
-                };
+                    padlock = document.createElement('span');
+                    padlock.className = 'sidekick-padlock';
+                    padlock.onclick = (e) => {
+                        e.stopPropagation();
+                        this.toggleLock(itemId, el);
+                    };
 
-                const nameWrap = el.querySelector('.name-wrap');
-                if (nameWrap) {
-                    nameWrap.insertBefore(padlock, nameWrap.firstChild);
+                    const nameWrap = el.querySelector('.name-wrap');
+                    if (nameWrap) {
+                        nameWrap.insertBefore(padlock, nameWrap.firstChild);
+                    }
                 }
             }
 
-            padlock.textContent = isLocked ? '🔒' : '🔓';
-            padlock.classList.toggle('is-locked', isLocked);
+            if (padlock) {
+                padlock.textContent = isLocked ? '🔒' : '🔓';
+                padlock.classList.toggle('is-locked', isLocked);
+            }
+
+            // Hide dangerous action buttons (sell, send, trash) on locked items
+            // These are always re-evaluated regardless of data-sidekick-processed
+            const actionEls = el.querySelectorAll('li.sell, li.send, li.dump');
+            actionEls.forEach(btn => {
+                btn.style.display = isLocked ? 'none' : '';
+            });
         });
 
         // Add unlock all button
@@ -490,13 +499,10 @@ const LockedItemsManagerModule = {
     startObserver() {
         if (this.observer) return;
 
-        let debounceTimer = null;
         this.observer = new MutationObserver(() => {
-            // Debounce to prevent infinite loops
-            if (debounceTimer) clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
-                requestAnimationFrame(() => this.processPage());
-            }, 300);
+            // Use rAF only — no extra debounce — so locked state applies
+            // immediately when the DOM changes (e.g. category switches)
+            requestAnimationFrame(() => this.processPage());
         });
 
         this.observer.observe(document.body, { childList: true, subtree: true });
