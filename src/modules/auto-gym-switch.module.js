@@ -32,13 +32,39 @@ const AutoGymSwitchModule = {
     },
 
     async loadSettings() {
-        try {
-            const settings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings') || {};
-            this.isEnabled = settings[this.STORAGE_KEY]?.isEnabled === true;
-            console.log('💪 Auto Gym Switch settings loaded, enabled:', this.isEnabled);
-        } catch (error) {
-            console.error('💪 Failed to load settings:', error);
-        }
+        return new Promise(resolve => {
+            chrome.storage.local.get(['sidekick_settings', 'sidekick_auto_gym_switch'], (result) => {
+                // Primary: unified settings format
+                const unified = result.sidekick_settings || {};
+                const unifiedVal = unified[this.STORAGE_KEY];
+
+                // Fallback: legacy key format saved by the settings panel
+                const legacyVal = result.sidekick_auto_gym_switch;
+
+                console.log('💪 Raw storage for auto-gym-switch:', {
+                    unified: unifiedVal,
+                    legacy: legacyVal
+                });
+
+                if (unifiedVal && typeof unifiedVal.isEnabled === 'boolean') {
+                    this.isEnabled = unifiedVal.isEnabled;
+                } else if (legacyVal && typeof legacyVal.isEnabled === 'boolean') {
+                    // Migrate legacy value into unified format
+                    this.isEnabled = legacyVal.isEnabled;
+                    if (!unified[this.STORAGE_KEY]) {
+                        unified[this.STORAGE_KEY] = { isEnabled: this.isEnabled };
+                        chrome.storage.local.set({ sidekick_settings: unified });
+                    }
+                } else {
+                    this.isEnabled = false;
+                }
+
+                // Always sync localStorage so the inject script reads the correct state
+                localStorage.setItem(this.LS_KEY, this.isEnabled ? 'true' : 'false');
+                console.log('💪 Auto Gym Switch settings loaded, enabled:', this.isEnabled);
+                resolve();
+            });
+        });
     },
 
     async saveSettings() {
