@@ -673,23 +673,35 @@ const PriceFillerModule = (() => {
     }
 
     function getItemIdFromWrapper(rowWrapper) {
-        // Try aria-controls (headlessui-tabs-panel-{itemId}-…)
-        const ctrl = rowWrapper.querySelector('[aria-controls]');
-        if (ctrl) { const m = (ctrl.getAttribute('aria-controls') || '').match(/-(\d+)-/); if (m) return m[1]; }
-        // Try image src
-        const img = rowWrapper.querySelector('[class*="viewInfoButton"] img, [class*="itemImage"] img');
-        if (img) { const m = (img.src || '').match(/\/(\d+)\//); if (m) return m[1]; }
+        // aria-controls="wai-addListing-itemInfo-{itemId}-{index}" on the viewInfoButton
+        const btn = rowWrapper.querySelector('button[aria-controls]');
+        if (btn) {
+            const m = (btn.getAttribute('aria-controls') || '').match(/itemInfo-?(\d+)-/i);
+            if (m) return m[1];
+        }
+        // Fallback: image src contains item ID
+        const img = rowWrapper.querySelector('img[src*="/images/items/"]');
+        if (img) {
+            const m = (img.src || '').match(/\/items\/(\d+)\//i);
+            if (m) return m[1];
+        }
         return null;
     }
 
     function addImFillButton(priceWrapper, itemId) {
         if (priceWrapper.querySelector('.sk-pf-im-btn') || priceWrapper.dataset.skPfDone) return;
-        const priceInputs = [...priceWrapper.querySelectorAll('input.input-money')];
+        // Only inject into visible (non-hidden) price inputs
+        const priceInputs = [...priceWrapper.querySelectorAll('input.input-money:not([type="hidden"])')]
+            .filter(i => i.placeholder === 'Price');
         if (!priceInputs.length) return;
         priceWrapper.dataset.skPfDone = '1';
 
+        // Qty inputs are in the sibling amountInputWrapper___USwSs div
         const rowEl = priceWrapper.closest('[class*="itemRowWrapper"]') || priceWrapper.closest('li');
-        const qtyInputs = rowEl ? [...rowEl.querySelectorAll('[class*="amountInput"] input.input-money')] : [];
+        const qtyInputs = rowEl
+            ? [...rowEl.querySelectorAll('[class*="amountInputWrapper___USwSs"] input.input-money:not([type="hidden"])')]
+                .filter(i => i.placeholder === 'Qty')
+            : [];
 
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -720,8 +732,10 @@ const PriceFillerModule = (() => {
     }
 
     function isOnItemMarket() {
-        return window.location.href.includes('page.php?sid=ItemMarket') ||
-            window.location.href.includes('imarket.php');
+        const url = window.location.href;
+        return url.includes('page.php?sid=ItemMarket') ||
+            url.includes('imarket.php') ||
+            (url.includes('page.php') && url.includes('ItemMarket'));
     }
 
     function isOnBazaar() {

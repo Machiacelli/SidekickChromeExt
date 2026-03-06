@@ -148,15 +148,11 @@ const WarMonitorModule = {
 
         this.injectStyles();
 
-        // Page visibility tracking
         document.addEventListener('visibilitychange', () => {
             this.pageVisible = !document.hidden;
         });
 
-        // Set up observers
-        this.setupObservers();
-
-        // Start update intervals
+        // Start update intervals — they guard on this.foundWar internally
         setInterval(() => {
             if (!this.running || !this.foundWar) return;
             this.updateStatuses();
@@ -167,64 +163,65 @@ const WarMonitorModule = {
             this.watch();
         }, this.TIME_BETWEEN_FRAMES);
 
+        this.setupObservers();
+
         console.log('⚔️ War Monitor injected');
     },
 
     setupObservers() {
-        let initialized = false;
-
+        // tryInit is idempotent — checks this.foundWar not a local guard
         const tryInit = () => {
-            if (initialized) return;
-            // Try broad selectors for Torn's React hashed class names
-            const warEl = document.querySelector(
-                '.faction-war, [class*="faction-war"], #faction_war_list_id .descriptions'
+            if (this.foundWar) return;
+
+            // Accept if we find ANY war-related element
+            const hasWarEl = document.querySelector(
+                'ul.members-list, li.enemy, li.your, .faction-war, [class*="factionWar"], #faction_war_list_id'
             );
-            if (!warEl) return;
+            if (!hasWarEl) return;
 
-            // Also accept if the war members list is present
-            const hasMemberList = document.querySelector('ul.members-list');
-            if (!warEl && !hasMemberList) return;
-
-            console.log('[WarMonitor] Found war element, initializing...');
-            initialized = true;
+            console.log('[WarMonitor] Found war element:', hasWarEl.className || hasWarEl.tagName);
             this.foundWar = true;
+
+            // Extract members then immediately fire first status update
             this.extractAllMemberLis();
-            this.updateStatuses();
+            setTimeout(() => this.updateStatuses(), 100);
         };
 
-        // Try immediately
-        tryInit();
-
-        // Observe for dynamic additions (Torn SPA navigations)
+        // MutationObserver so we catch React renders
         const observer = new MutationObserver(() => tryInit());
         observer.observe(document.body, { subtree: true, childList: true });
 
-        // Polling fallback — try every 1.5s for 45s
-        // This covers slow React renders that the observer might miss
-        let attempts = 0;
-        const MAX_ATTEMPTS = 30;
-        const poll = setInterval(() => {
-            attempts++;
+        // Aggressive polling for the first 20s (React can be slow)
+        let fastAttempts = 0;
+        const fastPoll = setInterval(() => {
+            fastAttempts++;
             tryInit();
-            if (initialized || attempts >= MAX_ATTEMPTS) {
-                clearInterval(poll);
-                if (!initialized) console.log('[WarMonitor] War list not found after 45s polling');
+            if (fastAttempts >= 40 || this.foundWar) {
+                clearInterval(fastPoll);
+                if (!this.foundWar) {
+                    // Slow poll fallback every 2s indefinitely
+                    const slowPoll = setInterval(() => {
+                        tryInit();
+                        if (this.foundWar) clearInterval(slowPoll);
+                    }, 2000);
+                }
             }
-        }, 1500);
+        }, 500);
 
-        // Also observe for member list mutations (re-renders)
+        // Try immediately after a short delay
+        setTimeout(tryInit, 200);
+
+        // Observe member list mutations so we re-extract when Torn re-renders the list
         const memberListObserver = new MutationObserver(() => {
-            if (!initialized) { tryInit(); return; }
-            this.extractAllMemberLis();
+            if (this.foundWar) this.extractAllMemberLis();
         });
-
         const recheckMemberObserver = setInterval(() => {
             const memberLists = document.querySelectorAll('ul.members-list');
             if (memberLists.length > 0) {
                 memberLists.forEach(ul => memberListObserver.observe(ul, { childList: true }));
                 clearInterval(recheckMemberObserver);
             }
-        }, 2000);
+        }, 1000);
     },
 
     extractAllMemberLis() {
