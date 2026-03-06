@@ -360,6 +360,7 @@
                 ${this.createToggle('auto-gym-switch', '💪 Auto Gym Switch', 'Automatically switches to best gym before training')}
                 ${this.createToggle('book-notifier', '📚 Mission Book Notifier', 'Alerts when books are available in mission rewards (checks every 12 hours)')}
                 ${this.createToggle('locked-items', '🔒 Locked Items Manager', 'Lock inventory items to prevent accidental trading, selling, or deleting')}
+                ${this.createToggle('market-filler', '🛒 Item Market Filler', 'Adds a Fill button to Item Market listings to auto-fill the cheapest price')}
                 ${this.createWeaponXpToggle()}
                 <div id="sidekick-module-status" style="text-align: center; padding: 10px; border-radius: 5px; 
                                                        background: rgba(255,255,255,0.1); color: #ccc; margin-top: 20px; font-size: 13px;">
