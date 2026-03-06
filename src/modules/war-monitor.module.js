@@ -169,30 +169,42 @@ const WarMonitorModule = {
     },
 
     setupObservers() {
-        // tryInit is idempotent — checks this.foundWar not a local guard
+        // Phase 1: find any war container element → set foundWar
         const tryInit = () => {
             if (this.foundWar) return;
 
-            // Accept if we find ANY war-related element
             const hasWarEl = document.querySelector(
                 'ul.members-list, li.enemy, li.your, .faction-war, .f-war-list, ' +
                 '[class*="war-list"], [class*="factionWar"], [class*="war-new"], #faction_war_list_id'
             );
             if (!hasWarEl) return;
 
-            console.log('[WarMonitor] Found war element:', hasWarEl.className || hasWarEl.tagName);
+            console.log('[WarMonitor] Found war container:', hasWarEl.className || hasWarEl.tagName);
             this.foundWar = true;
 
-            // Extract members then immediately fire first status update
-            this.extractAllMemberLis();
-            setTimeout(() => this.updateStatuses(), 100);
+            // Phase 2: keep trying to extract member rows — React renders them
+            // asynchronously AFTER the container, so we poll until we have some
+            let memberAttempts = 0;
+            const memberPoll = setInterval(() => {
+                memberAttempts++;
+                this.extractAllMemberLis();
+                if (this.memberLis.size > 0 || memberAttempts >= 30) {
+                    clearInterval(memberPoll);
+                    if (this.memberLis.size > 0) {
+                        console.log(`[WarMonitor] Extracted ${this.memberLis.size} member rows after ${memberAttempts} attempt(s)`);
+                        this.updateStatuses();
+                    } else {
+                        console.warn('[WarMonitor] No member rows found after 9s');
+                    }
+                }
+            }, 300);
         };
 
-        // MutationObserver so we catch React renders
+        // MutationObserver catches React renders immediately
         const observer = new MutationObserver(() => tryInit());
         observer.observe(document.body, { subtree: true, childList: true });
 
-        // Aggressive polling for the first 20s (React can be slow)
+        // Aggressive polling for the first 20s in case observer misses early render
         let fastAttempts = 0;
         const fastPoll = setInterval(() => {
             fastAttempts++;
@@ -200,7 +212,6 @@ const WarMonitorModule = {
             if (fastAttempts >= 40 || this.foundWar) {
                 clearInterval(fastPoll);
                 if (!this.foundWar) {
-                    // Slow poll fallback every 2s indefinitely
                     const slowPoll = setInterval(() => {
                         tryInit();
                         if (this.foundWar) clearInterval(slowPoll);
@@ -210,9 +221,9 @@ const WarMonitorModule = {
         }, 500);
 
         // Try immediately after a short delay
-        setTimeout(tryInit, 200);
+        setTimeout(tryInit, 150);
 
-        // Observe member list mutations so we re-extract when Torn re-renders the list
+        // After members are found, observe the member list for re-renders
         const memberListObserver = new MutationObserver(() => {
             if (this.foundWar) this.extractAllMemberLis();
         });

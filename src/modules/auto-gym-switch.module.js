@@ -108,46 +108,56 @@ const AutoGymSwitchModule = {
         const self = this;
 
         window.fetch = async function (...args) {
-            // Intercept training requests
-            if (args[0] && args[0].includes('/gym.php?step=train') && self.isEnabled) {
-                try {
-                    const body = JSON.parse(args[1].body);
-                    const stat = body.stat.substring(0, 3); // str, def, spe, dex
+            const url = typeof args[0] === 'string' ? args[0] : (args[0]?.url || '');
 
+            // ── Intercept initial gym info load ──────────────────────────────
+            if (url.includes('/gym.php?step=getInitialGymInfo')) {
+                const result = await self.originalFetch(...args);
+                try {
+                    const data = await result.clone().json();
+                    if (data.gyms) self.processGymData(data.gyms);
+                } catch (e) { /* ignore */ }
+                return result;
+            }
+
+            // ── Intercept manual gym changes / membership purchases ──────────
+            if (url.includes('/gym.php?step=changeGym') || url.includes('/gym.php?step=purchaseMembership')) {
+                const result = await self.originalFetch(...args);
+                try {
+                    const data = await result.clone().json();
+                    if (data.success && args[1]?.body) {
+                        const body = typeof args[1].body === 'string' ? JSON.parse(args[1].body) : {};
+                        if (body.gymID) self.currentGym = Number(body.gymID);
+                        if (!self.gymInfo[self.currentGym]?.checked) {
+                            self.addGymToPicks(self.currentGym);
+                            for (const s in self.picks) self.picks[s].sort((a, b) => b.gain - a.gain || b.id - a.id);
+                        }
+                    }
+                } catch (e) { /* ignore */ }
+                return result;
+            }
+
+            // ── Intercept training — switch gym BEFORE the train fires ───────
+            if (url.includes('/gym.php?step=train') && self.isEnabled) {
+                try {
+                    const bodyStr = args[1]?.body;
+                    const body = typeof bodyStr === 'string' ? JSON.parse(bodyStr) : {};
+                    const stat = (body.stat || '').substring(0, 3); // str/def/spe/dex
                     const bestGym = self.getBestGym(stat);
 
                     if (bestGym && bestGym !== self.currentGym) {
-                        console.log(`💪 Switching from gym ${self.currentGym} to ${bestGym} for ${stat}`);
-                        await self.switchGym(bestGym);
+                        console.log(`💪 Switching from gym ${self.currentGym} to ${bestGym} for stat: ${stat}`);
+                        // Switch the gym; return a synthetic response so Torn's UI
+                        // shows the swap message (matching original script behaviour)
+                        const switchMsg = await self.switchGym(bestGym);
+                        return new Response(JSON.stringify({ message: switchMsg }), {
+                            status: 200,
+                            headers: { 'Content-Type': 'application/json' }
+                        });
                     }
                 } catch (error) {
                     console.error('💪 Failed to process training request:', error);
                 }
-            }
-
-            // Intercept gym info to track current gym
-            if (args[0] && args[0].includes('/gym.php?step=getInitialGymInfo')) {
-                const result = await self.originalFetch(...args);
-                const data = await result.clone().json();
-
-                if (data.gyms) {
-                    self.processGymData(data.gyms);
-                }
-
-                return result;
-            }
-
-            // Track gym changes
-            if (args[0] && (args[0].includes('/gym.php?step=changeGym') || args[0].includes('/gym.php?step=purchaseMembership'))) {
-                const result = await self.originalFetch(...args);
-                const data = await result.clone().json();
-
-                if (data.success && args[1] && args[1].body) {
-                    const body = JSON.parse(args[1].body);
-                    self.currentGym = body.gymID;
-                }
-
-                return result;
             }
 
             return await self.originalFetch(...args);
@@ -221,26 +231,25 @@ const AutoGymSwitchModule = {
         try {
             const response = await this.originalFetch('/gym.php', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({
-                    step: 'changeGym',
-                    gymID: gymId
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ step: 'changeGym', gymID: gymId })
             });
 
             const data = await response.json();
 
             if (data.success) {
                 this.currentGym = gymId;
+                if (this.gymInfo[gymId]) this.gymInfo[gymId].checked = true;
                 console.log(`💪 Successfully switched to gym ${gymId}`);
-
-                // Update UI
                 this.updateGymUI(gymId);
+                return data.message || `Switched to gym ${gymId}`;
             } else {
                 console.error('💪 Failed to switch gym:', data.message);
+                return data.message || 'Gym switch failed';
             }
         } catch (error) {
             console.error('💪 Gym switch error:', error);
+            return 'Gym switch error';
         }
     },
 
