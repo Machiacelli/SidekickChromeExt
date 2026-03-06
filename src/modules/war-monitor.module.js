@@ -175,7 +175,8 @@ const WarMonitorModule = {
 
             // Accept if we find ANY war-related element
             const hasWarEl = document.querySelector(
-                'ul.members-list, li.enemy, li.your, .faction-war, [class*="factionWar"], #faction_war_list_id'
+                'ul.members-list, li.enemy, li.your, .faction-war, .f-war-list, ' +
+                '[class*="war-list"], [class*="factionWar"], [class*="war-new"], #faction_war_list_id'
             );
             if (!hasWarEl) return;
 
