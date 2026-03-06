@@ -84,6 +84,16 @@
         },
         {
             "matches": [
+                "https://www.torn.com/gym.php*"
+            ],
+            "js": [
+                "src/modules/auto-gym-switch-inject.js"
+            ],
+            "world": "MAIN",
+            "run_at": "document_start"
+        },
+        {
+            "matches": [
                 "https://www.torn.com/calendar.php*",
                 "https://*.torn.com/calendar.php*"
             ],
@@ -116,7 +126,8 @@
                 "assets/icons/sidekick-logo.png",
                 "assets/sounds/NotificationSound1.mp3",
                 "icons/*.png",
-                "src/core/notification-bridge-page.js"
+                "src/core/notification-bridge-page.js",
+                "src/modules/auto-gym-switch-inject.js"
             ],
             "matches": [
                 "<all_urls>"
