@@ -93,20 +93,42 @@
     }
 
     async function switchGym(gymId) {
-        const formData = new URLSearchParams();
-        formData.append('step', 'changeGym');
-        formData.append('gymID', gymId);
-        const resp = await originalFetch('/gym.php', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await resp.json();
-        if (data.success) {
-            currentGym = gymId;
-            updateGymUI(gymId);
-            return data.message || `Switched to gym ${gymId}`;
+        // Try the same pattern as the train request (POST /gym.php?step=X with JSON body)
+        const attempts = [
+            // Attempt 1: POST with JSON body (matches train request format)
+            () => originalFetch('/gym.php?step=changeGym', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ gymID: gymId })
+            }),
+            // Attempt 2: GET with query params (matches getInitialGymInfo format)
+            () => originalFetch(`/gym.php?step=changeGym&gymID=${gymId}`),
+            // Attempt 3: POST to root with URLSearchParams (old Torn API style)
+            () => originalFetch('/gym.php', {
+                method: 'POST',
+                body: new URLSearchParams({ step: 'changeGym', gymID: gymId })
+            })
+        ];
+
+        for (let i = 0; i < attempts.length; i++) {
+            let resp;
+            try {
+                resp = await attempts[i]();
+                const text = await resp.text();
+                console.log(`💪 [AutoGym] switchGym attempt ${i + 1}: status=${resp.status} ct=${resp.headers.get('content-type')} body=${text.slice(0, 150)}`);
+                const data = JSON.parse(text);
+                if (data.success) {
+                    currentGym = gymId;
+                    updateGymUI(gymId);
+                    return data.message || `Switched to gym ${gymId}`;
+                }
+                // Got JSON but not success — no point retrying, return the message
+                return data.message || 'Gym switch failed';
+            } catch (e) {
+                console.warn(`💪 [AutoGym] switchGym attempt ${i + 1} failed:`, e.message);
+            }
         }
-        return data.message || 'Gym switch failed';
+        return 'Gym switch failed after all attempts';
     }
 
     function updateGymUI(gymId) {
