@@ -93,42 +93,25 @@
     }
 
     async function switchGym(gymId) {
-        // Try the same pattern as the train request (POST /gym.php?step=X with JSON body)
-        const attempts = [
-            // Attempt 1: POST with JSON body (matches train request format)
-            () => originalFetch('/gym.php?step=changeGym', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ gymID: gymId })
-            }),
-            // Attempt 2: GET with query params (matches getInitialGymInfo format)
-            () => originalFetch(`/gym.php?step=changeGym&gymID=${gymId}`),
-            // Attempt 3: POST to root with URLSearchParams (old Torn API style)
-            () => originalFetch('/gym.php', {
-                method: 'POST',
-                body: new URLSearchParams({ step: 'changeGym', gymID: gymId })
-            })
-        ];
-
-        for (let i = 0; i < attempts.length; i++) {
-            let resp;
-            try {
-                resp = await attempts[i]();
-                const text = await resp.text();
-                console.log(`💪 [AutoGym] switchGym attempt ${i + 1}: status=${resp.status} ct=${resp.headers.get('content-type')} body=${text.slice(0, 150)}`);
-                const data = JSON.parse(text);
-                if (data.success) {
-                    currentGym = gymId;
-                    updateGymUI(gymId);
-                    return data.message || `Switched to gym ${gymId}`;
-                }
-                // Got JSON but not success — no point retrying, return the message
-                return data.message || 'Gym switch failed';
-            } catch (e) {
-                console.warn(`💪 [AutoGym] switchGym attempt ${i + 1} failed:`, e.message);
-            }
+        // Don't try to replicate Torn's API — click the gym button in the DOM instead.
+        // This lets Torn's own React onClick handler make the changeGym request through
+        // the full authenticated chain, which is the same path a manual click takes.
+        const gymEl = document.querySelector(`[class*='gym-${gymId}']`);
+        if (!gymEl) {
+            console.log(`💪 [AutoGym] gym-${gymId} element not found in DOM`);
+            return `Gym ${gymId} not found in UI`;
         }
-        return 'Gym switch failed after all attempts';
+
+        // Walk up/down to find the actual clickable element
+        const clickTarget = gymEl.closest('button')
+            || gymEl.querySelector('button')
+            || gymEl.parentElement?.closest('button')
+            || gymEl;
+
+        console.log(`💪 [AutoGym] Clicking gym ${gymId}:`, clickTarget.tagName, [...clickTarget.classList].slice(0, 3).join(' '));
+        clickTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        currentGym = gymId; // Optimistically update so we don't re-trigger next time
+        return `Switching to gym ${gymId} — click Train again to start training.`;
     }
 
     function updateGymUI(gymId) {
