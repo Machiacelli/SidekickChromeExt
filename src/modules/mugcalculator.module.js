@@ -54,12 +54,12 @@ const MugCalculatorModule = (() => {
                     this.processAllBazaarRows();
                     this.observeBazaarRows();
                 });
-                // Point market support
-                if (window.location.pathname.includes('pmarket.php')) {
-                    this.waitForElements('.pmarket-table___row, .row___points, [class*="pointsOffersList"] tr, [class*="pmarket"] tr', () => {
+                // Point market support — uses ul.users-point-sell li structure
+                if (window.location.pathname.includes('pmarket.php') || window.location.href.includes('pmarket.php')) {
+                    this.waitForElements('ul.users-point-sell li', () => {
                         this.processAllPMarketRows();
                         this.observePMarketRows();
-                    }, 15, 600);
+                    }, 20, 500);
                 }
                 setInterval(() => this.processAllMarketRows(), 2000);
             }, 1000);
@@ -509,24 +509,37 @@ const MugCalculatorModule = (() => {
             });
         },
 
+        // =============================================================
         // Point Market (pmarket.php) support
-        // Torn's pmarket columns: Name (col 0, has seller link) | Points (col 1, qty) | Cost Each (col 2) | Total Price (col 3) | Action (col 4)
-        async attachInfoIconForPMarketRow(row) {
-            if (processedRows.has(row) && row.querySelector('.mugInfoIcon')) return;
-            if (processedRows.has(row) && !row.querySelector('.mugInfoIcon')) processedRows.delete(row);
+        // DOM: ul.users-point-sell > li > span.expander
+        //   span.user-info     → contains seller link a.user.name[href*=XID=]
+        //   span.points        → amount of points
+        //   span.cost-each     → price per point
+        //   span.total-price   → total listing price
+        // =============================================================
+        async attachInfoIconForPMarketRow(li) {
+            if (!li || li.classList.contains('sidekick-pm-processed')) return;
 
-            const cells = row.querySelectorAll('td');
-            if (cells.length < 4) return;
+            const expander = li.querySelector('span.expander');
+            if (!expander) return;
 
-            // Seller link is in the Name cell (col 0)
-            const sellerLink = cells[0].querySelector("a[href*='profiles.php?XID='], a[href*='XID=']");
+            const sellerLink = expander.querySelector('span.user-info a.user.name[href*="XID="]');
             if (!sellerLink) return;
 
-            const parseNum = (el) => parseInt((el?.innerText || el?.textContent || '0').replace(/[^0-9]/g, ''), 10);
+            const parseSpan = (sel) => {
+                const el = expander.querySelector(sel);
+                if (!el) return 0;
+                // skip screen-reader wai children
+                const text = Array.from(el.childNodes)
+                    .filter(n => n.nodeType === Node.TEXT_NODE || (n.nodeType === Node.ELEMENT_NODE && !n.classList.contains('wai')))
+                    .map(n => n.textContent.trim())
+                    .join('');
+                return parseInt(text.replace(/[^0-9]/g, ''), 10) || 0;
+            };
 
-            const quantity = parseNum(cells[1]);  // Points column
-            const costEach = parseNum(cells[2]);  // Cost Each column
-            const totalPrice = parseNum(cells[3]); // Total Price column (use directly)
+            const quantity = parseSpan('span.points');
+            const costEach = parseSpan('span.cost-each');
+            const totalPrice = parseSpan('span.total-price');
 
             if (!quantity || !costEach) return;
             const listingTotal = totalPrice > 0 ? totalPrice : costEach * quantity;
@@ -534,25 +547,26 @@ const MugCalculatorModule = (() => {
             const threshold = parseInt(await window.SidekickModules.Core.ChromeStorage.get('mugThreshold') || 0, 10);
             if (threshold > 0 && listingTotal < threshold) return;
 
-            if (row.querySelector('.mugInfoIcon')) { processedRows.add(row); return; }
+            // Mark processed BEFORE async work to avoid races
+            li.classList.add('sidekick-pm-processed');
 
-            // Attach icon to Cost Each cell (col 2) for visibility
-            const priceCell = cells[2];
+            const costEachSpan = expander.querySelector('span.cost-each');
+            if (!costEachSpan) return;
+
             const icon = document.createElement('div');
             icon.className = 'mugInfoIcon';
             icon.textContent = 'i';
             icon.title = 'Mug info';
-            priceCell.style.position = 'relative';
-            priceCell.appendChild(icon);
+            icon.style.cssText = 'display:inline-block;vertical-align:middle;margin-left:4px;';
+            costEachSpan.appendChild(icon);
 
             icon.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.closeAllPopups();
                 this.handlePMarketIconClick(listingTotal, quantity, costEach, threshold, sellerLink, icon);
             });
-
-            processedRows.add(row);
         },
+
 
         async handlePMarketIconClick(listingTotal, quantity, costEach, threshold, sellerLink, icon) {
             try {
@@ -569,7 +583,6 @@ const MugCalculatorModule = (() => {
                 const cashOnHand = player.cashOnHand > 0 ? player.cashOnHand : listingTotal;
                 const mugAmount = this.calculateMugAmount(cashOnHand, mugMerits, plunderPct, player.hasClothingProtection);
 
-                // "Effective cost per point after mug"
                 const netCash = Math.max(0, listingTotal - mugAmount);
                 const effectiveCostEach = quantity > 0 ? Math.floor(netCash / quantity) : 0;
 
@@ -595,9 +608,7 @@ const MugCalculatorModule = (() => {
             let statusLine = `<strong>Status:</strong> ${statusDesc}`;
             if (until > Date.now() / 1000 && until > 0) {
                 const secsLeft = Math.max(0, Math.floor(until - Date.now() / 1000));
-                const m = Math.floor(secsLeft / 60);
-                const s = secsLeft % 60;
-                statusLine += ` <span style="font-weight:normal;font-size:11px">(${m}m ${s}s)</span>`;
+                statusLine += ` <span style="font-weight:normal;font-size:11px">(${Math.floor(secsLeft / 60)}m ${secsLeft % 60}s)</span>`;
             }
 
             const lifeMax = player.life?.maximum || player.life?.max_life || 0;
@@ -649,28 +660,19 @@ const MugCalculatorModule = (() => {
         },
 
         processAllPMarketRows() {
-            // Try several selectors — Torn's pmarket uses React so class names may vary
-            const rows = document.querySelectorAll(
-                '[class*="pmarket"] tr, [class*="pointsOffer"] tr, [class*="offers"] tr, table.offers-table tbody tr'
-            );
-            rows.forEach(row => this.attachInfoIconForPMarketRow(row));
+            document.querySelectorAll('ul.users-point-sell > li').forEach(li => this.attachInfoIconForPMarketRow(li));
         },
 
         observePMarketRows() {
-            const container = document.querySelector(
-                '[class*="pmarket"], [class*="pointsOffer"], [class*="offers"]'
-            );
-            if (!container) return;
-            new MutationObserver((mutations) => {
-                mutations.forEach(m => m.addedNodes.forEach(node => {
-                    if (node.nodeType !== 1) return;
-                    if (node.matches('tr')) {
-                        this.attachInfoIconForPMarketRow(node);
-                    } else {
-                        node.querySelectorAll?.('tr')?.forEach(r => this.attachInfoIconForPMarketRow(r));
-                    }
-                }));
-            }).observe(container, { childList: true, subtree: true });
+            const container = document.querySelector('ul.users-point-sell');
+            if (!container) {
+                // Try again shortly — may not be rendered yet
+                setTimeout(() => this.observePMarketRows(), 1000);
+                return;
+            }
+            new MutationObserver(() => this.processAllPMarketRows())
+                .observe(container, { childList: true, subtree: false });
+            console.log('[MugCalc] pmarket observer attached');
         },
 
         setupURLChangeListener() {
