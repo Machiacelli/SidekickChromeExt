@@ -499,10 +499,14 @@ const LockedItemsManagerModule = {
     startObserver() {
         if (this.observer) return;
 
+        let processing = false;
         this.observer = new MutationObserver(() => {
-            // Use rAF only — no extra debounce — so locked state applies
-            // immediately when the DOM changes (e.g. category switches)
-            requestAnimationFrame(() => this.processPage());
+            if (processing) return; // prevent re-entry from our own DOM changes
+            processing = true;
+            requestAnimationFrame(() => {
+                this.processPage();
+                processing = false;
+            });
         });
 
         this.observer.observe(document.body, { childList: true, subtree: true });

@@ -64,8 +64,10 @@ const AutoGymSwitchModule = {
 
     async loadSettings() {
         try {
-            const settings = await window.SidekickModules.Core.ChromeStorage.get(this.STORAGE_KEY) || {};
-            this.isEnabled = settings.enabled || false;
+            // Settings toggles are stored in sidekick_settings[moduleKey].isEnabled
+            const settings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings') || {};
+            this.isEnabled = settings[this.STORAGE_KEY]?.isEnabled === true;
+            console.log('💪 Auto Gym Switch settings loaded, enabled:', this.isEnabled);
         } catch (error) {
             console.error('💪 Failed to load settings:', error);
         }
@@ -73,9 +75,9 @@ const AutoGymSwitchModule = {
 
     async saveSettings() {
         try {
-            await window.SidekickModules.Core.ChromeStorage.set(this.STORAGE_KEY, {
-                enabled: this.isEnabled
-            });
+            const settings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings') || {};
+            settings[this.STORAGE_KEY] = { isEnabled: this.isEnabled };
+            await window.SidekickModules.Core.ChromeStorage.set('sidekick_settings', settings);
         } catch (error) {
             console.error('💪 Failed to save settings:', error);
         }
