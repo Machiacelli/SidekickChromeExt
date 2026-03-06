@@ -93,10 +93,12 @@
     }
 
     async function switchGym(gymId) {
+        const formData = new URLSearchParams();
+        formData.append('step', 'changeGym');
+        formData.append('gymID', gymId);
         const resp = await originalFetch('/gym.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ step: 'changeGym', gymID: gymId })
+            body: formData
         });
         const data = await resp.json();
         if (data.success) {
@@ -160,9 +162,16 @@
             const result = await originalFetch(...args);
             try {
                 const data = await result.clone().json();
-                if (data.success && args[1]?.body) {
-                    const body = typeof args[1].body === 'string' ? JSON.parse(args[1].body) : {};
-                    if (body.gymID) currentGym = Number(body.gymID);
+                if (data.success) {
+                    // Extract gymID from URLSearchParams body
+                    const body = args[1]?.body;
+                    let gymID = null;
+                    if (body instanceof URLSearchParams) {
+                        gymID = body.get('gymID');
+                    } else if (typeof body === 'string') {
+                        gymID = new URLSearchParams(body).get('gymID');
+                    }
+                    if (gymID) currentGym = Number(gymID);
                 }
             } catch (e) { /* ignore */ }
             return result;
