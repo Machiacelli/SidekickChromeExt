@@ -383,13 +383,13 @@
             // REMOVED: Vault Tracker Module
             // Vault Tracker has been removed from the extension
 
-            // Initialize Market Filler Module
-            console.log('🛒 Sidekick: Initializing Market Filler...');
-            if (window.SidekickModules.MarketFiller?.init) {
-                await window.SidekickModules.MarketFiller.init();
-                console.log('✅ Sidekick: Market Filler initialized');
+            // Initialize Price Filler Module
+            console.log('🛒 Sidekick: Initializing Price Filler...');
+            if (window.SidekickModules.PriceFiller?.init) {
+                await window.SidekickModules.PriceFiller.init();
+                console.log('✅ Sidekick: Price Filler initialized');
             } else {
-                console.warn('⚠️ Market Filler module not available');
+                console.warn('⚠️ Price Filler module not available');
             }
 
             // Initialize Notion Bug Reporter Module
