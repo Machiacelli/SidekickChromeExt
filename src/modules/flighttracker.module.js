@@ -170,10 +170,10 @@
                     pointer-events: auto;
                 `;
 
-                // Create track button
+                // Create Player Tools dropdown button
                 const button = document.createElement('button');
                 button.className = 'sidekick-flight-tracker-btn';
-                button.innerHTML = '✈️ Track Player';
+                button.innerHTML = '🎯 Player Tools ▾';
                 button.style.cssText = `
                     background: linear-gradient(135deg, #4CAF50, #45a049);
                     border: none;
@@ -186,13 +186,13 @@
                     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
                     transition: all 0.3s ease;
                     white-space: nowrap;
+                    position: relative;
                 `;
 
                 button.addEventListener('mouseenter', () => {
                     button.style.transform = 'scale(1.05)';
                     button.style.boxShadow = '0 4px 12px rgba(0,0,0,0.4)';
                 });
-
                 button.addEventListener('mouseleave', () => {
                     button.style.transform = 'scale(1)';
                     button.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
@@ -201,7 +201,68 @@
                 button.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    this.handleTrackButtonClick(playerId, statusContainer);
+
+                    // Remove existing dropdown
+                    const existingMenu = document.getElementById('sidekick-player-tools-menu');
+                    if (existingMenu) { existingMenu.remove(); return; }
+
+                    const rect = button.getBoundingClientRect();
+                    const menu = document.createElement('div');
+                    menu.id = 'sidekick-player-tools-menu';
+                    menu.style.cssText = `
+                        position: fixed;
+                        top: ${rect.bottom + 4}px;
+                        left: ${rect.left}px;
+                        background: #1a1a1a;
+                        border: 1px solid #444;
+                        border-radius: 6px;
+                        box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+                        z-index: 999999;
+                        min-width: 160px;
+                        overflow: hidden;
+                    `;
+
+                    const menuItemStyle = `
+                        display: flex; align-items: center; gap: 8px;
+                        width: 100%; padding: 10px 14px;
+                        background: none; border: none; color: #fff;
+                        text-align: left; cursor: pointer; font-size: 13px;
+                        font-weight: 500; transition: background 0.15s;
+                    `;
+
+                    menu.innerHTML = `
+                        <button id="pt-track" style="${menuItemStyle}">✈️ Track Player</button>
+                        <button id="pt-jail" style="${menuItemStyle}">⛓️ Last Jailed</button>
+                    `;
+
+                    document.body.appendChild(menu);
+
+                    menu.querySelectorAll('button').forEach(btn => {
+                        btn.addEventListener('mouseenter', () => btn.style.background = 'rgba(76,175,80,0.2)');
+                        btn.addEventListener('mouseleave', () => btn.style.background = 'none');
+                    });
+
+                    menu.querySelector('#pt-track').addEventListener('click', () => {
+                        menu.remove();
+                        this.handleTrackButtonClick(playerId, statusContainer);
+                    });
+
+                    menu.querySelector('#pt-jail').addEventListener('click', () => {
+                        menu.remove();
+                        if (window.SidekickModules?.LastJailed) {
+                            window.SidekickModules.LastJailed.showForPlayer(playerId, flexContainer);
+                        }
+                    });
+
+                    // Close on outside click
+                    setTimeout(() => {
+                        document.addEventListener('click', function close(ev) {
+                            if (!menu.contains(ev.target) && ev.target !== button) {
+                                menu.remove();
+                                document.removeEventListener('click', close);
+                            }
+                        });
+                    }, 0);
                 });
 
                 flexContainer.appendChild(button);

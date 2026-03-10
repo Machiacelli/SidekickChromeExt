@@ -343,6 +343,11 @@
                 console.warn("⚠️ War Monitor module not available");
             }
 
+            // Last Jailed is event-driven — no explicit init needed
+            if (window.SidekickModules.LastJailed) {
+                console.log("✅ Sidekick: Last Jailed module ready");
+            }
+
             // Initialize Chat Alert Module
             console.log("💬 Sidekick: Initializing Chat Alert...");
             if (window.SidekickModules.ChatAlert?.init) {

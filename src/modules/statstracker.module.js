@@ -27,6 +27,7 @@
         lastUpdated: 0,
         displayUpdateInterval: null,
         gymObserver: null,
+        displayPeriod: 'day', // 'day' | 'week' | 'month'
 
         // Initialize module
         async init() {
@@ -68,6 +69,7 @@
                 if (windowState) {
                     this.windowState = windowState;
                     this.isEnabled = windowState.isEnabled || false;
+                    this.displayPeriod = windowState.displayPeriod || 'day';
                 }
             } catch (error) {
                 console.error("❌ Failed to load Stats Tracker settings:", error);
@@ -79,7 +81,8 @@
             try {
                 const settings = {
                     ...this.windowState,
-                    isEnabled: this.isEnabled
+                    isEnabled: this.isEnabled,
+                    displayPeriod: this.displayPeriod
                 };
                 await window.SidekickModules.Core.ChromeStorage.set(WINDOW_STORAGE_KEY, settings);
             } catch (error) {
@@ -199,17 +202,26 @@
 
         // Get today's gains
         getTodayGains() {
+            return this.getPeriodGains(1);
+        },
+
+        // Get gains over the last N days (today vs N days ago)
+        getPeriodGains(days) {
             const today = this.formatDate();
-            const yesterday = this.formatDate(new Date(Date.now() - 86400000));
+            const pastDate = this.formatDate(new Date(Date.now() - days * 86400000));
 
             const todayStats = this.history[today];
-            const yesterdayStats = this.history[yesterday];
 
-            if (!todayStats || !yesterdayStats) {
-                return null;
+            // For >1 day, find the nearest available snapshot at or before the target date
+            let pastStats = this.history[pastDate];
+            if (!pastStats) {
+                const allDates = Object.keys(this.history).sort();
+                const candidates = allDates.filter(d => d <= pastDate);
+                if (candidates.length) pastStats = this.history[candidates[candidates.length - 1]];
             }
 
-            return this.diff(todayStats, yesterdayStats);
+            if (!todayStats || !pastStats) return null;
+            return this.diff(todayStats, pastStats);
         },
 
         // Enable module
@@ -370,6 +382,7 @@
                     min-width: 120px;
                 `;
 
+                const periodLabel = { day: 'Day', week: 'Week', month: 'Month' }[this.displayPeriod];
                 dropdown.innerHTML = `
                     <button class="dropdown-option" data-action="color" style="
                         width: 100%;
@@ -400,6 +413,21 @@
                         gap: 6px;
                     ">
                         <span>🔄</span> Refresh Stats
+                    </button>
+                    <button class="dropdown-option" data-action="duration" style="
+                        width: 100%;
+                        padding: 8px 12px;
+                        background: none;
+                        border: none;
+                        color: #fff;
+                        text-align: left;
+                        cursor: pointer;
+                        font-size: 12px;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                    ">
+                        <span>📅</span> Duration: ${periodLabel}
                     </button>
                 `;
 
@@ -437,6 +465,11 @@
                                     2000
                                 );
                             }
+                        } else if (action === 'duration') {
+                            const cycle = { day: 'week', week: 'month', month: 'day' };
+                            this.displayPeriod = cycle[this.displayPeriod] || 'day';
+                            await this.saveSettings();
+                            this.refreshDisplay();
                         }
                     });
                 });
@@ -521,14 +554,16 @@
             if (!this.window) return;
 
             const content = this.window.querySelector('.stats-content');
-            const gains = this.getTodayGains();
+            const periodDays = { day: 1, week: 7, month: 30 }[this.displayPeriod] || 1;
+            const periodName = { day: "Today's", week: 'Last 7-Day', month: 'Last 30-Day' }[this.displayPeriod];
+            const gains = this.getPeriodGains(periodDays);
 
             if (!gains) {
                 content.innerHTML = `
                     <div style="text-align: center; color: #888; padding: 20px;">
                         <p>⏳ Waiting for data...</p>
                         <p style="font-size: 11px; margin-top: 10px;">
-                            Stats are tracked daily. Come back tomorrow to see your gains!
+                            Stats are tracked daily. More history will be available over time.
                         </p>
                     </div>
                 `;
@@ -544,7 +579,7 @@
             content.innerHTML = `
                 <div style="margin-bottom: 15px;">
                     <div style="font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #4CAF50;">
-                        Today's Gains
+                        ${periodName} Gains
                     </div>
                     <div style="display: grid; grid-template-columns: 80px 1fr; gap: 8px; font-size: 12px;">
                         <div>💪 Strength:</div><div>${formatStat(gains.strength)}</div>

@@ -69,6 +69,7 @@
                 "src/modules/quick-deposit.module.js",
                 "src/modules/crime-notifier.module.js",
                 "src/modules/war-monitor.module.js",
+                "src/modules/last-jailed.module.js",
                 "src/modules/chat-alert.module.js",
                 "src/modules/mug-warning.module.js",
                 "src/modules/auto-gym-switch.module.js",
