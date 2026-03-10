@@ -2057,6 +2057,9 @@
                     });
 
                     if (!isVisible) {
+                        // Reset stretch-causing constraints before measuring/positioning
+                        dropdownContent.style.right = 'auto';
+                        dropdownContent.style.width = 'max-content';
                         dropdownContent.style.display = 'block';
                         const btnRect = dropdownBtn.getBoundingClientRect();
                         const ddWidth = dropdownContent.offsetWidth || 160;
