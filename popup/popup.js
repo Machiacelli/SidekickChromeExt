@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Sidekick Chrome Extension - Popup Script V2
  * Handles the extension popup interface (Notification Center)
  */
@@ -305,13 +305,32 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelector('[data-tab="notifications"]')?.addEventListener('click', () => {
         loadNotifications();
         loadPreferences();
+        loadWindowsNotifSetting();
     });
 
     // Load notifications immediately if on notifications tab
     if (document.getElementById('notifications-tab')?.classList.contains('active')) {
         loadNotifications();
         loadPreferences();
+        loadWindowsNotifSetting();
     }
+
+    // Windows Notifications checkbox
+    const winNotifCheckbox = document.getElementById('popup-notif-windows');
+
+    async function loadWindowsNotifSetting() {
+        const result = await chrome.storage.local.get('sidekick_notification_prefs');
+        const prefs = result.sidekick_notification_prefs || {};
+        if (winNotifCheckbox) winNotifCheckbox.checked = prefs.windowsNotifications || false;
+    }
+
+    winNotifCheckbox?.addEventListener('change', async () => {
+        const result = await chrome.storage.local.get('sidekick_notification_prefs');
+        const prefs = result.sidekick_notification_prefs || {};
+        prefs.windowsNotifications = winNotifCheckbox.checked;
+        await chrome.storage.local.set({ sidekick_notification_prefs: prefs });
+        showMessage(`Windows notifications ${winNotifCheckbox.checked ? 'enabled' : 'disabled'}`, 'success');
+    });
 
     // ========================================
     // END NOTIFICATION SYSTEM

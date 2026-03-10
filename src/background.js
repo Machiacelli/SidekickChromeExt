@@ -206,6 +206,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse({ success: true });
             break;
 
+        case 'proxyFetch':
+            // Generic fetch proxy for content scripts that hit fetch issues
+            fetch(request.url)
+                .then(r => r.json())
+                .then(data => sendResponse({ success: true, data }))
+                .catch(err => sendResponse({ success: false, error: err.message }));
+            return true; // Keep channel open for async response
+
         case 'crimeNotifierAlert':
             // Handle Crime Notifier alerts with browser notifications and badge
             handleCrimeNotifierAlert(request.data)
