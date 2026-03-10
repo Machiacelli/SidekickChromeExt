@@ -206,6 +206,10 @@ const LockedItemsManagerModule = {
             .sidekick-toast.error {
                 border-left-color: #f44336;
             }
+            /* Hide locked items on bazaar / item-market add pages */
+            .sidekick-hide-locked {
+                display: none !important;
+            }
         `;
         document.head.appendChild(style);
     },
@@ -477,12 +481,12 @@ const LockedItemsManagerModule = {
 
             if (itemId && this.lockedItems[itemId]) {
                 item.classList.add('sidekick-hide-locked');
-                item.style.display = 'none !important';
+                item.style.setProperty('display', 'none', 'important');
                 hiddenCount++;
                 console.log(`🔒 Hiding item ID: ${itemId}`);
             } else {
                 item.classList.remove('sidekick-hide-locked');
-                item.style.display = '';
+                item.style.removeProperty('display');
             }
         });
 

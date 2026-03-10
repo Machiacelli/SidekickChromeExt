@@ -6,7 +6,7 @@
  * Based on: Inventory Sorter userscript by Machiacelli
  */
 
-(function() {
+(function () {
     'use strict';
 
     console.log("📦 Loading Sidekick Inventory Sorter Module...");
@@ -47,7 +47,7 @@
 
             try {
                 await waitForCore();
-                
+
                 // Only initialize on inventory page
                 if (!window.location.href.includes('/item.php')) {
                     console.log("📦 Not on inventory page, skipping initialization");
@@ -59,7 +59,7 @@
                 this.setupUI();
                 this.setupObservers();
                 this.setupEventListeners();
-                
+
                 this.isInitialized = true;
                 console.log("✅ Inventory Sorter Module initialized successfully");
             } catch (error) {
@@ -124,19 +124,35 @@
             // Add styles
             this.addStyles();
 
-            // Create sort button container
+            // Create button container (holds worth label + worth btn + sort btn)
             const container = document.createElement('span');
             container.classList.add('is-container', 'right');
 
+            // Worth label — shows the calculated total
+            const worthLabel = document.createElement('span');
+            worthLabel.classList.add('is-worth-label');
+            worthLabel.style.display = 'none';
+
+            // Worth button
+            const worthBtn = document.createElement('button');
+            worthBtn.classList.add('is-btn', 'torn-btn', 'dark-mode');
+            worthBtn.textContent = 'WORTH';
+            worthBtn.title = 'Calculate total market value of all items in this category';
+
+            // Sort button
             const btn = document.createElement('button');
             btn.classList.add('is-btn', 'torn-btn', 'dark-mode');
             btn.textContent = 'SORT';
             btn.title = 'Click to sort inventory by value (Descending → Ascending → Default)';
 
+            container.appendChild(worthLabel);
+            container.appendChild(worthBtn);
             container.appendChild(btn);
             titleEl.appendChild(container);
 
             this.sortButton = btn;
+            this.worthButton = worthBtn;
+            this.worthLabel = worthLabel;
         },
 
         // Add CSS styles
@@ -149,6 +165,7 @@
                     position: relative;
                     display: flex;
                     align-items: center;
+                    gap: 4px;
                 }
 
                 .is-btn {
@@ -157,6 +174,14 @@
                     line-height: 0 !important;
                     font-size: 11px !important;
                     font-weight: bold !important;
+                }
+
+                .is-worth-label {
+                    font-size: 12px;
+                    font-weight: bold;
+                    color: #a8d8a8;
+                    white-space: nowrap;
+                    margin-right: 2px;
                 }
             `;
             document.head.appendChild(style);
@@ -189,7 +214,7 @@
         // Setup event listeners
         setupEventListeners() {
             const titleEl = document.querySelector('.title-black');
-            
+
             // Sort button click
             if (this.sortButton) {
                 this.sortButton.addEventListener('click', async (e) => {
@@ -198,10 +223,18 @@
                 });
             }
 
+            // Worth button click
+            if (this.worthButton) {
+                this.worthButton.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    await this.handleWorth();
+                });
+            }
+
             // Title click for loading all items
             titleEl?.addEventListener('click', async (e) => {
                 if (e.target !== titleEl) return;
-                
+
                 if (!this.apiKey) {
                     this.showNotification('Please set your API key in the extension settings to use Inventory Sorter', 'warning');
                     return;
@@ -228,6 +261,12 @@
                         this.currentTab = this.getCurrentTabElement();
                         this.currentTabIndex = this.getCurrentTabIndex();
                         this.sortState = 'default';
+
+                        // Reset worth label when switching tabs
+                        if (this.worthLabel) {
+                            this.worthLabel.style.display = 'none';
+                            this.worthLabel.textContent = '';
+                        }
 
                         this.itemObserver?.disconnect();
                         const tabContent = this.getCurrentTabContent();
@@ -260,6 +299,44 @@
             if (this.tabs[this.currentTabIndex]?.isFullyLoaded) {
                 await this.sortTab();
             }
+        },
+
+        // Handle worth button click — calculate total market value of the current category
+        async handleWorth() {
+            if (!this.apiKey) {
+                this.showNotification('Please set your API key in the extension settings', 'warning');
+                return;
+            }
+
+            // Load all items first if needed
+            if (!this.posBeforeScroll && !this.tabs[this.currentTabIndex]?.isFullyLoaded) {
+                this.posBeforeScroll = window.scrollY;
+                await this.loadTabItems();
+            }
+
+            const tabContent = this.getCurrentTabContent();
+            if (!tabContent) return;
+
+            let total = 0;
+            let counted = 0;
+
+            for (const item of tabContent.children) {
+                if (item.classList.contains('ajax-item-loader')) continue;
+
+                const itemId = item.getAttribute('data-item');
+                let qty = parseFloat(item.getAttribute('data-qty') || '1') || 1;
+
+                const value = this.itemValues[itemId]?.value || 0;
+                total += value * qty;
+                counted++;
+            }
+
+            if (this.worthLabel) {
+                this.worthLabel.textContent = this.getUsdFormat(total);
+                this.worthLabel.style.display = 'inline';
+            }
+
+            this.showNotification(`Category worth: ${this.getUsdFormat(total)} (${counted} items)`, 'success');
         },
 
         // Record current tab state
