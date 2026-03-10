@@ -115,7 +115,7 @@
         },
         async playNotificationSound() {
             try {
-                const settings = await ChromeStorage.get('sidekick_notifications') || {};
+                const settings = await ChromeStorage.get('sidekick_notification_prefs') || {};
                 if (settings.soundEnabled) {
                     const soundUrl = chrome.runtime.getURL('assets/sounds/NotificationSound1.mp3');
                     const audio = new Audio(soundUrl);

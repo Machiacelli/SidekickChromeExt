@@ -587,6 +587,16 @@
                     </div>
                 </div>
                 
+                <div style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px; color: #ccc; cursor: pointer;">
+                        <input type="checkbox" id="sidekick-notif-windows" style="accent-color: #2196F3;">
+                        <span>🖥️ Windows Notifications</span>
+                    </label>
+                    <div style="font-size: 12px; color: #aaa; margin-top: 5px; margin-left: 25px;">
+                        Send OS-level notifications (e.g. for Crime Notifier alerts) even when Torn is in the background
+                    </div>
+                </div>
+                
                 <div style="margin-bottom: 20px;">
                     <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Notification Duration (seconds):</label>
                     <div style="display: flex; align-items: center; gap: 15px;">
@@ -1611,18 +1621,22 @@
             const notifStatusDiv = panel.querySelector('#sidekick-notif-status');
 
             // CRITICAL: Load settings FIRST to initialize dataset.active BEFORE attaching click handler!
-            const notifSettings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_notifications') || {};
+            // Using 'sidekick_notification_prefs' to avoid collision with notification history array
+            const notifSettings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_notification_prefs') || {};
+
+            const notifWindowsCheckbox = panel.querySelector('#sidekick-notif-windows');
 
             // Auto-save helper function
             const autoSaveNotifSettings = async () => {
                 const settings = {
                     soundEnabled: notifSoundToggle?.dataset.active === 'true',
                     autoDismiss: notifAutoDismissCheckbox.checked,
+                    windowsNotifications: notifWindowsCheckbox?.checked || false,
                     duration: parseInt(notifDurationSlider.value) * 1000
                 };
 
                 try {
-                    await window.SidekickModules.Core.ChromeStorage.set('sidekick_notifications', settings);
+                    await window.SidekickModules.Core.ChromeStorage.set('sidekick_notification_prefs', settings);
                     this.showAutoSaveStatus(notifStatusDiv, 'Settings saved ✓');
 
                     // Toast notification
@@ -1671,6 +1685,10 @@
             // Load other notification settings
             if (notifAutoDismissCheckbox) {
                 notifAutoDismissCheckbox.checked = notifSettings.autoDismiss !== false;
+            }
+            if (notifWindowsCheckbox) {
+                notifWindowsCheckbox.checked = notifSettings.windowsNotifications || false;
+                notifWindowsCheckbox.addEventListener('change', autoSaveNotifSettings);
             }
             if (notifDurationSlider) {
                 const duration = (notifSettings.duration || 5000) / 1000;

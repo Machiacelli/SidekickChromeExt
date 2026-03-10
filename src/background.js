@@ -662,15 +662,21 @@ async function handleCrimeNotifierAlert(alertData) {
 
         console.log('🚨 Crime Notifier Alert:', { title, message, type });
 
-        // 1. Create browser notification
-        await chrome.notifications.create({
-            type: 'basic',
-            iconUrl: '../assets/icons/swissknife-48.png',
-            title: title || '🚨 Crime Notifier',
-            message: message || 'Alert from Crime Notifier',
-            priority: 2, // High priority
-            requireInteraction: false // Auto-dismiss after a few seconds
-        });
+        // Check if Windows notifications are enabled by the user
+        const notifPrefs = await chrome.storage.local.get('sidekick_notification_prefs');
+        const windowsNotifEnabled = notifPrefs?.sidekick_notification_prefs?.windowsNotifications || false;
+
+        // 1. Create OS-level notification only if opted in
+        if (windowsNotifEnabled) {
+            await chrome.notifications.create({
+                type: 'basic',
+                iconUrl: 'icons/icon48.png',
+                title: title || '🚨 Crime Notifier',
+                message: message || 'Alert from Crime Notifier',
+                priority: 2,
+                requireInteraction: false
+            });
+        }
 
         // 2. Increment badge counter
         await incrementBadge();

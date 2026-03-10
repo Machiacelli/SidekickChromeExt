@@ -147,18 +147,25 @@
                     return;
                 }
 
-                // Create a flex container that lives IN the document flow,
-                // floated left right after the player name h4 — no absolute positioning.
+                // Make content-title the position context
+                const contentTitle = h4.closest('.content-title') || h4.parentElement;
+                if (window.getComputedStyle(contentTitle).position === 'static') {
+                    contentTitle.style.position = 'relative';
+                }
+
+                // Create a flex container — absolutely positioned inside content-title
+                // (absolute removes it from flow so the clearfix never expands the header height)
                 const flexContainer = document.createElement('div');
                 flexContainer.className = 'sidekick-flight-tracker-container';
                 flexContainer.id = `flight-tracker-container-${playerId}`;
                 flexContainer.style.cssText = `
-                    display: inline-flex;
-                    float: left;
+                    position: absolute;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    left: ${h4.offsetLeft + h4.offsetWidth + 10}px;
+                    display: flex;
                     align-items: center;
                     gap: 10px;
-                    margin-left: 14px;
-                    margin-top: 2px;
                     z-index: 9999;
                     pointer-events: auto;
                 `;
@@ -259,8 +266,8 @@
 
                 flexContainer.appendChild(button);
 
-                // Insert right after the h4 in the DOM — in document flow, no overlap possible
-                h4.insertAdjacentElement('afterend', flexContainer);
+                // Append into content-title (our absolute positioning context)
+                contentTitle.appendChild(flexContainer);
 
                 // Create info panel inside the same container
                 this.createInfoPanel(playerId, flexContainer);
