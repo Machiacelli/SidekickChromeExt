@@ -2041,10 +2041,20 @@
             if (dropdownBtn && dropdownContent) {
                 console.log('🔧 Setting up dropdown for todolist:', todoList.id);
 
-                // Portal to body so it escapes all stacking contexts
-                dropdownContent.style.position = 'fixed';
-                dropdownContent.style.zIndex = '2147483647';
-                dropdownContent.style.display = 'none';
+                // Portal to body so it escapes all stacking contexts.
+                // Overwrite entire cssText to ensure no leftover styles from the HTML template
+                // (e.g. right:0, top:100%) survive and cause layout problems.
+                dropdownContent.style.cssText = `
+                    position: fixed;
+                    display: none;
+                    z-index: 2147483647;
+                    background: #2a2a2a;
+                    border: 1px solid #555;
+                    border-radius: 6px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    width: max-content;
+                    min-width: 160px;
+                `;
                 document.body.appendChild(dropdownContent);
 
                 dropdownBtn.addEventListener('click', function (e) {

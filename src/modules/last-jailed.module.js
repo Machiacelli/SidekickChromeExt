@@ -97,9 +97,20 @@
                     releaseRow = `<div style="margin-top:6px;color:#f0a500;font-size:12px;">🔓 Release: ${releaseAt.toLocaleString()}</div>`;
                 }
 
-                const avgDuration = totalJails > 0
+                // timespentinjail is a private stat — Torn returns 0 for other players
+                const hasTimeData = minsInJail > 0;
+                const avgDuration = hasTimeData && totalJails > 0
                     ? this._formatMinutes(Math.round(minsInJail / totalJails))
-                    : '—';
+                    : null;
+
+                const timeRows = hasTimeData ? `
+                    <div style="color:#aaa;">Time in jail:</div>
+                    <div><strong style="color:#fff;">${this._formatMinutes(minsInJail)}</strong></div>
+                    <div style="color:#aaa;">Avg sentence:</div>
+                    <div><strong style="color:#fff;">${avgDuration}</strong></div>
+                ` : `
+                    <div style="color:#666;font-size:11px;grid-column:1/-1;margin-top:2px;">⚠️ Sentence history is private on Torn's API</div>
+                `;
 
                 panel.innerHTML = `
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
@@ -110,10 +121,7 @@
                     <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin-top:8px;font-size:12px;color:#ddd;">
                         <div style="color:#aaa;">Total jails:</div>
                         <div><strong style="color:#fff;">${totalJails.toLocaleString()}</strong></div>
-                        <div style="color:#aaa;">Time in jail:</div>
-                        <div><strong style="color:#fff;">${this._formatMinutes(minsInJail)}</strong></div>
-                        <div style="color:#aaa;">Avg sentence:</div>
-                        <div><strong style="color:#fff;">${avgDuration}</strong></div>
+                        ${timeRows}
                     </div>
                     <div style="margin-top:10px;text-align:right;">
                         <button class="lj-close" style="background:none;border:none;color:#888;cursor:pointer;font-size:11px;">✕ Close</button>
