@@ -143,7 +143,7 @@
 
                 const statusBadge = inJail
                     ? `<span style="background:#c0392b;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:bold;">IN JAIL</span>`
-                    : `<span style="background:#27ae60;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:bold;">FREE</span>`;
+                    : '';
 
                 let releaseRow = '';
                 if (inJail && profile?.status?.until) {
@@ -153,7 +153,7 @@
 
                 panel.innerHTML = `
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                        <div style="font-weight:bold;font-size:14px;">⛓️ Jail Info</div>
+                        <div style="font-weight:bold;font-size:14px;">Jail Info</div>
                         ${statusBadge}
                     </div>
                     ${releaseRow}
