@@ -1,6 +1,6 @@
 /**
  * Sidekick Chrome Extension - Last Jailed Module
- * Binary-searches Torn API personalstats (with timestamp param)
+ * Binary-searches Torn API v1 personalstats (with timestamp param)
  * to find when a player's jailed count last incremented.
  */
 (function () {
@@ -15,98 +15,111 @@
             } catch (_) { return null; }
         },
 
-        // Fetch personalstats (+ profile) for a player at a given Unix timestamp.
-        // Torn API v2 supports: GET /v2/user/{id}?selections=personalstats,profile&timestamp={ts}
+        // Fetch personalstats + profile for a player at a given Unix timestamp.
+        // Uses Torn API v1 which supports timestamp param for personalstats.
         async _fetchStats(playerId, apiKey, timestamp) {
-            const ts = Math.floor(timestamp / 1000); // seconds
-            const url = timestamp
-                ? `https://api.torn.com/v2/user/${playerId}?selections=personalstats,profile&key=${apiKey}&timestamp=${ts}`
-                : `https://api.torn.com/v2/user/${playerId}?selections=personalstats,profile&key=${apiKey}`;
+            let url = `https://api.torn.com/user/${playerId}?selections=personalstats,profile&key=${apiKey}`;
+            if (timestamp) {
+                url += `&timestamp=${Math.floor(timestamp / 1000)}`;
+            }
             const resp = await fetch(url);
             const data = await resp.json();
             if (data.error) throw new Error(data.error.error || JSON.stringify(data.error));
             return data;
         },
 
+        // Return the jailed count from an API response (handles both v1 shapes)
+        _getJailed(data) {
+            return data.personalstats?.jailed ?? 0;
+        },
+
         // ── Binary-search for last jail date ────────────────────────────────────
-        // Returns { lastJailDate: Date|null, totalJails: number, status, profile }
         async findLastJail(playerId, apiKey) {
-            // Step 1: get current snapshot
+            // Step 1: current snapshot
             const now = await this._fetchStats(playerId, apiKey, null);
-            const totalJails = now.personalstats?.jailed ?? now.personalstats?.jail?.jailed ?? 0;
-            const profile = now.profile ?? {};
+            const totalJails = this._getJailed(now);
+            const profile = now; // v1 top-level has status, name, etc.
 
             if (totalJails === 0) {
                 return { lastJailDate: null, totalJails, profile };
             }
 
-            // Step 2: probe milestone points going back to find bracket
             const ONE_DAY = 86400 * 1000;
+
+            // Step 2: probe milestones to bracket the last increment
             const probes = [1, 7, 14, 30, 60, 90, 180, 365].map(d => Date.now() - d * ONE_DAY);
-            let lo = Date.now() - 365 * ONE_DAY; // default lower bound = 1 year ago
+            let lo = Date.now() - 365 * ONE_DAY;
             let hi = Date.now();
 
-            for (const probe of probes) {
+            for (let i = 0; i < probes.length; i++) {
+                const probe = probes[i];
                 try {
                     const snap = await this._fetchStats(playerId, apiKey, probe);
-                    const count = snap.personalstats?.jailed ?? snap.personalstats?.jail?.jailed ?? 0;
+                    const count = this._getJailed(snap);
                     if (count < totalJails) {
-                        // Jailed count was lower at this probe — bracket found
+                        // Count was lower at this probe — last jail was AFTER this probe
                         lo = probe;
-                        hi = probes[probes.indexOf(probe) - 1] || Date.now();
+                        hi = i > 0 ? probes[i - 1] : Date.now();
                         break;
                     }
-                    // Count same = last jail happened earlier
-                    lo = Date.now() - 365 * ONE_DAY;
+                    // Same count — last jail was BEFORE this probe
                     hi = probe;
-                } catch (_) { /* skip failed probes */ }
+                } catch (_) { /* skip */ }
             }
 
-            // Step 3: binary search within bracket (~8 iterations for day-resolution)
-            for (let i = 0; i < 10; i++) {
+            // Step 3: binary search within bracket for day precision
+            for (let i = 0; i < 10 && (hi - lo) > ONE_DAY; i++) {
                 const mid = Math.floor((lo + hi) / 2);
-                if (hi - lo < ONE_DAY) break; // day precision reached
                 try {
                     const snap = await this._fetchStats(playerId, apiKey, mid);
-                    const count = snap.personalstats?.jailed ?? snap.personalstats?.jail?.jailed ?? 0;
+                    const count = this._getJailed(snap);
                     if (count < totalJails) {
-                        lo = mid; // jail happened after mid
+                        lo = mid; // last jail happened after mid
                     } else {
-                        hi = mid; // jail happened before mid
+                        hi = mid; // last jail happened before mid
                     }
                 } catch (_) { break; }
             }
 
-            // lo is roughly when the count changed (last jail entered)
             return { lastJailDate: new Date(lo), totalJails, profile };
         },
 
         // ── UI ──────────────────────────────────────────────────────────────────
-        async showForPlayer(playerId, containerEl) {
+        async showForPlayer(playerId, anchorEl) {
+            const PANEL_ID = `sidekick-lj-panel-${playerId}`;
+
             // Remove existing panel
-            const existing = containerEl.querySelector('.sidekick-last-jailed-panel');
+            const existing = document.getElementById(PANEL_ID);
             if (existing) { existing.remove(); return; }
 
-            // Insert loading panel
+            // Calculate position from the anchor element (use fixed, append to body)
+            const rect = anchorEl.getBoundingClientRect();
+
             const panel = document.createElement('div');
-            panel.className = 'sidekick-last-jailed-panel';
+            panel.id = PANEL_ID;
             panel.style.cssText = `
+                position: fixed;
+                top: ${rect.bottom + 8}px;
+                left: ${rect.left}px;
                 background: #1a1a1a;
                 border: 1px solid #555;
                 border-radius: 8px;
                 padding: 12px 16px;
                 color: #fff;
                 font-size: 13px;
-                min-width: 220px;
-                box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-                position: relative;
+                min-width: 230px;
+                max-width: 300px;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+                z-index: 999999;
             `;
             panel.innerHTML = `<div style="color:#aaa">⛓️ Loading jail data…</div>`;
-            containerEl.appendChild(panel);
+            document.body.appendChild(panel);
 
             const apiKey = await this._getApiKey();
             if (!apiKey) {
-                panel.innerHTML = `<div style="color:#f66">❌ No API key set in Sidekick settings.</div>`;
+                panel.innerHTML = `<div style="color:#f66">❌ No API key set in Sidekick settings.</div>
+                    <div style="margin-top:8px;text-align:right;"><button class="lj-close" style="background:none;border:none;color:#888;cursor:pointer;font-size:11px;">✕ Close</button></div>`;
+                panel.querySelector('.lj-close').addEventListener('click', () => panel.remove());
                 return;
             }
 
@@ -114,15 +127,13 @@
                 const { lastJailDate, totalJails, profile } = await this.findLastJail(playerId, apiKey);
 
                 const statusState = profile?.status?.state ?? 'Unknown';
-                const statusDesc = profile?.status?.description ?? '';
                 const inJail = statusState.toLowerCase().includes('jail') || statusState.toLowerCase().includes('federal');
 
                 const relativeTime = (date) => {
-                    if (!date) return 'Unknown';
-                    const diffMs = Date.now() - date.getTime();
-                    const days = Math.floor(diffMs / 86400000);
-                    if (days === 0) return 'Today';
-                    if (days === 1) return 'Yesterday';
+                    if (!date) return '';
+                    const days = Math.floor((Date.now() - date.getTime()) / 86400000);
+                    if (days === 0) return 'today';
+                    if (days === 1) return 'yesterday';
                     return `${days} days ago`;
                 };
 
@@ -130,14 +141,14 @@
                     ? lastJailDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
                     : 'Never';
 
-                let statusBadge = inJail
+                const statusBadge = inJail
                     ? `<span style="background:#c0392b;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:bold;">IN JAIL</span>`
                     : `<span style="background:#27ae60;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:bold;">FREE</span>`;
 
                 let releaseRow = '';
                 if (inJail && profile?.status?.until) {
                     const releaseAt = new Date(profile.status.until * 1000);
-                    releaseRow = `<div style="margin-top:6px;color:#f0a500;font-size:12px;">🔓 Release: ${releaseAt.toLocaleString()}</div>`;
+                    releaseRow = `<div style="margin-top:6px;color:#f0a500;font-size:12px;">🔓 Released: ${releaseAt.toLocaleString()}</div>`;
                 }
 
                 panel.innerHTML = `
@@ -148,7 +159,7 @@
                     ${releaseRow}
                     <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin-top:8px;font-size:12px;color:#ddd;">
                         <div style="color:#aaa;">Last jailed:</div>
-                        <div><strong style="color:#fff;">${dateStr}</strong> &nbsp;<span style="color:#888;">${relativeTime(lastJailDate)}</span></div>
+                        <div><strong style="color:#fff;">${dateStr}</strong>${lastJailDate ? ` <span style="color:#888;font-size:11px;">(${relativeTime(lastJailDate)})</span>` : ''}</div>
                         <div style="color:#aaa;">Total jails:</div>
                         <div><strong style="color:#fff;">${totalJails.toLocaleString()}</strong></div>
                     </div>
@@ -156,7 +167,6 @@
                         <button class="lj-close" style="background:none;border:none;color:#888;cursor:pointer;font-size:11px;">✕ Close</button>
                     </div>
                 `;
-
                 panel.querySelector('.lj-close').addEventListener('click', () => panel.remove());
 
             } catch (err) {
