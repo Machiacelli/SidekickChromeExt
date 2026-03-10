@@ -133,10 +133,9 @@
             }
 
             try {
-
-                // Find the username/profile ID element to anchor to
-                const anchorElement = document.querySelector('#skip-to-content');
-                if (!anchorElement) {
+                // Find the h4 name element to insert after
+                const h4 = document.querySelector('#skip-to-content');
+                if (!h4) {
                     console.debug('Could not find #skip-to-content anchor element');
                     return;
                 }
@@ -148,24 +147,18 @@
                     return;
                 }
 
-                // Get the bounding rectangle for fixed positioning
-                const anchorRect = anchorElement.getBoundingClientRect();
-
-                // Calculate position relative to page (absolute positioning)
-                let absoluteLeft = anchorRect.right + window.scrollX + 20;
-                let absoluteTop = anchorRect.top + window.scrollY - 8; // Moved 8px up total
-
-                // Create a flex container with absolute positioning
+                // Create a flex container that lives IN the document flow,
+                // floated left right after the player name h4 — no absolute positioning.
                 const flexContainer = document.createElement('div');
                 flexContainer.className = 'sidekick-flight-tracker-container';
                 flexContainer.id = `flight-tracker-container-${playerId}`;
                 flexContainer.style.cssText = `
-                    position: absolute;
-                    left: ${absoluteLeft}px;
-                    top: ${absoluteTop}px;
-                    display: flex;
+                    display: inline-flex;
+                    float: left;
                     align-items: center;
                     gap: 10px;
+                    margin-left: 14px;
+                    margin-top: 2px;
                     z-index: 9999;
                     pointer-events: auto;
                 `;
@@ -178,15 +171,14 @@
                     background: linear-gradient(135deg, #4CAF50, #45a049);
                     border: none;
                     color: white;
-                    padding: 8px 14px;
+                    padding: 6px 12px;
                     border-radius: 6px;
                     cursor: pointer;
-                    font-size: 13px;
+                    font-size: 12px;
                     font-weight: 600;
                     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-                    transition: all 0.3s ease;
+                    transition: all 0.2s ease;
                     white-space: nowrap;
-                    position: relative;
                 `;
 
                 button.addEventListener('mouseenter', () => {
@@ -202,7 +194,7 @@
                     e.preventDefault();
                     e.stopPropagation();
 
-                    // Remove existing dropdown
+                    // Toggle existing dropdown
                     const existingMenu = document.getElementById('sidekick-player-tools-menu');
                     if (existingMenu) { existingMenu.remove(); return; }
 
@@ -267,21 +259,8 @@
 
                 flexContainer.appendChild(button);
 
-                // Function to update position
-                const updatePosition = () => {
-                    const rect = anchorElement.getBoundingClientRect();
-                    flexContainer.style.left = (rect.right + window.scrollX + 20) + 'px';
-                    flexContainer.style.top = (rect.top + window.scrollY - 8) + 'px';
-                };
-
-                // Add resize listener to update position when window resizes
-                window.addEventListener('resize', updatePosition);
-
-                // Store the listener reference for cleanup
-                flexContainer.dataset.resizeListener = 'attached';
-
-                // Append to body for fixed positioning
-                document.body.appendChild(flexContainer);
+                // Insert right after the h4 in the DOM — in document flow, no overlap possible
+                h4.insertAdjacentElement('afterend', flexContainer);
 
                 // Create info panel inside the same container
                 this.createInfoPanel(playerId, flexContainer);
