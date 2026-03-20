@@ -93,13 +93,23 @@
     }
 
     async function switchGym(gymId) {
-        // Don't try to replicate Torn's API — click the gym button in the DOM instead.
-        // This lets Torn's own React onClick handler make the changeGym request through
-        // the full authenticated chain, which is the same path a manual click takes.
         const gymEl = document.querySelector(`[class*='gym-${gymId}']`);
         if (!gymEl) {
             console.log(`💪 [AutoGym] gym-${gymId} element not found in DOM`);
             return `Gym ${gymId} not found in UI`;
+        }
+
+        // Check DOM active state — avoids clicking when we're already here
+        // (handles the case where currentGym wasn't set before the first Train click)
+        const isAlreadyActive =
+            gymEl.classList.toString().toLowerCase().includes('active') ||
+            gymEl.parentElement?.classList.toString().toLowerCase().includes('active') ||
+            gymEl.closest('[class*="active"]') !== null;
+
+        if (isAlreadyActive) {
+            console.log(`💪 [AutoGym] Gym ${gymId} already active (DOM check) — skipping click`);
+            currentGym = gymId;
+            return null; // null = no switch needed, proceed with training
         }
 
         // Walk up/down to find the actual clickable element
@@ -110,7 +120,7 @@
 
         console.log(`💪 [AutoGym] Clicking gym ${gymId}:`, clickTarget.tagName, [...clickTarget.classList].slice(0, 3).join(' '));
         clickTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-        currentGym = gymId; // Optimistically update so we don't re-trigger next time
+        currentGym = gymId;
         return `Switching to gym ${gymId} — click Train again to start training.`;
     }
 
@@ -193,12 +203,14 @@
                 if (bestGym && bestGym !== currentGym) {
                     console.log(`💪 [AutoGym] Switching from ${currentGym} → ${bestGym} for ${stat}`);
                     const msg = await switchGym(bestGym);
-                    // Return a synthetic response so Torn shows the switch message.
-                    // The user will need to click Train again (same as original script).
-                    return new Response(JSON.stringify({ success: true, message: msg }), {
-                        status: 200,
-                        headers: { 'Content-Type': 'application/json' }
-                    });
+                    if (msg !== null) {
+                        // Actually switched — block training so user clicks Train again
+                        return new Response(JSON.stringify({ success: true, message: msg }), {
+                            status: 200,
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                    }
+                    // msg === null means gym was already active; fall through and train normally
                 }
             } catch (err) {
                 console.error('💪 [AutoGym] Train intercept error:', err);

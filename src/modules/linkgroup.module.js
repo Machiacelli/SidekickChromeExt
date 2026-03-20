@@ -408,10 +408,18 @@
             const dropdownContent = element.querySelector('.linkgroup-dropdown-content');
 
             if (dropdownBtn && dropdownContent) {
-                // Portal the dropdown to document.body so it escapes all stacking contexts
-                dropdownContent.style.position = 'fixed';
-                dropdownContent.style.zIndex = '2147483647'; // max z-index
-                dropdownContent.style.display = 'none';
+                // Portal to body — overwrite entire cssText to erase right:0/top:100% from HTML template
+                dropdownContent.style.cssText = `
+                    position: fixed;
+                    display: none;
+                    z-index: 2147483647;
+                    background: #333;
+                    border: 1px solid #555;
+                    border-radius: 4px;
+                    box-shadow: 0px 8px 16px rgba(0,0,0,0.3);
+                    width: max-content;
+                    min-width: 120px;
+                `;
                 document.body.appendChild(dropdownContent);
 
                 dropdownBtn.addEventListener('click', (e) => {
@@ -443,40 +451,45 @@
                 });
             }
 
-            // Add link button (now inside dropdown)
-            const addLinkBtn = element.querySelector('.add-link-btn');
-            addLinkBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                dropdownContent.style.display = 'none';
-                this.showAddLinkDialog(linkGroup);
-            });
+            // Add link / color / pin buttons are now inside dropdownContent (portaled to body)
+            // — query them from dropdownContent, NOT from element
+            const addLinkBtn = dropdownContent.querySelector('.add-link-btn');
+            if (addLinkBtn) {
+                addLinkBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    dropdownContent.style.display = 'none';
+                    this.showAddLinkDialog(linkGroup);
+                });
+            }
 
-            // Color button
-            const colorBtn = element.querySelector('.color-linkgroup-btn');
-            colorBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                dropdownContent.style.display = 'none';
-                if (window.SidekickModules?.Core?.ColorPicker) {
-                    window.SidekickModules.Core.ColorPicker.show(linkGroup.color || '#607D8B', (selectedColor) => {
-                        linkGroup.color = selectedColor;
-                        const header = element.querySelector('.linkgroup-header');
-                        if (header) {
-                            header.style.background = `linear-gradient(135deg, ${selectedColor}, ${this.darkenColor(selectedColor, 15)})`;
-                        }
-                        this.saveLinkGroups();
-                    });
-                }
-            });
+            const colorBtn = dropdownContent.querySelector('.color-linkgroup-btn');
+            if (colorBtn) {
+                colorBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    dropdownContent.style.display = 'none';
+                    if (window.SidekickModules?.Core?.ColorPicker) {
+                        window.SidekickModules.Core.ColorPicker.show(linkGroup.color || '#607D8B', (selectedColor) => {
+                            linkGroup.color = selectedColor;
+                            const header = element.querySelector('.linkgroup-header');
+                            if (header) {
+                                header.style.background = `linear-gradient(135deg, ${selectedColor}, ${this.darkenColor(selectedColor, 15)})`;
+                            }
+                            this.saveLinkGroups();
+                        });
+                    }
+                });
+            }
 
-            // Pin button
-            const pinBtn = element.querySelector('.pin-linkgroup-btn');
-            pinBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                linkGroup.pinned = !linkGroup.pinned;
-                dropdownContent.style.display = 'none';
-                this.saveLinkGroups();
-                this.renderLinkGroup(linkGroup);
-            });
+            const pinBtn = dropdownContent.querySelector('.pin-linkgroup-btn');
+            if (pinBtn) {
+                pinBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    linkGroup.pinned = !linkGroup.pinned;
+                    dropdownContent.style.display = 'none';
+                    this.saveLinkGroups();
+                    this.renderLinkGroup(linkGroup);
+                });
+            }
 
             // Close button
             const closeBtn = element.querySelector('.linkgroup-close');

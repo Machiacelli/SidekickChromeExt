@@ -133,7 +133,7 @@
             }
 
             try {
-                const linksTopWrap = document.querySelector('.links-top-wrap');
+                const linksTopWrap = document.querySelector('#top-page-links-list');
                 const h4 = document.querySelector('#skip-to-content');
                 if (!linksTopWrap && !h4) {
                     console.debug('Could not find insertion point for track button');
@@ -158,13 +158,15 @@
                     margin: 0 4px;
                     vertical-align: middle;
                     outline: none;
+                    display: inline-flex;
+                    align-items: center;
                 `;
 
                 // Set initial label based on whether we're already tracking
                 this._setButtonState(button, this.trackedPlayers.has(playerId.toString()));
 
                 if (linksTopWrap) {
-                    // Insert at the start of links-top-wrap → appears at the right of the header
+                    // Prepend into the links list → appears left-most next to BSP/Report buttons
                     linksTopWrap.insertBefore(button, linksTopWrap.firstChild);
                 } else {
                     // Fallback: absolute inside content-title on the right
