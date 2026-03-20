@@ -133,12 +133,13 @@
             }
 
             try {
-                // #top-page-links-list is rendered by Torn's React asynchronously.
-                // Use a MutationObserver to wait for it instead of a direct querySelector.
-                const linksList = await this._waitForElement('#top-page-links-list', 5000);
+                // links-top-wrap is present in the initial HTML (not React-rendered).
+                // We insert our button into it, just before #top-page-links-list,
+                // so it sits left of Tutorial/Report/BSP without entering React's container.
+                const linksWrap = await this._waitForElement('.links-top-wrap', 5000);
                 const h4 = document.querySelector('#skip-to-content');
 
-                if (!linksList && !h4) {
+                if (!linksWrap && !h4) {
                     console.debug('Could not find insertion point for track button');
                     return;
                 }
@@ -170,11 +171,17 @@
 
                 this._setButtonState(button, this.trackedPlayers.has(playerId.toString()));
 
-                if (linksList) {
-                    // Insert as first child → left of Tutorial/Report/BSP
-                    linksList.insertBefore(button, linksList.firstChild);
+                if (linksWrap) {
+                    // Insert just before #top-page-links-list (React container) inside links-top-wrap
+                    const reactList = linksWrap.querySelector('#top-page-links-list');
+                    if (reactList) {
+                        linksWrap.insertBefore(button, reactList);
+                    } else {
+                        // List not rendered yet — append to linksWrap, it'll be left-most extra
+                        linksWrap.appendChild(button);
+                    }
                 } else {
-                    // Fallback: absolute inside content-title on the right
+                    // Last-resort fallback: absolute inside content-title
                     const contentTitle = h4.closest('.content-title') || h4.parentElement;
                     if (window.getComputedStyle(contentTitle).position === 'static') {
                         contentTitle.style.position = 'relative';
@@ -803,7 +810,9 @@
                 // Only update the player we're currently viewing
                 if (currentPlayerId && playerId === currentPlayerId) {
                     await this.updatePlayerStatus(playerId);
-                    this.updateInfoPanel(playerId);
+                    // Update button state (updateInfoPanel removed — tracking info is in the popup now)
+                    const btn = document.querySelector('.sidekick-flight-tracker-btn');
+                    if (btn) this._setButtonState(btn, true);
                 }
             }
         },
