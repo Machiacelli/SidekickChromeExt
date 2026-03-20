@@ -99,20 +99,7 @@
             return `Gym ${gymId} not found in UI`;
         }
 
-        // Check DOM active state — avoids clicking when we're already here
-        // (handles the case where currentGym wasn't set before the first Train click)
-        const isAlreadyActive =
-            gymEl.classList.toString().toLowerCase().includes('active') ||
-            gymEl.parentElement?.classList.toString().toLowerCase().includes('active') ||
-            gymEl.closest('[class*="active"]') !== null;
-
-        if (isAlreadyActive) {
-            console.log(`💪 [AutoGym] Gym ${gymId} already active (DOM check) — skipping click`);
-            currentGym = gymId;
-            return null; // null = no switch needed, proceed with training
-        }
-
-        // Walk up/down to find the actual clickable element
+        // Walk up/down to find the actual clickable element (button preferred over anchor)
         const clickTarget = gymEl.closest('button')
             || gymEl.querySelector('button')
             || gymEl.parentElement?.closest('button')

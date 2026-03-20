@@ -133,12 +133,18 @@
             }
 
             try {
-                const linksTopWrap = document.querySelector('#top-page-links-list');
+                // #top-page-links-list is rendered by Torn's React asynchronously.
+                // Use a MutationObserver to wait for it instead of a direct querySelector.
+                const linksList = await this._waitForElement('#top-page-links-list', 5000);
                 const h4 = document.querySelector('#skip-to-content');
-                if (!linksTopWrap && !h4) {
+
+                if (!linksList && !h4) {
                     console.debug('Could not find insertion point for track button');
                     return;
                 }
+
+                // Double-check we haven't added it while waiting
+                if (document.querySelector('.sidekick-flight-tracker-btn')) return;
 
                 const button = document.createElement('button');
                 button.className = 'sidekick-flight-tracker-btn';
@@ -162,12 +168,11 @@
                     align-items: center;
                 `;
 
-                // Set initial label based on whether we're already tracking
                 this._setButtonState(button, this.trackedPlayers.has(playerId.toString()));
 
-                if (linksTopWrap) {
-                    // Prepend into the links list → appears left-most next to BSP/Report buttons
-                    linksTopWrap.insertBefore(button, linksTopWrap.firstChild);
+                if (linksList) {
+                    // Insert as first child → left of Tutorial/Report/BSP
+                    linksList.insertBefore(button, linksList.firstChild);
                 } else {
                     // Fallback: absolute inside content-title on the right
                     const contentTitle = h4.closest('.content-title') || h4.parentElement;
@@ -190,6 +195,26 @@
             } catch (error) {
                 console.error('❌ Error creating flight tracker button:', error);
             }
+        },
+
+        // Wait for a CSS selector to appear in the DOM (MutationObserver + timeout)
+        _waitForElement(selector, timeout = 3000) {
+            const el = document.querySelector(selector);
+            if (el) return Promise.resolve(el);
+            return new Promise(resolve => {
+                const observer = new MutationObserver(() => {
+                    const found = document.querySelector(selector);
+                    if (found) {
+                        observer.disconnect();
+                        resolve(found);
+                    }
+                });
+                observer.observe(document.body, { childList: true, subtree: true });
+                setTimeout(() => {
+                    observer.disconnect();
+                    resolve(null); // timed out — use fallback
+                }, timeout);
+            });
         },
 
         // Set the button label/color based on tracking state
