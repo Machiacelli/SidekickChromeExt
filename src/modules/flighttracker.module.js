@@ -133,58 +133,48 @@
             }
 
             try {
-                // Wait for #top-page-links-list (confirmed present by diagnostic tool)
+                // Wait for #top-page-links-list — confirmed present by diagnostic
                 const linksList = await this._waitForElement('#top-page-links-list', 5000);
-                const h4 = document.querySelector('#skip-to-content');
-
-                if (!linksList && !h4) {
-                    console.debug('Could not find insertion point for track button');
+                if (!linksList) {
+                    console.debug('[FlightTracker] #top-page-links-list not found, aborting button injection');
                     return;
                 }
 
-                // Double-check we haven't added it while waiting
+                // Final guard
                 if (document.querySelector('.sidekick-flight-tracker-btn')) return;
 
-                const button = document.createElement('button');
-                button.className = 'sidekick-flight-tracker-btn';
+                // Use an <a> tag with Torn's native float-right classes, exactly like BSP does.
+                // This ensures Torn's own CSS handles sizing/spacing/float — no custom float hacks needed.
+                const button = document.createElement('a');
+                button.className = 'sidekick-flight-tracker-btn t-clear h c-pointer line-h24 right';
                 button.id = `sidekick-track-btn-${playerId}`;
                 button.style.cssText = `
-                    background: linear-gradient(135deg, #4CAF50, #45a049);
-                    border: none;
-                    color: white;
-                    padding: 4px 10px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-size: 11px;
-                    font-weight: 600;
-                    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-                    transition: all 0.2s ease;
-                    white-space: nowrap;
-                    margin-right: 6cm;
-                    vertical-align: middle;
                     outline: none;
-                    display: inline-flex;
-                    align-items: center;
-                    float: right;
+                    text-decoration: none;
                 `;
 
                 this._setButtonState(button, this.trackedPlayers.has(playerId.toString()));
 
-                if (linksList) {
-                    // Append to end of list. Torn uses float:right so
-                    // last-in-HTML = left-most visually → appears left of BSP
-                    linksList.appendChild(button);
+                // Insert immediately AFTER the BSP settings button (.TDup_divBtnBsp) if present,
+                // so our button appears to the LEFT of BSP in float:right layout.
+                // If BSP button isn't here yet, append to end (leftmost position) and then
+                // watch for BSP appearing so we can re-position.
+                const bspBtn = linksList.querySelector('.TDup_divBtnBsp');
+                if (bspBtn) {
+                    bspBtn.insertAdjacentElement('afterend', button);
                 } else {
-                    // Last-resort fallback: absolute inside content-title
-                    const contentTitle = h4.closest('.content-title') || h4.parentElement;
-                    if (window.getComputedStyle(contentTitle).position === 'static') {
-                        contentTitle.style.position = 'relative';
-                    }
-                    button.style.position = 'absolute';
-                    button.style.top = '50%';
-                    button.style.transform = 'translateY(-50%)';
-                    button.style.right = '10px';
-                    contentTitle.appendChild(button);
+                    linksList.appendChild(button);
+                    // Watch for BSP button appearing later (BSP initialises asynchronously)
+                    const bspWatcher = new MutationObserver(() => {
+                        const bsp = linksList.querySelector('.TDup_divBtnBsp');
+                        const ourBtn = linksList.querySelector('.sidekick-flight-tracker-btn');
+                        if (bsp && ourBtn) {
+                            // Re-insert our button AFTER BSP so we're to its left
+                            bsp.insertAdjacentElement('afterend', ourBtn);
+                            bspWatcher.disconnect();
+                        }
+                    });
+                    bspWatcher.observe(linksList, { childList: true });
                 }
 
                 button.addEventListener('click', (e) => {
@@ -220,15 +210,26 @@
 
         // Set the button label/color based on tracking state
         _setButtonState(button, isTracking) {
-            if (isTracking) {
-                button.innerHTML = '✈️ Tracking ▸';
-                button.style.background = 'linear-gradient(135deg, #2196F3, #1976D2)';
-                button.title = 'Click to view tracking info';
-            } else {
-                button.innerHTML = '✈️ Track';
-                button.style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
-                button.title = 'Click to start tracking this player';
-            }
+            const bg = isTracking
+                ? 'linear-gradient(135deg, #2196F3, #1976D2)'
+                : 'linear-gradient(135deg, #4CAF50, #45a049)';
+            const text = isTracking ? '✈️ Tracking ▸' : '✈️ Track';
+            button.title = isTracking
+                ? 'Click to view tracking info'
+                : 'Click to start tracking this player';
+            // Inner div carries all the visual styling (same pattern as BSP's TDup_button wrapper)
+            button.innerHTML = `<div style="
+                background: ${bg};
+                color: white;
+                padding: 3px 8px;
+                border-radius: 4px;
+                font-size: 11px;
+                font-weight: 600;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+                white-space: nowrap;
+                line-height: 18px;
+                display: inline-block;
+            ">${text}</div>`;
         },
 
         // Handle button click: show popup if tracking, else start area selection
