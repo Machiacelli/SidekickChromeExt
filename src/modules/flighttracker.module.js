@@ -133,13 +133,11 @@
             }
 
             try {
-                // links-top-wrap is present in the initial HTML (not React-rendered).
-                // We insert our button into it, just before #top-page-links-list,
-                // so it sits left of Tutorial/Report/BSP without entering React's container.
-                const linksWrap = await this._waitForElement('.links-top-wrap', 5000);
+                // Wait for #top-page-links-list (confirmed present by diagnostic tool)
+                const linksList = await this._waitForElement('#top-page-links-list', 5000);
                 const h4 = document.querySelector('#skip-to-content');
 
-                if (!linksWrap && !h4) {
+                if (!linksList && !h4) {
                     console.debug('Could not find insertion point for track button');
                     return;
                 }
@@ -167,19 +165,15 @@
                     outline: none;
                     display: inline-flex;
                     align-items: center;
+                    float: right;
                 `;
 
                 this._setButtonState(button, this.trackedPlayers.has(playerId.toString()));
 
-                if (linksWrap) {
-                    // Insert just before #top-page-links-list (React container) inside links-top-wrap
-                    const reactList = linksWrap.querySelector('#top-page-links-list');
-                    if (reactList) {
-                        linksWrap.insertBefore(button, reactList);
-                    } else {
-                        // List not rendered yet — append to linksWrap, it'll be left-most extra
-                        linksWrap.appendChild(button);
-                    }
+                if (linksList) {
+                    // Append to end of list. Torn uses float:right so
+                    // last-in-HTML = left-most visually → appears left of BSP
+                    linksList.appendChild(button);
                 } else {
                     // Last-resort fallback: absolute inside content-title
                     const contentTitle = h4.closest('.content-title') || h4.parentElement;
