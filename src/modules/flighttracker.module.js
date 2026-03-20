@@ -133,148 +133,176 @@
             }
 
             try {
-                // Find the h4 name element to insert after
+                const linksTopWrap = document.querySelector('.links-top-wrap');
                 const h4 = document.querySelector('#skip-to-content');
-                if (!h4) {
-                    console.debug('Could not find #skip-to-content anchor element');
+                if (!linksTopWrap && !h4) {
+                    console.debug('Could not find insertion point for track button');
                     return;
                 }
 
-                // Find the status container (the area with the travel image)
-                const statusContainer = this.findStatusContainer();
-                if (!statusContainer) {
-                    console.debug('Could not find status container');
-                    return;
-                }
-
-                // Make content-title the position context
-                const contentTitle = h4.closest('.content-title') || h4.parentElement;
-                if (window.getComputedStyle(contentTitle).position === 'static') {
-                    contentTitle.style.position = 'relative';
-                }
-
-                // Create a flex container — absolutely positioned inside content-title
-                // (absolute removes it from flow so the clearfix never expands the header height)
-                const flexContainer = document.createElement('div');
-                flexContainer.className = 'sidekick-flight-tracker-container';
-                flexContainer.id = `flight-tracker-container-${playerId}`;
-                flexContainer.style.cssText = `
-                    position: absolute;
-                    top: 50%;
-                    transform: translateY(-50%);
-                    left: ${h4.offsetLeft + h4.offsetWidth + 10}px;
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    z-index: 9999;
-                    pointer-events: auto;
-                `;
-
-                // Create Player Tools dropdown button
                 const button = document.createElement('button');
                 button.className = 'sidekick-flight-tracker-btn';
-                button.innerHTML = '🎯 Player Tools ▾';
+                button.id = `sidekick-track-btn-${playerId}`;
                 button.style.cssText = `
                     background: linear-gradient(135deg, #4CAF50, #45a049);
                     border: none;
                     color: white;
-                    padding: 6px 12px;
-                    border-radius: 6px;
+                    padding: 4px 10px;
+                    border-radius: 4px;
                     cursor: pointer;
-                    font-size: 12px;
+                    font-size: 11px;
                     font-weight: 600;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
                     transition: all 0.2s ease;
                     white-space: nowrap;
+                    margin: 0 4px;
+                    vertical-align: middle;
+                    outline: none;
                 `;
 
-                button.addEventListener('mouseenter', () => {
-                    button.style.transform = 'scale(1.05)';
-                    button.style.boxShadow = '0 4px 12px rgba(0,0,0,0.4)';
-                });
-                button.addEventListener('mouseleave', () => {
-                    button.style.transform = 'scale(1)';
-                    button.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
-                });
+                // Set initial label based on whether we're already tracking
+                this._setButtonState(button, this.trackedPlayers.has(playerId.toString()));
+
+                if (linksTopWrap) {
+                    // Insert at the start of links-top-wrap → appears at the right of the header
+                    linksTopWrap.insertBefore(button, linksTopWrap.firstChild);
+                } else {
+                    // Fallback: absolute inside content-title on the right
+                    const contentTitle = h4.closest('.content-title') || h4.parentElement;
+                    if (window.getComputedStyle(contentTitle).position === 'static') {
+                        contentTitle.style.position = 'relative';
+                    }
+                    button.style.position = 'absolute';
+                    button.style.top = '50%';
+                    button.style.transform = 'translateY(-50%)';
+                    button.style.right = '10px';
+                    contentTitle.appendChild(button);
+                }
 
                 button.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-
-                    // Toggle existing dropdown
-                    const existingMenu = document.getElementById('sidekick-player-tools-menu');
-                    if (existingMenu) { existingMenu.remove(); return; }
-
-                    const rect = button.getBoundingClientRect();
-                    const menu = document.createElement('div');
-                    menu.id = 'sidekick-player-tools-menu';
-                    menu.style.cssText = `
-                        position: fixed;
-                        top: ${rect.bottom + 4}px;
-                        left: ${rect.left}px;
-                        background: #1a1a1a;
-                        border: 1px solid #444;
-                        border-radius: 6px;
-                        box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-                        z-index: 999999;
-                        min-width: 160px;
-                        overflow: hidden;
-                    `;
-
-                    const menuItemStyle = `
-                        display: flex; align-items: center; gap: 8px;
-                        width: 100%; padding: 10px 14px;
-                        background: none; border: none; color: #fff;
-                        text-align: left; cursor: pointer; font-size: 13px;
-                        font-weight: 500; transition: background 0.15s;
-                    `;
-
-                    menu.innerHTML = `
-                        <button id="pt-track" style="${menuItemStyle}">✈️ Track Player</button>
-                        <button id="pt-jail" style="${menuItemStyle}">⛓️ Last Jailed</button>
-                    `;
-
-                    document.body.appendChild(menu);
-
-                    menu.querySelectorAll('button').forEach(btn => {
-                        btn.addEventListener('mouseenter', () => btn.style.background = 'rgba(76,175,80,0.2)');
-                        btn.addEventListener('mouseleave', () => btn.style.background = 'none');
-                    });
-
-                    menu.querySelector('#pt-track').addEventListener('click', () => {
-                        menu.remove();
-                        this.handleTrackButtonClick(playerId, statusContainer);
-                    });
-
-                    menu.querySelector('#pt-jail').addEventListener('click', () => {
-                        menu.remove();
-                        if (window.SidekickModules?.LastJailed) {
-                            window.SidekickModules.LastJailed.showForPlayer(playerId, flexContainer);
-                        }
-                    });
-
-                    // Close on outside click
-                    setTimeout(() => {
-                        document.addEventListener('click', function close(ev) {
-                            if (!menu.contains(ev.target) && ev.target !== button) {
-                                menu.remove();
-                                document.removeEventListener('click', close);
-                            }
-                        });
-                    }, 0);
+                    this._handleButtonClick(playerId, button);
                 });
-
-                flexContainer.appendChild(button);
-
-                // Append into content-title (our absolute positioning context)
-                contentTitle.appendChild(flexContainer);
-
-                // Create info panel inside the same container
-                this.createInfoPanel(playerId, flexContainer);
 
             } catch (error) {
                 console.error('❌ Error creating flight tracker button:', error);
             }
+        },
+
+        // Set the button label/color based on tracking state
+        _setButtonState(button, isTracking) {
+            if (isTracking) {
+                button.innerHTML = '✈️ Tracking ▸';
+                button.style.background = 'linear-gradient(135deg, #2196F3, #1976D2)';
+                button.title = 'Click to view tracking info';
+            } else {
+                button.innerHTML = '✈️ Track';
+                button.style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
+                button.title = 'Click to start tracking this player';
+            }
+        },
+
+        // Handle button click: show popup if tracking, else start area selection
+        _handleButtonClick(playerId, anchorBtn) {
+            if (this.trackedPlayers.has(playerId.toString())) {
+                this.showTrackingPopup(playerId, anchorBtn);
+            } else {
+                this.startAreaSelection(playerId, this.findStatusContainer());
+            }
+        },
+
+        // Floating popup showing current tracking status (replaces the old text bar)
+        showTrackingPopup(playerId, anchorEl) {
+            const POPUP_ID = `sidekick-ft-popup-${playerId}`;
+            const existing = document.getElementById(POPUP_ID);
+            if (existing) { existing.remove(); return; }
+
+            const rect = anchorEl.getBoundingClientRect();
+            const panel = document.createElement('div');
+            panel.id = POPUP_ID;
+            panel.style.cssText = `
+                position: fixed;
+                top: ${rect.bottom + 8}px;
+                left: ${rect.left}px;
+                background: #1a1a1a;
+                border: 1px solid #555;
+                border-radius: 8px;
+                padding: 12px 16px;
+                color: #fff;
+                font-size: 13px;
+                min-width: 210px;
+                max-width: 300px;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+                z-index: 999999;
+            `;
+
+            const player = this.trackedPlayers.get(playerId.toString());
+            if (!player) {
+                panel.innerHTML = `<div style="color:#aaa">Not currently tracking this player.</div>
+                    <div style="margin-top:8px;text-align:right;"><button class="ft-close" style="background:none;border:none;color:#888;cursor:pointer;font-size:11px;">✕ Close</button></div>`;
+            } else {
+                let statusLine = '';
+                if (player.currentCountry) {
+                    const dir = player.currentStatus === 'returning' ? '← Returning from' : '→ Traveling to';
+                    statusLine = `${dir} <strong>${player.currentCountry}</strong>`;
+                    if (player.detectedPlaneType) {
+                        statusLine += ` ${player.detectedPlaneType === 'airstrip' ? '🛩️' : '✈️'}`;
+                    }
+                    if (player.landingTime && player.currentStatus === 'returning') {
+                        const secs = Math.max(0, Math.floor((player.landingTime - Date.now()) / 1000));
+                        const color = secs <= 60 ? '#f44336' : secs <= 300 ? '#FF9800' : '#4CAF50';
+                        statusLine += `<br><span style="color:${color};">⏱ ${this._formatSeconds(secs)} left</span>`;
+                    }
+                    if (player.hasWLTBenefit && player.currentStatus === 'returning') {
+                        statusLine += ` <span style="color:#FFD700;">⚡WLT</span>`;
+                    }
+                } else {
+                    statusLine = `<span style="opacity:0.7;">${player.currentStatus || 'Monitoring…'}</span>`;
+                }
+
+                panel.innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <div style="font-weight:bold;font-size:14px;">✈️ Flight Tracker</div>
+                    </div>
+                    <div style="font-size:12px;color:#ddd;line-height:1.8;">${statusLine}</div>
+                    <div style="font-size:11px;color:#666;margin-top:4px;">Player: ${player.name}</div>
+                    <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end;">
+                        <button class="ft-stop" style="background:rgba(244,67,54,0.2);border:1px solid rgba(244,67,54,0.4);color:#F44336;border-radius:4px;cursor:pointer;font-size:11px;padding:4px 10px;">Stop Tracking</button>
+                        <button class="ft-close" style="background:none;border:none;color:#888;cursor:pointer;font-size:11px;">✕ Close</button>
+                    </div>
+                `;
+                panel.querySelector('.ft-stop').addEventListener('click', () => {
+                    if (confirm(`Stop tracking ${player.name}?`)) {
+                        this.removePlayer(playerId);
+                        panel.remove();
+                        const btn = document.querySelector('.sidekick-flight-tracker-btn');
+                        if (btn) this._setButtonState(btn, false);
+                    }
+                });
+            }
+
+            panel.querySelector('.ft-close')?.addEventListener('click', () => panel.remove());
+            document.body.appendChild(panel);
+
+            setTimeout(() => {
+                document.addEventListener('click', function close(e) {
+                    if (!panel.contains(e.target) && e.target !== anchorEl) {
+                        panel.remove();
+                        document.removeEventListener('click', close);
+                    }
+                });
+            }, 0);
+        },
+
+        // Format seconds into h/m/s string
+        _formatSeconds(secs) {
+            const h = Math.floor(secs / 3600);
+            const m = Math.floor((secs % 3600) / 60);
+            const s = secs % 60;
+            if (h > 0) return `${h}h ${m}m`;
+            if (m > 0) return `${m}m ${s}s`;
+            return `${s}s`;
         },
 
         // Find the status container with travel image
@@ -461,111 +489,12 @@
             // Start monitoring immediately
             this.updatePlayerStatus(playerId);
 
-            // Update UI
-            this.updateInfoPanel(playerId);
+            // Update button state
+            const btn = document.querySelector('.sidekick-flight-tracker-btn');
+            if (btn) this._setButtonState(btn, true);
         },
 
-        // Create info panel
-        createInfoPanel(playerId, container) {
-            // Remove existing panel
-            const existing = container.querySelector('.sidekick-flight-info-panel');
-            if (existing) {
-                existing.remove();
-            }
-
-            const panel = document.createElement('div');
-            panel.className = 'sidekick-flight-info-panel';
-            panel.dataset.playerId = playerId;
-            panel.style.cssText = `
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(30,30,30,0.9));
-                padding: 6px 10px;
-                border-radius: 6px;
-                font-size: 11px;
-                color: #fff;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                border: 1px solid rgba(255,255,255,0.1);
-                min-width: 180px;
-                white-space: nowrap;
-            `;
-
-            // Add to the flex container
-            container.appendChild(panel);
-
-            this.updateInfoPanel(playerId);
-        },
-
-        // Update info panel with current status
-        updateInfoPanel(playerId) {
-            const panel = document.querySelector('.sidekick-flight-info-panel');
-            if (!panel) return;
-
-            // Only update if this panel belongs to the current player
-            if (panel.dataset.playerId !== playerId.toString()) {
-                return;
-            }
-
-            const player = this.trackedPlayers.get(playerId.toString());
-
-            if (!player) {
-                panel.innerHTML = `<span style="opacity: 0.6; font-size: 10px;">Not tracking</span>`;
-                return;
-            }
-
-            // Build compact single-line status
-            let statusHTML = '';
-
-            if (player.currentCountry) {
-                const statusText = player.currentStatus === 'returning' ? '←' : '→';
-
-                // Country and direction
-                statusHTML += `<span style="font-size: 11px;">${statusText} <b>${player.currentCountry}</b></span>`;
-
-                // Plane type
-                if (player.detectedPlaneType) {
-                    const planeIcon = player.detectedPlaneType === 'airstrip' ? '🛩️' : '✈️';
-                    statusHTML += `<span style="font-size: 10px;">${planeIcon}</span>`;
-                }
-
-                // WLT if applicable
-                if (player.hasWLTBenefit && player.currentStatus === 'returning') {
-                    statusHTML += `<span style="color: #FFD700; font-size: 10px;">⚡WLT</span>`;
-                }
-
-                // Countdown timer
-                if (player.landingTime && player.currentStatus === 'returning') {
-                    const timeLeft = Math.max(0, Math.floor((player.landingTime - Date.now()) / 1000));
-                    const timeStr = window.TravelTimesData?.formatTravelTime(timeLeft) || `${timeLeft}s`;
-
-                    let timerColor = '#4CAF50';
-                    let timerIcon = '⏱️';
-                    if (timeLeft <= 60) {
-                        timerColor = '#f44336';
-                        timerIcon = '🚨';
-                    } else if (timeLeft <= 300) {
-                        timerColor = '#FF9800';
-                        timerIcon = '⚠️';
-                    }
-
-                    statusHTML += `<span style="font-size: 12px; font-weight: bold; color: ${timerColor}; margin-left: auto;">${timerIcon} ${timeStr}</span>`;
-
-                    // Flash animation for imminent landing
-                    if (timeLeft <= 60 && timeLeft > 0) {
-                        panel.style.animation = 'pulse 1s ease-in-out infinite';
-                        panel.style.borderColor = '#f44336';
-                    } else {
-                        panel.style.animation = 'none';
-                        panel.style.borderColor = 'rgba(255,255,255,0.1)';
-                    }
-                }
-            } else {
-                statusHTML += `<span style="opacity: 0.7; font-size: 10px;">${player.currentStatus}</span>`;
-            }
-
-            panel.innerHTML = statusHTML;
-        },
+        // updateInfoPanel is replaced by showTrackingPopup — see above
 
         // Update player status by monitoring selected area
         async updatePlayerStatus(playerId) {
