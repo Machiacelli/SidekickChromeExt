@@ -160,7 +160,7 @@
                     box-shadow: 0 1px 4px rgba(0,0,0,0.3);
                     transition: all 0.2s ease;
                     white-space: nowrap;
-                    margin: 0 4px;
+                    margin-right: 6cm;
                     vertical-align: middle;
                     outline: none;
                     display: inline-flex;

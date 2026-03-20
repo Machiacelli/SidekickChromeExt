@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Sidekick Chrome Extension - Main Entry Point
  * Converted from Tampermonkey userscript to Chrome extension
  * Version: 1.0.0
@@ -286,6 +286,14 @@
                 console.warn("⚠️ Flight Tracker module not available");
             }
 
+            // Initialize Legible Names Module
+            console.log("🔤 Sidekick: Initializing Legible Names...");
+            if (window.SidekickModules.LegibleNames?.init) {
+                await window.SidekickModules.LegibleNames.init();
+                console.log("✅ Sidekick: Legible Names initialized");
+            } else {
+                console.warn("⚠️ Legible Names module not available");
+            }
 
             // Initialize TravelArc Module
             console.log("🌍 Sidekick: Initializing TravelArc...");
