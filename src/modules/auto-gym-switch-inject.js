@@ -2,6 +2,10 @@
 // Runs in MAIN world at document_start so it can override window.fetch
 // before Torn's own scripts load. Enabled flag is read from localStorage
 // (set by the isolated-world content script auto-gym-switch.module.js).
+//
+// Based on the original "Auto gym switch" by Stephen Lynx (MIT).
+// Key fix: gym switching uses a proper POST to changeGym (not a DOM click),
+// which prevents Torn navigating to the gym profile page.
 (function () {
     'use strict';
 
@@ -45,7 +49,7 @@
     };
 
     // ── State ─────────────────────────────────────────────────────────────────
-    let currentGym = null;
+    let currentGym = null; // Number id of the currently active gym
     let picks = { str: [], def: [], spe: [], dex: [] };
     let booted = false;
     const originalFetch = window.fetch;
@@ -62,11 +66,12 @@
         for (const gymClass of classList) {
             if (!gyms[gymClass]) continue;
             for (const gym of gyms[gymClass]) {
-                if (gym.status === 'active') currentGym = gym.id;
+                const gymId = Number(gym.id); // Normalise to Number
+                if (gym.status === 'active') currentGym = gymId;
                 if (gym.status === 'available' || gym.status === 'active') {
                     for (const stat of ['str', 'def', 'spe', 'dex']) {
-                        const gain = gymInfo[gym.id]?.[stat];
-                        if (gain) picks[stat].push({ id: gym.id, gain });
+                        const gain = gymInfo[gymId]?.[stat];
+                        if (gain) picks[stat].push({ id: gymId, gain });
                     }
                 }
             }
@@ -74,12 +79,11 @@
         for (const stat in picks) {
             picks[stat].sort((a, b) => b.gain !== a.gain ? b.gain - a.gain : b.id - a.id);
         }
-        console.log('💪 [AutoGym] Gym data loaded. Current gym:', currentGym, 'Picks:', picks);
+        console.log('💪 [AutoGym] Gym data loaded. currentGym:', currentGym, 'picks:', picks);
     }
 
     function getBestGym(stat) {
         for (const gym of (picks[stat] || [])) {
-            // Special gyms (27-31) need a lock check
             if (gym.id >= 27 && gym.id <= 31) {
                 const el = document.querySelector(`[class*='gym-${gym.id}']`);
                 if (!el) continue;
@@ -92,53 +96,60 @@
         return null;
     }
 
-    async function switchGym(gymId) {
-        const gymEl = document.querySelector(`[class*='gym-${gymId}']`);
-        if (!gymEl) {
-            console.log(`💪 [AutoGym] gym-${gymId} element not found in DOM`);
-            return `Gym ${gymId} not found in UI`;
+    // Uses a proper POST to changeGym — same approach as the original script's
+    // getAction call. This avoids navigating to the gym profile page, which
+    // happens when clicking anchor/button elements in the DOM.
+    async function swapGyms(gymId) {
+        const params = new URLSearchParams({ step: 'changeGym', gymID: gymId });
+        let changeResult;
+        try {
+            const resp = await originalFetch('/gym.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params
+            });
+            changeResult = await resp.json();
+        } catch (e) {
+            console.error('💪 [AutoGym] changeGym request failed:', e);
+            // On error, let training proceed rather than blocking
+            return null;
         }
 
-        // Walk up/down to find the actual clickable element (button preferred over anchor)
-        const clickTarget = gymEl.closest('button')
-            || gymEl.querySelector('button')
-            || gymEl.parentElement?.closest('button')
-            || gymEl;
+        if (changeResult.success) {
+            currentGym = gymId;
+            // Update visual UI (non-critical — ignore errors)
+            try { updateGymUI(gymId); } catch (e) { /* ignore */ }
+        }
 
-        console.log(`💪 [AutoGym] Clicking gym ${gymId}:`, clickTarget.tagName, [...clickTarget.classList].slice(0, 3).join(' '));
-        clickTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-        currentGym = gymId;
-        return `Switching to gym ${gymId} — click Train again to start training.`;
+        return new Response(JSON.stringify({
+            success: changeResult.success,
+            message: changeResult.message || `Switched to gym ${gymId}. Click Train again.`
+        }));
     }
 
     function updateGymUI(gymId) {
-        try {
-            const info = gymInfo[gymId];
-            if (!info) return;
+        const info = gymInfo[gymId];
+        if (!info) return;
 
-            // Update active button highlight
-            const activeButton = document.querySelector('[class*=\'active\'][class^=\'gymButton\']');
-            if (activeButton) {
-                const activeClass = Array.from(activeButton.classList).find(c => c.includes('active'));
-                if (activeClass) {
-                    activeButton.classList.remove(activeClass);
-                    const newActive = document.querySelector(`[class*='gym-${gymId}']`);
-                    newActive?.parentElement?.classList.add(activeClass);
-                }
+        // Swap active button class
+        const activeButton = document.querySelector('[class*="active"][class^="gymButton"]');
+        if (activeButton) {
+            const activeClass = Array.from(activeButton.classList).find(c => c.includes('active'));
+            if (activeClass) {
+                activeButton.classList.remove(activeClass);
+                document.querySelector(`[class*='gym-${gymId}']`)?.parentElement?.classList.add(activeClass);
             }
+        }
 
-            // Update logo image
-            const logos = document.querySelectorAll('[class^=\'logo\']');
-            for (const el of logos) {
-                if (el.tagName === 'IMG') {
-                    const parts = el.src.split('/');
-                    parts[parts.length - 1] = gymId + '.png';
-                    el.src = parts.join('/');
-                    break;
-                }
+        // Swap gym logo
+        const logos = document.querySelectorAll('[class^="logo"]');
+        for (const el of logos) {
+            if (el.tagName === 'IMG') {
+                const parts = el.src.split('/');
+                parts[parts.length - 1] = gymId + '.png';
+                el.src = parts.join('/');
+                break;
             }
-        } catch (e) {
-            console.warn('💪 [AutoGym] UI update error:', e);
         }
     }
 
@@ -159,20 +170,16 @@
             return result;
         }
 
-        // 2. Track manual gym changes
+        // 2. Track manual gym changes so currentGym stays accurate
         if (url.includes('/gym.php?step=changeGym') || url.includes('/gym.php?step=purchaseMembership')) {
             const result = await originalFetch(...args);
             try {
                 const data = await result.clone().json();
                 if (data.success) {
-                    // Extract gymID from URLSearchParams body
                     const body = args[1]?.body;
                     let gymID = null;
-                    if (body instanceof URLSearchParams) {
-                        gymID = body.get('gymID');
-                    } else if (typeof body === 'string') {
-                        gymID = new URLSearchParams(body).get('gymID');
-                    }
+                    if (body instanceof URLSearchParams) gymID = body.get('gymID');
+                    else if (typeof body === 'string') gymID = new URLSearchParams(body).get('gymID');
                     if (gymID) currentGym = Number(gymID);
                 }
             } catch (e) { /* ignore */ }
@@ -187,17 +194,18 @@
                 const stat = (body.stat || '').substring(0, 3); // str/def/spe/dex
                 const bestGym = getBestGym(stat);
 
-                if (bestGym && bestGym !== currentGym) {
-                    console.log(`💪 [AutoGym] Switching from ${currentGym} → ${bestGym} for ${stat}`);
-                    const msg = await switchGym(bestGym);
-                    if (msg !== null) {
-                        // Actually switched — block training so user clicks Train again
-                        return new Response(JSON.stringify({ success: true, message: msg }), {
-                            status: 200,
-                            headers: { 'Content-Type': 'application/json' }
-                        });
+                console.log(`💪 [AutoGym] Train intercepted — stat:${stat} best:${bestGym} current:${currentGym}`);
+
+                if (bestGym !== null && bestGym !== currentGym) {
+                    console.log(`💪 [AutoGym] Switching ${currentGym} → ${bestGym} for ${stat}`);
+                    const fakeResp = await swapGyms(bestGym);
+                    if (fakeResp !== null) {
+                        // Block the train request — user must click Train once more
+                        return fakeResp;
                     }
-                    // msg === null means gym was already active; fall through and train normally
+                    // swapGyms returned null (error) — fall through and train anyway
+                } else {
+                    console.log(`💪 [AutoGym] Already in best gym (${currentGym}), training normally.`);
                 }
             } catch (err) {
                 console.error('💪 [AutoGym] Train intercept error:', err);
