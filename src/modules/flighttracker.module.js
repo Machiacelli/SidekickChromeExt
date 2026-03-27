@@ -376,14 +376,19 @@
             let statusColor = '#aaa';
             let countdownHTML = '';
 
+            const planeLabel = state.planeType === 'airstrip' ? '🛩️ Airstrip'
+                : state.planeType === 'business' ? '💼 Business'
+                : '✈️ Commercial';
+            const planeBadge = `<span style="font-size:11px;color:#999;margin-left:6px;">${planeLabel}</span>`;
+
             if (state.status === 'traveling' && state.country) {
-                statusLine = `🛫 Waiting for arrival in <strong>${state.country}</strong>`;
+                statusLine = `🛫 Waiting for arrival in <strong>${state.country}</strong>${planeBadge}`;
                 statusColor = '#FFB74D';
             } else if (state.status === 'abroad' && state.country) {
-                statusLine = `🌍 In <strong>${state.country}</strong> — waiting for return`;
+                statusLine = `🌍 In <strong>${state.country}</strong> — waiting for return${planeBadge}`;
                 statusColor = '#64B5F6';
             } else if (state.status === 'returning' && state.country) {
-                statusLine = `🛬 Returning from <strong>${state.country}</strong>`;
+                statusLine = `🛬 Returning from <strong>${state.country}</strong>${planeBadge}`;
                 statusColor = '#81C784';
                 if (state.landingTime) {
                     const remaining = Math.max(0, Math.floor((state.landingTime - Date.now()) / 1000));
@@ -394,33 +399,16 @@
                         </div>`;
                     } else {
                         const urgentColor = remaining <= 60 ? '#F44336' : remaining <= 300 ? '#FF9800' : '#81C784';
-                        countdownHTML = `<div style="margin-top:10px;padding:8px 10px;
-                            background:rgba(0,0,0,0.3);border-radius:6px;text-align:center;">
+                        countdownHTML = `<div style="margin-top:10px;padding:8px 10px;background:rgba(0,0,0,0.3);border-radius:6px;text-align:center;">
                             <div style="font-size:11px;color:#aaa;margin-bottom:4px;">Estimated arrival in</div>
                             <div style="font-size:22px;font-weight:bold;color:${urgentColor};font-variant-numeric:tabular-nums;">
                                 ${this._fmtSeconds(remaining)}
-                            </div>
-                            <div style="font-size:11px;color:#666;margin-top:4px;">
-                                ${state.planeType === 'airstrip' ? '🛩️ Airstrip' : state.planeType === 'business' ? '💼 Business' : '✈️ Commercial'}
                             </div>
                         </div>`;
                     }
                 }
             } else {
                 statusLine = `<span style="color:#666">👁️ Monitoring status…</span>`;
-            }
-
-            // All possible arrival times for this country (if known)
-            let timesHTML = '';
-            if (state.country && TRAVEL_TIMES[state.country]) {
-                const t = TRAVEL_TIMES[state.country];
-                timesHTML = `
-                <div style="margin-top:10px;border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;
-                    display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;">
-                    <div style="font-size:11px;color:#888;">✈️ Standard<br><span style="color:#ccc;">${this._fmtSeconds(t.standard)}</span></div>
-                    <div style="font-size:11px;color:#888;">🛩️ Airstrip<br><span style="color:#ccc;">${this._fmtSeconds(t.airstrip)}</span></div>
-                    <div style="font-size:11px;color:#888;">💼 Business<br><span style="color:#ccc;">${this._fmtSeconds(t.business)}</span></div>
-                </div>`;
             }
 
             return `
@@ -440,7 +428,6 @@
             <div style="padding:12px 14px;">
                 <div style="color:${statusColor};line-height:1.6;">${statusLine}</div>
                 ${countdownHTML}
-                ${timesHTML}
             </div>`;
         },
 
