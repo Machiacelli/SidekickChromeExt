@@ -212,7 +212,7 @@
                         <div class="settings-content-scroll" style="flex: 1; overflow-y: auto; padding: 30px;">
                             
                             <!-- GENERAL TAB -->
-                            <div class="settings-tab-content" id="settings-tab-general" style="display: block;">
+                            <div class="settings-tab-content" id="settings-tab-general" style="position: relative; opacity: 1; pointer-events: auto;">
                                 <div style="margin-bottom: 20px;">
                                     <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Torn API Key:</label>
                                     <input type="text" id="sidekick-api-key" placeholder="Enter your API key..." 
@@ -288,47 +288,47 @@
                             </div>
                             
                             <!-- MODULES TAB -->
-                            <div class="settings-tab-content" id="settings-tab-modules" style="display: none;">
+                            <div class="settings-tab-content" id="settings-tab-modules" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
                                 ${this.createModuleTogglesHTML()}
                             </div>
                             
                             <!-- XANAX VIEWER TAB -->
-                            <div class="settings-tab-content" id="settings-tab-xanax" style="display: none;">
+                            <div class="settings-tab-content" id="settings-tab-xanax" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
                                 ${this.createXanaxSettingsHTML()}
                             </div>
                             
                             <!-- CHAIN TIMER TAB -->
-                            <div class="settings-tab-content" id="settings-tab-chain" style="display: none;">
+                            <div class="settings-tab-content" id="settings-tab-chain" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
                                 ${this.createChainTimerSettingsHTML()}
                             </div>
                             
                             <!-- NOTIFICATIONS TAB -->
-                            <div class="settings-tab-content" id="settings-tab-notifications" style="display: none;">
+                            <div class="settings-tab-content" id="settings-tab-notifications" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
                                 ${this.createNotificationsSettingsHTML()}
                             </div>
                             
                             <!-- MUG CALCULATOR TAB -->
-                            <div class="settings-tab-content" id="settings-tab-mugcalc" style="display: none;">
+                            <div class="settings-tab-content" id="settings-tab-mugcalc" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
                                 ${this.createMugCalculatorSettingsHTML()}
                             </div>
                             
                             <!-- BLOOD BAG REMINDER TAB -->
-                            <div class="settings-tab-content" id="settings-tab-bloodbag" style="display: none;">
+                            <div class="settings-tab-content" id="settings-tab-bloodbag" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
                                 ${this.createBloodBagSettingsHTML()}
                             </div>
                             
                             <!-- QUICK DEPOSIT TAB -->
-                            <div class="settings-tab-content" id="settings-tab-quickdeposit" style="display: none;">
+                            <div class="settings-tab-content" id="settings-tab-quickdeposit" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
                                 ${this.createQuickDepositSettingsHTML()}
                             </div>
                             
                             <!-- CRIME NOTIFIER TAB -->
-                            <div class="settings-tab-content" id="settings-tab-crimenotifier" style="display: none;">
+                            <div class="settings-tab-content" id="settings-tab-crimenotifier" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
                                 ${this.createCrimeNotifierSettingsHTML()}
                             </div>
                             
                             <!-- MUG WARNING TAB -->
-                            <div class="settings-tab-content" id="settings-tab-mugwarning" style="display: none;">
+                            <div class="settings-tab-content" id="settings-tab-mugwarning" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
                                 ${this.createMugWarningSettingsHTML()}
                             </div>
                         </div>
@@ -970,11 +970,30 @@
                 }
             });
 
-            // Update content visibility
+            // Update content visibility with smooth opacity transition
             const tabContents = panel.querySelectorAll('.settings-tab-content');
             tabContents.forEach(content => {
-                content.style.display = content.id === `settings-tab-${tabName}` ? 'block' : 'none';
+                const isActive = content.id === `settings-tab-${tabName}`;
+                if (isActive) {
+                    content.style.position = 'relative';
+                    content.style.opacity = '0';
+                    content.style.pointerEvents = 'auto';
+                    // Small rAF so the browser renders position change before fading in
+                    requestAnimationFrame(() => {
+                        content.style.transition = 'opacity 0.15s ease';
+                        content.style.opacity = '1';
+                    });
+                } else {
+                    content.style.transition = 'none';
+                    content.style.opacity = '0';
+                    content.style.position = 'absolute';
+                    content.style.pointerEvents = 'none';
+                    content.style.top = '0';
+                    content.style.left = '0';
+                    content.style.width = '100%';
+                }
             });
+
 
             this.currentTab = tabName;
         },
