@@ -1241,9 +1241,9 @@
                 if (!entry || !entry.timestamp) continue;
                 if (entry.timestamp < sinceTimestamp) continue;
 
-                const entryCategory = (entry.category || '').toLowerCase();
-                const entryTitle    = (entry.title    || '').toLowerCase();
-                const entryLog      = (entry.log      || '').toLowerCase();
+                const entryCategory = String(entry.category ?? '').toLowerCase();
+                const entryTitle    = String(entry.title    ?? '').toLowerCase();
+                const entryLog      = String(entry.log      ?? '').toLowerCase();
 
                 if (
                     entryCategory === lowerCategory ||
@@ -1997,7 +1997,7 @@
                     flex-shrink: 0;
                     padding: 0;
                     outline: none;
-                " title="Click to toggle" onmouseover="this.style.borderColor='#CE93D8'" onmouseout="this.style.borderColor='${isCompleted ? '#9C27B0' : '#666'}'">
+                " title="Click to toggle">
                     ${isCompleted ? '<span style="color: white; font-size: 10px;">✓</span>' : ''}
                 </button>`
                 : `<div style="
@@ -2524,7 +2524,6 @@
             `;
 
             dialog.innerHTML = `
-                <style>#sidekick-task-dialog div::-webkit-scrollbar { display: none; }</style>
 
                 <!-- Header -->
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
@@ -2532,7 +2531,7 @@
                     <button id="manage-tasks-close" style="
                         background: none; border: none; color: #aaa; cursor: pointer;
                         font-size: 18px; line-height: 1; padding: 2px 6px; border-radius: 4px;
-                    " onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#aaa'">×</button>
+                    ">×</button>
                 </div>
 
                 <!-- Section: Daily Task Visibility -->
@@ -2615,7 +2614,7 @@
                             cursor: pointer;
                             font-size: 12px;
                             transition: all 0.2s;
-                        " onmouseover="this.style.background='#3a3a3a';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#aaa'">Close</button>
+                        ">Close</button>
                         <button id="create-task" style="
                             padding: 7px 16px;
                             border: none;
@@ -2626,7 +2625,7 @@
                             font-size: 12px;
                             font-weight: 600;
                             transition: opacity 0.2s;
-                        " onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">+ Add Task</button>
+                        ">+ Add Task</button>
                     </div>
                 </div>
             `;
@@ -2634,7 +2633,29 @@
             dialogOverlay.appendChild(dialog);
             document.body.appendChild(dialogOverlay);
 
-            // ── Daily visibility toggle listeners (event delegation survives innerHTML rebuilds) ──
+            // Wire up hover effects via JS (no inline handlers — CSP safe)
+            const closeBtn = dialog.querySelector('#manage-tasks-close');
+            const nameInput = dialog.querySelector('#task-name-input');
+            const cancelBtn = dialog.querySelector('#cancel-task');
+            const createBtn = dialog.querySelector('#create-task');
+            const resetSelect = dialog.querySelector('#reset-duration');
+
+            if (closeBtn) {
+                closeBtn.addEventListener('mouseover', () => { closeBtn.style.color = '#fff'; });
+                closeBtn.addEventListener('mouseout',  () => { closeBtn.style.color = '#aaa'; });
+            }
+            if (nameInput) {
+                nameInput.addEventListener('focus', () => { nameInput.style.borderColor = '#4CAF50'; });
+                nameInput.addEventListener('blur',  () => { nameInput.style.borderColor = '#555'; });
+            }
+            if (cancelBtn) {
+                cancelBtn.addEventListener('mouseover', () => { cancelBtn.style.background = '#3a3a3a'; cancelBtn.style.color = '#fff'; });
+                cancelBtn.addEventListener('mouseout',  () => { cancelBtn.style.background = 'transparent'; cancelBtn.style.color = '#aaa'; });
+            }
+            if (createBtn) {
+                createBtn.addEventListener('mouseover', () => { createBtn.style.opacity = '0.85'; });
+                createBtn.addEventListener('mouseout',  () => { createBtn.style.opacity = '1'; });
+            }
             dialog.querySelector('#daily-toggle-list') && dialog.querySelector('#daily-toggle-list').addEventListener('change', (e) => {
                 const checkbox = e.target.closest('.daily-visibility-toggle');
                 if (!checkbox) return;
@@ -2655,12 +2676,6 @@
             });
 
             // ── Custom task creation ──
-            const nameInput = dialog.querySelector('#task-name-input');
-            const createBtn = dialog.querySelector('#create-task');
-            const cancelBtn = dialog.querySelector('#cancel-task');
-            const resetSelect = dialog.querySelector('#reset-duration');
-            const closeBtn = dialog.querySelector('#manage-tasks-close');
-
             nameInput.focus();
 
             const closeDialog = () => dialogOverlay.remove();
