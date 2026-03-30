@@ -39,7 +39,8 @@
                     /gained.*?energy/i
                 ],
                 completed: false,
-                resetDaily: true // Ensure this always resets at midnight UTC
+                resetDaily: true, // Ensure this always resets at midnight UTC
+                visible: true
             },
             nerveRefill: {
                 name: 'Nerve Refill',
@@ -61,7 +62,8 @@
                     /gained.*?nerve/i
                 ],
                 completed: false,
-                resetDaily: true // Ensure this always resets at midnight UTC
+                resetDaily: true, // Ensure this always resets at midnight UTC
+                visible: true
             },
             xanaxDose: {
                 name: 'Xanax Dose',
@@ -72,7 +74,19 @@
                 maxCount: 3,
                 currentCount: 0,
                 completed: false,
-                resetDaily: true  // Reset baseline at midnight UTC
+                resetDaily: true,  // Reset baseline at midnight UTC
+                visible: true
+            },
+            prayer: {
+                name: 'Daily Prayer',
+                icon: '🙏',
+                color: '#9C27B0',
+                description: 'Pray at the church',
+                detectCategory: 'church', // Detected via Torn API log category field
+                manualToggle: true,       // Can also be manually checked off
+                completed: false,
+                resetDaily: true,
+                visible: true
             }
         },
 
@@ -953,6 +967,22 @@
                     continue;
                 }
 
+                // 🙏 Category-based detection (e.g. prayer via church logs)
+                // Only ever sets completed=true — manual toggle or midnight reset are the only ways to uncheck
+                if (task.detectCategory) {
+                    if (!task.completed) {
+                        const found = this.checkCategoryInLogs(logData, todayUTCStartTimestamp, task.detectCategory);
+                        if (found) {
+                            task.completed = true;
+                            hasUpdates = true;
+                            console.log(`🙏 ${task.name} detected via log category '${task.detectCategory}'`);
+                        }
+                    } else {
+                        console.log(`🙏 ${task.name} already complete — skipping API check`);
+                    }
+                    continue;
+                }
+
                 // Check if this task should be detected from logs
                 if (task.detectFromLogs && task.logPatterns) {
                     console.log(`🔍 Starting ${task.name} detection from logs...`);
@@ -1190,6 +1220,44 @@
             }
 
             return itemCount;
+        },
+
+        // Check if any log entry today matches the given category (e.g. 'church' for prayer)
+        checkCategoryInLogs(logData, sinceTimestamp, category) {
+            if (!logData) return false;
+
+            let logsArray = [];
+            if (Array.isArray(logData)) {
+                logsArray = logData;
+            } else if (logData.log && Array.isArray(logData.log)) {
+                logsArray = logData.log;
+            } else if (typeof logData === 'object') {
+                logsArray = Object.values(logData);
+            }
+
+            const lowerCategory = category.toLowerCase();
+
+            for (const entry of logsArray) {
+                if (!entry || !entry.timestamp) continue;
+                if (entry.timestamp < sinceTimestamp) continue;
+
+                const entryCategory = (entry.category || '').toLowerCase();
+                const entryTitle    = (entry.title    || '').toLowerCase();
+                const entryLog      = (entry.log      || '').toLowerCase();
+
+                if (
+                    entryCategory === lowerCategory ||
+                    entryCategory.includes(lowerCategory) ||
+                    entryTitle.includes(lowerCategory) ||
+                    entryTitle.includes('pray') ||
+                    entryLog.includes(lowerCategory)
+                ) {
+                    console.log(`🙏 Found '${category}' log entry: ${new Date(entry.timestamp * 1000).toISOString()} - "${entry.title || entry.log || ''}"`);
+                    return true;
+                }
+            }
+
+            return false;
         },
 
         // Get known log codes for specific items
@@ -1883,7 +1951,8 @@
 
                 for (const taskKey in this.dailyTasks) {
                     const task = this.dailyTasks[taskKey];
-                    content += this.renderDailyTask(task);
+                    if (task.visible === false) continue; // Hidden via Manage Tasks dialog
+                    content += this.renderDailyTask(task, taskKey);
                 }
 
                 content += '</div>';
@@ -1908,14 +1977,55 @@
         },
 
         // Render daily task item
-        renderDailyTask(task) {
+        renderDailyTask(task, taskKey) {
             const isCompleted = task.completed;
             const progressText = task.maxCount ? ` (${task.currentCount || 0}/${task.maxCount})` : '';
 
+            // Tasks with manualToggle (e.g. Prayer) render the circle as a clickable button
+            const toggleEl = task.manualToggle
+                ? `<button class="daily-task-toggle" data-task-key="${taskKey}" style="
+                    width: 16px;
+                    height: 16px;
+                    border: 2px solid ${isCompleted ? '#9C27B0' : '#666'};
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: ${isCompleted ? '#9C27B0' : 'transparent'};
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    flex-shrink: 0;
+                    padding: 0;
+                    outline: none;
+                " title="Click to toggle" onmouseover="this.style.borderColor='#CE93D8'" onmouseout="this.style.borderColor='${isCompleted ? '#9C27B0' : '#666'}'">
+                    ${isCompleted ? '<span style="color: white; font-size: 10px;">✓</span>' : ''}
+                </button>`
+                : `<div style="
+                    width: 16px;
+                    height: 16px;
+                    border: 2px solid ${isCompleted ? '#4CAF50' : '#666'};
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: ${isCompleted ? '#4CAF50' : 'transparent'};
+                    transition: all 0.2s;
+                    flex-shrink: 0;
+                ">
+                    ${isCompleted ? '<span style="color: white; font-size: 10px;">✓</span>' : ''}
+                </div>`;
+
+            const borderColor = task.manualToggle
+                ? (isCompleted ? '#9C27B0' : '#555')
+                : (isCompleted ? '#4CAF50' : '#555');
+            const bgColor = task.manualToggle
+                ? (isCompleted ? 'rgba(156, 39, 176, 0.15)' : 'rgba(255,255,255,0.1)')
+                : (isCompleted ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255,255,255,0.1)');
+
             return `
                 <div class="task-item daily-task" style="
-                    background: ${isCompleted ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255,255,255,0.1)'};
-                    border: 1px solid ${isCompleted ? '#4CAF50' : '#555'};
+                    background: ${bgColor};
+                    border: 1px solid ${borderColor};
                     border-radius: 4px;
                     padding: 8px;
                     display: flex;
@@ -1932,19 +2042,7 @@
                             ${task.description}
                         </div>
                     </div>
-                    <div style="
-                        width: 16px;
-                        height: 16px;
-                        border: 2px solid ${isCompleted ? '#4CAF50' : '#666'};
-                        border-radius: 50%;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        background: ${isCompleted ? '#4CAF50' : 'transparent'};
-                        transition: all 0.2s;
-                    ">
-                        ${isCompleted ? '<span style="color: white; font-size: 10px;">✓</span>' : ''}
-                    </div>
+                    ${toggleEl}
                 </div>
             `;
         },
@@ -2260,13 +2358,23 @@
 
         // Set up task event listeners
         setupTaskEventListeners(element, todoList) {
-            // Toggle task completion buttons
+            // Toggle task completion buttons (custom tasks)
             element.querySelectorAll('.toggle-task-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     const taskId = btn.dataset.taskId;
                     this.toggleTaskCompletion(todoList.id, taskId);
+                });
+            });
+
+            // Manual toggle buttons for daily tasks (e.g. Prayer)
+            element.querySelectorAll('.daily-task-toggle').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const taskKey = btn.dataset.taskKey;
+                    this.toggleDailyTask(taskKey);
                 });
             });
 
@@ -2279,6 +2387,18 @@
                     this.removeTask(todoList.id, taskId);
                 });
             });
+        },
+
+        // Manually toggle a daily task (for tasks with manualToggle: true, e.g. Prayer)
+        toggleDailyTask(taskKey) {
+            const task = this.dailyTasks[taskKey];
+            if (!task || !task.manualToggle) return;
+
+            task.completed = !task.completed;
+            console.log(`🙏 Daily task '${task.name}' manually toggled: ${task.completed ? '✅ complete' : '❌ incomplete'}`);
+
+            this.saveDailyTasks();
+            this.renderAllTodoLists();
         },
 
         // Set up resize observer for todo list
@@ -2309,13 +2429,67 @@
             this.createTaskDialog(todoList);
         },
 
-        // Create advanced task dialog
+        // Create Manage Tasks dialog — daily task visibility + add custom task
         createTaskDialog(todoList) {
             // Remove existing dialog if present
             const existingDialog = document.getElementById('sidekick-task-dialog');
             if (existingDialog) {
                 existingDialog.remove();
             }
+
+            // Build daily task toggle rows from current dailyTasks state
+            const buildDailyToggles = () => {
+                return Object.entries(this.dailyTasks).map(([key, task]) => {
+                    const isVisible = task.visible !== false;
+                    return `
+                    <div style="
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        padding: 7px 10px;
+                        border-radius: 6px;
+                        background: ${isVisible ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.2)'};
+                        border: 1px solid ${isVisible ? '#555' : '#333'};
+                        transition: all 0.2s;
+                        opacity: ${isVisible ? '1' : '0.55'};
+                    ">
+                        <span style="font-size: 15px; width: 20px; text-align: center;">${task.icon}</span>
+                        <div style="flex: 1;">
+                            <div style="color: #fff; font-size: 12px; font-weight: 500;">${task.name}</div>
+                            <div style="color: #888; font-size: 10px;">${task.description}</div>
+                        </div>
+                        <label style="
+                            position: relative;
+                            display: inline-block;
+                            width: 36px;
+                            height: 20px;
+                            flex-shrink: 0;
+                            cursor: pointer;
+                        ">
+                            <input type="checkbox" class="daily-visibility-toggle" data-task-key="${key}"
+                                ${isVisible ? 'checked' : ''}
+                                style="opacity:0; width:0; height:0;">
+                            <span style="
+                                position: absolute;
+                                top: 0; left: 0; right: 0; bottom: 0;
+                                background: ${isVisible ? '#4CAF50' : '#444'};
+                                border-radius: 20px;
+                                transition: background 0.25s;
+                            ">
+                                <span style="
+                                    position: absolute;
+                                    height: 14px; width: 14px;
+                                    left: ${isVisible ? '19px' : '3px'};
+                                    top: 3px;
+                                    background: white;
+                                    border-radius: 50%;
+                                    transition: left 0.25s;
+                                "></span>
+                            </span>
+                        </label>
+                    </div>`;
+                }).join('');
+            };
 
             // Create dialog overlay
             const dialogOverlay = document.createElement('div');
@@ -2326,106 +2500,173 @@
                 left: 0;
                 width: 100%;
                 height: 100%;
-                background: rgba(0, 0, 0, 0.7);
+                background: rgba(0, 0, 0, 0.72);
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 z-index: 10000;
-                backdrop-filter: blur(3px);
+                backdrop-filter: blur(4px);
             `;
 
             // Create dialog box
             const dialog = document.createElement('div');
             dialog.style.cssText = `
                 background: linear-gradient(145deg, #37474F, #263238);
-                border: 1px solid #666;
-                border-radius: 8px;
+                border: 1px solid #555;
+                border-radius: 10px;
                 padding: 20px;
-                min-width: 320px;
-                max-width: 400px;
-                box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+                width: 340px;
+                max-width: calc(100vw - 32px);
+                max-height: 85vh;
+                overflow-y: auto;
+                box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+                scrollbar-width: none;
             `;
 
             dialog.innerHTML = `
-                <h3 style="color: #fff; margin: 0 0 15px 0; font-size: 16px;">Add New Task</h3>
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="color: #ccc; font-size: 12px; display: block; margin-bottom: 5px;">Task Name:</label>
-                    <input type="text" id="task-name-input" style="
-                        width: 100%;
-                        padding: 8px;
-                        border: 1px solid #555;
-                        border-radius: 4px;
-                        background: #2a2a2a;
-                        color: #fff;
-                        font-size: 14px;
-                        box-sizing: border-box;
-                    " placeholder="Enter task name..." maxlength="50">
+                <style>#sidekick-task-dialog div::-webkit-scrollbar { display: none; }</style>
+
+                <!-- Header -->
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                    <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">⚙️ Manage Tasks</h3>
+                    <button id="manage-tasks-close" style="
+                        background: none; border: none; color: #aaa; cursor: pointer;
+                        font-size: 18px; line-height: 1; padding: 2px 6px; border-radius: 4px;
+                    " onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#aaa'">×</button>
                 </div>
 
-                <div style="margin-bottom: 15px;">
-                    <label style="color: #ccc; font-size: 12px; display: block; margin-bottom: 5px;">Auto-reset after completion:</label>
-                    <select id="reset-duration" style="
-                        width: 100%;
-                        padding: 8px;
-                        border: 1px solid #555;
-                        border-radius: 4px;
-                        background: #2a2a2a;
-                        color: #fff;
-                        font-size: 14px;
-                    ">
-                        <option value="never">Never (manual reset only)</option>
-                        <option value="1h">1 Hour</option>
-                        <option value="2h">2 Hours</option>
-                        <option value="4h">4 Hours</option>
-                        <option value="8h">8 Hours</option>
-                        <option value="12h">12 Hours</option>
-                        <option value="1d" selected>1 Day (24 hours)</option>
-                        <option value="2d">2 Days</option>
-                        <option value="3d">3 Days</option>
-                        <option value="7d">1 Week</option>
-                        <option value="30d">1 Month</option>
-                    </select>
+                <!-- Section: Daily Task Visibility -->
+                <div style="margin-bottom: 18px;">
+                    <div style="
+                        color: #aaa;
+                        font-size: 10px;
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        letter-spacing: 0.8px;
+                        margin-bottom: 8px;
+                    ">Daily Tasks — show / hide</div>
+                    <div id="daily-toggle-list" style="display: flex; flex-direction: column; gap: 6px;">
+                        ${buildDailyToggles()}
+                    </div>
                 </div>
 
-                <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button id="cancel-task" style="
-                        padding: 8px 16px;
-                        border: 1px solid #666;
-                        border-radius: 4px;
-                        background: #444;
-                        color: #ccc;
-                        cursor: pointer;
-                        font-size: 12px;
-                    ">Cancel</button>
-                    <button id="create-task" style="
-                        padding: 8px 16px;
-                        border: none;
-                        border-radius: 4px;
-                        background: linear-gradient(135deg, #4CAF50, #388E3C);
-                        color: white;
-                        cursor: pointer;
-                        font-size: 12px;
-                        font-weight: 500;
-                    ">Create Task</button>
+                <!-- Divider -->
+                <div style="border-top: 1px solid #444; margin-bottom: 16px;"></div>
+
+                <!-- Section: Add Custom Task -->
+                <div>
+                    <div style="
+                        color: #aaa;
+                        font-size: 10px;
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        letter-spacing: 0.8px;
+                        margin-bottom: 10px;
+                    ">Add Custom Task</div>
+
+                    <div style="margin-bottom: 12px;">
+                        <input type="text" id="task-name-input" style="
+                            width: 100%;
+                            padding: 8px 10px;
+                            border: 1px solid #555;
+                            border-radius: 6px;
+                            background: #1e282e;
+                            color: #fff;
+                            font-size: 13px;
+                            box-sizing: border-box;
+                            outline: none;
+                            transition: border-color 0.2s;
+                        " placeholder="Task name..." maxlength="50"
+                           onfocus="this.style.borderColor='#4CAF50'" onblur="this.style.borderColor='#555'">
+                    </div>
+
+                    <div style="margin-bottom: 14px;">
+                        <label style="color: #aaa; font-size: 11px; display: block; margin-bottom: 5px;">Auto-reset after completion:</label>
+                        <select id="reset-duration" style="
+                            width: 100%;
+                            padding: 7px 10px;
+                            border: 1px solid #555;
+                            border-radius: 6px;
+                            background: #1e282e;
+                            color: #fff;
+                            font-size: 13px;
+                        ">
+                            <option value="never">Never (manual only)</option>
+                            <option value="1h">1 Hour</option>
+                            <option value="2h">2 Hours</option>
+                            <option value="4h">4 Hours</option>
+                            <option value="8h">8 Hours</option>
+                            <option value="12h">12 Hours</option>
+                            <option value="1d" selected>1 Day (24 hours)</option>
+                            <option value="2d">2 Days</option>
+                            <option value="3d">3 Days</option>
+                            <option value="7d">1 Week</option>
+                            <option value="30d">1 Month</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <button id="cancel-task" style="
+                            padding: 7px 14px;
+                            border: 1px solid #555;
+                            border-radius: 6px;
+                            background: transparent;
+                            color: #aaa;
+                            cursor: pointer;
+                            font-size: 12px;
+                            transition: all 0.2s;
+                        " onmouseover="this.style.background='#3a3a3a';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#aaa'">Close</button>
+                        <button id="create-task" style="
+                            padding: 7px 16px;
+                            border: none;
+                            border-radius: 6px;
+                            background: linear-gradient(135deg, #4CAF50, #388E3C);
+                            color: white;
+                            cursor: pointer;
+                            font-size: 12px;
+                            font-weight: 600;
+                            transition: opacity 0.2s;
+                        " onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">+ Add Task</button>
+                    </div>
                 </div>
             `;
 
             dialogOverlay.appendChild(dialog);
             document.body.appendChild(dialogOverlay);
 
-            // Focus on input
+            // ── Daily visibility toggle listeners (event delegation survives innerHTML rebuilds) ──
+            dialog.querySelector('#daily-toggle-list') && dialog.querySelector('#daily-toggle-list').addEventListener('change', (e) => {
+                const checkbox = e.target.closest('.daily-visibility-toggle');
+                if (!checkbox) return;
+
+                const taskKey = checkbox.dataset.taskKey;
+                const task = this.dailyTasks[taskKey];
+                if (!task) return;
+
+                task.visible = checkbox.checked;
+                this.saveDailyTasks();
+                this.renderAllTodoLists();
+
+                // Rebuild the toggle list to reflect updated styles (listener survives because it's on the container)
+                const list = dialog.querySelector('#daily-toggle-list');
+                if (list) list.innerHTML = buildDailyToggles();
+
+                console.log(`Daily task '${task.name}' visibility: ${task.visible}`);
+            });
+
+            // ── Custom task creation ──
             const nameInput = dialog.querySelector('#task-name-input');
+            const createBtn = dialog.querySelector('#create-task');
+            const cancelBtn = dialog.querySelector('#cancel-task');
+            const resetSelect = dialog.querySelector('#reset-duration');
+            const closeBtn = dialog.querySelector('#manage-tasks-close');
+
             nameInput.focus();
 
-            // Add event listeners
-            const cancelBtn = dialog.querySelector('#cancel-task');
-            const createBtn = dialog.querySelector('#create-task');
-            const resetSelect = dialog.querySelector('#reset-duration');
+            const closeDialog = () => dialogOverlay.remove();
 
-            cancelBtn.addEventListener('click', () => {
-                dialogOverlay.remove();
-            });
+            cancelBtn.addEventListener('click', closeDialog);
+            closeBtn.addEventListener('click', closeDialog);
 
             createBtn.addEventListener('click', () => {
                 const taskName = nameInput.value.trim();
@@ -2434,31 +2675,29 @@
                     nameInput.focus();
                     return;
                 }
-
-                const resetDuration = resetSelect.value;
-                this.createTaskWithReset(todoList, taskName, resetDuration);
-                dialogOverlay.remove();
+                this.createTaskWithReset(todoList, taskName, resetSelect.value);
+                nameInput.value = '';
+                nameInput.style.borderColor = '#555';
+                nameInput.focus();
+                // Show brief success feedback
+                createBtn.textContent = '✓ Added!';
+                createBtn.style.background = 'linear-gradient(135deg, #2196F3, #1565C0)';
+                setTimeout(() => {
+                    createBtn.textContent = '+ Add Task';
+                    createBtn.style.background = 'linear-gradient(135deg, #4CAF50, #388E3C)';
+                }, 1200);
             });
 
-            // Enter key to create
             nameInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    createBtn.click();
-                }
+                if (e.key === 'Enter') createBtn.click();
             });
 
-            // Escape key to cancel
             dialogOverlay.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    dialogOverlay.remove();
-                }
+                if (e.key === 'Escape') closeDialog();
             });
 
-            // Click outside to cancel
             dialogOverlay.addEventListener('click', (e) => {
-                if (e.target === dialogOverlay) {
-                    dialogOverlay.remove();
-                }
+                if (e.target === dialogOverlay) closeDialog();
             });
         },
 
