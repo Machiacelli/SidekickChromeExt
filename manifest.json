@@ -77,6 +77,9 @@
                 "src/modules/travel-stocks.module.js",
                 "src/modules/price-filler.module.js",
                 "src/modules/legible-names.module.js",
+                "src/modules/mission-tracker.module.js",
+                "src/modules/hide-crime-outcome.module.js",
+                "src/modules/holiday.module.js",
                 "src/modules/ui.module.js",
                 "src/main.js"
             ],

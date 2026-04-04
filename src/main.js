@@ -405,6 +405,33 @@
                 console.warn('⚠️ Price Filler module not available');
             }
 
+            // Initialize Mission Tracker Module
+            console.log('🎯 Sidekick: Initializing Mission Tracker...');
+            if (window.SidekickModules.MissionTracker?.init) {
+                await window.SidekickModules.MissionTracker.init();
+                console.log('✅ Sidekick: Mission Tracker initialized');
+            } else {
+                console.warn('⚠️ Mission Tracker module not available');
+            }
+
+            // Initialize Hide Crime Outcome Module
+            console.log('🦹 Sidekick: Initializing Hide Crime Outcome...');
+            if (window.SidekickModules.HideCrimeOutcome?.init) {
+                await window.SidekickModules.HideCrimeOutcome.init();
+                console.log('✅ Sidekick: Hide Crime Outcome initialized');
+            } else {
+                console.warn('⚠️ Hide Crime Outcome module not available');
+            }
+
+            // Initialize Holiday Module
+            console.log('🎉 Sidekick: Initializing Holiday Module...');
+            if (window.SidekickModules.Holiday?.init) {
+                await window.SidekickModules.Holiday.init();
+                console.log('✅ Sidekick: Holiday Module initialized');
+            } else {
+                console.warn('⚠️ Holiday Module not available');
+            }
+
             // Initialize Notion Bug Reporter Module
             console.log("🐛 Sidekick: Initializing Notion Bug Reporter...");
             if (window.SidekickModules.NotionBugReporter?.init) {

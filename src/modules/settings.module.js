@@ -194,6 +194,27 @@
                                 <div style="font-size: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">⚠️</div>
                                 <span>Mug Warning</span>
                             </button>
+                            <button class="settings-sidebar-tab" data-tab="missiontracker" 
+                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
+                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
+                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
+                                <div style="font-size: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">🎯</div>
+                                <span>Missions</span>
+                            </button>
+                            <button class="settings-sidebar-tab" data-tab="hidecrime" 
+                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
+                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
+                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
+                                <div style="font-size: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">🦹</div>
+                                <span>Hide Crime</span>
+                            </button>
+                            <button class="settings-sidebar-tab" data-tab="holiday" 
+                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
+                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
+                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
+                                <div style="font-size: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">🎉</div>
+                                <span>Holiday</span>
+                            </button>
                         </div>
                     </div>
                     
@@ -330,6 +351,21 @@
                             <!-- MUG WARNING TAB -->
                             <div class="settings-tab-content" id="settings-tab-mugwarning" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
                                 ${this.createMugWarningSettingsHTML()}
+                            </div>
+
+                            <!-- MISSION TRACKER TAB -->
+                            <div class="settings-tab-content" id="settings-tab-missiontracker" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
+                                ${this.createMissionTrackerSettingsHTML()}
+                            </div>
+
+                            <!-- HIDE CRIME OUTCOME TAB -->
+                            <div class="settings-tab-content" id="settings-tab-hidecrime" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
+                                ${this.createHideCrimeOutcomeSettingsHTML()}
+                            </div>
+
+                            <!-- HOLIDAY TAB -->
+                            <div class="settings-tab-content" id="settings-tab-holiday" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
+                                ${this.createHolidaySettingsHTML()}
                             </div>
                         </div>
                     </div>
@@ -941,6 +977,15 @@
 
             // Mug Warning Tab listeners
             this.attachMugWarningTabListeners(panel);
+
+            // Mission Tracker Tab listeners
+            this.attachMissionTrackerTabListeners(panel);
+
+            // Hide Crime Outcome Tab listeners
+            this.attachHideCrimeTabListeners(panel);
+
+            // Holiday Tab listeners
+            this.attachHolidayTabListeners(panel);
         },
 
         // Switch between tabs
@@ -2718,6 +2763,321 @@
                 if (buttonColorInput) buttonColorInput.value = data.buttonTextColor || '#ffffff';
             } catch (error) {
                 console.error('Failed to load mug warning settings:', error);
+            }
+        },
+
+        // ─── Mission Tracker Settings ─────────────────────────────────────────
+
+        createMissionTrackerSettingsHTML() {
+            return `
+                <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">🎯 Mission Tracker Settings</h4>
+
+                <div style="background: rgba(102,187,106,0.08); border-left: 3px solid #66BB6A; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
+                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                        ℹ️ Polls the Torn API for active missions and shows a <strong>🎯</strong> icon in your status bar when one is running.
+                    </div>
+                </div>
+
+                ${this.createToggle('mission-tracker', '🎯 Enable Mission Tracker', 'Shows a tray icon when you have an active mission')}
+
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Check Interval:</label>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <input type="range" id="mission-tracker-interval" min="1" max="30" value="5"
+                               style="flex: 1; accent-color: #66BB6A;">
+                        <span id="mission-tracker-interval-display" style="color: #fff; min-width: 55px; text-align: right; font-weight: bold;">5 min</span>
+                    </div>
+                    <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
+                        How often Sidekick checks the API for active missions
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: flex; align-items: center; gap: 10px; color: #ccc; cursor: pointer;">
+                        <input type="checkbox" id="mission-tracker-newtab" style="accent-color: #66BB6A;">
+                        <span>Open in new tab</span>
+                    </label>
+                    <div style="font-size: 12px; color: #aaa; margin-top: 5px; margin-left: 28px;">
+                        When disabled, clicking the icon navigates in the same tab.
+                    </div>
+                </div>
+
+                <div id="sidekick-missiontracker-status" style="text-align: center; padding: 10px; border-radius: 5px;
+                                                              background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px; margin-top: 20px;">
+                    Mission Tracker settings loaded
+                </div>
+            `;
+        },
+
+        attachMissionTrackerTabListeners(panel) {
+            const intervalSlider  = panel.querySelector('#mission-tracker-interval');
+            const intervalDisplay = panel.querySelector('#mission-tracker-interval-display');
+            const newTabCheck     = panel.querySelector('#mission-tracker-newtab');
+            const statusDiv       = panel.querySelector('#sidekick-missiontracker-status');
+
+            if (intervalSlider && intervalDisplay) {
+                intervalSlider.addEventListener('input', async () => {
+                    const mins = parseInt(intervalSlider.value, 10);
+                    intervalDisplay.textContent = mins + ' min';
+                    if (window.SidekickModules.MissionTracker) {
+                        window.SidekickModules.MissionTracker.checkIntervalMinutes = mins;
+                        await window.SidekickModules.MissionTracker.saveSettings();
+                        if (window.SidekickModules.MissionTracker.isEnabled) {
+                            window.SidekickModules.MissionTracker.startPolling();
+                        }
+                        this.showAutoSaveStatus(statusDiv, 'Interval saved ✓');
+                    }
+                });
+            }
+
+            if (newTabCheck) {
+                newTabCheck.addEventListener('change', async () => {
+                    if (window.SidekickModules.MissionTracker) {
+                        window.SidekickModules.MissionTracker.openInNewTab = newTabCheck.checked;
+                        await window.SidekickModules.MissionTracker.saveSettings();
+                        this.showAutoSaveStatus(statusDiv, 'Saved ✓');
+                    }
+                });
+            }
+
+            // Load current values
+            this.loadMissionTrackerSettings(panel);
+        },
+
+        async loadMissionTrackerSettings(panel) {
+            try {
+                const data = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings');
+                const s = data?.['mission-tracker'] || {};
+                const intervalSlider  = panel.querySelector('#mission-tracker-interval');
+                const intervalDisplay = panel.querySelector('#mission-tracker-interval-display');
+                const newTabCheck     = panel.querySelector('#mission-tracker-newtab');
+                const mins = s.checkIntervalMinutes || 5;
+                if (intervalSlider)  intervalSlider.value = mins;
+                if (intervalDisplay) intervalDisplay.textContent = mins + ' min';
+                if (newTabCheck)     newTabCheck.checked = s.openInNewTab || false;
+            } catch (e) {
+                console.error('Failed to load Mission Tracker settings:', e);
+            }
+        },
+
+        // ─── Hide Crime Outcome Settings ──────────────────────────────────────
+
+        createHideCrimeOutcomeSettingsHTML() {
+            return `
+                <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">🦹 Hide Crime Outcome</h4>
+
+                <div style="background: rgba(239,83,80,0.08); border-left: 3px solid #ef5350; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
+                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                        ℹ️ Controls how the crime outcome panel is shown on the crimes page — great for rapid clicking.
+                        Only active on <code style="background: rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 3px;">/page.php?sid=crimes</code>.
+                    </div>
+                </div>
+
+                ${this.createToggle('hide-crime-outcome-enabled', '🦹 Enable Hide Crime Outcome', 'Activates the selected mode on the crimes page')}
+
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
+
+                <label style="display: block; margin-bottom: 12px; color: #ccc; font-weight: bold;">Display Mode:</label>
+
+                <div id="hco-mode-cards" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                    ${['0:Disabled:🔓:Shows the full outcome as normal.',
+                       '1:Hidden:🚫:Hides the outcome panel entirely. Fastest for bulk crimes.',
+                       '2:Minimal:📋:Removes story text. Keeps result & rewards.',
+                       '3:Toast:🔔:Shows a small pop-up instead of the panel.']
+                        .map(s => {
+                            const [id, name, icon, desc] = s.split(':');
+                            return `<div class="hco-mode-card" data-mode="${id}" style="
+                                padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+                                background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1);
+                            ">
+                                <div style="font-size: 22px; margin-bottom: 6px;">${icon}</div>
+                                <div style="font-weight: 700; color: #fff; font-size: 13px; margin-bottom: 4px;">${name}</div>
+                                <div style="font-size: 11px; color: #aaa; line-height: 1.4;">${desc}</div>
+                            </div>`;
+                        }).join('')
+                    }
+                </div>
+
+                <div id="sidekick-hidecrime-status" style="text-align: center; padding: 10px; border-radius: 5px;
+                                                          background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px; margin-top: 10px;">
+                    Hide Crime Outcome settings loaded
+                </div>
+            `;
+        },
+
+        attachHideCrimeTabListeners(panel) {
+            const statusDiv = panel.querySelector('#sidekick-hidecrime-status');
+
+            // Mode card selection
+            const modeCards = panel.querySelectorAll('.hco-mode-card');
+            const selectMode = async (modeId) => {
+                modeCards.forEach(c => {
+                    const active = parseInt(c.dataset.mode, 10) === modeId;
+                    c.style.borderColor = active ? '#ef5350' : 'rgba(255,255,255,0.1)';
+                    c.style.background  = active ? 'rgba(239,83,80,0.12)' : 'rgba(255,255,255,0.05)';
+                });
+                if (window.SidekickModules.HideCrimeOutcome) {
+                    window.SidekickModules.HideCrimeOutcome.mode = modeId;
+                    await window.SidekickModules.HideCrimeOutcome.saveSettings();
+                    window.SidekickModules.HideCrimeOutcome.apply();
+                    this.showAutoSaveStatus(statusDiv, 'Mode saved ✓');
+                }
+            };
+
+            modeCards.forEach(card => {
+                card.addEventListener('click', () => selectMode(parseInt(card.dataset.mode, 10)));
+                card.addEventListener('mouseenter', () => {
+                    const isActive = card.style.borderColor.includes('83,80');
+                    if (!isActive) card.style.background = 'rgba(255,255,255,0.09)';
+                });
+                card.addEventListener('mouseleave', () => {
+                    const isActive = card.style.borderColor.includes('83,80');
+                    if (!isActive) card.style.background = 'rgba(255,255,255,0.05)';
+                });
+            });
+
+            // Wire the enable toggle (it uses a different key from core toggles)
+            const toggleEl = panel.querySelector('[data-module="hide-crime-outcome-enabled"]');
+            if (toggleEl) {
+                toggleEl.addEventListener('click', async () => {
+                    const enabled = toggleEl.classList.contains('active') || toggleEl.querySelector('.toggle-track')?.style.backgroundColor?.includes('76, 175');
+                    if (window.SidekickModules.HideCrimeOutcome) {
+                        window.SidekickModules.HideCrimeOutcome.isEnabled = !window.SidekickModules.HideCrimeOutcome.isEnabled;
+                        await window.SidekickModules.HideCrimeOutcome.saveSettings();
+                        window.SidekickModules.HideCrimeOutcome.apply();
+                    }
+                });
+            }
+
+            this.loadHideCrimeSettings(panel);
+        },
+
+        async loadHideCrimeSettings(panel) {
+            try {
+                const data = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings');
+                const s = data?.['hide-crime-outcome'] || {};
+                const mode = s.mode != null ? s.mode : 0;
+
+                const modeCards = panel.querySelectorAll('.hco-mode-card');
+                modeCards.forEach(c => {
+                    const active = parseInt(c.dataset.mode, 10) === mode;
+                    c.style.borderColor = active ? '#ef5350' : 'rgba(255,255,255,0.1)';
+                    c.style.background  = active ? 'rgba(239,83,80,0.12)' : 'rgba(255,255,255,0.05)';
+                });
+
+                // Reflect enabled state in toggle
+                const toggleEl = panel.querySelector('[data-module="hide-crime-outcome-enabled"] .toggle-track');
+                const thumbEl  = panel.querySelector('[data-module="hide-crime-outcome-enabled"] .toggle-thumb');
+                if (toggleEl && thumbEl && s.isEnabled) {
+                    toggleEl.style.backgroundColor = 'rgba(76, 175, 80, 0.8)';
+                    thumbEl.style.transform = 'translateX(26px)';
+                }
+            } catch (e) {
+                console.error('Failed to load Hide Crime Outcome settings:', e);
+            }
+        },
+
+        // ─── Holiday Settings ─────────────────────────────────────────────────
+
+        createHolidaySettingsHTML() {
+            return `
+                <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">🎉 Holiday Tools</h4>
+
+                <div style="background: rgba(102,187,106,0.08); border-left: 3px solid #66BB6A; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
+                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
+                        ℹ️ Seasonal tools that appear on Torn pages during special events. Toggle each tool on or off here.
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #fff; margin-bottom: 4px;">🥚 Easter Egg Hunt Helper</div>
+                            <div style="font-size: 12px; color: #aaa; line-height: 1.5;">
+                                Shows a floating panel that tracks which Torn pages you've visited to hunt Easter eggs.
+                                Detects eggs automatically and lets you navigate to the next page in one click.
+                            </div>
+                        </div>
+                        <div class="toggle-switch" id="holiday-egghunt-toggle" style="
+                            position: relative; display: inline-block; width: 50px; height: 24px;
+                            margin-left: 15px; cursor: pointer; flex-shrink: 0;
+                        ">
+                            <div class="toggle-track" style="
+                                position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+                                background-color: rgba(255,255,255,0.2); border-radius: 24px;
+                                transition: background-color 0.3s ease;
+                            "></div>
+                            <div class="toggle-thumb" style="
+                                position: absolute; top: 2px; left: 2px; width: 20px; height: 20px;
+                                background-color: white; border-radius: 50%;
+                                transition: transform 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                            "></div>
+                        </div>
+                    </div>
+                    <button id="holiday-egghunt-reset" style="margin-top: 10px; padding: 6px 14px; background: rgba(239,83,80,0.15); border: 1px solid rgba(239,83,80,0.3);
+                                                              color: #ef5350; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">
+                        🗑️ Reset Hunt Progress
+                    </button>
+                </div>
+
+                <div id="sidekick-holiday-status" style="text-align: center; padding: 10px; border-radius: 5px;
+                                                        background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px; margin-top: 10px;">
+                    Holiday settings loaded
+                </div>
+            `;
+        },
+
+        attachHolidayTabListeners(panel) {
+            const toggle   = panel.querySelector('#holiday-egghunt-toggle');
+            const resetBtn = panel.querySelector('#holiday-egghunt-reset');
+            const statusDiv = panel.querySelector('#sidekick-holiday-status');
+
+            if (toggle) {
+                const track = toggle.querySelector('.toggle-track');
+                const thumb = toggle.querySelector('.toggle-thumb');
+
+                toggle.addEventListener('click', async () => {
+                    if (!window.SidekickModules.Holiday) return;
+                    window.SidekickModules.Holiday.eggHuntEnabled = !window.SidekickModules.Holiday.eggHuntEnabled;
+                    const on = window.SidekickModules.Holiday.eggHuntEnabled;
+                    track.style.backgroundColor = on ? 'rgba(76,175,80,0.8)' : 'rgba(255,255,255,0.2)';
+                    thumb.style.transform = on ? 'translateX(26px)' : 'translateX(0)';
+                    await window.SidekickModules.Holiday.saveSettings();
+                    window.SidekickModules.Holiday._apply();
+                    this.showAutoSaveStatus(statusDiv, on ? 'Egg Hunt enabled ✓' : 'Egg Hunt disabled ✓');
+                });
+            }
+
+            if (resetBtn) {
+                resetBtn.addEventListener('click', async () => {
+                    if (!confirm('Reset all Easter Egg Hunt progress (visited pages and egg count)?')) return;
+                    try {
+                        await window.SidekickModules.Core.ChromeStorage.set('sidekick_holiday_eggHunt', {});
+                        this.showAutoSaveStatus(statusDiv, 'Hunt progress reset ✓');
+                    } catch (e) {
+                        console.error('Failed to reset egg hunt:', e);
+                    }
+                });
+
+                resetBtn.addEventListener('mouseenter', () => { resetBtn.style.background = 'rgba(239,83,80,0.28)'; });
+                resetBtn.addEventListener('mouseleave', () => { resetBtn.style.background = 'rgba(239,83,80,0.15)'; });
+            }
+
+            this.loadHolidaySettings(panel);
+        },
+
+        async loadHolidaySettings(panel) {
+            try {
+                const data = await window.SidekickModules.Core.ChromeStorage.get('sidekick_holiday');
+                const on = data?.eggHuntEnabled || false;
+                const track = panel.querySelector('#holiday-egghunt-toggle .toggle-track');
+                const thumb = panel.querySelector('#holiday-egghunt-toggle .toggle-thumb');
+                if (track) track.style.backgroundColor = on ? 'rgba(76,175,80,0.8)' : 'rgba(255,255,255,0.2)';
+                if (thumb) thumb.style.transform = on ? 'translateX(26px)' : 'translateX(0)';
+            } catch (e) {
+                console.error('Failed to load Holiday settings:', e);
             }
         }
     };
