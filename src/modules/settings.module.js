@@ -2785,9 +2785,9 @@
                 <div style="margin-bottom: 20px;">
                     <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Check Interval:</label>
                     <div style="display: flex; align-items: center; gap: 15px;">
-                        <input type="range" id="mission-tracker-interval" min="1" max="30" value="5"
+                        <input type="range" id="mission-tracker-interval" min="30" max="360" step="30" value="30"
                                style="flex: 1; accent-color: #66BB6A;">
-                        <span id="mission-tracker-interval-display" style="color: #fff; min-width: 55px; text-align: right; font-weight: bold;">5 min</span>
+                        <span id="mission-tracker-interval-display" style="color: #fff; min-width: 55px; text-align: right; font-weight: bold;">30 min</span>
                     </div>
                     <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
                         How often Sidekick checks the API for active missions
@@ -2820,7 +2820,8 @@
             if (intervalSlider && intervalDisplay) {
                 intervalSlider.addEventListener('input', async () => {
                     const mins = parseInt(intervalSlider.value, 10);
-                    intervalDisplay.textContent = mins + ' min';
+                    const label = mins >= 60 ? (mins % 60 === 0 ? (mins / 60) + 'h' : Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm') : mins + ' min';
+                    intervalDisplay.textContent = label;
                     if (window.SidekickModules.MissionTracker) {
                         window.SidekickModules.MissionTracker.checkIntervalMinutes = mins;
                         await window.SidekickModules.MissionTracker.saveSettings();
@@ -2853,9 +2854,10 @@
                 const intervalSlider  = panel.querySelector('#mission-tracker-interval');
                 const intervalDisplay = panel.querySelector('#mission-tracker-interval-display');
                 const newTabCheck     = panel.querySelector('#mission-tracker-newtab');
-                const mins = s.checkIntervalMinutes || 5;
+                const mins = s.checkIntervalMinutes || 30;
                 if (intervalSlider)  intervalSlider.value = mins;
-                if (intervalDisplay) intervalDisplay.textContent = mins + ' min';
+                const label = mins >= 60 ? (mins % 60 === 0 ? (mins / 60) + 'h' : Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm') : mins + ' min';
+                if (intervalDisplay) intervalDisplay.textContent = label;
                 if (newTabCheck)     newTabCheck.checked = s.openInNewTab || false;
             } catch (e) {
                 console.error('Failed to load Mission Tracker settings:', e);
@@ -2875,7 +2877,18 @@
                     </div>
                 </div>
 
-                ${this.createToggle('hide-crime-outcome-enabled', '🦹 Enable Hide Crime Outcome', 'Activates the selected mode on the crimes page')}
+                <div style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #fff; margin-bottom: 4px;">🦹 Enable Hide Crime Outcome</div>
+                            <div style="font-size: 12px; color: #aaa;">Activates the selected mode on the crimes page</div>
+                        </div>
+                        <div id="hide-crime-outcome-toggle" style="position: relative; display: inline-block; width: 50px; height: 24px; margin-left: 15px; cursor: pointer; flex-shrink: 0;">
+                            <div class="hco-toggle-track" style="position: absolute; inset: 0; background: rgba(255,255,255,0.2); border-radius: 24px; transition: background 0.3s ease;"></div>
+                            <div class="hco-toggle-thumb" style="position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+                        </div>
+                    </div>
+                </div>
 
                 <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
 
@@ -2938,16 +2951,20 @@
                 });
             });
 
-            // Wire the enable toggle (it uses a different key from core toggles)
-            const toggleEl = panel.querySelector('[data-module="hide-crime-outcome-enabled"]');
-            if (toggleEl) {
-                toggleEl.addEventListener('click', async () => {
-                    const enabled = toggleEl.classList.contains('active') || toggleEl.querySelector('.toggle-track')?.style.backgroundColor?.includes('76, 175');
-                    if (window.SidekickModules.HideCrimeOutcome) {
-                        window.SidekickModules.HideCrimeOutcome.isEnabled = !window.SidekickModules.HideCrimeOutcome.isEnabled;
-                        await window.SidekickModules.HideCrimeOutcome.saveSettings();
-                        window.SidekickModules.HideCrimeOutcome.apply();
-                    }
+            const toggle    = panel.querySelector('#hide-crime-outcome-toggle');
+            const track     = toggle?.querySelector('.hco-toggle-track');
+            const thumb     = toggle?.querySelector('.hco-toggle-thumb');
+
+            if (toggle) {
+                toggle.addEventListener('click', async () => {
+                    if (!window.SidekickModules.HideCrimeOutcome) return;
+                    window.SidekickModules.HideCrimeOutcome.isEnabled = !window.SidekickModules.HideCrimeOutcome.isEnabled;
+                    const on = window.SidekickModules.HideCrimeOutcome.isEnabled;
+                    if (track) track.style.background = on ? 'rgba(76,175,80,0.85)' : 'rgba(255,255,255,0.2)';
+                    if (thumb) thumb.style.transform  = on ? 'translateX(26px)' : 'translateX(0)';
+                    await window.SidekickModules.HideCrimeOutcome.saveSettings();
+                    window.SidekickModules.HideCrimeOutcome.apply();
+                    this.showAutoSaveStatus(statusDiv, on ? 'Enabled ✓' : 'Disabled ✓');
                 });
             }
 
@@ -2967,13 +2984,11 @@
                     c.style.background  = active ? 'rgba(239,83,80,0.12)' : 'rgba(255,255,255,0.05)';
                 });
 
-                // Reflect enabled state in toggle
-                const toggleEl = panel.querySelector('[data-module="hide-crime-outcome-enabled"] .toggle-track');
-                const thumbEl  = panel.querySelector('[data-module="hide-crime-outcome-enabled"] .toggle-thumb');
-                if (toggleEl && thumbEl && s.isEnabled) {
-                    toggleEl.style.backgroundColor = 'rgba(76, 175, 80, 0.8)';
-                    thumbEl.style.transform = 'translateX(26px)';
-                }
+                // Reflect enabled state in custom toggle
+                const toggleTrack = panel.querySelector('#hide-crime-outcome-toggle .hco-toggle-track');
+                const toggleThumb = panel.querySelector('#hide-crime-outcome-toggle .hco-toggle-thumb');
+                if (toggleTrack) toggleTrack.style.background = s.isEnabled ? 'rgba(76,175,80,0.85)' : 'rgba(255,255,255,0.2)';
+                if (toggleThumb) toggleThumb.style.transform  = s.isEnabled ? 'translateX(26px)' : 'translateX(0)';
             } catch (e) {
                 console.error('Failed to load Hide Crime Outcome settings:', e);
             }

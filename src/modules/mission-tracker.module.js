@@ -15,7 +15,7 @@ const MissionTrackerModule = {
     // State
     isEnabled: false,
     openInNewTab: false,
-    checkIntervalMinutes: 5,
+    checkIntervalMinutes: 30,
 
     pollTimer: null,
     observer: null,

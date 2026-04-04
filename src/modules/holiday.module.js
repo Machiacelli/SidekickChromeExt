@@ -1,11 +1,8 @@
 /**
- * Holiday Module
- * Manages seasonal tools injected into Torn.com pages.
- * Current tools: Easter Egg Hunt Helper
- * Version: 1.0.0
+ * Holiday Module — Easter Egg Hunt Helper
+ * Minimal floating panel, auto-detects eggs, blocks navigation when egg is found.
+ * Version: 2.0.0
  */
-
-// ─── Constants ───────────────────────────────────────────────────────────────
 
 const EGG_HUNT_PAGES = [
     { label: "Home",                 url: "/" },
@@ -115,44 +112,31 @@ const EGG_HUNT_PAGES = [
     { label: "Christmas Town",       url: "/christmas_town.php" }
 ];
 
-// ─── Egg Hunt Tool ───────────────────────────────────────────────────────────
+// ─── Egg Hunt Tool ────────────────────────────────────────────────────────────
 
 const EggHuntTool = {
     STORAGE_KEY: 'sidekick_holiday_eggHunt',
-    PANEL_ID: 'sk-egg-hunt-panel',
-    STYLES_ID: 'sk-egg-hunt-styles',
+    PANEL_ID:    'sk-egg-panel',
+    MINI_ID:     'sk-egg-mini',
+    STYLES_ID:   'sk-egg-styles',
+    OVERLAY_ID:  'sk-egg-overlay',
 
-    // State
     state: {
-        idx: 0,
-        panelX: null,
-        panelY: null,
-        collapsed: false,
-        hidden: false,
-        eggsFound: 0,
-        visited: [],
-        filter: '',
+        idx: 0, panelX: null, panelY: null,
+        collapsed: false, hidden: false,
+        eggsFound: 0, visited: [],
     },
 
-    panel: null,
-    miniBtn: null,
-    _listWrap: null,
-    _progressFill: null,
-    _progressLabel: null,
-    _jumpInput: null,
-    _searchInput: null,
-    _currentPageEl: null,
-    _eggBadge: null,
-    _eggObserver: null,
+    panel: null, miniBtn: null,
+    _overlay: null, _eggObserver: null, _navBlocker: null,
+    _progressFill: null, _visitedLabel: null, _eggCountLabel: null,
 
-    // ─── State Persistence ────────────────────────────────────────────────────
+    // ─── State ───────────────────────────────────────────────────────────────
 
     async loadState() {
         try {
-            const data = await window.SidekickModules.Core.ChromeStorage.get(this.STORAGE_KEY);
-            if (data) {
-                Object.assign(this.state, data);
-            }
+            const d = await window.SidekickModules.Core.ChromeStorage.get(this.STORAGE_KEY);
+            if (d) Object.assign(this.state, d);
         } catch {}
     },
 
@@ -162,24 +146,10 @@ const EggHuntTool = {
         } catch {}
     },
 
-    async resetVisited() {
-        this.state.visited = [];
-        this.state.idx = 0;
-        await this.saveState();
-        this._renderList(false);
-        this._updateUI();
-    },
-
-    async resetEggs() {
-        this.state.eggsFound = 0;
-        await this.saveState();
-        if (this._eggBadge) this._eggBadge.textContent = this.state.eggsFound;
-    },
-
-    // ─── Lifecycle ────────────────────────────────────────────────────────────
+    // ─── Lifecycle ───────────────────────────────────────────────────────────
 
     async init() {
-        if (document.getElementById(this.PANEL_ID)) return; // already alive
+        if (document.getElementById(this.PANEL_ID)) return;
         this._ensureStyles();
         await this.loadState();
         this._buildPanel();
@@ -189,402 +159,205 @@ const EggHuntTool = {
 
     destroy() {
         document.getElementById(this.PANEL_ID)?.remove();
-        document.getElementById('sk-egg-mini-btn')?.remove();
+        document.getElementById(this.MINI_ID)?.remove();
         document.getElementById(this.STYLES_ID)?.remove();
+        this._removeEggOverlay(false);
         if (this._eggObserver) { this._eggObserver.disconnect(); this._eggObserver = null; }
-        this.panel = null;
-        this.miniBtn = null;
+        this.panel = null; this.miniBtn = null;
     },
 
-    // ─── Styles ───────────────────────────────────────────────────────────────
+    // ─── Styles ──────────────────────────────────────────────────────────────
 
     _ensureStyles() {
         if (document.getElementById(this.STYLES_ID)) return;
         const s = document.createElement('style');
         s.id = this.STYLES_ID;
         s.textContent = `
-            #sk-egg-hunt-panel, #sk-egg-hunt-panel * {
-                box-sizing: border-box;
-                font-family: Arial, 'Segoe UI', sans-serif;
-            }
+            #sk-egg-panel, #sk-egg-panel * { box-sizing: border-box; font-family: Arial, sans-serif; }
 
-            #sk-egg-hunt-panel {
-                position: fixed;
-                z-index: 2147483640;
-                width: 260px;
-                background: #1a1a1a;
-                border: 1px solid rgba(255,255,255,0.12);
-                border-radius: 12px;
-                overflow: hidden;
-                box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.4);
+            #sk-egg-panel {
+                position: fixed; z-index: 2147483640;
+                width: 230px; background: #1a1a1a;
+                border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+                overflow: hidden; box-shadow: 0 6px 28px rgba(0,0,0,0.6);
                 user-select: none;
             }
 
-            #sk-egg-hunt-header {
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                padding: 10px 12px;
-                background: #242424;
-                border-bottom: 1px solid rgba(255,255,255,0.08);
+            #sk-egg-header {
+                display: flex; align-items: center; gap: 6px;
+                padding: 10px 10px 10px 13px;
+                background: #242424; border-bottom: 1px solid rgba(255,255,255,0.08);
                 cursor: grab;
             }
-            #sk-egg-hunt-header:active { cursor: grabbing; }
+            #sk-egg-header:active { cursor: grabbing; }
+            #sk-egg-title { flex: 1; font-size: 12px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.04em; }
 
-            #sk-egg-hunt-title {
-                flex: 1;
-                font-size: 12px;
-                font-weight: 700;
-                color: #fff;
-                letter-spacing: 0.03em;
-                text-transform: uppercase;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-
-            #sk-egg-badge {
-                background: linear-gradient(135deg, #66BB6A, #43A047);
-                color: #fff;
-                font-size: 10px;
-                font-weight: 800;
-                padding: 2px 8px;
-                border-radius: 10px;
-                min-width: 28px;
-                text-align: center;
-            }
-
-            .sk-egg-hdr-btn {
-                width: 22px;
-                height: 22px;
-                border: none;
-                background: rgba(255,255,255,0.06);
-                border-radius: 5px;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: rgba(255,255,255,0.5);
-                font-size: 11px;
-                flex-shrink: 0;
-                padding: 0;
+            .sk-egg-hbtn {
+                width: 20px; height: 20px; border: none;
+                background: rgba(255,255,255,0.07); border-radius: 4px;
+                cursor: pointer; display: flex; align-items: center; justify-content: center;
+                color: rgba(255,255,255,0.45); font-size: 11px; flex-shrink: 0; padding: 0;
                 transition: background 0.15s, color 0.15s;
             }
-            .sk-egg-hdr-btn:hover {
-                background: rgba(102,187,106,0.2);
-                color: #66BB6A;
-            }
+            .sk-egg-hbtn:hover { background: rgba(102,187,106,0.2); color: #66BB6A; }
 
-            #sk-egg-hunt-body {
-                overflow: hidden;
-                transition: max-height 0.22s cubic-bezier(0.4,0,0.2,1), opacity 0.18s ease;
-                max-height: 400px;
+            #sk-egg-body {
+                max-height: 200px; overflow: hidden;
+                transition: max-height 0.22s ease, opacity 0.18s ease;
                 opacity: 1;
             }
-            #sk-egg-hunt-panel.sk-collapsed #sk-egg-hunt-body {
-                max-height: 0;
-                opacity: 0;
-            }
+            #sk-egg-panel.sk-collapsed #sk-egg-body { max-height: 0; opacity: 0; }
 
-            #sk-egg-progress-wrap {
-                padding: 8px 12px 6px;
-                border-bottom: 1px solid rgba(255,255,255,0.05);
+            #sk-egg-stats {
+                padding: 12px 13px 6px;
             }
-            #sk-egg-progress-track {
-                height: 3px;
-                background: rgba(255,255,255,0.08);
-                border-radius: 2px;
-                overflow: hidden;
-                margin-bottom: 5px;
+            #sk-egg-track {
+                height: 3px; background: rgba(255,255,255,0.08);
+                border-radius: 2px; overflow: hidden; margin-bottom: 9px;
             }
-            #sk-egg-progress-fill {
-                height: 100%;
-                border-radius: 2px;
+            #sk-egg-fill {
+                height: 100%; border-radius: 2px;
                 background: linear-gradient(90deg, #66BB6A, #43A047);
-                transition: width 0.35s cubic-bezier(0.4,0,0.2,1);
+                transition: width 0.4s ease;
             }
-            #sk-egg-progress-label {
-                font-size: 10px;
-                color: rgba(255,255,255,0.4);
-                display: flex;
-                justify-content: space-between;
+            .sk-egg-stat {
+                font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 4px;
             }
-            #sk-egg-progress-label span { color: #66BB6A; }
-
-            #sk-egg-current-page {
-                padding: 5px 12px;
-                font-size: 10px;
-                color: rgba(255,255,255,0.3);
-                border-bottom: 1px solid rgba(255,255,255,0.04);
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-            #sk-egg-current-page em {
-                font-style: normal;
-                color: rgba(102,187,106,0.85);
-            }
-
-            #sk-egg-search-wrap {
-                padding: 7px 10px 5px;
-                border-bottom: 1px solid rgba(255,255,255,0.05);
-            }
-            #sk-egg-search {
-                width: 100%;
-                background: rgba(255,255,255,0.06);
-                border: 1px solid rgba(255,255,255,0.1);
-                border-radius: 6px;
-                padding: 5px 9px;
-                font-size: 11px;
-                color: #fff;
-                outline: none;
-                transition: border-color 0.2s;
-            }
-            #sk-egg-search::placeholder { color: rgba(255,255,255,0.25); }
-            #sk-egg-search:focus { border-color: rgba(102,187,106,0.5); }
-
-            #sk-egg-list-wrap {
-                max-height: 165px;
-                overflow-y: auto;
-                overflow-x: hidden;
-                padding: 3px 0;
-                scrollbar-width: thin;
-                scrollbar-color: rgba(102,187,106,0.25) transparent;
-            }
-            #sk-egg-list-wrap::-webkit-scrollbar { width: 4px; }
-            #sk-egg-list-wrap::-webkit-scrollbar-track { background: transparent; }
-            #sk-egg-list-wrap::-webkit-scrollbar-thumb { background: rgba(102,187,106,0.25); border-radius: 2px; }
-
-            .sk-egg-page-item {
-                display: flex;
-                align-items: center;
-                gap: 7px;
-                padding: 5px 12px;
-                cursor: pointer;
-                font-size: 11px;
-                color: rgba(255,255,255,0.7);
-                text-decoration: none;
-                transition: background 0.1s;
-            }
-            .sk-egg-page-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
-            .sk-egg-page-item.sk-active {
-                background: rgba(102,187,106,0.12);
-                color: #66BB6A;
-                font-weight: 600;
-            }
-            .sk-egg-page-num {
-                font-size: 9px;
-                color: rgba(255,255,255,0.2);
-                min-width: 22px;
-                text-align: right;
-                flex-shrink: 0;
-            }
-            .sk-egg-page-label {
-                flex: 1;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
-            .sk-egg-check {
-                font-size: 10px;
-                color: #66BB6A;
-                opacity: 0;
-                flex-shrink: 0;
-            }
-            .sk-egg-page-item.sk-visited .sk-egg-check { opacity: 1; }
+            .sk-egg-stat span { color: #66BB6A; font-weight: 700; }
 
             #sk-egg-controls {
-                padding: 8px 10px;
-                display: flex;
-                gap: 6px;
-                align-items: center;
-                border-top: 1px solid rgba(255,255,255,0.06);
+                display: flex; gap: 6px; padding: 8px 10px 10px;
             }
-
             .sk-egg-btn {
-                border: none;
-                border-radius: 7px;
-                cursor: pointer;
-                font-weight: 700;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: filter 0.15s, background 0.15s, transform 0.1s;
-                outline: none;
+                border: none; border-radius: 7px; cursor: pointer;
+                display: flex; align-items: center; justify-content: center;
+                font-weight: 700; transition: filter 0.15s, transform 0.1s;
             }
             .sk-egg-btn:active { transform: scale(0.93); }
-
-            .sk-egg-btn-prev {
-                width: 32px;
-                height: 32px;
+            .sk-egg-prev {
+                width: 32px; height: 32px; flex-shrink: 0;
                 background: rgba(255,255,255,0.07);
-                color: rgba(255,255,255,0.6);
-                font-size: 13px;
-                flex-shrink: 0;
+                color: rgba(255,255,255,0.55); font-size: 13px;
             }
-            .sk-egg-btn-prev:hover { background: rgba(255,255,255,0.12); color: #fff; }
-
-            .sk-egg-btn-next {
-                flex: 1;
-                height: 32px;
+            .sk-egg-prev:hover { background: rgba(255,255,255,0.13); color: #fff; }
+            .sk-egg-next {
+                flex: 1; height: 32px;
                 background: linear-gradient(135deg, #66BB6A, #43A047);
-                color: #fff;
-                font-size: 11px;
-                letter-spacing: 0.05em;
-                text-transform: uppercase;
-                box-shadow: 0 2px 10px rgba(102,187,106,0.25);
+                color: #fff; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase;
+                box-shadow: 0 2px 10px rgba(66,175,80,0.25);
             }
-            .sk-egg-btn-next:hover { filter: brightness(1.1); box-shadow: 0 3px 16px rgba(102,187,106,0.4); }
+            .sk-egg-next:hover { filter: brightness(1.1); }
 
-            #sk-egg-jump-row {
-                display: flex;
-                align-items: center;
-                gap: 5px;
-                padding: 0 10px 9px;
+            /* Mini restore button */
+            #sk-egg-mini {
+                position: fixed; width: 38px; height: 38px;
+                background: #1a1a1a; border: 1px solid rgba(102,187,106,0.45);
+                border-radius: 50%; cursor: pointer; z-index: 2147483640;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 18px; box-shadow: 0 3px 12px rgba(0,0,0,0.5);
+                transition: transform 0.2s, box-shadow 0.2s; touch-action: none;
             }
-            #sk-egg-jump-row label {
-                font-size: 10px;
-                color: rgba(255,255,255,0.28);
-                flex-shrink: 0;
-            }
-            #sk-egg-jump-input {
-                width: 48px;
-                background: rgba(255,255,255,0.06);
-                border: 1px solid rgba(255,255,255,0.1);
-                border-radius: 5px;
-                padding: 4px 6px;
-                font-size: 11px;
-                color: #fff;
-                outline: none;
-                text-align: center;
-                -moz-appearance: textfield;
-            }
-            #sk-egg-jump-input::-webkit-inner-spin-button { -webkit-appearance: none; }
-            #sk-egg-jump-input:focus { border-color: rgba(102,187,106,0.4); }
-            #sk-egg-jump-total {
-                font-size: 10px;
-                color: rgba(255,255,255,0.22);
-                flex-shrink: 0;
-            }
-            #sk-egg-jump-go {
-                flex: 1;
-                height: 26px;
-                font-size: 10px;
-                font-weight: 700;
-                background: rgba(102,187,106,0.15);
-                color: #66BB6A;
-                border: 1px solid rgba(102,187,106,0.25);
-                border-radius: 5px;
-                cursor: pointer;
-                letter-spacing: 0.04em;
-                transition: background 0.15s;
-            }
-            #sk-egg-jump-go:hover { background: rgba(102,187,106,0.28); }
+            #sk-egg-mini:hover { transform: scale(1.1); box-shadow: 0 4px 16px rgba(102,187,106,0.4); }
 
-            #sk-egg-mini-btn {
-                position: fixed;
-                width: 40px;
-                height: 40px;
-                background: #1a1a1a;
-                border: 1px solid rgba(102,187,106,0.4);
+            /* ── Egg Overlay ── */
+            #sk-egg-overlay {
+                position: fixed; inset: 0; z-index: 2147483641;
+                background: rgba(0,0,0,0.90);
+                display: flex; flex-direction: column;
+                align-items: center; justify-content: center;
+            }
+
+            #sk-egg-overlay-title {
+                font-size: clamp(24px, 4.5vw, 40px); font-weight: 900;
+                color: #66BB6A; text-align: center; letter-spacing: 0.06em;
+                text-shadow: 0 0 30px rgba(102,187,106,0.5);
+                animation: sk-ov-pulse 1.4s ease-in-out infinite;
+                margin-bottom: 24px; font-family: Arial, sans-serif;
+            }
+            @keyframes sk-ov-pulse {
+                0%,100% { transform: scale(1); text-shadow: 0 0 30px rgba(102,187,106,0.5); }
+                50%      { transform: scale(1.04); text-shadow: 0 0 55px rgba(102,187,106,0.8); }
+            }
+
+            #sk-egg-wrap {
+                width: min(68vmin, 540px); height: min(68vmin, 540px);
                 border-radius: 50%;
+                box-shadow: 0 0 0 3px rgba(102,187,106,0.55), 0 0 70px rgba(102,187,106,0.35);
+                animation: sk-egg-pop 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
+                overflow: hidden; display: flex; align-items: center; justify-content: center;
                 cursor: pointer;
-                z-index: 2147483640;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 18px;
-                box-shadow: 0 3px 14px rgba(0,0,0,0.5), 0 0 8px rgba(102,187,106,0.15);
-                transition: transform 0.2s, box-shadow 0.2s;
-                touch-action: none;
             }
-            #sk-egg-mini-btn:hover {
-                transform: scale(1.08);
-                box-shadow: 0 5px 18px rgba(0,0,0,0.6), 0 0 12px rgba(102,187,106,0.35);
+            @keyframes sk-egg-pop {
+                from { transform: scale(0.2) rotate(-10deg); opacity: 0; }
+                to   { transform: scale(1) rotate(0deg); opacity: 1; }
             }
 
-            /* egg detected glow */
-            #sk-egg-hunt-panel.sk-egg-found {
-                box-shadow: 0 0 0 2px rgba(102,187,106,0.8), 0 0 24px 4px rgba(102,187,106,0.3), 0 8px 32px rgba(0,0,0,0.6);
-                animation: sk-egg-found-pulse 0.7s ease-in-out 3;
-            }
-            @keyframes sk-egg-found-pulse {
-                0%,100% { box-shadow: 0 0 0 2px rgba(102,187,106,0.7), 0 0 24px 4px rgba(102,187,106,0.3), 0 8px 32px rgba(0,0,0,0.6); }
-                50%      { box-shadow: 0 0 0 3px rgba(102,187,106,1),   0 0 40px 10px rgba(102,187,106,0.5), 0 8px 32px rgba(0,0,0,0.6); }
-            }
-
-            /* repositioned egg button */
-            #easter-egg-hunt-root button.__sk-egg-repositioned {
-                position: fixed !important;
-                top: 50% !important;
-                left: 50% !important;
-                transform: translate(-50%, -50%) !important;
-                width: min(50vw, 50vh) !important;
-                height: min(50vw, 50vh) !important;
-                z-index: 2147483639 !important;
+            #sk-egg-wrap button {
+                width: 100% !important; height: 100% !important;
+                background: transparent !important; border: none !important;
                 cursor: pointer !important;
-                border: 2px solid rgba(102,187,106,0.8) !important;
-                border-radius: 50% !important;
-                box-shadow: 0 0 0 5px rgba(102,187,106,0.15), 0 0 32px 8px rgba(102,187,106,0.3) !important;
-                animation: sk-egg-button-appear 0.35s cubic-bezier(0.34,1.56,0.64,1) both !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                overflow: visible !important;
-                background: transparent !important;
+                display: flex !important; align-items: center !important; justify-content: center !important;
+                padding: 0 !important;
             }
-            @keyframes sk-egg-button-appear {
-                from { transform: translate(-50%,-50%) scale(0.4) rotate(-6deg); opacity: 0; }
-                to   { transform: translate(-50%,-50%) scale(1) rotate(0deg); opacity: 1; }
-            }
-            #easter-egg-hunt-root button.__sk-egg-repositioned img,
-            #easter-egg-hunt-root button.__sk-egg-repositioned > *:first-child {
+            #sk-egg-wrap button img,
+            #sk-egg-wrap button > *:first-child {
                 width: 100% !important; height: 100% !important; object-fit: contain !important;
+            }
+
+            #sk-egg-overlay-sub {
+                margin-top: 18px; font-size: 14px; color: rgba(255,255,255,0.5);
+                font-family: Arial, sans-serif; text-align: center;
+            }
+
+            #sk-egg-overlay-skip {
+                margin-top: 22px; padding: 7px 18px;
+                background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+                color: rgba(255,255,255,0.4); border-radius: 6px; cursor: pointer;
+                font-size: 11px; font-family: Arial, sans-serif; transition: all 0.2s;
+            }
+            #sk-egg-overlay-skip:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); }
+
+            #sk-egg-overlay-collected {
+                font-size: clamp(20px,3.5vw,32px); font-weight: 900; color: #66BB6A;
+                font-family: Arial, sans-serif; text-align: center;
+                animation: sk-collected-pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+            }
+            @keyframes sk-collected-pop {
+                from { transform: scale(0.5); opacity: 0; }
+                to   { transform: scale(1); opacity: 1; }
             }
         `;
         document.head.appendChild(s);
     },
 
-    // ─── Panel Construction ───────────────────────────────────────────────────
+    // ─── Panel ───────────────────────────────────────────────────────────────
 
     _buildPanel() {
-        const s = this.state;
-        const W = 260;
-
+        const W = 230;
         this.panel = document.createElement('div');
         this.panel.id = this.PANEL_ID;
-        if (s.collapsed) this.panel.classList.add('sk-collapsed');
+        if (this.state.collapsed) this.panel.classList.add('sk-collapsed');
+        const px = Math.max(0, Math.min(this.state.panelX ?? (window.innerWidth - W - 12), window.innerWidth - W));
+        const py = Math.max(0, Math.min(this.state.panelY ?? 16, window.innerHeight - 120));
+        this.panel.style.left = px + 'px';
+        this.panel.style.top  = py + 'px';
 
-        const dx = Math.max(0, Math.min(s.panelX ?? (window.innerWidth - W - 10), window.innerWidth - W));
-        const dy = Math.max(0, Math.min(s.panelY ?? 16, window.innerHeight - 80));
-        this.panel.style.left = dx + 'px';
-        this.panel.style.top  = dy + 'px';
-
-        // ── Header ────────────────────────────────────────────────────────────
+        // Header
         const header = document.createElement('div');
-        header.id = 'sk-egg-hunt-header';
+        header.id = 'sk-egg-header';
+        const title = document.createElement('div');
+        title.id = 'sk-egg-title';
+        title.textContent = '🥚 Egg Hunt';
 
-        const titleEl = document.createElement('div');
-        titleEl.id = 'sk-egg-hunt-title';
-        titleEl.textContent = '🥚 Egg Hunt';
-
-        this._eggBadge = document.createElement('div');
-        this._eggBadge.id = 'sk-egg-badge';
-        this._eggBadge.textContent = s.eggsFound;
-
-        const resetEggsBtn = this._headerBtn('0', 'Reset egg count');
-        resetEggsBtn.addEventListener('click', (e) => {
+        const resetBtn = this._hbtn('↺', 'Reset all progress');
+        resetBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (confirm('Reset egg counter to 0?')) this.resetEggs();
+            if (confirm('Reset all egg hunt progress? This clears visited pages and egg count.')) {
+                this.state.visited = []; this.state.idx = 0; this.state.eggsFound = 0;
+                this.saveState(); this._updateUI();
+            }
         });
-
-        const resetVisitBtn = this._headerBtn('↺', 'Reset visited pages');
-        resetVisitBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (confirm('Reset all visited checkpoints?')) this.resetVisited();
-        });
-
-        const collapseBtn = this._headerBtn(s.collapsed ? '▲' : '▼', 'Collapse / Expand');
+        const collapseBtn = this._hbtn(this.state.collapsed ? '▲' : '▼', 'Collapse');
         collapseBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.state.collapsed = !this.state.collapsed;
@@ -592,164 +365,55 @@ const EggHuntTool = {
             collapseBtn.textContent = this.state.collapsed ? '▲' : '▼';
             this.saveState();
         });
+        const hideBtn = this._hbtn('✕', 'Minimise to button');
+        hideBtn.addEventListener('click', (e) => { e.stopPropagation(); this._showMini(); });
+        header.append(title, resetBtn, collapseBtn, hideBtn);
 
-        const hideBtn = this._headerBtn('✕', 'Hide panel');
-        hideBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.state.hidden = true;
-            this.saveState();
-            this._applyHidden();
-        });
-
-        header.append(titleEl, this._eggBadge, resetEggsBtn, resetVisitBtn, collapseBtn, hideBtn);
-
-        // ── Body ──────────────────────────────────────────────────────────────
+        // Body
         const body = document.createElement('div');
-        body.id = 'sk-egg-hunt-body';
+        body.id = 'sk-egg-body';
 
-        // Progress
-        const progWrap = document.createElement('div');
-        progWrap.id = 'sk-egg-progress-wrap';
-        const track = document.createElement('div');
-        track.id = 'sk-egg-progress-track';
-        this._progressFill = document.createElement('div');
-        this._progressFill.id = 'sk-egg-progress-fill';
+        const stats = document.createElement('div');
+        stats.id = 'sk-egg-stats';
+        const track = document.createElement('div'); track.id = 'sk-egg-track';
+        this._progressFill = document.createElement('div'); this._progressFill.id = 'sk-egg-fill';
         track.appendChild(this._progressFill);
-        this._progressLabel = document.createElement('div');
-        this._progressLabel.id = 'sk-egg-progress-label';
-        progWrap.append(track, this._progressLabel);
+        this._visitedLabel = document.createElement('div'); this._visitedLabel.className = 'sk-egg-stat';
+        this._eggCountLabel = document.createElement('div'); this._eggCountLabel.className = 'sk-egg-stat';
+        stats.append(track, this._visitedLabel, this._eggCountLabel);
 
-        // Current page
-        this._currentPageEl = document.createElement('div');
-        this._currentPageEl.id = 'sk-egg-current-page';
-
-        // Search
-        const searchWrap = document.createElement('div');
-        searchWrap.id = 'sk-egg-search-wrap';
-        this._searchInput = document.createElement('input');
-        this._searchInput.id = 'sk-egg-search';
-        this._searchInput.type = 'text';
-        this._searchInput.placeholder = '🔍 Search pages…';
-        this._searchInput.value = s.filter || '';
-        this._searchInput.addEventListener('input', () => {
-            this.state.filter = this._searchInput.value;
-            this._renderList(false);
-        });
-        searchWrap.appendChild(this._searchInput);
-
-        // List
-        this._listWrap = document.createElement('div');
-        this._listWrap.id = 'sk-egg-list-wrap';
-
-        body.append(progWrap, this._currentPageEl, searchWrap, this._listWrap);
-
-        // ── Controls ──────────────────────────────────────────────────────────
-        const controls = document.createElement('div');
-        controls.id = 'sk-egg-controls';
+        const controls = document.createElement('div'); controls.id = 'sk-egg-controls';
         const prevBtn = document.createElement('button');
-        prevBtn.className = 'sk-egg-btn sk-egg-btn-prev';
-        prevBtn.textContent = '◀';
-        prevBtn.title = 'Previous page';
+        prevBtn.className = 'sk-egg-btn sk-egg-prev'; prevBtn.textContent = '◀'; prevBtn.title = 'Previous page';
         prevBtn.addEventListener('click', (e) => { e.stopPropagation(); this._navigateDelta(-1); });
         const nextBtn = document.createElement('button');
-        nextBtn.className = 'sk-egg-btn sk-egg-btn-next';
-        nextBtn.textContent = 'Next Page ▶';
+        nextBtn.className = 'sk-egg-btn sk-egg-next'; nextBtn.textContent = 'Next Page ▶';
         nextBtn.addEventListener('click', (e) => { e.stopPropagation(); this._navigateDelta(1); });
         controls.append(prevBtn, nextBtn);
 
-        // Jump row
-        const jumpRow = document.createElement('div');
-        jumpRow.id = 'sk-egg-jump-row';
-        const jumpLbl = document.createElement('label');
-        jumpLbl.textContent = 'Jump:';
-        this._jumpInput = document.createElement('input');
-        this._jumpInput.id = 'sk-egg-jump-input';
-        this._jumpInput.type = 'number';
-        this._jumpInput.min = '1';
-        this._jumpInput.max = String(EGG_HUNT_PAGES.length);
-        this._jumpInput.value = String(s.idx + 1);
-        const jumpTotal = document.createElement('span');
-        jumpTotal.id = 'sk-egg-jump-total';
-        jumpTotal.textContent = '/ ' + EGG_HUNT_PAGES.length;
-        const jumpGo = document.createElement('button');
-        jumpGo.id = 'sk-egg-jump-go';
-        jumpGo.textContent = 'GO';
-        jumpGo.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const v = parseInt(this._jumpInput.value, 10) - 1;
-            if (!isNaN(v) && v >= 0 && v < EGG_HUNT_PAGES.length) this._navigateTo(v);
-        });
-        this._jumpInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') jumpGo.click(); e.stopPropagation(); });
-        jumpRow.append(jumpLbl, this._jumpInput, jumpTotal, jumpGo);
-
-        this.panel.append(header, body, controls, jumpRow);
+        body.append(stats, controls);
+        this.panel.append(header, body);
         document.body.appendChild(this.panel);
-
         this._makeDraggable(header, this.panel);
         this._updateUI();
-        this._renderList(false);
-        this._applyHidden();
     },
 
-    _headerBtn(text, title) {
-        const btn = document.createElement('button');
-        btn.className = 'sk-egg-hdr-btn';
-        btn.textContent = text;
-        btn.title = title;
-        return btn;
-    },
-
-    // ─── List Rendering ───────────────────────────────────────────────────────
-
-    _renderList(scrollToActive) {
-        const q = (this.state.filter || '').toLowerCase();
-        const visited = new Set(this.state.visited || []);
-        this._listWrap.innerHTML = '';
-
-        EGG_HUNT_PAGES.forEach((p, i) => {
-            if (q && !p.label.toLowerCase().includes(q) && !p.url.toLowerCase().includes(q)) return;
-
-            const el = document.createElement('a');
-            el.className = 'sk-egg-page-item';
-            if (i === this.state.idx) el.classList.add('sk-active');
-            if (visited.has(i)) el.classList.add('sk-visited');
-            el.href = 'https://www.torn.com' + p.url;
-            el.draggable = false;
-            el.addEventListener('click', (e) => { e.preventDefault(); this._navigateTo(i); });
-
-            const num = document.createElement('span');
-            num.className = 'sk-egg-page-num';
-            num.textContent = i + 1;
-            const lbl = document.createElement('span');
-            lbl.className = 'sk-egg-page-label';
-            lbl.textContent = p.label;
-            const chk = document.createElement('span');
-            chk.className = 'sk-egg-check';
-            chk.textContent = '✓';
-            el.append(num, lbl, chk);
-            this._listWrap.appendChild(el);
-        });
-
-        if (scrollToActive) {
-            this._listWrap.querySelector('.sk-active')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        }
+    _hbtn(txt, title) {
+        const b = document.createElement('button');
+        b.className = 'sk-egg-hbtn'; b.textContent = txt; b.title = title;
+        return b;
     },
 
     _updateUI() {
-        if (!this._progressFill) return;
+        const total   = EGG_HUNT_PAGES.length;
         const visited = (this.state.visited || []).length;
-        const pct = (visited / EGG_HUNT_PAGES.length * 100).toFixed(1);
-        this._progressFill.style.width = pct + '%';
-        this._progressLabel.innerHTML = `<span>${visited}</span> visited &nbsp; <span>${pct}%</span>`;
-        if (this._jumpInput) this._jumpInput.value = String(this.state.idx + 1);
-        const cur = EGG_HUNT_PAGES[this.state.idx];
-        if (this._currentPageEl && cur) {
-            this._currentPageEl.innerHTML = `Next: <em>${cur.label}</em>`;
-        }
-        if (this._eggBadge) this._eggBadge.textContent = this.state.eggsFound;
+        const pct     = Math.min(100, (visited / total * 100)).toFixed(1);
+        if (this._progressFill) this._progressFill.style.width = pct + '%';
+        if (this._visitedLabel)  this._visitedLabel.innerHTML  = `Pages visited: <span>${visited} / ${total}</span>`;
+        if (this._eggCountLabel) this._eggCountLabel.innerHTML = `Eggs collected: <span>${this.state.eggsFound}</span> 🥚`;
     },
 
-    // ─── Navigation ───────────────────────────────────────────────────────────
+    // ─── Navigation ──────────────────────────────────────────────────────────
 
     _navigateDelta(d) {
         let next = this.state.idx + d;
@@ -759,44 +423,34 @@ const EggHuntTool = {
     },
 
     _navigateTo(idx) {
+        this._unblockNavigation(); // always allow panel-initiated navigation
         this.state.idx = idx;
         if (!this.state.visited) this.state.visited = [];
         if (!this.state.visited.includes(idx)) this.state.visited.push(idx);
         this.saveState();
-        const url = 'https://www.torn.com' + EGG_HUNT_PAGES[idx].url;
-        if (window.location.href.split('#')[0] === url.split('#')[0]) {
-            window.location.href = url;
-            window.location.reload();
-        } else {
-            window.location.href = url;
-        }
+        window.location.href = 'https://www.torn.com' + EGG_HUNT_PAGES[idx].url;
     },
 
-    // ─── Hidden / Mini Button ─────────────────────────────────────────────────
+    // ─── Mini button ─────────────────────────────────────────────────────────
 
-    _applyHidden() {
-        if (this.state.hidden) {
-            if (this.panel) this.panel.style.display = 'none';
-            if (!this.miniBtn) {
-                this.miniBtn = document.createElement('button');
-                this.miniBtn.id = 'sk-egg-mini-btn';
-                this.miniBtn.title = 'Show Egg Hunt';
-                this.miniBtn.textContent = '🥚';
-                document.body.appendChild(this.miniBtn);
-                this._makeDraggable(this.miniBtn, this.miniBtn, true);
-            }
-            const px = Math.max(0, Math.min(this.state.pillX ?? (window.innerWidth - 50), window.innerWidth - 40));
-            const py = Math.max(0, Math.min(this.state.pillY ?? (window.innerHeight - 90), window.innerHeight - 40));
-            this.miniBtn.style.left = px + 'px';
-            this.miniBtn.style.top  = py + 'px';
-            this.miniBtn.style.display = 'flex';
-        } else {
-            if (this.panel) this.panel.style.display = '';
-            if (this.miniBtn) this.miniBtn.style.display = 'none';
+    _showMini() {
+        if (this.panel) this.panel.style.display = 'none';
+        if (!this.miniBtn) {
+            this.miniBtn = document.createElement('button');
+            this.miniBtn.id = this.MINI_ID;
+            this.miniBtn.textContent = '🥚';
+            this.miniBtn.title = 'Show Egg Hunt panel';
+            document.body.appendChild(this.miniBtn);
+            this._makeDraggable(this.miniBtn, this.miniBtn, true);
         }
+        const px = Math.max(0, Math.min(this.state.pillX ?? (window.innerWidth - 50), window.innerWidth - 38));
+        const py = Math.max(0, Math.min(this.state.pillY ?? (window.innerHeight - 85), window.innerHeight - 38));
+        this.miniBtn.style.left = px + 'px';
+        this.miniBtn.style.top  = py + 'px';
+        this.miniBtn.style.display = 'flex';
     },
 
-    // ─── Egg Detection ────────────────────────────────────────────────────────
+    // ─── Egg Detection ───────────────────────────────────────────────────────
 
     _setupEggDetection() {
         this._checkForEggRoot();
@@ -808,30 +462,15 @@ const EggHuntTool = {
         const root = document.querySelector('#easter-egg-hunt-root');
         if (!root || root.dataset.skHandled) return;
         root.dataset.skHandled = '1';
-        this._waitForEggButtons(root).then((buttons) => {
-            buttons.forEach(btn => {
-                if (!btn.classList.contains('__sk-egg-repositioned')) {
-                    btn.classList.add('__sk-egg-repositioned');
-                }
-                btn.addEventListener('click', () => {
-                    this.state.eggsFound = (this.state.eggsFound || 0) + 1;
-                    if (this._eggBadge) this._eggBadge.textContent = this.state.eggsFound;
-                    this.saveState();
-                }, { once: true });
-            });
-            if (this.panel) {
-                this.panel.classList.add('sk-egg-found');
-                setTimeout(() => this.panel?.classList.remove('sk-egg-found'), 2500);
-            }
-        }).catch(() => {});
+        this._waitForEggButton(root).then(btn => this._showEggOverlay(btn)).catch(() => {});
     },
 
-    _waitForEggButtons(root) {
+    _waitForEggButton(root) {
         return new Promise((resolve, reject) => {
-            const t = setTimeout(() => { obs.disconnect(); reject('timeout'); }, 12000);
+            const deadline = setTimeout(() => { obs.disconnect(); reject(); }, 12000);
             const check = () => {
-                const btns = root.querySelectorAll('button');
-                if (btns.length) { clearTimeout(t); obs.disconnect(); resolve(btns); }
+                const b = root.querySelector('button');
+                if (b) { clearTimeout(deadline); obs.disconnect(); resolve(b); }
             };
             const obs = new MutationObserver(check);
             obs.observe(root, { childList: true, subtree: true });
@@ -839,7 +478,110 @@ const EggHuntTool = {
         });
     },
 
-    // ─── Keyboard ─────────────────────────────────────────────────────────────
+    // ─── Egg Overlay ─────────────────────────────────────────────────────────
+
+    _showEggOverlay(btn) {
+        if (document.getElementById(this.OVERLAY_ID)) return;
+        this._blockNavigation();
+
+        // Store original DOM position so we can restore on skip
+        const origParent  = btn.parentElement;
+        const origSibling = btn.nextSibling;
+
+        const overlay = document.createElement('div');
+        overlay.id = this.OVERLAY_ID;
+        this._overlay = overlay;
+
+        const titleEl = document.createElement('div');
+        titleEl.id = 'sk-egg-overlay-title';
+        titleEl.textContent = '🥚 EGG FOUND!';
+
+        const wrap = document.createElement('div');
+        wrap.id = 'sk-egg-wrap';
+
+        // Reset button styles so our container controls the size
+        btn.style.cssText = 'width:100%;height:100%;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;';
+        wrap.appendChild(btn);
+
+        const sub = document.createElement('div');
+        sub.id = 'sk-egg-overlay-sub';
+        sub.textContent = 'Click the egg to collect it!';
+
+        const skipBtn = document.createElement('button');
+        skipBtn.id = 'sk-egg-overlay-skip';
+        skipBtn.textContent = 'Skip — I don\'t want this egg';
+        skipBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm('Skip this egg? It will be gone.')) {
+                // Restore button to original position
+                if (origParent) origParent.insertBefore(btn, origSibling);
+                this._removeEggOverlay(false);
+            }
+        });
+
+        overlay.append(titleEl, wrap, sub, skipBtn);
+
+        // Clicking the backdrop (not the egg) flashes the title
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                titleEl.style.color = '#fff';
+                setTimeout(() => { titleEl.style.color = '#66BB6A'; }, 300);
+            }
+        });
+
+        // Egg collected
+        btn.addEventListener('click', () => {
+            this.state.eggsFound = (this.state.eggsFound || 0) + 1;
+            this._updateUI();
+            this.saveState();
+
+            // Show collected flash, then close
+            wrap.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+            wrap.style.transform = 'scale(1.15)';
+            wrap.style.opacity = '0';
+            titleEl.innerHTML = '';
+            const collected = document.createElement('div');
+            collected.id = 'sk-egg-overlay-collected';
+            collected.textContent = '🥚 Egg Collected! +1';
+            overlay.insertBefore(collected, wrap);
+            sub.textContent = '';
+            skipBtn.style.display = 'none';
+
+            setTimeout(() => {
+                if (origParent) origParent.insertBefore(btn, origSibling);
+                this._removeEggOverlay(false);
+            }, 1200);
+        }, { once: true });
+
+        document.body.appendChild(overlay);
+    },
+
+    _removeEggOverlay(restoreBtn) {
+        this._overlay?.remove();
+        this._overlay = null;
+        this._unblockNavigation();
+    },
+
+    // ─── Navigation blocking ─────────────────────────────────────────────────
+
+    _blockNavigation() {
+        if (this._navBlocker) return;
+        this._navBlocker = (e) => {
+            e.preventDefault();
+            e.returnValue = 'An Easter egg is waiting! Leave without collecting it?';
+            return e.returnValue;
+        };
+        window.addEventListener('beforeunload', this._navBlocker);
+    },
+
+    _unblockNavigation() {
+        if (this._navBlocker) {
+            window.removeEventListener('beforeunload', this._navBlocker);
+            this._navBlocker = null;
+        }
+    },
+
+    // ─── Keyboard ────────────────────────────────────────────────────────────
 
     _bindKeyboard() {
         document.addEventListener('keydown', (e) => {
@@ -849,11 +591,10 @@ const EggHuntTool = {
         });
     },
 
-    // ─── Drag ─────────────────────────────────────────────────────────────────
+    // ─── Drag ────────────────────────────────────────────────────────────────
 
     _makeDraggable(handle, target, isPill = false) {
         let dragging = false, moved = false, ox = 0, oy = 0, sx = 0, sy = 0;
-
         const start = (cx, cy) => {
             dragging = true; moved = false; sx = cx; sy = cy;
             const r = target.getBoundingClientRect();
@@ -871,15 +612,15 @@ const EggHuntTool = {
             else        { this.state.panelX = x; this.state.panelY = y; }
         };
         const end = () => {
-            if (dragging) { dragging = false; this.saveState(); }
+            if (!dragging) return;
+            dragging = false;
+            this.saveState();
             if (isPill && !moved) {
-                // Click on mini button — restore panel
-                this.state.hidden = false;
-                this.saveState();
-                this._applyHidden();
+                // Tap on mini btn — restore panel
+                if (this.panel) this.panel.style.display = '';
+                if (this.miniBtn) this.miniBtn.style.display = 'none';
             }
         };
-
         handle.addEventListener('mousedown', (e) => { if (e.button === 0) { e.preventDefault(); start(e.clientX, e.clientY); } });
         document.addEventListener('mousemove', (e) => move(e.clientX, e.clientY));
         document.addEventListener('mouseup', end);
@@ -893,7 +634,7 @@ const EggHuntTool = {
 
 const HolidayModule = {
     name: 'Holiday',
-    version: '1.0.0',
+    version: '2.0.0',
     STORAGE_KEY: 'sidekick_holiday',
 
     eggHuntEnabled: false,
@@ -902,25 +643,19 @@ const HolidayModule = {
         console.log('🎉 Holiday Module: initializing...');
         await this.loadSettings();
         this._apply();
-
         chrome.storage.onChanged.addListener((changes, namespace) => {
             if (namespace === 'local' && changes[this.STORAGE_KEY]) {
                 this.loadSettings().then(() => this._apply());
             }
         });
-
         console.log('🎉 Holiday Module: initialized');
     },
 
     async loadSettings() {
         try {
             const data = await window.SidekickModules.Core.ChromeStorage.get(this.STORAGE_KEY);
-            if (data) {
-                this.eggHuntEnabled = data.eggHuntEnabled || false;
-            }
-        } catch (e) {
-            console.error('🎉 Holiday Module: load failed:', e);
-        }
+            if (data) this.eggHuntEnabled = data.eggHuntEnabled || false;
+        } catch (e) { console.error('🎉 Holiday load failed:', e); }
     },
 
     async saveSettings() {
@@ -928,17 +663,12 @@ const HolidayModule = {
             await window.SidekickModules.Core.ChromeStorage.set(this.STORAGE_KEY, {
                 eggHuntEnabled: this.eggHuntEnabled,
             });
-        } catch (e) {
-            console.error('🎉 Holiday Module: save failed:', e);
-        }
+        } catch (e) { console.error('🎉 Holiday save failed:', e); }
     },
 
     _apply() {
-        if (this.eggHuntEnabled) {
-            EggHuntTool.init();
-        } else {
-            EggHuntTool.destroy();
-        }
+        if (this.eggHuntEnabled) EggHuntTool.init();
+        else EggHuntTool.destroy();
     },
 };
 
