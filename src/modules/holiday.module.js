@@ -585,6 +585,9 @@ const EggHuntTool = {
         if (this._progressFill) this._progressFill.style.width = pct + '%';
         if (this._visitedLabel) this._visitedLabel.innerHTML = `Pages visited: <span>${visited} / ${total}</span>`;
         if (this._eggCountLabel) this._eggCountLabel.innerHTML = `Eggs collected: <span>${this.state.eggsFound}</span> 🥚`;
+        // Update title badge with total so the user can confirm the right module version is loaded
+        const titleEl = this.panel?.querySelector('#sk-egg-title');
+        if (titleEl) titleEl.textContent = `🥚 Egg Hunt (${total})`;
     },
 
     // ─── Navigation ──────────────────────────────────────────────────────────
