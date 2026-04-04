@@ -3060,8 +3060,8 @@
                     track.style.backgroundColor = on ? 'rgba(76,175,80,0.8)' : 'rgba(255,255,255,0.2)';
                     thumb.style.transform = on ? 'translateX(26px)' : 'translateX(0)';
                     await window.SidekickModules.Holiday.saveSettings();
-                    window.SidekickModules.Holiday._apply();
-                    this.showAutoSaveStatus(statusDiv, on ? 'Egg Hunt enabled ✓' : 'Egg Hunt disabled ✓');
+                    this.showAutoSaveStatus(statusDiv, on ? 'Egg Hunt enabled \u2713' : 'Egg Hunt disabled \u2713');
+                    setTimeout(() => window.location.reload(), 700);
                 });
             }
 
