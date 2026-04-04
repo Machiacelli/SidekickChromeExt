@@ -127,9 +127,12 @@ const MissionTrackerModule = {
             }
 
             const missions = data.missions || {};
+
+            // Only show icon for missions the player has actively CLAIMED.
+            // Dormant/available missions exist for every player always — ignore those.
             const active = Object.values(missions).filter(m => {
                 const s = (m.status || '').toLowerCase();
-                return s !== 'completed' && s !== 'failed' && s !== 'expired';
+                return s === 'accepted' || s === 'active' || s === 'started';
             });
 
             if (active.length > 0) {
@@ -305,11 +308,15 @@ const MissionTrackerModule = {
 
     startObserver() {
         if (this.observer) return;
+        let debounceTimer = null;
         this.observer = new MutationObserver(() => {
             if (!this.isEnabled) return;
             const statusUl = document.querySelector('ul[class*="status-icons"]');
+            // Only trigger when status bar exists but our icon is absent.
+            // Debounced 15 s to prevent looping when no missions are active.
             if (statusUl && !document.getElementById(this.ICON_ID)) {
-                this.checkMissions();
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => this.checkMissions(), 15000);
             }
         });
         this.observer.observe(document.documentElement, { childList: true, subtree: true });

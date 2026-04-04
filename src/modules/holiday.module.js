@@ -5,121 +5,295 @@
  */
 
 const EGG_HUNT_PAGES = [
-    { label: "Home",                 url: "/" },
-    { label: "Preferences",          url: "/preferences.php" },
-    { label: "Personal Stats",       url: "/personalstats.php" },
-    { label: "Player Report",        url: "/playerreport.php" },
-    { label: "Activity Log",         url: "/page.php?sid=log" },
-    { label: "Events",               url: "/page.php?sid=events" },
-    { label: "Profile",              url: "/profiles.php?XID=1" },
-    { label: "Awards",               url: "/page.php?sid=awards" },
-    { label: "Hall of Fame",         url: "/page.php?sid=hof" },
-    { label: "Revive",               url: "/revive.php" },
-    { label: "PC",                   url: "/pc.php" },
-    { label: "City",                 url: "/city.php" },
-    { label: "City Stats",           url: "/citystats.php" },
-    { label: "Users Online",         url: "/usersonline.php" },
-    { label: "User List",            url: "/page.php?sid=UserList" },
-    { label: "People",               url: "/index.php?page=people" },
-    { label: "Fortune Teller",       url: "/index.php?page=fortune" },
-    { label: "Rehab",                url: "/index.php?page=rehab" },
-    { label: "Hunting",              url: "/index.php?page=hunting" },
-    { label: "Items",                url: "/item.php" },
-    { label: "Item Mods",            url: "/page.php?sid=itemsMods" },
-    { label: "Ammo",                 url: "/page.php?sid=ammo" },
-    { label: "Display Case",         url: "/displaycase.php" },
-    { label: "Keepsakes",            url: "/page.php?sid=keepsakes" },
-    { label: "Trade",                url: "/trade.php" },
-    { label: "Museum",               url: "/museum.php" },
-    { label: "Auction Market",       url: "/amarket.php" },
-    { label: "Point Market",         url: "/pmarket.php" },
-    { label: "Item Market",          url: "/page.php?sid=ItemMarket" },
-    { label: "Bazaar",               url: "/page.php?sid=bazaar" },
-    { label: "Stocks",               url: "/page.php?sid=stocks" },
-    { label: "Bank",                 url: "/bank.php" },
-    { label: "Points",               url: "/points.php" },
-    { label: "Loan",                 url: "/loan.php" },
-    { label: "Donator",              url: "/donator.php" },
-    { label: "Token Shop",           url: "/token_shop.php" },
-    { label: "Freebies",             url: "/freebies.php" },
-    { label: "Bring a Friend",       url: "/bringafriend.php" },
-    { label: "Bounties",             url: "/bounties.php" },
-    { label: "Big Al's Gun Shop",    url: "/bigalgunshop.php" },
-    { label: "Bits N' Bobs",         url: "/shops.php?step=bitsnbobs" },
-    { label: "Cyberforce",           url: "/shops.php?step=cyberforce" },
-    { label: "Docks",                url: "/shops.php?step=docks" },
-    { label: "Jewelry",              url: "/shops.php?step=jewelry" },
-    { label: "Nike-H",               url: "/shops.php?step=nikeh" },
-    { label: "Pawn Shop",            url: "/shops.php?step=pawnshop" },
-    { label: "Pharmacy",             url: "/shops.php?step=pharmacy" },
-    { label: "Post Office",          url: "/shops.php?step=postoffice" },
-    { label: "Print Store",          url: "/shops.php?step=printstore" },
-    { label: "Recycling Center",     url: "/shops.php?step=recyclingcenter" },
-    { label: "Supermarket",          url: "/shops.php?step=super" },
-    { label: "Candy Shop",           url: "/shops.php?step=candy" },
-    { label: "Clothes Shop",         url: "/shops.php?step=clothes" },
-    { label: "Bunker",               url: "/page.php?sid=bunker" },
-    { label: "Properties",           url: "/properties.php" },
-    { label: "Estate Agents",        url: "/estateagents.php" },
-    { label: "Casino",               url: "/casino.php" },
-    { label: "Slots",                url: "/page.php?sid=slots" },
-    { label: "Roulette",             url: "/page.php?sid=roulette" },
-    { label: "High/Low",             url: "/page.php?sid=highlow" },
-    { label: "Keno",                 url: "/page.php?sid=keno" },
-    { label: "Craps",                url: "/page.php?sid=craps" },
-    { label: "Bookie",               url: "/page.php?sid=bookie" },
-    { label: "Lottery",              url: "/page.php?sid=lottery" },
-    { label: "Blackjack",            url: "/page.php?sid=blackjack" },
-    { label: "Hold'em",              url: "/page.php?sid=holdem" },
-    { label: "Russian Roulette",     url: "/page.php?sid=russianRoulette" },
-    { label: "Spin The Wheel",       url: "/page.php?sid=spinTheWheel" },
-    { label: "Dump",                 url: "/dump.php" },
-    { label: "Crimes 1.0",           url: "/crimes.php" },
-    { label: "Crimes 2.0",           url: "/page.php?sid=crimes" },
-    { label: "Criminal Records",     url: "/page.php?sid=crimesRecord" },
-    { label: "Missions",             url: "/loader.php?sid=missions" },
-    { label: "Racing",               url: "/loader.php?sid=racing" },
-    { label: "Factions",             url: "/factions.php" },
-    { label: "Faction Warfare",      url: "/page.php?sid=factionWarfare" },
-    { label: "Jobs",                 url: "/jobs.php" },
-    { label: "Job List",             url: "/joblist.php" },
-    { label: "Job Listing",          url: "/joblisting.php" },
-    { label: "Companies",            url: "/companies.php" },
-    { label: "Education",            url: "/education.php" },
-    { label: "Gym",                  url: "/gym.php" },
-    { label: "Travel",               url: "/page.php?sid=travel" },
-    { label: "Hospital",             url: "/hospitalview.php" },
-    { label: "Jail",                 url: "/jailview.php" },
-    { label: "Friends List",         url: "/page.php?sid=list&type=friends" },
-    { label: "Enemies List",         url: "/page.php?sid=list&type=enemies" },
-    { label: "Targets List",         url: "/page.php?sid=list&type=targets" },
-    { label: "Messages",             url: "/messages.php" },
-    { label: "Message Inc",          url: "/messageinc.php" },
-    { label: "Fans",                 url: "/fans.php" },
-    { label: "Personals",            url: "/personals.php" },
-    { label: "Forums",               url: "/forums.php" },
-    { label: "Newspaper",            url: "/newspaper.php" },
-    { label: "Comics",               url: "/comics.php" },
-    { label: "Archives",             url: "/archives.php" },
-    { label: "Rules",                url: "/rules.php" },
-    { label: "Staff",                url: "/staff.php" },
-    { label: "Credits",              url: "/credits.php" },
-    { label: "Committee",            url: "/committee.php" },
-    { label: "Calendar",             url: "/calendar.php" },
-    { label: "Competition",          url: "/competition.php" },
-    { label: "Church",               url: "/church.php" },
-    { label: "Blacklist",            url: "/blacklist.php" },
-    { label: "Christmas Town",       url: "/christmas_town.php" }
+    // Core
+    { label: "Home",                      url: "/" },
+    { label: "Preferences",               url: "/preferences.php" },
+    { label: "Personal Stats",            url: "/personalstats.php" },
+    { label: "Player Report",             url: "/playerreport.php" },
+    { label: "Activity Log",              url: "/page.php?sid=log" },
+    { label: "Events",                    url: "/page.php?sid=events" },
+    { label: "Profile",                   url: "/profiles.php?XID=1" },
+    { label: "Awards",                    url: "/page.php?sid=awards" },
+    { label: "Hall of Fame",              url: "/page.php?sid=hof" },
+    { label: "Revive",                    url: "/revive.php" },
+    { label: "PC",                        url: "/pc.php" },
+    // City
+    { label: "City",                      url: "/city.php" },
+    { label: "City Stats",                url: "/citystats.php" },
+    { label: "Users Online",              url: "/usersonline.php" },
+    { label: "User List",                 url: "/page.php?sid=UserList" },
+    { label: "People",                    url: "/index.php?page=people" },
+    { label: "Fortune Teller",            url: "/index.php?page=fortune" },
+    { label: "Rehab",                     url: "/index.php?page=rehab" },
+    { label: "Hunting",                   url: "/index.php?page=hunting" },
+    // Inventory / Market
+    { label: "Items",                     url: "/item.php" },
+    { label: "Item Mods",                 url: "/page.php?sid=itemsMods" },
+    { label: "Ammo",                      url: "/page.php?sid=ammo" },
+    { label: "Display Case",              url: "/displaycase.php" },
+    { label: "Keepsakes",                 url: "/page.php?sid=keepsakes" },
+    { label: "Trade",                     url: "/trade.php" },
+    { label: "Museum",                    url: "/museum.php" },
+    { label: "Auction Market",            url: "/amarket.php" },
+    { label: "Point Market",              url: "/pmarket.php" },
+    { label: "Item Market",               url: "/page.php?sid=ItemMarket" },
+    { label: "Item Market - Weapons",     url: "/page.php?sid=ItemMarket&type=weapons" },
+    { label: "Item Market - Armor",       url: "/page.php?sid=ItemMarket&type=armor" },
+    { label: "Item Market - Temporary",   url: "/page.php?sid=ItemMarket&type=temporary" },
+    { label: "Item Market - Drugs",       url: "/page.php?sid=ItemMarket&type=drugs" },
+    { label: "Item Market - Energy",      url: "/page.php?sid=ItemMarket&type=enhancers" },
+    { label: "Item Market - Medical",     url: "/page.php?sid=ItemMarket&type=medical" },
+    { label: "Item Market - Flowers",     url: "/page.php?sid=ItemMarket&type=flowers" },
+    { label: "Item Market - Plushies",    url: "/page.php?sid=ItemMarket&type=plushies" },
+    { label: "Item Market - Books",       url: "/page.php?sid=ItemMarket&type=books" },
+    { label: "Item Market - Other",       url: "/page.php?sid=ItemMarket&type=other" },
+    { label: "Bazaar",                    url: "/page.php?sid=bazaar" },
+    // Finance
+    { label: "Stocks",                    url: "/page.php?sid=stocks" },
+    { label: "Bank",                      url: "/bank.php" },
+    { label: "Points",                    url: "/points.php" },
+    { label: "Loan",                      url: "/loan.php" },
+    { label: "Donator",                   url: "/donator.php" },
+    { label: "Token Shop",                url: "/token_shop.php" },
+    { label: "Freebies",                  url: "/freebies.php" },
+    { label: "Bring a Friend",            url: "/bringafriend.php" },
+    { label: "Bounties",                  url: "/bounties.php" },
+    { label: "Bounty List",               url: "/bounties.php?step=list" },
+    // Shops
+    { label: "Big Al's Gun Shop",         url: "/bigalgunshop.php" },
+    { label: "Bits N Bobs",               url: "/shops.php?step=bitsnbobs" },
+    { label: "Cyberforce",                url: "/shops.php?step=cyberforce" },
+    { label: "Docks",                     url: "/shops.php?step=docks" },
+    { label: "Jewelry",                   url: "/shops.php?step=jewelry" },
+    { label: "Nike-H",                    url: "/shops.php?step=nikeh" },
+    { label: "Pawn Shop",                 url: "/shops.php?step=pawnshop" },
+    { label: "Pharmacy",                  url: "/shops.php?step=pharmacy" },
+    { label: "Post Office",               url: "/shops.php?step=postoffice" },
+    { label: "Print Store",               url: "/shops.php?step=printstore" },
+    { label: "Recycling Center",          url: "/shops.php?step=recyclingcenter" },
+    { label: "Supermarket",               url: "/shops.php?step=super" },
+    { label: "Candy Shop",                url: "/shops.php?step=candy" },
+    { label: "Clothes Shop",              url: "/shops.php?step=clothes" },
+    { label: "Bunker",                    url: "/page.php?sid=bunker" },
+    // Property
+    { label: "Properties",                url: "/properties.php" },
+    { label: "Estate Agents",             url: "/estateagents.php" },
+    // Casino
+    { label: "Casino",                    url: "/casino.php" },
+    { label: "Slots",                     url: "/page.php?sid=slots" },
+    { label: "Roulette",                  url: "/page.php?sid=roulette" },
+    { label: "High/Low",                  url: "/page.php?sid=highlow" },
+    { label: "Keno",                      url: "/page.php?sid=keno" },
+    { label: "Craps",                     url: "/page.php?sid=craps" },
+    { label: "Bookie",                    url: "/page.php?sid=bookie" },
+    { label: "Lottery",                   url: "/page.php?sid=lottery" },
+    { label: "Blackjack",                 url: "/page.php?sid=blackjack" },
+    { label: "Hold'em",                   url: "/page.php?sid=holdem" },
+    { label: "Russian Roulette",          url: "/page.php?sid=russianRoulette" },
+    { label: "Spin The Wheel",            url: "/page.php?sid=spinTheWheel" },
+    // Criminal
+    { label: "Dump",                      url: "/dump.php" },
+    { label: "Crimes 1.0",                url: "/crimes.php" },
+    { label: "Crimes 2.0",                url: "/page.php?sid=crimes" },
+    { label: "Criminal Records",          url: "/page.php?sid=crimesRecord" },
+    // Missions NPCs
+    { label: "Missions",                  url: "/loader.php?sid=missions" },
+    { label: "Missions - Duke",           url: "/loader.php?sid=missions&step=duke" },
+    { label: "Missions - Billie",         url: "/loader.php?sid=missions&step=billie" },
+    { label: "Missions - Dave",           url: "/loader.php?sid=missions&step=dave" },
+    { label: "Missions - Jesus",          url: "/loader.php?sid=missions&step=jesus" },
+    { label: "Missions - Leslie",         url: "/loader.php?sid=missions&step=leslie" },
+    { label: "Missions - Jimmy",          url: "/loader.php?sid=missions&step=jimmy" },
+    { label: "Missions - Juan",           url: "/loader.php?sid=missions&step=juan" },
+    { label: "Missions - Tiny",           url: "/loader.php?sid=missions&step=tiny" },
+    // Racing
+    { label: "Racing",                    url: "/loader.php?sid=racing" },
+    { label: "Racing - Upgrade Car",      url: "/loader.php?sid=racing&step=upgradecar" },
+    { label: "Racing - Leaderboards",     url: "/loader.php?sid=racing&step=leaderboards" },
+    { label: "Racing - Your Races",       url: "/loader.php?sid=racing&step=yourRaces" },
+    // Factions
+    { label: "Factions",                  url: "/factions.php" },
+    { label: "Faction - Main",            url: "/factions.php?step=your" },
+    { label: "Faction - Armory",          url: "/factions.php?step=your&type=armoury" },
+    { label: "Faction - Members",         url: "/factions.php?step=your&type=members" },
+    { label: "Faction - Crimes",          url: "/factions.php?step=your&type=crimes" },
+    { label: "Faction - News",            url: "/factions.php?step=your&type=news" },
+    { label: "Faction - Attacks",         url: "/factions.php?step=your&type=attacks" },
+    { label: "Faction - Stats",           url: "/factions.php?step=your&type=stats" },
+    { label: "Faction - Donations",       url: "/factions.php?step=your&type=donations" },
+    { label: "Faction - Upgrades",        url: "/factions.php?step=your&type=upgrades" },
+    { label: "Faction - Territory",       url: "/factions.php?step=your&type=territory" },
+    { label: "Faction - Wall",            url: "/factions.php?step=your&type=wall" },
+    { label: "Faction - Applications",    url: "/factions.php?step=your&type=applications" },
+    { label: "Faction Warfare",           url: "/page.php?sid=factionWarfare" },
+    { label: "Faction - Search",          url: "/factions.php?step=search" },
+    { label: "Ranked Wars",               url: "/page.php?sid=rankedWars" },
+    // Jobs
+    { label: "Jobs",                      url: "/jobs.php" },
+    { label: "Job List",                  url: "/joblist.php" },
+    { label: "Job Listing",               url: "/joblisting.php" },
+    { label: "Companies",                 url: "/companies.php" },
+    { label: "Company - Main",            url: "/companies.php?step=your" },
+    { label: "Company - Employees",       url: "/companies.php?step=your&type=employees" },
+    { label: "Company - Stock",           url: "/companies.php?step=your&type=stock" },
+    { label: "Company - Stats",           url: "/companies.php?step=your&type=stats" },
+    { label: "Company - Upgrades",        url: "/companies.php?step=your&type=upgrades" },
+    { label: "Company - News",            url: "/companies.php?step=your&type=news" },
+    { label: "Company - Applications",    url: "/companies.php?step=your&type=applications" },
+    { label: "Company - Search",          url: "/companies.php?step=search" },
+    // Education
+    { label: "Education",                 url: "/education.php" },
+    { label: "Education - Completed",     url: "/education.php?step=completed" },
+    // Gym
+    { label: "Gym",                       url: "/gym.php" },
+    { label: "Gym - Strength",            url: "/gym.php?step=train&trainStat=strength" },
+    { label: "Gym - Defense",             url: "/gym.php?step=train&trainStat=defense" },
+    { label: "Gym - Speed",               url: "/gym.php?step=train&trainStat=speed" },
+    { label: "Gym - Dexterity",           url: "/gym.php?step=train&trainStat=dexterity" },
+    // Travel
+    { label: "Travel",                    url: "/page.php?sid=travel" },
+    { label: "Travel - Argentina",        url: "/page.php?sid=travel&code=AR" },
+    { label: "Travel - Canada",           url: "/page.php?sid=travel&code=CA" },
+    { label: "Travel - Cayman Islands",   url: "/page.php?sid=travel&code=CI" },
+    { label: "Travel - China",            url: "/page.php?sid=travel&code=ZH" },
+    { label: "Travel - Dubai",            url: "/page.php?sid=travel&code=DU" },
+    { label: "Travel - Hawaii",           url: "/page.php?sid=travel&code=HI" },
+    { label: "Travel - Japan",            url: "/page.php?sid=travel&code=JA" },
+    { label: "Travel - Mexico",           url: "/page.php?sid=travel&code=MX" },
+    { label: "Travel - South Africa",     url: "/page.php?sid=travel&code=SA" },
+    { label: "Travel - Switzerland",      url: "/page.php?sid=travel&code=SW" },
+    { label: "Travel - UK",               url: "/page.php?sid=travel&code=UK" },
+    // Hospital / Jail
+    { label: "Hospital",                  url: "/hospitalview.php" },
+    { label: "Jail",                      url: "/jailview.php" },
+    { label: "Jail - Bail",               url: "/jailview.php?step=bail" },
+    { label: "Jail - Bust",               url: "/jailview.php?step=bust" },
+    // Social
+    { label: "Friends List",              url: "/page.php?sid=list&type=friends" },
+    { label: "Enemies List",              url: "/page.php?sid=list&type=enemies" },
+    { label: "Targets List",              url: "/page.php?sid=list&type=targets" },
+    { label: "Messages",                  url: "/messages.php" },
+    { label: "Message Inbox",             url: "/messages.php?step=inbox" },
+    { label: "Message Outbox",            url: "/messages.php?step=outbox" },
+    { label: "Message Inc",               url: "/messageinc.php" },
+    { label: "Fans",                      url: "/fans.php" },
+    { label: "Personals",                 url: "/personals.php" },
+    { label: "Attack Log",                url: "/page.php?sid=attackLog" },
+    { label: "Merits",                    url: "/page.php?sid=merits" },
+    // Forums
+    { label: "Forums",                    url: "/forums.php" },
+    { label: "Forums - General",          url: "/forums.php#/p=threads&f=67" },
+    { label: "Forums - Announcements",    url: "/forums.php#/p=threads&f=1" },
+    { label: "Forums - Help",             url: "/forums.php#/p=threads&f=8" },
+    { label: "Forums - Market",           url: "/forums.php#/p=threads&f=44" },
+    { label: "Forums - Trade",            url: "/forums.php#/p=threads&f=9" },
+    { label: "Forums - Questions",        url: "/forums.php#/p=threads&f=7" },
+    // Newspaper / media
+    { label: "Newspaper",                 url: "/newspaper.php" },
+    { label: "Comics",                    url: "/comics.php" },
+    { label: "Archives",                  url: "/archives.php" },
+    // Staff / Info
+    { label: "Rules",                     url: "/rules.php" },
+    { label: "Staff",                     url: "/staff.php" },
+    { label: "Credits",                   url: "/credits.php" },
+    { label: "Committee",                 url: "/committee.php" },
+    { label: "Calendar",                  url: "/calendar.php" },
+    { label: "Competition",               url: "/competition.php" },
+    { label: "Church",                    url: "/church.php" },
+    { label: "Blacklist",                 url: "/blacklist.php" },
+    { label: "Christmas Town",            url: "/christmas_town.php" },
+    // HOF pages
+    { label: "HOF - Rank",                url: "/page.php?sid=hof&type=rank" },
+    { label: "HOF - Money",               url: "/page.php?sid=hof&type=money" },
+    { label: "HOF - Crimes",              url: "/page.php?sid=hof&type=crimes" },
+    { label: "HOF - Busts",               url: "/page.php?sid=hof&type=busts" },
+    { label: "HOF - Hospital",            url: "/page.php?sid=hof&type=hospital" },
+    { label: "HOF - Jail",                url: "/page.php?sid=hof&type=jail" },
+    { label: "HOF - Defense",             url: "/page.php?sid=hof&type=defense" },
+    { label: "HOF - Hunting",             url: "/page.php?sid=hof&type=hunting" },
+    { label: "HOF - Racing",              url: "/page.php?sid=hof&type=racing" },
+    { label: "HOF - Gambling",            url: "/page.php?sid=hof&type=gambling" },
+    { label: "HOF - Travel",              url: "/page.php?sid=hof&type=travel" },
+    { label: "HOF - Forum Posts",         url: "/page.php?sid=hof&type=forumposts" },
+    { label: "HOF - Revives",             url: "/page.php?sid=hof&type=revives" },
+    { label: "HOF - Attacks",             url: "/page.php?sid=hof&type=attacks" },
+    { label: "HOF - Networth",            url: "/page.php?sid=hof&type=networth" },
+    // Preferences sub-tabs
+    { label: "Preferences - Account",     url: "/preferences.php#tab=account" },
+    { label: "Preferences - Notifs",      url: "/preferences.php#tab=notifications" },
+    { label: "Preferences - API",         url: "/preferences.php#tab=api" },
+    { label: "Preferences - Display",     url: "/preferences.php#tab=display" },
+    // Personal Stats sub-pages
+    { label: "Stats - Misc",              url: "/personalstats.php?stats=misc" },
+    { label: "Stats - Criminal",          url: "/personalstats.php?stats=criminal" },
+    { label: "Stats - Trading",           url: "/personalstats.php?stats=trading" },
+    { label: "Stats - Combat",            url: "/personalstats.php?stats=combat" },
+    { label: "Stats - Travel",            url: "/personalstats.php?stats=travel" },
+    { label: "Stats - Racing",            url: "/personalstats.php?stats=racing" },
+    { label: "Stats - Casino",            url: "/personalstats.php?stats=casino" },
+    // Loader pages
+    { label: "Loader - Daily Gifts",      url: "/loader.php?sid=dailyGifts" },
+    { label: "Loader - Bazaar",           url: "/loader.php?sid=bazaar" },
+    { label: "Loader - Bounties",         url: "/loader.php?sid=bounties" },
+    { label: "Loader - Events",           url: "/loader.php?sid=events" },
+    { label: "Loader - Messages",         url: "/loader.php?sid=messages" },
+    { label: "Loader - Stocks",           url: "/loader.php?sid=stocks" },
+    { label: "Loader - Crimes",           url: "/loader.php?sid=crimes" },
+    { label: "Loader - Hospital",         url: "/loader.php?sid=hospital" },
+    { label: "Loader - Jail",             url: "/loader.php?sid=jail" },
+    { label: "Loader - Items",            url: "/loader.php?sid=items" },
+    { label: "Loader - Travel",           url: "/loader.php?sid=travel" },
+    { label: "Loader - Auction",          url: "/loader.php?sid=auction" },
+    { label: "Loader - Points Market",    url: "/loader.php?sid=points" },
+    { label: "Loader - Education",        url: "/loader.php?sid=education" },
+    { label: "Loader - Gym",              url: "/loader.php?sid=gym" },
+    { label: "Loader - Forum",            url: "/loader.php?sid=forum" },
+    { label: "Loader - Companies",        url: "/loader.php?sid=companies" },
+    { label: "Loader - Jobs",             url: "/loader.php?sid=jobs" },
+    { label: "Loader - Trade",            url: "/loader.php?sid=trade" },
+    { label: "Loader - Newspaper",        url: "/loader.php?sid=newspaper" },
+    { label: "Loader - Revive",           url: "/loader.php?sid=revive" },
+    { label: "Loader - Donate",           url: "/loader.php?sid=donate" },
+    { label: "Loader - Hall of Fame",     url: "/loader.php?sid=hof" },
+    { label: "Loader - Museum",           url: "/loader.php?sid=museum" },
+    { label: "Loader - Awards",           url: "/loader.php?sid=awards" },
+    { label: "Loader - Merits",           url: "/loader.php?sid=merits" },
+    { label: "Loader - Achievements",     url: "/loader.php?sid=achievements" },
+    { label: "Loader - Display Case",     url: "/loader.php?sid=displaycase" },
+    { label: "Loader - Keepsakes",        url: "/loader.php?sid=keepsakes" },
+    { label: "Loader - Church",           url: "/loader.php?sid=church" },
+    { label: "Loader - Hunting",          url: "/loader.php?sid=hunting" },
+    { label: "Loader - Rehab",            url: "/loader.php?sid=rehab" },
+    { label: "Loader - Property",         url: "/loader.php?sid=properties" },
+    { label: "Loader - Estate",           url: "/loader.php?sid=estateagents" },
+    { label: "Loader - Casino",           url: "/loader.php?sid=casino" },
+    { label: "Loader - Lottery",          url: "/loader.php?sid=lottery" },
+    { label: "Loader - Bookie",           url: "/loader.php?sid=bookie" },
+    { label: "Loader - Dump",             url: "/loader.php?sid=dump" },
+    { label: "Loader - Bank",             url: "/loader.php?sid=bank" },
+    { label: "Loader - Loan",             url: "/loader.php?sid=loan" },
+    { label: "Loader - Blackjack",        url: "/loader.php?sid=blackjack" },
+    { label: "Loader - Slots",            url: "/loader.php?sid=slots" },
+    { label: "Loader - Roulette",         url: "/loader.php?sid=roulette" },
+    { label: "Loader - Keno",             url: "/loader.php?sid=keno" },
+    { label: "Loader - Craps",            url: "/loader.php?sid=craps" },
+    { label: "Loader - High/Low",         url: "/loader.php?sid=highlow" },
+    { label: "Loader - Hold'em",          url: "/loader.php?sid=holdem" },
+    { label: "Loader - Spin Wheel",       url: "/loader.php?sid=spinTheWheel" },
+    { label: "Loader - Russian Roulette", url: "/loader.php?sid=russianRoulette" },
+    { label: "Loader - Personalstats",    url: "/loader.php?sid=personalstats" },
+    { label: "Loader - Faction",          url: "/loader.php?sid=faction" },
+    { label: "Loader - Temp Items",       url: "/loader.php?sid=temporaryItems" },
 ];
 
 // ─── Egg Hunt Tool ────────────────────────────────────────────────────────────
 
 const EggHuntTool = {
     STORAGE_KEY: 'sidekick_holiday_eggHunt',
-    PANEL_ID:    'sk-egg-panel',
-    MINI_ID:     'sk-egg-mini',
-    STYLES_ID:   'sk-egg-styles',
-    OVERLAY_ID:  'sk-egg-overlay',
+    PANEL_ID: 'sk-egg-panel',
+    MINI_ID: 'sk-egg-mini',
+    STYLES_ID: 'sk-egg-styles',
+    OVERLAY_ID: 'sk-egg-overlay',
 
     state: {
         idx: 0, panelX: null, panelY: null,
@@ -137,13 +311,13 @@ const EggHuntTool = {
         try {
             const d = await window.SidekickModules.Core.ChromeStorage.get(this.STORAGE_KEY);
             if (d) Object.assign(this.state, d);
-        } catch {}
+        } catch { }
     },
 
     async saveState() {
         try {
             await window.SidekickModules.Core.ChromeStorage.set(this.STORAGE_KEY, { ...this.state });
-        } catch {}
+        } catch { }
     },
 
     // ─── Lifecycle ───────────────────────────────────────────────────────────
@@ -340,7 +514,7 @@ const EggHuntTool = {
         const px = Math.max(0, Math.min(this.state.panelX ?? (window.innerWidth - W - 12), window.innerWidth - W));
         const py = Math.max(0, Math.min(this.state.panelY ?? 16, window.innerHeight - 120));
         this.panel.style.left = px + 'px';
-        this.panel.style.top  = py + 'px';
+        this.panel.style.top = py + 'px';
 
         // Header
         const header = document.createElement('div');
@@ -405,11 +579,11 @@ const EggHuntTool = {
     },
 
     _updateUI() {
-        const total   = EGG_HUNT_PAGES.length;
+        const total = EGG_HUNT_PAGES.length;
         const visited = (this.state.visited || []).length;
-        const pct     = Math.min(100, (visited / total * 100)).toFixed(1);
+        const pct = Math.min(100, (visited / total * 100)).toFixed(1);
         if (this._progressFill) this._progressFill.style.width = pct + '%';
-        if (this._visitedLabel)  this._visitedLabel.innerHTML  = `Pages visited: <span>${visited} / ${total}</span>`;
+        if (this._visitedLabel) this._visitedLabel.innerHTML = `Pages visited: <span>${visited} / ${total}</span>`;
         if (this._eggCountLabel) this._eggCountLabel.innerHTML = `Eggs collected: <span>${this.state.eggsFound}</span> 🥚`;
     },
 
@@ -446,7 +620,7 @@ const EggHuntTool = {
         const px = Math.max(0, Math.min(this.state.pillX ?? (window.innerWidth - 50), window.innerWidth - 38));
         const py = Math.max(0, Math.min(this.state.pillY ?? (window.innerHeight - 85), window.innerHeight - 38));
         this.miniBtn.style.left = px + 'px';
-        this.miniBtn.style.top  = py + 'px';
+        this.miniBtn.style.top = py + 'px';
         this.miniBtn.style.display = 'flex';
     },
 
@@ -462,7 +636,7 @@ const EggHuntTool = {
         const root = document.querySelector('#easter-egg-hunt-root');
         if (!root || root.dataset.skHandled) return;
         root.dataset.skHandled = '1';
-        this._waitForEggButton(root).then(btn => this._showEggOverlay(btn)).catch(() => {});
+        this._waitForEggButton(root).then(btn => this._showEggOverlay(btn)).catch(() => { });
     },
 
     _waitForEggButton(root) {
@@ -485,7 +659,7 @@ const EggHuntTool = {
         this._blockNavigation();
 
         // Store original DOM position so we can restore on skip
-        const origParent  = btn.parentElement;
+        const origParent = btn.parentElement;
         const origSibling = btn.nextSibling;
 
         const overlay = document.createElement('div');
@@ -587,7 +761,7 @@ const EggHuntTool = {
         document.addEventListener('keydown', (e) => {
             if (e.repeat) return;
             if (e.altKey && e.key === 'ArrowRight') { e.preventDefault(); this._navigateDelta(1); }
-            if (e.altKey && e.key === 'ArrowLeft')  { e.preventDefault(); this._navigateDelta(-1); }
+            if (e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); this._navigateDelta(-1); }
         });
     },
 
@@ -605,11 +779,11 @@ const EggHuntTool = {
             if (!dragging) return;
             if (Math.abs(cx - sx) > 4 || Math.abs(cy - sy) > 4) moved = true;
             if (!moved) return;
-            const x = Math.max(0, Math.min(cx - ox, window.innerWidth  - target.offsetWidth));
+            const x = Math.max(0, Math.min(cx - ox, window.innerWidth - target.offsetWidth));
             const y = Math.max(0, Math.min(cy - oy, window.innerHeight - target.offsetHeight));
             target.style.left = x + 'px'; target.style.top = y + 'px';
             if (isPill) { this.state.pillX = x; this.state.pillY = y; }
-            else        { this.state.panelX = x; this.state.panelY = y; }
+            else { this.state.panelX = x; this.state.panelY = y; }
         };
         const end = () => {
             if (!dragging) return;
