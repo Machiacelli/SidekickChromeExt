@@ -351,13 +351,22 @@
                 console.warn("⚠️ Crime Notifier module not available");
             }
 
-            // Initialize Crimes Module
-            console.log("🧾 Sidekick: Initializing Crimes module...");
-            if (window.SidekickModules.Crimes?.init) {
-                await window.SidekickModules.Crimes.init();
-                console.log("✅ Sidekick: Crimes module initialized");
+            // Initialize Disposal Module
+            console.log("🧹 Sidekick: Initializing Disposal module...");
+            if (window.SidekickModules.Disposal?.init) {
+                await window.SidekickModules.Disposal.init();
+                console.log("✅ Sidekick: Disposal module initialized");
             } else {
-                console.warn("⚠️ Crimes module not available");
+                console.warn("⚠️ Disposal module not available");
+            }
+
+            // Initialize Scamming Module
+            console.log("🎣 Sidekick: Initializing Scamming module...");
+            if (window.SidekickModules.Scamming?.init) {
+                await window.SidekickModules.Scamming.init();
+                console.log("✅ Sidekick: Scamming module initialized");
+            } else {
+                console.warn("⚠️ Scamming module not available");
             }
 
             // Initialize War Monitor Module
