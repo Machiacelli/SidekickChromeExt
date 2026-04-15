@@ -166,9 +166,15 @@
                         console.log("🔄 Daily reset needed - clearing daily tasks (different day detected)");
                         console.log("🔄 Time difference:", (todayUTC.getTime() - lastResetUTC.getTime()) / (1000 * 60 * 60), "hours");
 
-                        // Force reset immediately and save the reset state
-                        this.resetDailyTasksData();
-                        await this.saveDailyTasks();
+                        // Merge persisted visibility first so reset preserves user hide/show choices.
+                        for (const taskKey in this.dailyTasks) {
+                            if (saved[taskKey] && typeof saved[taskKey].visible === 'boolean') {
+                                this.dailyTasks[taskKey].visible = saved[taskKey].visible;
+                            }
+                        }
+
+                        // Force reset immediately (resetDailyTasksData persists state).
+                        await this.resetDailyTasksData();
 
                         console.log("📋 Reset applied and saved - all tasks are now incomplete");
                     } else {
@@ -286,9 +292,10 @@
                 console.log(`📦 Stored yesterday's final xantaken: ${this.apiBaselines.yesterdayFinalXantaken} (from ${this.apiBaselines.lastKnownXantaken !== undefined ? 'lastKnown' : 'baseline'})`);
             }
 
-            // Force reset ALL tasks to incomplete state
+            // Force reset ALL tasks to incomplete state, preserving user visibility preferences
             for (const taskKey in this.dailyTasks) {
                 const task = this.dailyTasks[taskKey];
+                const savedVisible = task.visible; // preserve the user's show/hide choice
 
                 console.log(`🔄 Resetting task: ${task.name} (was completed: ${task.completed})`);
                 task.completed = false;
@@ -299,6 +306,9 @@
                 if (task.baseline !== undefined) {
                     task.baseline = 0;
                 }
+
+                // Restore visibility — daily reset must never un-hide a task the user hid
+                task.visible = savedVisible;
             }
 
             // Clear current day's API baselines (but keep yesterday's final values)
@@ -321,7 +331,6 @@
         // Reset daily tasks at UTC midnight
         async resetDailyTasks() {
             await this.resetDailyTasksData();
-            await this.saveDailyTasks();
 
             // Force immediate UI refresh for all open todo lists
             console.log('🔄 Refreshing todo list UI after reset');
@@ -1242,8 +1251,8 @@
                 if (entry.timestamp < sinceTimestamp) continue;
 
                 const entryCategory = String(entry.category ?? '').toLowerCase();
-                const entryTitle    = String(entry.title    ?? '').toLowerCase();
-                const entryLog      = String(entry.log      ?? '').toLowerCase();
+                const entryTitle = String(entry.title ?? '').toLowerCase();
+                const entryLog = String(entry.log ?? '').toLowerCase();
 
                 if (
                     entryCategory === lowerCategory ||
@@ -2642,19 +2651,19 @@
 
             if (closeBtn) {
                 closeBtn.addEventListener('mouseover', () => { closeBtn.style.color = '#fff'; });
-                closeBtn.addEventListener('mouseout',  () => { closeBtn.style.color = '#aaa'; });
+                closeBtn.addEventListener('mouseout', () => { closeBtn.style.color = '#aaa'; });
             }
             if (nameInput) {
                 nameInput.addEventListener('focus', () => { nameInput.style.borderColor = '#4CAF50'; });
-                nameInput.addEventListener('blur',  () => { nameInput.style.borderColor = '#555'; });
+                nameInput.addEventListener('blur', () => { nameInput.style.borderColor = '#555'; });
             }
             if (cancelBtn) {
                 cancelBtn.addEventListener('mouseover', () => { cancelBtn.style.background = '#3a3a3a'; cancelBtn.style.color = '#fff'; });
-                cancelBtn.addEventListener('mouseout',  () => { cancelBtn.style.background = 'transparent'; cancelBtn.style.color = '#aaa'; });
+                cancelBtn.addEventListener('mouseout', () => { cancelBtn.style.background = 'transparent'; cancelBtn.style.color = '#aaa'; });
             }
             if (createBtn) {
                 createBtn.addEventListener('mouseover', () => { createBtn.style.opacity = '0.85'; });
-                createBtn.addEventListener('mouseout',  () => { createBtn.style.opacity = '1'; });
+                createBtn.addEventListener('mouseout', () => { createBtn.style.opacity = '1'; });
             }
             dialog.querySelector('#daily-toggle-list') && dialog.querySelector('#daily-toggle-list').addEventListener('change', (e) => {
                 const checkbox = e.target.closest('.daily-visibility-toggle');

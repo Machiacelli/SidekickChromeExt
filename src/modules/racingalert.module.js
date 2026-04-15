@@ -11,7 +11,7 @@ const RacingAlertModule = (() => {
     let animatedIcons = true;
 
     // Icon HTML templates
-    const raceIconRed = `<li id="sidekick-race-icon" class="icon18___wusPZ"><a href="/loader.php?sid=racing" tabindex="0" i-data="i_37_86_17_17"></a></li>`;
+    const raceIconRed = `<li id="sidekick-race-icon" class="icon18___wusPZ"><a href="/page.php?sid=racing" tabindex="0" i-data="i_37_86_17_17"></a></li>`;
 
     return {
         name: 'RacingAlert',
@@ -142,8 +142,21 @@ const RacingAlertModule = (() => {
                 window.addEventListener('load', () => this.handleCheck());
             }
 
-            // Check every 5 seconds
+            // Check every 5 seconds (fallback)
             checkInterval = setInterval(() => this.handleCheck(), 5000);
+
+            // MutationObserver: re-inject icon when status-icons area changes (Torn SPA re-renders)
+            const observeStatusIcons = () => {
+                const target = document.querySelector('[class^="status-icons"]')?.parentElement || document.body;
+                const domObserver = new MutationObserver(() => this.handleCheck());
+                domObserver.observe(target, { childList: true, subtree: true });
+            };
+
+            if (document.readyState === 'complete') {
+                observeStatusIcons();
+            } else {
+                window.addEventListener('load', observeStatusIcons);
+            }
         },
 
         stopMonitoring() {

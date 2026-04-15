@@ -66,8 +66,8 @@
                 notification: "Drink up – St. Patrick's Day bonuses live."
             },
             {
-                startMonth: 4, startDay: 18,
-                endMonth: 4, endDay: 24,
+                startMonth: 4, startDay: 1,
+                endMonth: 4, endDay: 9,
                 name: "Easter Egg Hunt",
                 feature: "Eggs spawn on Torn pages",
                 notification: "Crack eggs, not skulls… or both. Easter in Torn."
@@ -1003,83 +1003,32 @@
                     }
                 }
 
-                console.log('🔄 Scraping Torn calendar page...');
+                const isCalendarPage = window.location.pathname.includes('calendar.php');
+                if (!isCalendarPage) {
+                    const existing = await window.SidekickModules.Core.ChromeStorage.get('event_calendar_overrides');
+                    const cachedOverrides = existing?.event_calendar_overrides || {};
+                    const cachedCount = Object.keys(cachedOverrides).length;
 
-                // Fetch the calendar page
-                const response = await fetch('https://www.torn.com/calendar.php');
-                if (!response.ok) {
-                    throw new Error(`Calendar fetch failed: ${response.status}`);
+                    console.log(`📅 Calendar scrape skipped: not on calendar.php (cached overrides: ${cachedCount})`);
+                    if (!forceRefresh && cachedCount > 0) {
+                        return {
+                            success: true,
+                            usedCachedOverrides: true,
+                            cachedCount
+                        };
+                    }
+
+                    console.warn('⚠️ Event Ticker: Calendar refresh requires opening Torn calendar page once (Cloudflare blocks direct background fetches).');
+                    return {
+                        success: false,
+                        requiresCalendarPage: true,
+                        cachedCount
+                    };
                 }
 
-                const html = await response.text();
-
-                // Parse HTML to extract event dates
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-
-                const overrides = {};
+                console.log('🔄 Scraping Torn calendar page from current DOM...');
                 const currentYear = new Date().getFullYear();
-
-                // Find all calendar events
-                const eventElements = doc.querySelectorAll('.calendarEvents .event, .calendar-wrap .event-item');
-
-                console.log(`📅 Found ${eventElements.length} event elements on calendar`);
-
-                eventElements.forEach(eventEl => {
-                    try {
-                        // Extract event name
-                        const nameEl = eventEl.querySelector('.event-name, .name, h3, h4');
-                        if (!nameEl) return;
-
-                        const eventName = nameEl.textContent.trim();
-                        const normalized = this.normalizeEventName(eventName);
-
-                        // Extract date range
-                        const dateEl = eventEl.querySelector('.event-date, .date, .time');
-                        if (!dateEl) return;
-
-                        const dateText = dateEl.textContent.trim();
-
-                        // Parse date format: "Dec 19 - Jan 2" or "Dec 15-31"
-                        const dateMatch = dateText.match(/(\w+)\s+(\d+)(?:\s*-\s*(?:(\w+)\s+)?(\d+))?/);
-                        if (!dateMatch) return;
-
-                        const [, startMonth, startDay, endMonth, endDay] = dateMatch;
-
-                        // Convert month names to numbers
-                        const monthMap = {
-                            'jan': 1, 'january': 1,
-                            'feb': 2, 'february': 2,
-                            'mar': 3, 'march': 3,
-                            'apr': 4, 'april': 4,
-                            'may': 5,
-                            'jun': 6, 'june': 6,
-                            'jul': 7, 'july': 7,
-                            'aug': 8, 'august': 8,
-                            'sep': 9, 'sept': 9, 'september': 9,
-                            'oct': 10, 'october': 10,
-                            'nov': 11, 'november': 11,
-                            'dec': 12, 'december': 12
-                        };
-
-                        const startMonthNum = monthMap[startMonth.toLowerCase()];
-                        const endMonthNum = endMonth ? monthMap[endMonth.toLowerCase()] : startMonthNum;
-
-                        if (!startMonthNum) return;
-
-                        overrides[normalized] = {
-                            startMonth: startMonthNum,
-                            startDay: parseInt(startDay),
-                            endMonth: endMonthNum,
-                            endDay: parseInt(endDay || startDay)
-                        };
-
-                        console.log(`✅ Scraped: "${eventName}" = ${startMonthNum}/${startDay} - ${endMonthNum}/${endDay || startDay}`);
-
-                    } catch (err) {
-                        console.warn('⚠️ Failed to parse event:', err);
-                    }
-                });
+                const overrides = this.extractCalendarOverridesFromDocument(document);
 
                 // Store overrides and update last scraped year
                 await window.SidekickModules.Core.ChromeStorage.set('event_calendar_overrides', overrides);
@@ -1094,6 +1043,64 @@
                 console.error('❌ Failed to scrape calendar:', error);
                 return null;
             }
+        },
+
+        extractCalendarOverridesFromDocument(doc) {
+            const overrides = {};
+
+            // Torn calendar markup can vary, so try multiple selectors.
+            const eventElements = doc.querySelectorAll(
+                '.calendarEvents .event, .calendar-wrap .event-item, .calendar-event, div[class*="calendar"] div[class*="event"]'
+            );
+            console.log(`📅 Found ${eventElements.length} event elements on calendar`);
+
+            const monthMap = {
+                'jan': 1, 'january': 1,
+                'feb': 2, 'february': 2,
+                'mar': 3, 'march': 3,
+                'apr': 4, 'april': 4,
+                'may': 5,
+                'jun': 6, 'june': 6,
+                'jul': 7, 'july': 7,
+                'aug': 8, 'august': 8,
+                'sep': 9, 'sept': 9, 'september': 9,
+                'oct': 10, 'october': 10,
+                'nov': 11, 'november': 11,
+                'dec': 12, 'december': 12
+            };
+
+            eventElements.forEach(eventEl => {
+                try {
+                    const nameEl = eventEl.querySelector('.event-name, .name, h3, h4, strong, b') || eventEl;
+                    const eventName = nameEl.textContent?.trim();
+                    if (!eventName) return;
+
+                    const dateEl = eventEl.querySelector('.event-date, .date, .time');
+                    const dateText = (dateEl?.textContent || eventEl.textContent || '').trim();
+
+                    const dateMatch = dateText.match(/\b(\w+)\s+(\d+)(?:\s*[-–]\s*(?:(\w+)\s+)?(\d+))?/i);
+                    if (!dateMatch) return;
+
+                    const [, startMonth, startDay, endMonth, endDay] = dateMatch;
+                    const startMonthNum = monthMap[startMonth.toLowerCase()];
+                    const endMonthNum = endMonth ? monthMap[endMonth.toLowerCase()] : startMonthNum;
+                    if (!startMonthNum) return;
+
+                    const normalized = this.normalizeEventName(eventName);
+                    overrides[normalized] = {
+                        startMonth: startMonthNum,
+                        startDay: parseInt(startDay, 10),
+                        endMonth: endMonthNum,
+                        endDay: parseInt(endDay || startDay, 10)
+                    };
+
+                    console.log(`✅ Scraped: "${eventName}" = ${startMonthNum}/${startDay} - ${endMonthNum}/${endDay || startDay}`);
+                } catch (err) {
+                    console.warn('⚠️ Failed to parse event:', err);
+                }
+            });
+
+            return overrides;
         },
 
         // Get merged event dates (override + hardcoded fallback)

@@ -223,6 +223,15 @@
                 console.warn('⚠️ Inventory Sorter module not available');
             }
 
+            // Initialize Item Market Max Quantity Module
+            console.log('🛒 Sidekick: Initializing Item Market Max Quantity...');
+            if (window.SidekickModules.ItemMarketMaxQuantity?.init) {
+                window.SidekickModules.ItemMarketMaxQuantity.init();
+                console.log('✅ Sidekick: Item Market Max Quantity initialized');
+            } else {
+                console.warn('⚠️ Item Market Max Quantity module not available');
+            }
+
             // Initialize Mug Calculator Module
             console.log('💰 Sidekick: Initializing Mug Calculator...');
             if (window.SidekickModules.MugCalculator?.initialize) {
@@ -342,6 +351,15 @@
                 console.warn("⚠️ Crime Notifier module not available");
             }
 
+            // Initialize Crimes Module
+            console.log("🧾 Sidekick: Initializing Crimes module...");
+            if (window.SidekickModules.Crimes?.init) {
+                await window.SidekickModules.Crimes.init();
+                console.log("✅ Sidekick: Crimes module initialized");
+            } else {
+                console.warn("⚠️ Crimes module not available");
+            }
+
             // Initialize War Monitor Module
             console.log("⚔️ Sidekick: Initializing War Monitor...");
             if (window.SidekickModules.WarMonitor?.init) {
@@ -405,6 +423,15 @@
                 console.warn('⚠️ Price Filler module not available');
             }
 
+            // Initialize Auction Weapon Bonus Module
+            console.log('🗡️ Sidekick: Initializing Auction Weapon Bonus...');
+            if (window.SidekickModules.AuctionWeaponBonus?.init) {
+                await window.SidekickModules.AuctionWeaponBonus.init();
+                console.log('✅ Sidekick: Auction Weapon Bonus initialized');
+            } else {
+                console.warn('⚠️ Auction Weapon Bonus module not available');
+            }
+
             // Initialize Mission Tracker Module
             console.log('🎯 Sidekick: Initializing Mission Tracker...');
             if (window.SidekickModules.MissionTracker?.init) {
@@ -423,13 +450,13 @@
                 console.warn('⚠️ Hide Crime Outcome module not available');
             }
 
-            // Initialize Holiday Module
-            console.log('🎉 Sidekick: Initializing Holiday Module...');
+            // Initialize Egg Helper Module
+            console.log('🎉 Sidekick: Initializing Egg Helper Module...');
             if (window.SidekickModules.Holiday?.init) {
                 await window.SidekickModules.Holiday.init();
-                console.log('✅ Sidekick: Holiday Module initialized');
+                console.log('✅ Sidekick: Egg Helper Module initialized');
             } else {
-                console.warn('⚠️ Holiday Module not available');
+                console.warn('⚠️ Egg Helper Module not available');
             }
 
             // Initialize Notion Bug Reporter Module

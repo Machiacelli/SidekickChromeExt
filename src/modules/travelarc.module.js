@@ -8,20 +8,21 @@
     console.log('✈️ Loading TravelArc Module...');
 
     // Map coordinates as percentages (x%, y%) on the map image
-    // All coordinates obtained by user clicking on map locations + fine-tuned
+    // Atlantic-centred world map: x increases left→right (Americas left, Europe centre-right, Asia right)
+    // Torn City = New York (approx)
     const COORDS = {
-        torn: { x: 50.4, y: 45.6 },            // ✅ User clicked
-        mexico: { x: 46.0, y: 47.6 },          // ✅ User clicked
-        cayman: { x: 53.1, y: 51.9 },          // ✅ Fine-tuned (up)
-        canada: { x: 53.4, y: 38.0 },          // ✅ User clicked
-        hawaii: { x: 32.8, y: 52.2 },          // ✅ Fine-tuned (up)
-        uk: { x: 74.4, y: 35.0 },              // ✅ Fine-tuned (down)
-        argentina: { x: 58.2, y: 73.5 },       // ✅ Fine-tuned (up 5cm total)
-        switzerland: { x: 77.3, y: 37.0 },     // ✅ Fine-tuned (adjusted up)
-        japan: { x: 15.1, y: 44.3 },           // ✅ User clicked
-        china: { x: 8.4, y: 42.8 },            // ✅ Fine-tuned (down)
-        uae: { x: 90.1, y: 50.9 },             // ✅ User clicked
-        south_africa: { x: 82.4, y: 70.9 }     // ✅ Fine-tuned (up 3cm total)
+        torn:         { x: 24.0, y: 40.0 },   // New York / Torn City
+        mexico:       { x: 19.0, y: 47.0 },   // Mexico City
+        cayman:       { x: 23.0, y: 48.5 },   // Cayman Islands
+        canada:       { x: 22.0, y: 32.0 },   // Canada (Toronto area)
+        hawaii:       { x:  5.5, y: 45.0 },   // Hawaii (far left, mid-Pacific)
+        uk:           { x: 46.5, y: 33.0 },   // United Kingdom
+        argentina:    { x: 28.0, y: 68.0 },   // Buenos Aires
+        switzerland:  { x: 49.5, y: 35.0 },   // Zurich / Switzerland
+        japan:        { x: 82.5, y: 37.0 },   // Tokyo
+        china:        { x: 76.0, y: 38.0 },   // Beijing
+        uae:          { x: 60.5, y: 43.5 },   // Dubai / UAE
+        south_africa: { x: 51.0, y: 66.0 },   // Cape Town / South Africa
     };
 
     // Map destination names to coordinate keys
@@ -35,18 +36,24 @@
         'uk': 'uk',
         'united kingdom': 'uk',
         'london': 'uk',
+        'england': 'uk',
         'argentina': 'argentina',
+        'buenos aires': 'argentina',
         'switzerland': 'switzerland',
         'zurich': 'switzerland',
+        'z\u00fcrich': 'switzerland',
         'japan': 'japan',
         'tokyo': 'japan',
         'china': 'china',
+        'beijing': 'china',
         'uae': 'uae',
         'dubai': 'uae',
+        'united arab emirates': 'uae',
         'south africa': 'south_africa',
         'south_africa': 'south_africa',
-        'cape town': 'south_africa'
+        'cape town': 'south_africa',
     };
+
 
     let animationFrame = null;
 
@@ -87,7 +94,7 @@
         }
 
         console.warn('⚠️ TravelArc: Could not detect destination');
-        return { origin: 'torn', destination: 'china', returning: false }; // fallback
+        return { origin: 'torn', destination: 'torn', returning: false }; // fallback - no arc rather than wrong arc
     }
 
     function detectProgress() {
@@ -116,7 +123,7 @@
 
     function getCoordKey(destName) {
         const normalized = destName.toLowerCase().trim();
-        return DEST_MAP[normalized] || 'china'; // fallback to china
+        return DEST_MAP[normalized] || 'torn'; // fallback to torn (no wrong arc drawn)
     }
 
     function mountTravelArc() {

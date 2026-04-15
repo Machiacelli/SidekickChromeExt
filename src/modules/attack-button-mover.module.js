@@ -31,6 +31,17 @@
         buttonLocation: 'Primary', // Default: Primary weapon
         loopIntervalId: null,
 
+        // Torn moved attack pages to page.php?sid=attack; keep legacy loader.php support too.
+        isAttackPage() {
+            const href = window.location.href.toLowerCase();
+            const pathname = window.location.pathname.toLowerCase();
+            const sid = (new URLSearchParams(window.location.search).get('sid') || '').toLowerCase();
+
+            return pathname.includes('loader.php')
+                || (pathname.includes('page.php') && sid === 'attack')
+                || href.includes('/loader.php?sid=attack');
+        },
+
         // Initialize the module
         async init() {
             if (this.isInitialized) {
@@ -109,8 +120,8 @@
 
         // Start monitoring for attack pages
         startMonitoring() {
-            // Only run on loader.php pages (attack/gym pages)
-            if (!window.location.href.includes('loader.php')) {
+            // Run only on attack pages
+            if (!this.isAttackPage()) {
                 return;
             }
 
@@ -121,14 +132,25 @@
                 clearInterval(this.loopIntervalId);
             }
 
-            // Start detection loop
+            const startTime = Date.now();
+
+            // Attempt immediately to minimize perceived delay.
+            if (this.moveStartFightButton()) {
+                console.log(`✅ Attack Button Mover: Start fight button moved immediately (${Date.now() - startTime}ms)`);
+                return;
+            }
+
+            // Start fast fallback detection loop (bounded by timeout).
+            const intervalMs = 50;
+            const timeoutMs = 10000;
+            const maxLoops = Math.ceil(timeoutMs / intervalMs);
             let loopCount = 0;
             this.loopIntervalId = setInterval(() => {
                 loopCount++;
-                if (loopCount > 20) { // Stop after 5 seconds (20 * 250ms)
+                if (loopCount > maxLoops) {
                     clearInterval(this.loopIntervalId);
                     this.loopIntervalId = null;
-                    console.log('⏹️ Attack Button Mover: Detection timeout after 5 seconds');
+                    console.log(`⏹️ Attack Button Mover: Detection timeout after ${timeoutMs / 1000} seconds`);
                     return;
                 }
 
@@ -136,9 +158,9 @@
                     // If button successfully moved, stop loop
                     clearInterval(this.loopIntervalId);
                     this.loopIntervalId = null;
-                    console.log('✅ Attack Button Mover: Start fight button successfully moved');
+                    console.log(`✅ Attack Button Mover: Start fight button moved after ${Date.now() - startTime}ms`);
                 }
-            }, 250);
+            }, intervalMs);
         },
 
         // Stop monitoring
@@ -152,25 +174,32 @@
 
         // Move the start fight button
         moveStartFightButton() {
-            let startFightButton, weaponImage, weaponWrapper;
+            // Resilient selectors: find by text content/role, not obfuscated class names
+            const startFightButton = this._findStartFightButton();
+            let weaponImage, weaponWrapper;
+
+            if (!startFightButton) return false;
 
             // Find elements based on button location setting
             if (this.buttonLocation === 'Primary') {
-                startFightButton = document.querySelector('.torn-btn.btn___RxE8_.silver');
-                weaponImage = document.querySelector('.weaponImage___tUzwP img');
-                weaponWrapper = document.querySelector('.weaponWrapper___h3buK');
+                weaponImage = document.querySelector('[class*="weaponImage"] img, [class*="weapon-image"] img, .weapon img');
+                weaponWrapper = document.querySelector('[class*="weaponWrapper"], [class*="weapon-wrapper"], [class*="primaryWeapon"]') ||
+                    (weaponImage && weaponImage.closest('[class*="weapon"]'));
             } else if (this.buttonLocation === 'Secondary') {
-                startFightButton = document.querySelector('.torn-btn.btn___RxE8_.silver');
-                weaponImage = document.querySelector('#weapon_second .weaponImage___tUzwP img');
-                weaponWrapper = document.querySelector('#weapon_second');
+                weaponImage = document.querySelector('#weapon_second [class*="weaponImage"] img, #weapon_second img, [class*="secondWeapon"] img');
+                weaponWrapper = document.querySelector('#weapon_second') ||
+                    document.querySelector('[class*="secondWeapon"]') ||
+                    (weaponImage && weaponImage.closest('[class*="weapon"]'));
             } else if (this.buttonLocation === 'Melee') {
-                startFightButton = document.querySelector('.torn-btn.btn___RxE8_.silver');
-                weaponImage = document.querySelector('#weapon_melee .weaponImage___tUzwP img');
-                weaponWrapper = document.querySelector('#weapon_melee');
+                weaponImage = document.querySelector('#weapon_melee [class*="weaponImage"] img, #weapon_melee img, [class*="meleeWeapon"] img');
+                weaponWrapper = document.querySelector('#weapon_melee') ||
+                    document.querySelector('[class*="meleeWeapon"]') ||
+                    (weaponImage && weaponImage.closest('[class*="weapon"]'));
             } else if (this.buttonLocation === 'Temp') {
-                startFightButton = document.querySelector('.torn-btn.btn___RxE8_.silver');
-                weaponImage = document.querySelector('#weapon_temp .weaponImage___tUzwP img');
-                weaponWrapper = document.querySelector('#weapon_temp');
+                weaponImage = document.querySelector('#weapon_temp [class*="weaponImage"] img, #weapon_temp img, [class*="tempWeapon"] img');
+                weaponWrapper = document.querySelector('#weapon_temp') ||
+                    document.querySelector('[class*="tempWeapon"]') ||
+                    (weaponImage && weaponImage.closest('[class*="weapon"]'));
             }
 
             // Only proceed if all elements found
@@ -196,16 +225,20 @@
             buttonWrapper.classList.add('sidekick-attack-button-wrapper');
             buttonWrapper.appendChild(startFightButton);
 
-            // Insert wrapper after weapon image (matching original script)
+            // Ensure weapon wrapper is relatively positioned
+            const wrapperPos = window.getComputedStyle(weaponWrapper).position;
+            if (wrapperPos === 'static') weaponWrapper.style.position = 'relative';
+
+            // Insert wrapper after weapon image
             weaponWrapper.insertBefore(buttonWrapper, weaponImage.nextSibling);
 
-            // Position button over weapon image (matching original script positioning)
+            // Position button over weapon image
             buttonWrapper.style.position = 'absolute';
             buttonWrapper.style.top = weaponImage.offsetTop + 'px';
             buttonWrapper.style.left = '15px';
             buttonWrapper.style.zIndex = '10';
 
-            // Remove wrapper when button clicked (matching original script)
+            // Remove wrapper when button clicked
             const clickHandler = () => {
                 console.log('🎯 Attack Button Mover: Fight started, removing button wrapper');
                 buttonWrapper.remove();
@@ -216,6 +249,21 @@
             console.log('✅ Attack Button Mover: Button positioned over weapon');
             return true;
         },
+
+        // Resilient helper: find the Start Fight button by text content
+        _findStartFightButton() {
+            // Try common button patterns used by Torn's attack page
+            const candidates = document.querySelectorAll('button, [class*="btn"], [class*="Btn"]');
+            for (const el of candidates) {
+                const text = el.textContent?.trim().toLowerCase();
+                if (text === 'start fight' || text === 'attack' || text === 'fight') {
+                    return el;
+                }
+            }
+            // Fallback: broad obfuscated class patterns
+            return document.querySelector('[class*="btn"][class*="silver"], [class*="startFight"], [class*="start-fight"]') || null;
+        },
+
 
         // Restore button to original position
         restoreButton() {
@@ -250,7 +298,7 @@
             await this.saveSettings();
 
             // If currently active, restart with new location
-            if (this.isEnabled && window.location.href.includes('loader.php')) {
+            if (this.isEnabled && this.isAttackPage()) {
                 this.restoreButton();
                 this.startMonitoring();
             }

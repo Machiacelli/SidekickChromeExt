@@ -188,6 +188,19 @@
             // Short page label for tab identification (e.g. "Market", "Faction", "Profile")
             const pageLabel = this.getPageLabel(profileName);
 
+            // Travel timer takes priority and is ALWAYS shown statically (never alternates)
+            if (window.location.href.includes('page.php?sid=travel')) {
+                const travelTimerEl = document.querySelector('#travel-root time, [class*="progressText"] time');
+                if (travelTimerEl && travelTimerEl.textContent.trim().match(/\d+:\d+/)) {
+                    const travelTime = travelTimerEl.textContent.trim();
+                    if (travelTime !== '00:00' && travelTime !== '0:00') {
+                        const newTitle = `Travel: ${travelTime} | TORN`;
+                        if (document.title !== newTitle) document.title = newTitle;
+                        return;
+                    }
+                }
+            }
+
             let timerInfo = null;
 
             // Priority logic:

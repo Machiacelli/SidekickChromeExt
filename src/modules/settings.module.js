@@ -187,6 +187,13 @@
                                 <img src="${iconCrimeNotifier}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
                                 <span>Crime Notifier</span>
                             </button>
+                            <button class="settings-sidebar-tab" data-tab="crimes" 
+                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
+                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
+                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
+                                <div style="font-size: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">🧱</div>
+                                <span>Crimes</span>
+                            </button>
                             <button class="settings-sidebar-tab" data-tab="mugwarning" 
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
@@ -212,8 +219,8 @@
                                     style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
                                            border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
                                            transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <div style="font-size: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">🎉</div>
-                                <span>Holiday</span>
+                                <div style="font-size: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">🥚</div>
+                                <span>Egg Helper</span>
                             </button>
                         </div>
                     </div>
@@ -347,6 +354,11 @@
                             <div class="settings-tab-content" id="settings-tab-crimenotifier" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
                                 ${this.createCrimeNotifierSettingsHTML()}
                             </div>
+
+                            <!-- CRIMES TAB -->
+                            <div class="settings-tab-content" id="settings-tab-crimes" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
+                                ${this.createCrimesSettingsHTML()}
+                            </div>
                             
                             <!-- MUG WARNING TAB -->
                             <div class="settings-tab-content" id="settings-tab-mugwarning" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
@@ -397,6 +409,7 @@
                 ${this.createToggle('book-notifier', '📚 Mission Book Notifier', 'Alerts when books are available in mission rewards (checks every 12 hours)')}
                 ${this.createToggle('locked-items', '🔒 Locked Items Manager', 'Lock inventory items to prevent accidental trading, selling, or deleting')}
                 ${this.createToggle('price-filler', '🛒 Price Filler', 'Auto-fills prices on the Item Market and Bazaar pages')}
+                ${this.createToggle('auction-weapon-bonus', '🗡️ Auction Weapon Bonus', 'Displays weapon bonus stats and rarity highlights on the auction house')}
                 ${this.createToggle('legible-names', '🔤 Legible Player Names', 'Replaces small honor-bar name sprites with a larger, cleaner font')}
                 ${this.createWeaponXpToggle()}
                 <div id="sidekick-module-status" style="text-align: center; padding: 10px; border-radius: 5px; 
@@ -918,6 +931,22 @@
             `;
         },
 
+        createCrimesSettingsHTML() {
+            return `
+                <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">🧾 Crimes</h4>
+                ${this.createToggle('crime-disposal', '🧹 Disposal Helper', 'Highlights disposal options and shows max nerve for the Disposal crime')}
+                ${this.createToggle('crime-scamming', '🎭 Scamming Helper', 'Displays scam helper hints for the Scamming crime only')}
+                <div id="sidekick-crimes-status" style="text-align: center; padding: 10px; border-radius: 5px; 
+                                                        background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px; margin-top: 20px;">
+                    Crime module settings loaded
+                </div>
+            `;
+        },
+
+        attachCrimesTabListeners(panel) {
+            // Placeholder for future crime module tab event listeners if required
+        },
+
         // Attach all event listeners
         attachEventListeners(panel) {
             // Tab switching for sidebar
@@ -974,6 +1003,7 @@
 
             // Crime Notifier Tab listeners
             this.attachCrimeNotifierTabListeners(panel);
+            this.attachCrimesTabListeners(panel);
 
             // Mug Warning Tab listeners
             this.attachMugWarningTabListeners(panel);
@@ -1139,23 +1169,36 @@
 
                     try {
                         console.log('📅 Manual calendar refresh triggered from settings');
-                        await window.SidekickModules.EventTicker.scrapeCalendarPage(true); // Force refresh
+                        const scrapeResult = await window.SidekickModules.EventTicker.scrapeCalendarPage(true); // Force refresh
 
-                        // Update last year display
-                        const currentYear = new Date().getFullYear();
-                        if (calendarLastYearSpan) {
-                            calendarLastYearSpan.textContent = currentYear;
-                        }
+                        if (scrapeResult?.requiresCalendarPage) {
+                            this.showStatus(calendarStatusDiv, 'Open Torn calendar page once to refresh events', 'info');
 
-                        this.showStatus(calendarStatusDiv, 'Calendar refreshed successfully!', 'success');
+                            if (window.SidekickModules.Core.NotificationSystem) {
+                                window.SidekickModules.Core.NotificationSystem.show(
+                                    'Calendar Refresh Needed',
+                                    'Open calendar.php to allow browser-context scraping',
+                                    'info',
+                                    4500
+                                );
+                            }
+                        } else {
+                            // Update last year display
+                            const currentYear = new Date().getFullYear();
+                            if (calendarLastYearSpan) {
+                                calendarLastYearSpan.textContent = currentYear;
+                            }
 
-                        if (window.SidekickModules.Core.NotificationSystem) {
-                            window.SidekickModules.Core.NotificationSystem.show(
-                                'Calendar Updated',
-                                'Event calendar has been refreshed',
-                                'success',
-                                3000
-                            );
+                            this.showStatus(calendarStatusDiv, 'Calendar refreshed successfully!', 'success');
+
+                            if (window.SidekickModules.Core.NotificationSystem) {
+                                window.SidekickModules.Core.NotificationSystem.show(
+                                    'Calendar Updated',
+                                    'Event calendar has been refreshed',
+                                    'success',
+                                    3000
+                                );
+                            }
                         }
                     } catch (error) {
                         console.error('❌ Calendar refresh failed:', error);
@@ -2998,7 +3041,7 @@
 
         createHolidaySettingsHTML() {
             return `
-                <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">🎉 Holiday Tools</h4>
+                <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">🥚 Egg Helper Tools</h4>
 
                 <div style="background: rgba(102,187,106,0.08); border-left: 3px solid #66BB6A; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
                     <div style="font-size: 13px; color: #ccc; line-height: 1.5;">

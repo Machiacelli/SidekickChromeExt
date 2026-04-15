@@ -21,6 +21,16 @@ const WeaponExpModule = (() => {
     const pageSpanSelector = "#mainContainer > div.content-wrapper > div.main-items-cont-wrap > div.items-wrap.primary-items > div.title-black > span.items-name";
     const pageDivSelector = "#mainContainer > div.content-wrapper > div.main-items-cont-wrap > div.items-wrap.primary-items > div.title-black";
     const observerConfig = { attributes: true, characterData: true, subtree: true, childList: true };
+    const excludedWeaponNames = new Set([
+        'melatonin',
+        'tyrosine',
+        'serotonin',
+        'flash grenade',
+        'smoke grenade',
+        'pepper spray',
+        'tear gas',
+        'teargas'
+    ]);
 
     // Module API
     return {
@@ -165,10 +175,9 @@ const WeaponExpModule = (() => {
 
                 const name = nameSel.innerHTML;
 
-                // Skip items that are not weapons (drugs/boosters that appear in temporary items)
-                const excludedItems = ['Melatonin', 'Tyrosine', 'Serotonin'];
-                if (excludedItems.includes(name)) {
-                    console.log('[Sidekick] Weapon XP: Skipping non-weapon item:', name);
+                // Skip temporary utility/non-weapon items.
+                if (this.isExcludedWeaponName(name)) {
+                    console.log('[Sidekick] Weapon XP: Skipping excluded item:', name);
                     continue;
                 }
 
@@ -202,6 +211,10 @@ const WeaponExpModule = (() => {
         getItemByItemID(data, itemID) {
             if (!data) return null;
             return data.find(item => item.itemID == itemID);
+        },
+
+        isExcludedWeaponName(name) {
+            return excludedWeaponNames.has((name || '').toLowerCase().trim());
         },
 
         // Build an <li> element to display the WE percentage
@@ -386,6 +399,10 @@ const WeaponExpModule = (() => {
             const temporary = [];
 
             weArray.forEach(weapon => {
+                if (this.isExcludedWeaponName(weapon.name)) {
+                    return;
+                }
+
                 const invItem = inventoryArray.find(i => i.ID == weapon.itemID);
                 const tornItem = tornItems?.[weapon.itemID];
                 const type = tornItem?.type || 'Unknown';
@@ -457,6 +474,7 @@ const WeaponExpModule = (() => {
             Object.entries(tornItems || {}).forEach(([itemId, item]) => {
                 // Skip if this weapon has experience
                 if (trainedWeaponIds.has(parseInt(itemId))) return;
+                if (this.isExcludedWeaponName(item.name)) return;
 
                 // Only include weapons (not armor, drugs, etc)
                 const type = item.type;

@@ -166,6 +166,21 @@ const QuickDepositModule = {
             this.executeDeposit('auto');
         });
 
+        overlay.addEventListener('auxclick', (e) => {
+            if (e.button !== 1) return; // middle mouse only
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🏦 Quick Deposit overlay middle-clicked');
+            this.openDepositInNewTab('auto');
+        });
+
+        // Prevent browser autoscroll when pressing middle mouse on the money area.
+        overlay.addEventListener('mousedown', (e) => {
+            if (e.button !== 1) return;
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
         // Make money element's parent container position relative
         const container = moneyEl.parentElement;
         if (container) {
@@ -244,6 +259,55 @@ const QuickDepositModule = {
         } else if (target === 'COMPANY') {
             this.depositToCompany(balance);
         }
+    },
+
+    // Open deposit destination in a new tab/window (used by middle click)
+    openDepositInNewTab(mode = 'auto') {
+        const status = this.getStatus();
+        let target = mode === 'auto' ? this.settings.target : mode;
+
+        if (target === 'GHOST' && (!this.state.ghostID || !status.ghost)) {
+            this.showToast('Ghost trade not available');
+            return;
+        }
+        if (target === 'FACTION' && !status.faction) {
+            this.showToast('Faction vault not available');
+            return;
+        }
+        if (target === 'COMPANY' && !status.company) {
+            this.showToast('Company vault not available');
+            return;
+        }
+
+        const destination = this.getDepositDestinationUrl(target);
+        if (!destination) {
+            this.showToast('No vault page available');
+            return;
+        }
+
+        const newTab = window.open(destination, '_blank', 'noopener,noreferrer');
+        if (!newTab) {
+            this.showToast('Popup blocked - allow popups for Torn');
+            return;
+        }
+
+        this.showToast('Opened deposit page in new tab');
+    },
+
+    getDepositDestinationUrl(target) {
+        if (target === 'GHOST') {
+            return `https://www.torn.com/trade.php#step=addmoney&ID=${this.state.ghostID}`;
+        }
+        if (target === 'FACTION') {
+            return 'https://www.torn.com/factions.php?step=your&type=1#/tab=armoury';
+        }
+        if (target === 'PROPERTY') {
+            return 'https://www.torn.com/properties.php#/p=options&tab=vault';
+        }
+        if (target === 'COMPANY') {
+            return 'https://www.torn.com/companies.php?step=your&type=1#/option=funds';
+        }
+        return null;
     },
 
     // Deposit to Ghost Trade
