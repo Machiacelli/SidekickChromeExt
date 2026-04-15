@@ -1088,6 +1088,24 @@ const ScammingModule = (() => {
     return {
         async init() {
             console.log('[Scamming] Init called, isScammingPage:', isScammingPage());
+
+            // Always add hashchange listener for SPA navigation
+            window.addEventListener('hashchange', async () => {
+                console.log('[Scamming] Hash changed, checking page:', window.location.hash);
+                if (isScammingPage()) {
+                    const settings = await getSettings();
+                    if (shouldRun(settings)) {
+                        if (window.jQuery || window.$) {
+                            interceptFetch();
+                            renderStyle();
+                            console.log('[Scamming] Module started on hashchange');
+                        } else {
+                            console.warn('[Scamming] jQuery not available on hashchange');
+                        }
+                    }
+                }
+            });
+
             if (!isScammingPage()) {
                 return;
             }

@@ -193,60 +193,7 @@ if (typeof window.SidekickModules === 'undefined') {
 }
 
 window.SidekickModules.Disposal = DisposalModule;
-console.log('[Disposal] Registered');const DisposalModule = (() => {
-    const DISPOSAL_STORAGE_KEY = 'crime-disposal';
-    const DISPOSAL_HASH = '/disposal';
-    let disposalObserver = null;
-
-    const COLORS = {
-        safe: '#40Ab24',
-        moderatelySafe: '#A4D497',
-        caution: '#D6BBA2',
-        unsafe: '#B51B1B'
-    };
-
-    const NERVE_COSTS = {
-        abandon: 6,
-        bury: 8,
-        burn: 10,
-        sink: 12,
-        dissolve: 14
-    };
-
-    const DISPOSAL_METHODS = {
-        'Biological Waste': { safe: ['sink'], moderatelySafe: [], caution: ['burn'], unsafe: ['bury'] },
-        'Body Part': { safe: ['dissolve'], moderatelySafe: [], caution: [], unsafe: [] },
-        'Broken Appliance': { safe: ['sink'], moderatelySafe: [], caution: ['abandon', 'bury'], unsafe: ['dissolve'] },
-        'Building Debris': { safe: ['sink'], moderatelySafe: [], caution: ['abandon', 'bury'], unsafe: [] },
-        'Dead Body': { safe: ['dissolve'], moderatelySafe: [], caution: [], unsafe: [] },
-        Documents: { safe: ['burn'], moderatelySafe: [], caution: ['abandon', 'bury'], unsafe: ['dissolve', 'sink'] },
-        Firearm: { safe: ['sink'], moderatelySafe: ['bury'], caution: [], unsafe: ['dissolve'] },
-        'General Waste': { safe: ['burn'], moderatelySafe: ['bury'], caution: ['abandon', 'sink'], unsafe: ['dissolve'] },
-        'Industrial Waste': { safe: ['sink'], moderatelySafe: [], caution: ['abandon', 'bury'], unsafe: [] },
-        'Murder Weapon': { safe: ['sink'], moderatelySafe: [], caution: [], unsafe: ['dissolve'] },
-        'Old Furniture': { safe: ['burn'], moderatelySafe: [], caution: ['abandon', 'bury', 'sink'], unsafe: ['dissolve'] },
-        Vehicle: { safe: ['sink'], moderatelySafe: ['burn'], caution: ['abandon'], unsafe: [] }
-    };
-
-    function isCrimesPage() {
-        const url = new URL(window.location.href);
-        return (
-            (url.pathname.endsWith('/page.php') || url.pathname.endsWith('/loader.php')) &&
-            url.searchParams.get('sid') === 'crimes'
-        );
-    }
-
-    function isDisposalPage() {
-        return isCrimesPage() && window.location.hash.endsWith(DISPOSAL_HASH);
-    }
-
-    async function getSettings() {
-        return window.SidekickModules.Core.ChromeStorage.get('sidekick_settings');
-    }
-
-    function shouldRun(settings) {
-        return settings?.[DISPOSAL_STORAGE_KEY]?.isEnabled === true;
-    }
+console.log('[Disposal] Registered');
 
     function findElementByClassStartingWith(prefix, parent) {
         if (!parent || !parent.getElementsByTagName) return null;
