@@ -659,6 +659,12 @@ const ScammingModule = (() => {
             this.farmIcons = document.body.getElementsByClassName('scraperPhisher___oy1Wn');
             this.spamOptions = document.body.getElementsByClassName('optionWithLevelRequirement___cHH35');
             this.virtualLists = document.body.getElementsByClassName('virtualList___noLef');
+            console.log('[Scamming] Found elements:', {
+                crimeOptions: this.crimeOptions.length,
+                farmIcons: this.farmIcons.length,
+                spamOptions: this.spamOptions.length,
+                virtualLists: this.virtualLists.length
+            });
             this.observer.observe($('.scamming-root')[0], { subtree: true, childList: true });
         }
 
@@ -669,6 +675,7 @@ const ScammingModule = (() => {
 
         onNewData() {
             this.start();
+            console.log('[Scamming] Processing new data, crimeOptions:', this.crimeOptions.length);
             for (const element of this.crimeOptions) {
                 this._refreshCrimeOption(element);
             }
@@ -888,10 +895,12 @@ const ScammingModule = (() => {
     const scammingObserver = new ScammingObserver();
 
     async function checkScamming(crimeType, data) {
+        console.log('[Scamming] checkScamming called with crimeType:', crimeType);
         if (crimeType !== '12') {
             scammingObserver.stop();
             return;
         }
+        console.log('[Scamming] Processing scamming data');
         scammingObserver.store.update(data);
         scammingObserver.onNewData();
     }
@@ -1078,12 +1087,14 @@ const ScammingModule = (() => {
 
     return {
         async init() {
+            console.log('[Scamming] Init called, isScammingPage:', isScammingPage());
             if (!isScammingPage()) {
                 return;
             }
 
             const settings = await getSettings();
             if (!shouldRun(settings)) {
+                console.log('[Scamming] Disabled in settings');
                 return;
             }
 
