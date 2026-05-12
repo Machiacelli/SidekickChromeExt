@@ -411,6 +411,7 @@
                 ${this.createToggle('price-filler', '🛒 Price Filler', 'Auto-fills prices on the Item Market and Bazaar pages')}
                 ${this.createToggle('auction-weapon-bonus', '🗡️ Auction Weapon Bonus', 'Displays weapon bonus stats and rarity highlights on the auction house')}
                 ${this.createToggle('legible-names', '🔤 Legible Player Names', 'Replaces small honor-bar name sprites with a larger, cleaner font')}
+                ${this.createToggle('special-gym-ratios', '🏋️ Special Gym Ratios', 'Warns when battle stat ratios risk losing access to specialist / combo gyms (gym.php)')}
                 ${this.createWeaponXpToggle()}
                 <div id="sidekick-module-status" style="text-align: center; padding: 10px; border-radius: 5px; 
                                                        background: rgba(255,255,255,0.1); color: #ccc; margin-top: 20px; font-size: 13px;">

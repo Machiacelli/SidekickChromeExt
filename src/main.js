@@ -463,6 +463,24 @@
                 console.warn('⚠️ Egg Helper Module not available');
             }
 
+            // Initialize Special Gym Ratios Module
+            console.log('🏋️ Sidekick: Initializing Special Gym Ratios...');
+            if (window.SidekickModules.SpecialGymRatios?.init) {
+                await window.SidekickModules.SpecialGymRatios.init();
+                console.log('✅ Sidekick: Special Gym Ratios initialized');
+            } else {
+                console.warn('⚠️ Special Gym Ratios module not available');
+            }
+
+            // Initialize Player ID Linker Module
+            console.log('🔗 Sidekick: Initializing Player ID Linker...');
+            if (window.SidekickModules.PlayerIdLinker?.init) {
+                await window.SidekickModules.PlayerIdLinker.init();
+                console.log('✅ Sidekick: Player ID Linker initialized');
+            } else {
+                console.warn('⚠️ Player ID Linker module not available');
+            }
+
             // Initialize Notion Bug Reporter Module
             console.log("🐛 Sidekick: Initializing Notion Bug Reporter...");
             if (window.SidekickModules.NotionBugReporter?.init) {
