@@ -1377,47 +1377,7 @@
             // Get content area for positioning within sidepanel
             const contentArea = document.getElementById('sidekick-content');
 
-            // ── Undocked timers live on document.body with position:fixed ──
-            if (timer.docked === false) {
-                const screenW = window.innerWidth;
-                const screenH = window.innerHeight;
-                const width  = Math.min(Math.max(timer.width  || 220, 140), screenW - 20);
-                const height = Math.min(Math.max(timer.height || 150, 80),  screenH - 40);
-                const x = Math.min(Math.max(timer.undockX ?? 40, 0), screenW - width);
-                const y = Math.min(Math.max(timer.undockY ?? 40, 0), screenH - height);
-
-                timerElement.style.cssText = `
-                    position: fixed !important;
-                    left: ${x}px;
-                    top: ${y}px;
-                    width: ${width}px;
-                    height: ${height}px;
-                    background: #2a2a2a;
-                    border: 2px solid #7ec8e3;
-                    border-radius: 6px;
-                    display: flex;
-                    flex-direction: column;
-                    min-width: 140px;
-                    min-height: 80px;
-                    z-index: 2147483630;
-                    resize: both;
-                    overflow: auto;
-                    box-shadow: 0 4px 16px rgba(0,0,0,0.6);
-                `;
-
-                timerElement.innerHTML = this._buildTimerInnerHTML(timer);
-                document.body.appendChild(timerElement);
-
-                if (window.SidekickModules?.Core?.WindowManager) {
-                    window.SidekickModules.Core.WindowManager.registerWindow(timerElement, 'Timer');
-                }
-
-                this.setupTimerEventListeners(timer, timerElement);
-                this.makeDraggableFixed(timerElement, timer);
-                this.addResizeObserver(timerElement, timer);
-                console.log('✅ Undocked timer rendered on page:', timer.name);
-                return;
-            }
+            // Note: undocked timers are styled after the shared HTML is built below.
 
             // ── Docked timers live inside sidepanel ──
             if (!contentArea) {
@@ -1778,8 +1738,94 @@
 
             this.setupTimerEventListeners(timer, timerElement);
 
+            // ── If undocked: restyle as fixed, move to body, make draggable ──
+            if (timer.docked === false) {
+                const screenW = window.innerWidth;
+                const screenH = window.innerHeight;
+                const width  = parseInt(timerElement.style.width)  || timer.width  || 220;
+                const height = parseInt(timerElement.style.height) || timer.height || 150;
+                const x = Math.min(Math.max(timer.undockX ?? 40, 0), screenW - width);
+                const y = Math.min(Math.max(timer.undockY ?? 40, 0), screenH - height);
+
+                // Move from sidepanel content area to document.body
+                document.body.appendChild(timerElement);
+
+                timerElement.style.cssText = `
+                    position: fixed !important;
+                    left: ${x}px;
+                    top: ${y}px;
+                    width: ${width}px;
+                    height: ${height}px;
+                    background: #2a2a2a;
+                    border: 2px solid #7ec8e3;
+                    border-radius: 6px;
+                    display: flex;
+                    flex-direction: column;
+                    min-width: 140px;
+                    min-height: 80px;
+                    z-index: 2147483630;
+                    resize: both;
+                    overflow: auto;
+                    box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+                `;
+
+                this.makeDraggableFixed(timerElement, timer);
+                this.addResizeObserverFixed(timerElement, timer);
+                console.log('✅ Undocked timer rendered on page:', timer.name);
+            }
+
             console.log('⏰ Timer rendered:', timer.name);
         },
+
+        // Make a position:fixed element draggable, saving position to storage on drop
+        makeDraggableFixed(el, timer) {
+            const header = el.querySelector('.timer-header');
+            if (!header) return;
+
+            let startX, startY, startLeft, startTop;
+
+            const onMouseMove = (e) => {
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                const newLeft = Math.max(0, Math.min(window.innerWidth  - el.offsetWidth,  startLeft + dx));
+                const newTop  = Math.max(0, Math.min(window.innerHeight - el.offsetHeight, startTop  + dy));
+                el.style.left = newLeft + 'px';
+                el.style.top  = newTop  + 'px';
+            };
+
+            const onMouseUp = () => {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                // Persist position
+                timer.undockX = parseInt(el.style.left);
+                timer.undockY = parseInt(el.style.top);
+                this.saveTimers();
+            };
+
+            header.addEventListener('mousedown', (e) => {
+                // Only drag on left-click on the header itself (not buttons inside)
+                if (e.button !== 0 || e.target.tagName === 'BUTTON') return;
+                e.preventDefault();
+                startX    = e.clientX;
+                startY    = e.clientY;
+                startLeft = parseInt(el.style.left) || 0;
+                startTop  = parseInt(el.style.top)  || 0;
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+        },
+
+        // ResizeObserver for undocked (fixed) timers
+        addResizeObserverFixed(el, timer) {
+            if (!window.ResizeObserver) return;
+            const ro = new ResizeObserver(() => {
+                timer.width  = el.offsetWidth;
+                timer.height = el.offsetHeight;
+                this.saveTimers();
+            });
+            ro.observe(el);
+        },
+
 
         // Set up timer event listeners
         setupTimerEventListeners(timer, element) {

@@ -236,7 +236,29 @@
             this.cash = data.DB?.user?.money;
             this._save();
         }
-        setDefaultAlgo(algo) { this.data.defaultAlgo = algo; this._save(); }
+        setDefaultAlgo(algo, observer) {
+            this.data.defaultAlgo = algo;
+            // Re-solve every existing target that has this algo available,
+            // then signal the observer to re-render so checkmarks move immediately.
+            let changed = false;
+            for (const target of Object.values(this.data.targets)) {
+                if (!target.algos) continue;
+                const idx = target.algos.indexOf(algo);
+                if (idx === 0) continue; // already using this algo
+                if (idx > 0) {
+                    // Rotate so the chosen algo is first
+                    target.algos = [...target.algos.slice(idx), ...target.algos.slice(0, idx)];
+                } else {
+                    // algo not feasible for this target — skip
+                    continue;
+                }
+                target.solution = null;
+                this._solve(target);
+                changed = true;
+            }
+            this._save();
+            if (changed && observer) observer.refreshAll();
+        }
         changeAlgo(target) { target.algos.push(target.algos.shift()); target.solution = null; this._solve(target); this._save(); }
         setAlgoNoticeRead(algo) { this.data.algoNotice[algo] = true; this._save(); }
         _save() { setValue('scamming', this.data); }
@@ -363,8 +385,10 @@
             this.farmIcons = document.body.getElementsByClassName('scraperPhisher___oy1Wn');
             this.spamOptions = document.body.getElementsByClassName('optionWithLevelRequirement___cHH35');
             this.virtualLists = document.body.getElementsByClassName('virtualList___noLef');
-            const root = document.querySelector('.scamming-root');
-            if (root) this.observer.observe(root, { subtree: true, childList: true });
+            // Prefer observing the scamming root, fall back to body so we never
+            // miss mutations when React hasn't rendered the root yet.
+            const root = document.querySelector('.scamming-root') ?? document.body;
+            this.observer.observe(root, { subtree: true, childList: true });
         }
         stop() { this.crimeOptions = null; this.observer.disconnect(); }
         onNewData() {
@@ -372,6 +396,21 @@
             for (const el of this.crimeOptions) this._refreshCrimeOption(el);
             for (const el of this.farmIcons) this._refreshFarm(el);
             for (const el of this.spamOptions) this._refreshSpam(el);
+            // Ensure settings panel is built for any virtualList already in DOM
+            for (const el of this.virtualLists) {
+                if (!el.classList.contains('cm-sc-seen')) {
+                    el.classList.add('cm-sc-seen');
+                    this._refreshSettings(el);
+                }
+            }
+        }
+
+        // Re-render all crime options (called after algo change)
+        refreshAll() {
+            for (const el of this.crimeOptions) {
+                el.classList.remove('cm-sc-seen');
+                this._refreshCrimeOption(el);
+            }
         }
 
         _buildHintHtml(target, solution, lastSolution, showGriftNotice) {
@@ -490,6 +529,7 @@
         }
 
         _refreshSettings(element) {
+            const self = this;
             const store = this.store;
             const defaultAlgo = store.data.defaultAlgo;
             const $s = $(`<div class="cm-sc-settings">
@@ -501,7 +541,8 @@
             $s.children(`[data-cm-value="${defaultAlgo}"]`).addClass('cm-sc-active');
             $s.children('.cm-sc-algo-option').on('click', function () {
                 const $this = $(this);
-                store.setDefaultAlgo($this.attr('data-cm-value'));
+                // Pass `self` (ScammingObserver) so setDefaultAlgo can trigger refreshAll
+                store.setDefaultAlgo($this.attr('data-cm-value'), self);
                 $this.siblings().removeClass('cm-sc-active');
                 $this.addClass('cm-sc-active');
             });
@@ -614,15 +655,23 @@
         console.log('[Scamming] Module active');
     }
 
-    // Intercept fetch immediately so we never miss the first crimes data request,
-    // regardless of when the user navigates to the scamming sub-page.
+    // Intercept fetch immediately so we never miss the first crimes data request.
     interceptFetch();
 
-    // Watch hash for SPA navigation
-    window.addEventListener('hashchange', () => {
-        started = false;
-        tryStart();
-    });
+    // URL polling — Torn uses history.pushState (not hashchange) for SPA navigation.
+    let lastUrl = window.location.href;
+    setInterval(() => {
+        const current = window.location.href;
+        if (current === lastUrl) return;
+        lastUrl = current;
+        if (isScammingPage()) {
+            started = false;
+            tryStart();
+        } else {
+            // Left scamming page — allow re-init on next visit
+            started = false;
+        }
+    }, 300);
 
     // Run on initial load
     if (document.readyState === 'loading') {
