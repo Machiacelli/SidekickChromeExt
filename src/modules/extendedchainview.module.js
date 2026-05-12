@@ -13,6 +13,8 @@ const ExtendedChainViewModule = (() => {
     let nodeObserver = null;
     let updateTimerId = null;
     let savedTarget = null;
+    let watchdogId = null;
+    let lastUrl = '';
 
     return {
         name: 'ExtendedChainView',
@@ -20,13 +22,11 @@ const ExtendedChainViewModule = (() => {
         async initialize() {
             console.log('[Sidekick] Initializing Extended Chain View...');
 
-            // Check if Core module is available
             if (!window.SidekickModules?.Core?.ChromeStorage) {
                 console.warn('[Sidekick] Core module not available, Extended Chain View disabled');
                 return;
             }
 
-            // Check if module is enabled
             const settings = await window.SidekickModules.Core.ChromeStorage.get('sidekick_extended_chain_view');
             isEnabled = settings?.isEnabled === true;
             maxExtLength = settings?.maxExtLength || 10;
@@ -37,19 +37,25 @@ const ExtendedChainViewModule = (() => {
                 return;
             }
 
-            // Only run on faction chain page
-            if (!window.location.href.includes('factions.php?step=your') ||
-                window.location.href.indexOf('war/chain') < 0) {
-                return;
-            }
-
-            // Add styles
             this.addStyles();
-
-            // Start the module
-            this.handlePageLoad();
+            this.startWatchdog();
 
             console.log('[Sidekick] Extended Chain View initialized');
+        },
+
+        startWatchdog() {
+            watchdogId = setInterval(() => {
+                const currentUrl = window.location.href;
+                if (currentUrl === lastUrl) return;
+                lastUrl = currentUrl;
+
+                const isChainPage = currentUrl.includes('factions.php') && currentUrl.includes('war/chain');
+                if (isChainPage) {
+                    this.installExtendedUI();
+                } else if (savedTarget) {
+                    this.stopMonitoring();
+                }
+            }, 300);
         },
 
         addStyles() {
@@ -78,7 +84,6 @@ const ExtendedChainViewModule = (() => {
         },
 
         getListHdr() {
-            // Auto-expand when module is enabled - no header text needed
             return `
                 <div id="hdr-extended" class="sortable-box t-blue-cont h">
                      <div class="title main-title title-black active box" role="table" aria-level="5" style="height: 5px;">
@@ -153,11 +158,9 @@ const ExtendedChainViewModule = (() => {
             const listConfig = { childList: true };
             savedTarget = targetNode;
 
-            // Disconnect existing observers
             if (listObserver) listObserver.disconnect();
             if (nodeObserver) nodeObserver.disconnect();
 
-            // Node observer watches for changes in list items
             nodeObserver = new MutationObserver((mutationsList) => {
                 nodeObserver.disconnect();
                 for (const mutation of mutationsList) {
@@ -172,14 +175,12 @@ const ExtendedChainViewModule = (() => {
                 this.reconnectLiNodes();
             });
 
-            // Observe all existing list elements
             const liList = targetNode.querySelectorAll('li');
             liList.forEach(liNode => {
                 this.addUpdateStartTime(liNode);
                 nodeObserver.observe(liNode, nodeConfig);
             });
 
-            // List observer watches for additions/removals
             listObserver = new MutationObserver((mutationsList) => {
                 for (const mutation of mutationsList) {
                     if (mutation.type === 'childList') {
@@ -217,20 +218,17 @@ const ExtendedChainViewModule = (() => {
         installExtendedUI(retries = 0) {
             const rootUL = document.querySelector('.chain-attacks-list.recent-attacks');
             if (!rootUL) {
-                if (retries++ < 30) {
+                if (retries++ < 20) {
                     setTimeout(() => this.installExtendedUI(retries), 250);
                     return;
                 }
-                console.warn('[Sidekick] Extended Chain View: Root UL not found');
                 return;
             }
 
-            // Create extended view if it doesn't exist
             if (!document.getElementById('ext-chain-view')) {
-                // Always visible when module is enabled
                 const rootClone = rootUL.cloneNode(false);
                 rootClone.id = 'ext-chain-view';
-                rootClone.classList.add('hdr-blk'); // Always show
+                rootClone.classList.add('hdr-blk');
 
                 rootUL.insertAdjacentHTML('afterend', this.getListHdr());
                 document.getElementById('hdr-extended').appendChild(rootClone);
@@ -238,18 +236,9 @@ const ExtendedChainViewModule = (() => {
 
             this.installObserver(rootUL);
 
-            // Start time updater
             if (!updateTimerId) {
                 updateTimerId = setInterval(() => this.updateItemTimes(), 1000);
             }
-        },
-
-        handlePageLoad() {
-            if (window.location.href.indexOf('war/chain') < 0) {
-                console.log('[Sidekick] Extended Chain View: Not on chain page');
-                return;
-            }
-            this.installExtendedUI();
         },
 
         stopMonitoring() {
@@ -266,32 +255,30 @@ const ExtendedChainViewModule = (() => {
                 updateTimerId = null;
             }
 
-            // Remove UI
             const extView = document.getElementById('ext-chain-view');
             if (extView) extView.remove();
 
             const hdrExtended = document.getElementById('hdr-extended');
             if (hdrExtended) hdrExtended.remove();
+            
+            savedTarget = null;
         },
 
         async destroy() {
+            if (watchdogId) clearInterval(watchdogId);
             this.stopMonitoring();
 
-            // Remove styles
             const styleEl = document.getElementById('sidekick-extended-chain-styles');
             if (styleEl) styleEl.remove();
 
-            savedTarget = null;
             console.log('[Sidekick] Extended Chain View destroyed');
         }
     };
 })();
 
-// Register module
 if (!window.SidekickModules) window.SidekickModules = {};
 window.SidekickModules.ExtendedChainView = ExtendedChainViewModule;
 
-// Export for use in main.js
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = ExtendedChainViewModule;
 }
