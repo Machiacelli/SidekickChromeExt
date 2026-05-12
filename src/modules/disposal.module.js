@@ -1,37 +1,40 @@
+/**
+ * Disposal JARVIS Module
+ * Color-codes disposal method buttons by safety level.
+ * Selector approach adapted from Taznister's Disposal crime helper (MIT).
+ */
 const DisposalModule = (() => {
-    const DISPOSAL_STORAGE_KEY = 'crime-disposal';
+    const STORAGE_KEY = 'crime-disposal';
     const DISPOSAL_HASH = '/disposal';
-    let disposalObserver = null;
+    let observer = null;
 
-    const COLORS = {
-        safe: '#40Ab24',
-        moderatelySafe: '#A4D497',
-        caution: '#D6BBA2',
-        unsafe: '#B51B1B'
+    // Border styles per safety level
+    const STYLES = {
+        safe: 'border: 4px solid #5fbb83 !important;',
+        caut: 'border: 2px solid #e4e460 !important;',
+        risk: 'border: 2px solid #d29b5d !important;',
+        fail: 'border: 2px solid #d25858 !important;',
+        none: ''
     };
 
-    const NERVE_COSTS = {
-        abandon: 6,
-        bury: 8,
-        burn: 10,
-        sink: 12,
-        dissolve: 14
-    };
-
+    // Keyed by item name → method (aria-label) → safety level
+    // Method names must exactly match the aria-label on the buttons in Torn's DOM
     const DISPOSAL_METHODS = {
-        'Biological Waste': { safe: ['sink'], moderatelySafe: [], caution: ['burn'], unsafe: ['bury'] },
-        'Body Part': { safe: ['dissolve'], moderatelySafe: [], caution: [], unsafe: [] },
-        'Broken Appliance': { safe: ['sink'], moderatelySafe: [], caution: ['abandon', 'bury'], unsafe: ['dissolve'] },
-        'Building Debris': { safe: ['sink'], moderatelySafe: [], caution: ['abandon', 'bury'], unsafe: [] },
-        'Dead Body': { safe: ['dissolve'], moderatelySafe: [], caution: [], unsafe: [] },
-        Documents: { safe: ['burn'], moderatelySafe: [], caution: ['abandon', 'bury'], unsafe: ['dissolve', 'sink'] },
-        Firearm: { safe: ['sink'], moderatelySafe: ['bury'], caution: [], unsafe: ['dissolve'] },
-        'General Waste': { safe: ['burn'], moderatelySafe: ['bury'], caution: ['abandon', 'sink'], unsafe: ['dissolve'] },
-        'Industrial Waste': { safe: ['sink'], moderatelySafe: [], caution: ['abandon', 'bury'], unsafe: [] },
-        'Murder Weapon': { safe: ['sink'], moderatelySafe: [], caution: [], unsafe: ['dissolve'] },
-        'Old Furniture': { safe: ['burn'], moderatelySafe: [], caution: ['abandon', 'bury', 'sink'], unsafe: ['dissolve'] },
-        Vehicle: { safe: ['sink'], moderatelySafe: ['burn'], caution: ['abandon'], unsafe: [] }
+        'Biological Waste': { Abandon: 'risk', Bury: 'caut', Burn: 'risk', Sink: 'safe', Dissolve: 'none' },
+        'Body Part':        { Abandon: 'risk', Bury: 'caut', Burn: 'caut', Sink: 'caut', Dissolve: 'safe' },
+        'Broken Appliance': { Abandon: 'risk', Bury: 'risk', Burn: 'none', Sink: 'safe', Dissolve: 'fail' },
+        'Building Debris':  { Abandon: 'caut', Bury: 'risk', Burn: 'none', Sink: 'safe', Dissolve: 'none' },
+        'Dead Body':        { Abandon: 'caut', Bury: 'safe', Burn: 'risk', Sink: 'risk', Dissolve: 'safe' },
+        'Documents':        { Abandon: 'risk', Bury: 'caut', Burn: 'safe', Sink: 'fail', Dissolve: 'fail' },
+        'Firearm':          { Abandon: 'risk', Bury: 'caut', Burn: 'none', Sink: 'safe', Dissolve: 'fail' },
+        'General Waste':    { Abandon: 'caut', Bury: 'safe', Burn: 'safe', Sink: 'risk', Dissolve: 'fail' },
+        'Industrial Waste': { Abandon: 'risk', Bury: 'caut', Burn: 'none', Sink: 'safe', Dissolve: 'none' },
+        'Murder Weapon':    { Abandon: 'risk', Bury: 'caut', Burn: 'none', Sink: 'safe', Dissolve: 'fail' },
+        'Old Furniture':    { Abandon: 'caut', Bury: 'risk', Burn: 'safe', Sink: 'caut', Dissolve: 'fail' },
+        'Vehicle':          { Abandon: 'risk', Bury: 'none', Burn: 'safe', Sink: 'safe', Dissolve: 'none' }
     };
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
 
     function isCrimesPage() {
         const url = new URL(window.location.href);
@@ -42,440 +45,91 @@ const DisposalModule = (() => {
     }
 
     function isDisposalPage() {
-        return isCrimesPage() && window.location.hash.endsWith(DISPOSAL_HASH);
+        return isCrimesPage() && window.location.hash.includes(DISPOSAL_HASH);
     }
 
-    async function getSettings() {
-        return window.SidekickModules.Core.ChromeStorage.get('sidekick_settings');
-    }
-
-    function shouldRun(settings) {
-        return settings?.[DISPOSAL_STORAGE_KEY]?.isEnabled === true;
-    }
-
-    function findElementByClassStartingWith(prefix, parent) {
-        if (!parent || !parent.getElementsByTagName) return null;
-
-        for (const element of parent.getElementsByTagName('*')) {
-            for (const className of element.classList) {
-                if (className.startsWith(prefix)) {
-                    return element;
-                }
-            }
-        }
-        return null;
-    }
-
-    function getDisposalItemName(jobNode) {
-        const sections = findElementByClassStartingWith('sections', jobNode);
-        if (!sections || sections.children.length < 2) return null;
-
-        const nameElement = sections.children[1];
-        return nameElement ? nameElement.textContent.trim() : null;
-    }
-
-    function getMethodsContainer(jobNode) {
-        const sections = findElementByClassStartingWith('sections', jobNode);
-        if (!sections) return null;
-
-        let container = findElementByClassStartingWith('desktopMethodsSection', sections) ||
-                        findElementByClassStartingWith('tabletMethodsSection', sections);
-
-        if (container) {
-            const picker = findElementByClassStartingWith('methodPicker', container);
-            return picker || container;
-        }
-
-        return null;
-    }
-
-    function calculateMaxNerve(itemName) {
-        const methods = DISPOSAL_METHODS[itemName];
-        if (!methods) return 0;
-
-        let maxNerve = 0;
-        for (const method of methods.safe) {
-            const nerveCost = NERVE_COSTS[method];
-            if (nerveCost > maxNerve) maxNerve = nerveCost;
-        }
-        return maxNerve;
-    }
-
-    function colorizeDisposalMethods(jobNode) {
-        const itemName = getDisposalItemName(jobNode);
-        if (!itemName || !DISPOSAL_METHODS[itemName]) return;
-
-        const methodsContainer = getMethodsContainer(jobNode);
-        if (!methodsContainer) return;
-
-        const methods = DISPOSAL_METHODS[itemName];
-        const safetyBuckets = {
-            safe: methods.safe,
-            moderatelySafe: methods.moderatelySafe,
-            caution: methods.caution,
-            unsafe: methods.unsafe
-        };
-
-        for (const [safety, methodList] of Object.entries(safetyBuckets)) {
-            for (const method of methodList) {
-                const button = findElementByClassStartingWith(method, methodsContainer);
-                if (button) {
-                    const borderWidth = (safety === 'safe' || safety === 'unsafe') ? '3px' : '2px';
-                    button.style.border = `${borderWidth} solid ${COLORS[safety]}`;
-                }
-            }
-        }
-    }
-
-    function updateDisposalHeader() {
-        const currentCrime = document.querySelector('[class^="currentCrime"]');
-        if (!currentCrime) return;
-
-        const container = currentCrime.querySelector('[class^="virtualList"]');
-        if (!container) return;
-
-        let totalNerve = 0;
-        let jobCount = 0;
-
-        const jobWrappers = [...container.getElementsByClassName('crimeOptionWrapper___IOnLO')];
-        for (const jobNode of jobWrappers) {
-            const itemName = getDisposalItemName(jobNode);
-            if (itemName) {
-                totalNerve += calculateMaxNerve(itemName);
-                jobCount++;
-            }
-        }
-
-        const titleDiv = document.querySelector('[class^="titleBar"]');
-        if (titleDiv && titleDiv.children.length > 0) {
-            const title = titleDiv.children[0];
-            title.textContent = `Disposal ... Max Nerve needed: ${totalNerve} ... ${jobCount} jobs remaining`;
-        }
-    }
-
-    function processDisposalItems() {
-        const disposalItems = [...document.getElementsByClassName('crimeOptionWrapper___IOnLO')];
-        if (!disposalItems.length) return;
-
-        disposalItems.forEach(colorizeDisposalMethods);
-        updateDisposalHeader();
-    }
-
-    function startDisposalObserver() {
-        if (disposalObserver) {
-            disposalObserver.disconnect();
-        }
-
-        disposalObserver = new MutationObserver(() => processDisposalItems());
-        disposalObserver.observe(document.body, { childList: true, subtree: true });
-    }
-
-    return {
-        async init() {
-            if (!isDisposalPage()) {
-                return;
-            }
-
-            const settings = await getSettings();
-            if (!shouldRun(settings)) {
-                return;
-            }
-
-            processDisposalItems();
-            startDisposalObserver();
-            console.log('[Disposal] Module initialized');
-        }
-    };
-})();
-
-if (typeof window.SidekickModules === 'undefined') {
-    window.SidekickModules = {};
-}
-
-window.SidekickModules.Disposal = DisposalModule;
-console.log('[Disposal] Registered');
-
-    function findElementByClassStartingWith(prefix, parent) {
-        if (!parent || !parent.getElementsByTagName) return null;
-
-        for (const element of parent.getElementsByTagName('*')) {
-            for (const className of element.classList) {
-                if (className.startsWith(prefix)) {
-                    return element;
-                }
-            }
-        }
-        return null;
-    }
-
-    function getDisposalItemName(jobNode) {
-        const sections = findElementByClassStartingWith('sections', jobNode);
-        if (!sections || sections.children.length < 2) return null;
-
-        const nameElement = sections.children[1];
-        return nameElement ? nameElement.textContent.trim() : null;
-    }
-
-    function getMethodsContainer(jobNode) {
-        const sections = findElementByClassStartingWith('sections', jobNode);
-        if (!sections) return null;
-
-        let container = findElementByClassStartingWith('desktopMethodsSection', sections) ||
-                        findElementByClassStartingWith('tabletMethodsSection', sections);
-
-        if (container) {
-            const picker = findElementByClassStartingWith('methodPicker', container);
-            return picker || container;
-        }
-
-        return null;
-    }
-
-    function calculateMaxNerve(itemName) {
-        const methods = DISPOSAL_METHODS[itemName];
-        if (!methods) return 0;
-
-        let maxNerve = 0;
-        for (const method of methods.safe) {
-            const nerveCost = NERVE_COSTS[method];
-            if (nerveCost > maxNerve) maxNerve = nerveCost;
-        }
-        return maxNerve;
-    }
-
-    function colorizeDisposalMethods(jobNode) {
-        const itemName = getDisposalItemName(jobNode);
-        if (!itemName || !DISPOSAL_METHODS[itemName]) return;
-
-        const methodsContainer = getMethodsContainer(jobNode);
-        if (!methodsContainer) return;
-
-        const methods = DISPOSAL_METHODS[itemName];
-        const safetyBuckets = {
-            safe: methods.safe,
-            moderatelySafe: methods.moderatelySafe,
-            caution: methods.caution,
-            unsafe: methods.unsafe
-        };
-
-        for (const [safety, methodList] of Object.entries(safetyBuckets)) {
-            for (const method of methodList) {
-                const button = findElementByClassStartingWith(method, methodsContainer);
-                if (button) {
-                    const borderWidth = (safety === 'safe' || safety === 'unsafe') ? '3px' : '2px';
-                    button.style.border = `${borderWidth} solid ${COLORS[safety]}`;
-                }
-            }
-        }
-    }
-
-    function updateDisposalHeader() {
-        const currentCrime = document.querySelector('[class^="currentCrime"]');
-        if (!currentCrime) return;
-
-        const container = currentCrime.querySelector('[class^="virtualList"]');
-        if (!container) return;
-
-        let totalNerve = 0;
-        let jobCount = 0;
-
-        const jobWrappers = [...container.getElementsByClassName('crimeOptionWrapper___IOnLO')];
-        for (const jobNode of jobWrappers) {
-            const itemName = getDisposalItemName(jobNode);
-            if (itemName) {
-                totalNerve += calculateMaxNerve(itemName);
-                jobCount++;
-            }
-        }
-
-        const titleDiv = document.querySelector('[class^="titleBar"]');
-        if (titleDiv && titleDiv.children.length > 0) {
-            const title = titleDiv.children[0];
-            title.textContent = `Disposal ... Max Nerve needed: ${totalNerve} ... ${jobCount} jobs remaining`;
-        }
-    }
-
-    function processDisposalItems() {
-        const disposalItems = [...document.getElementsByClassName('crimeOptionWrapper___IOnLO')];
-        if (!disposalItems.length) return;
-
-        disposalItems.forEach(colorizeDisposalMethods);
-        updateDisposalHeader();
-    }
-
-    function startDisposalObserver() {
-        if (disposalObserver) {
-            disposalObserver.disconnect();
-        }
-
-        disposalObserver = new MutationObserver(() => processDisposalItems());
-        disposalObserver.observe(document.body, { childList: true, subtree: true });
-    }
-
-    return {
-        async init() {
-            if (!isDisposalPage()) {
-                return;
-            }
-
-            const settings = await getSettings();
-            if (!shouldRun(settings)) {
-                return;
-            }
-
-            processDisposalItems();
-            startDisposalObserver();
-            console.log('[Disposal] Module initialized');
-        }
-    };
-})();
-
-if (typeof window.SidekickModules === 'undefined') {
-    window.SidekickModules = {};
-}
-
-window.SidekickModules.Disposal = DisposalModule;
-console.log('[Disposal] Registered');
-        if (!parent || !parent.getElementsByTagName) return null;
-
-        for (const element of parent.getElementsByTagName('*')) {
-            for (const className of element.classList) {
-                if (className.startsWith(prefix)) {
-                    return element;
-                }
-            }
-        }
-        return null;
-    }
-
-    function getDisposalItemName(jobNode) {
-        const sections = findElementByClassStartingWith('sections', jobNode);
-        if (!sections || sections.children.length < 2) return null;
-
-        const nameElement = sections.children[1];
-        return nameElement ? nameElement.textContent.trim() : null;
-    }
-
-    function getMethodsContainer(jobNode) {
-        const sections = findElementByClassStartingWith('sections', jobNode);
-        if (!sections) return null;
-
-        const container = findElementByClassStartingWith('desktopMethodsSection', sections) ||
-            findElementByClassStartingWith('tabletMethodsSection', sections);
-
-        if (container) {
-            return findElementByClassStartingWith('methodPicker', container) || container;
-        }
-
-        return null;
-    }
-
-    function calculateMaxNerve(itemName) {
-        const methods = DISPOSAL_METHODS[itemName];
-        if (!methods) return 0;
-
-        let maxNerve = 0;
-        methods.safe.forEach(method => {
-            const nerveCost = NERVE_COSTS[method];
-            if (nerveCost > maxNerve) maxNerve = nerveCost;
-        });
-        return maxNerve;
-    }
-
-    function colorizeDisposalMethods(jobNode) {
-        const itemName = getDisposalItemName(jobNode);
-        if (!itemName || !DISPOSAL_METHODS[itemName]) return;
-
-        const methodsContainer = getMethodsContainer(jobNode);
-        if (!methodsContainer) return;
-
-        const methods = DISPOSAL_METHODS[itemName];
-        const safetyBuckets = {
-            safe: methods.safe,
-            moderatelySafe: methods.moderatelySafe,
-            caution: methods.caution,
-            unsafe: methods.unsafe
-        };
-
-        Object.entries(safetyBuckets).forEach(([safety, methodList]) => {
-            methodList.forEach(method => {
-                const button = findElementByClassStartingWith(method, methodsContainer);
-                if (button) {
-                    const borderWidth = safety === 'safe' || safety === 'unsafe' ? '3px' : '2px';
-                    button.style.border = `${borderWidth} solid ${COLORS[safety]}`;
+    // ── Core logic ────────────────────────────────────────────────────────────
+
+    function processAll() {
+        // Use stable prefix selectors — avoids hashed class names that change with every Torn deploy
+        const sections = document.querySelectorAll("div[class^='crimeOptionSection']");
+        if (!sections.length) return;
+
+        let processed = 0;
+        sections.forEach(section => {
+            const itemName = section.textContent.trim();
+            const methods = DISPOSAL_METHODS[itemName];
+            if (!methods) return;
+
+            const parent = section.parentElement;
+            if (!parent) return;
+
+            Object.entries(methods).forEach(([method, safety]) => {
+                const style = STYLES[safety];
+                if (style === undefined || style === '') return; // skip 'none'
+                const btn = parent.querySelector(`[type='button'][class^='methodButton'][aria-label='${method}']`);
+                if (btn) {
+                    btn.style.cssText = (btn.style.cssText || '') + style;
+                    processed++;
                 }
             });
         });
-    }
 
-    function updateDisposalHeader() {
-        const currentCrime = document.querySelector('[class^="currentCrime"]');
-        if (!currentCrime) return;
-
-        const container = currentCrime.querySelector('[class^="virtualList"]');
-        if (!container) return;
-
-        let totalNerve = 0;
-        let jobCount = 0;
-
-        const jobWrappers = [...container.getElementsByClassName('crimeOptionWrapper___IOnLO')];
-        jobWrappers.forEach(jobNode => {
-            const itemName = getDisposalItemName(jobNode);
-            if (itemName) {
-                totalNerve += calculateMaxNerve(itemName);
-                jobCount += 1;
-            }
-        });
-
-        const titleDiv = document.querySelector('[class^="titleBar"]');
-        if (titleDiv && titleDiv.children.length > 0) {
-            const title = titleDiv.children[0];
-            title.textContent = `Disposal ... Max Nerve needed: ${totalNerve} ... ${jobCount} jobs remaining`;
+        if (processed > 0) {
+            console.log(`[Disposal] Colorized ${processed} buttons`);
         }
     }
 
-    function processDisposalItems() {
-        const disposalItems = [...document.getElementsByClassName('crimeOptionWrapper___IOnLO')];
-        if (!disposalItems.length) return;
-
-        disposalItems.forEach(colorizeDisposalMethods);
-        updateDisposalHeader();
+    function startObserver() {
+        if (observer) observer.disconnect();
+        // Observe body — crimes-app is added dynamically so we must watch from above
+        observer = new MutationObserver(processAll);
+        observer.observe(document.body, { childList: true, subtree: true });
     }
 
-    function startDisposalObserver() {
-        if (disposalObserver) {
-            disposalObserver.disconnect();
-        }
-
-        disposalObserver = new MutationObserver(() => processDisposalItems());
-        disposalObserver.observe(document.body, { childList: true, subtree: true });
+    function stopObserver() {
+        if (observer) { observer.disconnect(); observer = null; }
     }
 
-    // ===== INIT FUNCTIONS =====
+    // ── Module API ────────────────────────────────────────────────────────────
 
-    async function initDisposal(settings) {
+    async function tryEnable() {
         if (!isDisposalPage()) return;
-        if (!shouldRun(DISPOSAL_STORAGE_KEY, settings)) return;
 
-        processDisposalItems();
-        startDisposalObserver();
-        console.log('[Disposal] Disposal helper initialized');
+        // Start observer immediately so we never miss React's first DOM mutations
+        // while waiting for the async settings check.
+        startObserver();
+        processAll();
+
+        const settings = await window.SidekickModules?.Core?.ChromeStorage?.get('sidekick_settings');
+        // Default to ENABLED when key is absent (no toggle has ever been explicitly saved)
+        const moduleEntry = settings?.[STORAGE_KEY];
+        const isEnabled = moduleEntry === undefined ? true : moduleEntry.isEnabled === true;
+
+        if (!isEnabled) {
+            console.log('[Disposal] Disabled in settings');
+            stopObserver();
+            return;
+        }
+
+        processAll();
+        console.log('[Disposal] Initialized on disposal page');
     }
 
     return {
         async init() {
-            if (!isCrimesPage()) return;
-            const settings = await getSettings();
-            if (!settings) return;
+            // Watch hash changes for SPA navigation (Torn uses hash routing)
+            window.addEventListener('hashchange', () => {
+                stopObserver();
+                tryEnable();
+            });
 
-            await initDisposal(settings);
+            // Run immediately if already on disposal page
+            await tryEnable();
         }
     };
 })();
 
-if (typeof window.SidekickModules === 'undefined') {
-    window.SidekickModules = {};
-}
-
+if (!window.SidekickModules) window.SidekickModules = {};
 window.SidekickModules.Disposal = DisposalModule;
 console.log('[Disposal] Registered');

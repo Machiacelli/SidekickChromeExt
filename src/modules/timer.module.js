@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Sidekick Chrome Extension - Timer Module
  * Handles timer functionality for countdown and stopwatch timers
  * Version: 1.0.0
@@ -1037,6 +1037,9 @@
                         width: timer.width,
                         height: timer.height,
                         pinned: timer.pinned,
+                        docked: timer.docked,
+                        undockX: timer.undockX,
+                        undockY: timer.undockY,
                         created: timer.created,
                         modified: timer.modified,
                         isApiTimer: timer.isApiTimer,
@@ -1373,6 +1376,50 @@
 
             // Get content area for positioning within sidepanel
             const contentArea = document.getElementById('sidekick-content');
+
+            // ── Undocked timers live on document.body with position:fixed ──
+            if (timer.docked === false) {
+                const screenW = window.innerWidth;
+                const screenH = window.innerHeight;
+                const width  = Math.min(Math.max(timer.width  || 220, 140), screenW - 20);
+                const height = Math.min(Math.max(timer.height || 150, 80),  screenH - 40);
+                const x = Math.min(Math.max(timer.undockX ?? 40, 0), screenW - width);
+                const y = Math.min(Math.max(timer.undockY ?? 40, 0), screenH - height);
+
+                timerElement.style.cssText = `
+                    position: fixed !important;
+                    left: ${x}px;
+                    top: ${y}px;
+                    width: ${width}px;
+                    height: ${height}px;
+                    background: #2a2a2a;
+                    border: 2px solid #7ec8e3;
+                    border-radius: 6px;
+                    display: flex;
+                    flex-direction: column;
+                    min-width: 140px;
+                    min-height: 80px;
+                    z-index: 2147483630;
+                    resize: both;
+                    overflow: auto;
+                    box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+                `;
+
+                timerElement.innerHTML = this._buildTimerInnerHTML(timer);
+                document.body.appendChild(timerElement);
+
+                if (window.SidekickModules?.Core?.WindowManager) {
+                    window.SidekickModules.Core.WindowManager.registerWindow(timerElement, 'Timer');
+                }
+
+                this.setupTimerEventListeners(timer, timerElement);
+                this.makeDraggableFixed(timerElement, timer);
+                this.addResizeObserver(timerElement, timer);
+                console.log('✅ Undocked timer rendered on page:', timer.name);
+                return;
+            }
+
+            // ── Docked timers live inside sidepanel ──
             if (!contentArea) {
                 console.error('⏰ Sidekick content area not found');
                 return;
@@ -1548,6 +1595,18 @@
                                     font-size: 11px;
                                     transition: background 0.2s;
                                 ">${timer.pinned ? '📌 Unpin' : '📌 Pin'}</button>
+                                <div style="border-top: 1px solid #555; margin: 4px 0;"></div>
+                                <button class="timer-undock-option" style="
+                                    background: none;
+                                    border: none;
+                                    color: #7ec8e3;
+                                    padding: 6px 12px;
+                                    width: 100%;
+                                    text-align: left;
+                                    font-size: 11px;
+                                    transition: background 0.2s;
+                                    font-weight: bold;
+                                ">${timer.docked === false ? '🔒 Dock to Panel' : '🔓 Release to Page'}</button>
                             </div>
                         </div>
                         
@@ -1960,6 +2019,45 @@
                         }
                     });
                 }
+
+                // Handle undock / re-dock option
+                const undockOption = dropdownContent.querySelector('.timer-undock-option');
+                if (undockOption) {
+                    undockOption.addEventListener('mouseenter', function () {
+                        undockOption.style.background = 'rgba(126,200,227,0.15)';
+                    });
+                    undockOption.addEventListener('mouseleave', function () {
+                        undockOption.style.background = 'none';
+                    });
+                    undockOption.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dropdownContent.style.display = 'none';
+
+                        if (timer.docked === false) {
+                            // Dock back into sidepanel
+                            timer.docked = true;
+                            timer.undockX = undefined;
+                            timer.undockY = undefined;
+                            self.saveTimers();
+                            const el = document.getElementById(`sidekick-timer-${timer.id}`);
+                            if (el) el.remove();
+                            self.renderTimer(timer);
+                            console.log(`🔒 Timer docked back to panel: ${timer.name}`);
+                        } else {
+                            // Undock onto page
+                            const rect = element.getBoundingClientRect();
+                            timer.docked = false;
+                            timer.undockX = Math.max(rect.left, 10);
+                            timer.undockY = Math.max(rect.top, 10);
+                            self.saveTimers();
+                            const el = document.getElementById(`sidekick-timer-${timer.id}`);
+                            if (el) el.remove();
+                            self.renderTimer(timer);
+                            console.log(`🔓 Timer released to page: ${timer.name}`);
+                        }
+                    });
+                }
             } else {
                 console.warn('❌ Dropdown elements not found:', {
                     dropdownBtn: !!dropdownBtn,
@@ -2167,7 +2265,7 @@
             }
 
             // Update display content based on timer type
-            const contentArea = element.querySelector('div[style*="flex-direction: column"]');
+            const contentArea = element.querySelector('.timer-content');
             if (contentArea) {
                 // Check if rebuild is needed (prevents expansion bug)
                 const needsRebuild = this.checkIfRebuildNeeded(contentArea, timer);
@@ -2826,6 +2924,107 @@
                 originalRemove.call(this);
             };
         },
+
+        // Make element draggable with fixed positioning (for undocked timers on the page)
+        makeDraggableFixed(element, timer) {
+            const header = element.querySelector('.timer-header');
+            if (!header) return;
+
+            let isDragging = false;
+            let startMouseX, startMouseY, startElemX, startElemY;
+
+            header.addEventListener('mousedown', (e) => {
+                if (e.target.closest('button')) return;
+                isDragging = true;
+                startMouseX = e.clientX;
+                startMouseY = e.clientY;
+                startElemX = parseInt(element.style.left, 10) || 0;
+                startElemY = parseInt(element.style.top,  10) || 0;
+                element.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+
+            const onMove = (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - startMouseX;
+                const dy = e.clientY - startMouseY;
+                const newX = Math.max(0, Math.min(startElemX + dx, window.innerWidth  - element.offsetWidth));
+                const newY = Math.max(0, Math.min(startElemY + dy, window.innerHeight - element.offsetHeight));
+                element.style.left = newX + 'px';
+                element.style.top  = newY + 'px';
+            };
+
+            const onUp = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                element.style.cursor = 'default';
+                timer.undockX = parseInt(element.style.left, 10) || 0;
+                timer.undockY = parseInt(element.style.top,  10) || 0;
+                timer.modified = new Date().toISOString();
+                this.saveTimers();
+                console.log(`📌 Undocked timer position saved: x=${timer.undockX}, y=${timer.undockY}`);
+            };
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup',   onUp);
+
+            // Clean up listeners when element is removed
+            const origRemove = element.remove.bind(element);
+            element.remove = () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup',   onUp);
+                origRemove();
+            };
+        },
+
+        // Build the inner HTML string for a timer element (shared between docked & undocked paths)
+        _buildTimerInnerHTML(timer) {
+            // Reuse the full innerHTML generation from renderTimer by temporarily rendering then extracting
+            // Instead, inline the essential structure here.
+            const headerGrad = `linear-gradient(135deg, ${timer.color || '#2196F3'}, ${this.darkenColor(timer.color || '#2196F3', 15)})`;
+            const timeDisplay = timer.remainingTime > 0 ? this.formatTime(timer.remainingTime) : '';
+            return `
+                <div class="timer-header" style="
+                    background: ${headerGrad};
+                    border-bottom: 1px solid #555;
+                    padding: 4px 8px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    cursor: move;
+                    height: 24px;
+                    flex-shrink: 0;
+                    border-radius: 5px 5px 0 0;
+                    user-select: none;
+                ">
+                    <span style="color:#fff;font-weight:600;font-size:11px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${this.escapeHtml(timer.name)}</span>
+                    <div style="display:flex;align-items:center;gap:3px;">
+                        <div class="timer-dropdown" style="position:relative;">
+                            <button class="dropdown-btn" style="background:none;border:none;color:rgba(255,255,255,0.8);font-size:10px;padding:1px 3px;border-radius:2px;min-width:12px;display:flex;align-items:center;justify-content:center;" title="Options">⚙️</button>
+                            <div class="dropdown-content timer-dropdown-content" style="display:none;position:fixed;background:#333;width:160px;box-shadow:0px 8px 16px rgba(0,0,0,0.3);z-index:99999;border-radius:4px;border:1px solid #555;padding:4px 0;overflow-y:auto;max-height:260px;">
+                                <button class="cooldown-option" data-type="drug"          style="background:none;border:none;color:#fff;padding:6px 12px;width:100%;text-align:left;font-size:11px;">Drug</button>
+                                <button class="cooldown-option" data-type="medical"       style="background:none;border:none;color:#fff;padding:6px 12px;width:100%;text-align:left;font-size:11px;">Medical</button>
+                                <button class="cooldown-option" data-type="booster"       style="background:none;border:none;color:#fff;padding:6px 12px;width:100%;text-align:left;font-size:11px;">Booster</button>
+                                <button class="cooldown-option" data-type="Bank"          style="background:none;border:none;color:#fff;padding:6px 12px;width:100%;text-align:left;font-size:11px;">Bank Investment</button>
+                                <button class="cooldown-option" data-type="Virus"         style="background:none;border:none;color:#fff;padding:6px 12px;width:100%;text-align:left;font-size:11px;">Virus Coding</button>
+                                <div style="border-top:1px solid #555;margin:4px 0;"></div>
+                                <button class="custom-timer-option" style="background:none;border:none;color:#FFD700;padding:6px 12px;width:100%;text-align:left;font-size:11px;font-weight:bold;">⏱️ Custom Timer</button>
+                                <div style="border-top:1px solid #555;margin:4px 0;"></div>
+                                <button class="timer-color-option" style="background:none;border:none;color:#fff;padding:6px 12px;width:100%;text-align:left;font-size:11px;">🎨 Change Color</button>
+                                <button class="timer-pin-option"   style="background:none;border:none;color:#fff;padding:6px 12px;width:100%;text-align:left;font-size:11px;">${timer.pinned ? '📌 Unpin' : '📌 Pin'}</button>
+                                <div style="border-top:1px solid #555;margin:4px 0;"></div>
+                                <button class="timer-undock-option" style="background:none;border:none;color:#7ec8e3;padding:6px 12px;width:100%;text-align:left;font-size:11px;font-weight:bold;">🔒 Dock to Panel</button>
+                            </div>
+                        </div>
+                        <button class="timer-close" style="background:#f44336;border:none;color:white;width:14px;height:14px;border-radius:50%;font-size:8px;display:flex;align-items:center;justify-content:center;line-height:1;" title="Close">×</button>
+                    </div>
+                </div>
+                <div class="timer-content" style="flex:1;padding:12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;scrollbar-width:none;align-items:center;justify-content:flex-start;color:#999;font-size:14px;text-align:center;">
+                    <div class="timer-display" data-timer-id="${timer.id}" style="text-align:center;font-size:22px;font-weight:700;color:${timer.color || '#666'};font-family:'Courier New',monospace;">${timeDisplay}</div>
+                </div>
+            `;
+        },
+
 
         // Start API monitoring for cooldown timers
         startApiMonitoring(timerId = null) {

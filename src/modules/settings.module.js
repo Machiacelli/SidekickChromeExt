@@ -1553,11 +1553,15 @@
                 // Save unified settings object
                 chrome.storage.local.set({ sidekick_settings: settings }, () => {
                     // ALSO save to legacy format for backwards compatibility
+                    // IMPORTANT: read existing value first to preserve fields like position
                     toggleSwitches.forEach(toggle => {
                         const moduleId = toggle.dataset.module;
                         const isEnabled = toggle.dataset.active === 'true';
                         const legacyKey = `sidekick_${moduleId.replace(/-/g, '_')}`;
-                        chrome.storage.local.set({ [legacyKey]: { isEnabled } });
+                        chrome.storage.local.get([legacyKey], (existing) => {
+                            const merged = Object.assign({}, existing[legacyKey] || {}, { isEnabled });
+                            chrome.storage.local.set({ [legacyKey]: merged });
+                        });
                     });
 
                     this.showAutoSaveStatus(statusDiv, 'Settings saved ✓');

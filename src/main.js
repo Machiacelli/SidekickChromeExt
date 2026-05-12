@@ -351,23 +351,9 @@
                 console.warn("⚠️ Crime Notifier module not available");
             }
 
-            // Initialize Disposal Module
-            console.log("🧹 Sidekick: Initializing Disposal module...");
-            if (window.SidekickModules.Disposal?.init) {
-                await window.SidekickModules.Disposal.init();
-                console.log("✅ Sidekick: Disposal module initialized");
-            } else {
-                console.warn("⚠️ Disposal module not available");
-            }
 
-            // Initialize Scamming Module
-            console.log("🎣 Sidekick: Initializing Scamming module...");
-            if (window.SidekickModules.Scamming?.init) {
-                await window.SidekickModules.Scamming.init();
-                console.log("✅ Sidekick: Scamming module initialized");
-            } else {
-                console.warn("⚠️ Scamming module not available");
-            }
+            // Scamming module runs in MAIN world (self-initializing) — no init call needed here
+            console.log('🎣 Sidekick: Scamming module is self-initializing in MAIN world');
 
             // Initialize War Monitor Module
             console.log("⚔️ Sidekick: Initializing War Monitor...");
@@ -448,6 +434,15 @@
                 console.log('✅ Sidekick: Mission Tracker initialized');
             } else {
                 console.warn('⚠️ Mission Tracker module not available');
+            }
+
+            // Initialize Disposal Module
+            console.log('🗑️ Sidekick: Initializing Disposal...');
+            if (window.SidekickModules.Disposal?.init) {
+                await window.SidekickModules.Disposal.init();
+                console.log('✅ Sidekick: Disposal initialized');
+            } else {
+                console.warn('⚠️ Disposal module not available');
             }
 
             // Initialize Hide Crime Outcome Module

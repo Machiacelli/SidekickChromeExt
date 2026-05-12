@@ -1,8 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Sidekick",
-    "version": "1.2.16",
-
+    "version": "1.2.17",
     "description": "Enhanced sidebar and tools for Torn.com",
     "permissions": [
         "storage",
@@ -77,7 +76,6 @@
                 "src/modules/travel-stocks.module.js",
                 "src/modules/price-filler.module.js",
                 "src/modules/disposal.module.js",
-                "src/modules/scamming.module.js",
                 "src/modules/auction-weapon-bonus.module.js",
                 "src/modules/item-market-max-quantity.module.js",
                 "src/modules/legible-names.module.js",
@@ -91,6 +89,17 @@
                 "src/styles/main.css"
             ],
             "run_at": "document_end"
+        },
+        {
+            "matches": [
+                "https://www.torn.com/page.php?sid=crimes*",
+                "https://www.torn.com/loader.php?sid=crimes*"
+            ],
+            "js": [
+                "src/modules/scamming.module.js"
+            ],
+            "world": "MAIN",
+            "run_at": "document_start"
         },
         {
             "matches": [

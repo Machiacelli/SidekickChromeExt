@@ -192,7 +192,7 @@
             this.blockingOverlay.id = 'sidekick-training-block';
             this.blockingOverlay.style.cssText = `
                 position: absolute !important;
-                top: 0 !important;
+                top: -10px !important;
                 left: 0 !important;
                 right: 0 !important;
                 bottom: 0 !important;
@@ -219,24 +219,7 @@
                 return false;
             }, true);
 
-            // Add minimal overlay text
-            this.blockingOverlay.innerHTML = `
-                <div style="
-                    position: absolute;
-                    bottom: 20px;
-                    right: 20px;
-                    color: white;
-                    background: rgba(0,0,0,0.8);
-                    padding: 12px 18px;
-                    border-radius: 6px;
-                    font-size: 13px;
-                    font-weight: 600;
-                    backdrop-filter: blur(10px);
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-                ">
-                    🚫 Training Blocked - Toggle off in extension popup
-                </div>
-            `;
+
 
             // Append to gym container to only cover gym area
             gymRoot.appendChild(this.blockingOverlay);
