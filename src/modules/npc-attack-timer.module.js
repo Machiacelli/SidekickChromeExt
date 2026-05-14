@@ -3,7 +3,7 @@
  * Display upcoming NPC attacks as a standalone banner
  * Based on Loot Rangers API
  * Version: 5.0.0 - Standalone banner approach
- * Author: Machiacelli / Robin
+ * Author: Machiacelli
  */
 
 (function () {
