@@ -106,13 +106,12 @@ const SpecialGymRatiosModule = (() => {
             <div class="title-black top-round" aria-level="5" style="padding:8px 12px;font-weight:bold;">
                 Special Gym Ratios
             </div>
-            <div class="bottom-round gym-box cont-gray" style="padding:12px;">
+                <div class="bottom-round gym-box cont-gray" style="padding:12px;">
                 <p class="sub-title" style="margin:0 0 8px;">Select desired specialist build:</p>
                 <select id="sk-gym-build-select" style="width:100%;padding:6px;background:#1a1a2e;
-                    border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:4px;margin-bottom:10px;">
+                    border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:4px;margin-bottom:4px;">
                     ${optionsHTML}
                 </select>
-                <div id="sk-gym-status" style="margin-top:6px;font-size:12px;color:#aaa;line-height:1.6;"></div>
             </div>
         `;
 
@@ -142,9 +141,6 @@ const SpecialGymRatiosModule = (() => {
                     li.querySelectorAll('.sk-gym-status').forEach(el => el.remove());
                 });
             });
-
-        const statusDiv = document.getElementById('sk-gym-status');
-        if (statusDiv) statusDiv.innerHTML = '';
 
         if (build.value === 'none') return;
 
@@ -273,14 +269,6 @@ const SpecialGymRatiosModule = (() => {
             });
         });
 
-        // Also update the panel status summary
-        if (statusDiv) {
-            statusDiv.innerHTML = Object.entries(messages)
-                .map(([s, { msg, cls }]) => {
-                    const colors = { good: '#4caf50', warn: '#ff9800', danger: '#f44336' };
-                    return `<span style="color:${colors[cls]};display:block;">${cap(s)}: ${msg}</span>`;
-                }).join('');
-        }
     }
 
     // ── Navigation watchdog ────────────────────────────────────────────────────
