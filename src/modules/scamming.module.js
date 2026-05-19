@@ -382,8 +382,8 @@
         start() {
             if (this.crimeOptions) return;
             this.crimeOptions = document.body.getElementsByClassName('crime-option');
-            this.farmIcons = document.body.getElementsByClassName('scraperPhisher___oy1Wn');
-            this.spamOptions = document.body.getElementsByClassName('optionWithLevelRequirement___cHH35');
+            this.farmIcons = document.body.getElementsByClassName('scraperPhisher___lS7va');
+            this.spamOptions = document.body.getElementsByClassName('optionWithLevelRequirement___CojuV');
             this.virtualLists = document.body.getElementsByClassName('virtualList___noLef');
             const root = document.querySelector('.scamming-root') ?? document.body;
             this.observer.observe(root, { subtree: true, childList: true });
@@ -447,7 +447,7 @@
         _refreshCrimeOption(element) { this._refreshTarget(element); this._refreshFarmButton(element); }
 
         _refreshTarget(element) {
-            const emailEl = element.querySelector('span.email___gVRXx');
+            const emailEl = element.querySelector('span.email___ga8BY');
             if (!emailEl) return;
             const email = emailEl.textContent;
             const target = Object.values(this.store.data.targets).find(x => x.email === email);
@@ -500,7 +500,7 @@
             ltEl.textContent = lifetime.text;
             emailEl.before(ltEl);
 
-            const cells = element.querySelectorAll('.cell___AfwZm');
+            const cells = element.querySelectorAll('.cell___ZwSaW');
             if (cells.length >= 50) {
                 cells.forEach(c => c.querySelectorAll('.cm-sc-scale').forEach(e => e.remove()));
                 for (let i = 0; i < 50; i++) {
