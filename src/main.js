@@ -481,6 +481,15 @@
                 console.warn('⚠️ Player ID Linker module not available');
             }
 
+            // Initialize Loadout Switcher Module
+            console.log('👕 Sidekick: Initializing Loadout Switcher...');
+            if (window.SidekickModules.LoadoutSwitcher?.init) {
+                await window.SidekickModules.LoadoutSwitcher.init();
+                console.log('✅ Sidekick: Loadout Switcher initialized');
+            } else {
+                console.warn('⚠️ Loadout Switcher module not available');
+            }
+
             // Initialize Notion Bug Reporter Module
             console.log("🐛 Sidekick: Initializing Notion Bug Reporter...");
             if (window.SidekickModules.NotionBugReporter?.init) {

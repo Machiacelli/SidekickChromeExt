@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Sidekick",
-    "version": "1.2.18",
+    "version": "1.2.19",
     "description": "Enhanced sidebar and tools for Torn.com",
     "permissions": [
         "storage",
@@ -84,6 +84,7 @@
                 "src/modules/holiday.module.js",
                 "src/modules/special-gym-ratios.module.js",
                 "src/modules/player-id-linker.module.js",
+                "src/modules/loadout-switcher.module.js",
                 "src/modules/ui.module.js",
                 "src/main.js"
             ],
