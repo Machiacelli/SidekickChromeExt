@@ -212,7 +212,7 @@
             // 6. Page label only: alternate between the Torn page title and the label
 
             if (chainTimer && profileName) {
-                timerInfo = showInfo ? chainTimer : `Profile: ${profileName}`;
+                timerInfo = showInfo ? chainTimer : profileName;
             } else if (chainTimer && pageTimer) {
                 timerInfo = showInfo ? chainTimer : pageTimer;
             } else if (chainTimer) {
@@ -220,7 +220,7 @@
             } else if (pageTimer) {
                 timerInfo = showInfo ? pageTimer : pageLabel;
             } else if (profileName) {
-                timerInfo = `Profile: ${profileName}`;
+                timerInfo = profileName;
             }
             // No timers: show original page title without alternating
 

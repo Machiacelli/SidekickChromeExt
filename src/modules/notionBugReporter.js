@@ -316,6 +316,33 @@
                     console.log('📸 First 50 chars:', screenshotBase64?.substring(0, 50));
                 }
 
+                // Gather client metadata dynamically
+                const manifest = chrome.runtime.getManifest();
+                const pluginVersion = manifest?.version || 'Unknown';
+
+                // Parse a clean browser string from userAgent
+                const ua = navigator.userAgent;
+                let browser = 'Unknown';
+                if (ua.includes('Edg/'))        browser = 'Edge ' + (ua.match(/Edg\/(\S+)/)?.[1] || '');
+                else if (ua.includes('OPR/'))   browser = 'Opera ' + (ua.match(/OPR\/(\S+)/)?.[1] || '');
+                else if (ua.includes('Chrome/')) browser = 'Chrome ' + (ua.match(/Chrome\/(\S+)/)?.[1] || '');
+                else if (ua.includes('Firefox/')) browser = 'Firefox ' + (ua.match(/Firefox\/(\S+)/)?.[1] || '');
+                else if (ua.includes('Safari/')) browser = 'Safari';
+
+                // Best-effort Torn username from page DOM or storage
+                let tornUser = 'Anonymous';
+                try {
+                    // Torn sidebar or top-nav often has the player name
+                    const nameEl = document.querySelector('[class*="playerName"], .user-name, #player-name, [class*="userName"]');
+                    if (nameEl?.textContent?.trim()) {
+                        tornUser = nameEl.textContent.trim();
+                    } else {
+                        // Fallback: Chrome storage
+                        const stored = await new Promise(r => chrome.storage.local.get('torn_player_name', r));
+                        if (stored?.torn_player_name) tornUser = stored.torn_player_name;
+                    }
+                } catch { /* leave as Anonymous */ }
+
                 const result = await this.reportBug({
                     title,
                     description,
@@ -324,7 +351,9 @@
                     metadata: {
                         reportedVia: 'Popup Modal',
                         module: 'NotionBugReporter',
-                        extensionVersion: '1.0.0',
+                        pluginVersion,
+                        browser,
+                        user: tornUser,
                         timestamp: new Date().toISOString(),
                         hasScreenshot: !!screenshotBase64
                     }
