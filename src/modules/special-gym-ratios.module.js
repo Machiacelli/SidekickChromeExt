@@ -104,21 +104,15 @@ const SpecialGymRatiosModule = (() => {
 
         panel.innerHTML = `
             <div class="title-black top-round" aria-level="5" style="padding:8px 12px;font-weight:bold;">
-                🏋️ Special Gym Ratios
+                Special Gym Ratios
             </div>
             <div class="bottom-round gym-box cont-gray" style="padding:12px;">
                 <p class="sub-title" style="margin:0 0 8px;">Select desired specialist build:</p>
-                <select id="sk-gym-build-select" style="width:100%;padding:6px;background:rgba(255,255,255,0.1);
+                <select id="sk-gym-build-select" style="width:100%;padding:6px;background:#1a1a2e;
                     border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:4px;margin-bottom:10px;">
                     ${optionsHTML}
                 </select>
-
-                <p class="sub-title" style="margin:0 0 4px;">Warning distance (e.g. 1000000 = 1m):</p>
-                <input id="sk-gym-safe-dist" type="number" value="${statSafeDistance}" min="0" step="100000"
-                    style="width:100%;padding:6px;background:rgba(255,255,255,0.1);
-                    border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:4px;box-sizing:border-box;">
-
-                <div id="sk-gym-status" style="margin-top:10px;font-size:12px;color:#aaa;line-height:1.6;"></div>
+                <div id="sk-gym-status" style="margin-top:6px;font-size:12px;color:#aaa;line-height:1.6;"></div>
             </div>
         `;
 
@@ -129,11 +123,7 @@ const SpecialGymRatiosModule = (() => {
             updateRatios();
         });
 
-        document.getElementById('sk-gym-safe-dist').addEventListener('input', function () {
-            statSafeDistance = parseInt(this.value, 10) || 0;
-            localStorage.setItem('sk_gym_safe_dist', statSafeDistance);
-            updateRatios();
-        });
+
     }
 
     // ── Ratio calculation + DOM update ─────────────────────────────────────────

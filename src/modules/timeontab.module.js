@@ -481,22 +481,9 @@
             // Reset attack target cache when not on attack page
             this._attackTargetName = null;
 
-            // For regular profile pages
-            // Method 1: Profile header name
-            const profileHeader = document.querySelector('.profile-container .profile-name') ||
-                document.querySelector('.basic-information .user-info-value .name') ||
-                document.querySelector('[class*="userName"]') ||
-                document.querySelector('[class*="profile"] [class*="name"]');
-
-            if (profileHeader && profileHeader.textContent) {
-                const name = profileHeader.textContent.trim();
-                if (name && name.length > 0 && name !== 'TORN') {
-                    return name;
-                }
-            }
-
-            // Method 2: Page title (safe here since we're on a profile page not attack)
-            const titleMatch = this.originalTitle.match(/^([^\[|]+)/);
+            // For regular profile pages — use originalTitle as single source of truth
+            // (DOM selectors like [class*="userName"] return CSS-uppercased text causing "AsleepASLEEP")
+            const titleMatch = this.originalTitle.match(/^([^\[|\-]+)/);
             if (titleMatch && titleMatch[1]) {
                 const name = titleMatch[1].trim();
                 if (name && name !== 'TORN' && !name.includes(':') && !name.toLowerCase().includes('attack')) {
