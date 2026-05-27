@@ -198,7 +198,7 @@ const MarketFillerModule = (() => {
             // Clear mode
             btn.classList.remove('sk-mf-active');
             btn.textContent = 'Fill';
-            btn.style.background = '#2a4a7f';
+            btn.style.background = 'linear-gradient(135deg, #3a8a3e, #4fa854)';
             priceInputs.forEach(i => { i.value = ''; });
             qtyInputs?.forEach(i => { i.value = ''; });
             priceInputs[0]?.dispatchEvent(new Event('input', { bubbles: true }));
@@ -209,7 +209,7 @@ const MarketFillerModule = (() => {
 
         btn.classList.add('sk-mf-active');
         btn.textContent = 'Clear';
-        btn.style.background = '#1a3a5f';
+        btn.style.background = 'linear-gradient(135deg, #1a4a2e, #254f30)';
 
         ensurePopup();
         showListingsPopup(btn, null, true);
@@ -248,17 +248,23 @@ const MarketFillerModule = (() => {
         btn.textContent = 'Fill';
         btn.title = 'Fill price and quantity from cheapest listing';
         btn.style.cssText = `
-            cursor:pointer; background:#2a4a7f; color:#fff;
-            border:none; padding:0 8px; border-radius:3px;
-            font-size:11px; height:26px; line-height:26px;
+            cursor:pointer; background:linear-gradient(135deg, #3a8a3e, #4fa854); color:#fff;
+            border:none; padding:0 8px; border-radius:4px;
+            font-size:11px; font-weight:600; height:26px; line-height:26px;
             margin-right:4px; vertical-align:middle; flex-shrink:0;
-            transition:background 0.15s; white-space:nowrap;
+            transition:background 0.15s, box-shadow 0.15s; white-space:nowrap; letter-spacing:0.3px;
         `;
         btn.addEventListener('mouseenter', () => {
-            if (!btn.classList.contains('sk-mf-active')) btn.style.background = '#3a6abf';
+            if (!btn.classList.contains('sk-mf-active')) {
+                btn.style.background = 'linear-gradient(135deg, #4aa84e, #62c066)';
+                btn.style.boxShadow = '0 0 6px rgba(79,168,84,0.5)';
+            }
         });
         btn.addEventListener('mouseleave', () => {
-            if (!btn.classList.contains('sk-mf-active')) btn.style.background = '#2a4a7f';
+            if (!btn.classList.contains('sk-mf-active')) {
+                btn.style.background = 'linear-gradient(135deg, #3a8a3e, #4fa854)';
+                btn.style.boxShadow = '';
+            }
         });
         btn.addEventListener('click', e => handleFill(e, itemId, priceInputs, qtyInputs));
 

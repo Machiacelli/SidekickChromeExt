@@ -364,11 +364,6 @@
                 console.warn("⚠️ War Monitor module not available");
             }
 
-            // Last Jailed is event-driven — no explicit init needed
-            if (window.SidekickModules.LastJailed) {
-                console.log("✅ Sidekick: Last Jailed module ready");
-            }
-
             // Initialize Chat Alert Module
             console.log("💬 Sidekick: Initializing Chat Alert...");
             if (window.SidekickModules.ChatAlert?.init) {
@@ -418,6 +413,15 @@
                 console.warn('⚠️ Price Filler module not available');
             }
 
+            // Initialize Bazaar Filler Module
+            console.log('🏪 Sidekick: Initializing Bazaar Filler...');
+            if (window.SidekickModules.BazaarFiller?.init) {
+                await window.SidekickModules.BazaarFiller.init();
+                console.log('✅ Sidekick: Bazaar Filler initialized');
+            } else {
+                console.warn('⚠️ Bazaar Filler module not available');
+            }
+
             // Initialize Auction Weapon Bonus Module
             console.log('🗡️ Sidekick: Initializing Auction Weapon Bonus...');
             if (window.SidekickModules.AuctionWeaponBonus?.init) {
@@ -452,6 +456,24 @@
                 console.log('✅ Sidekick: Hide Crime Outcome initialized');
             } else {
                 console.warn('⚠️ Hide Crime Outcome module not available');
+            }
+
+            // Initialize Burglary Module
+            console.log('🏠 Sidekick: Initializing Burglary...');
+            if (window.SidekickModules.Burglary?.init) {
+                await window.SidekickModules.Burglary.init();
+                console.log('✅ Sidekick: Burglary initialized');
+            } else {
+                console.warn('⚠️ Burglary module not available');
+            }
+
+            // Initialize Cracking Module
+            console.log('💻 Sidekick: Initializing Cracking...');
+            if (window.SidekickModules.Cracking?.init) {
+                await window.SidekickModules.Cracking.init();
+                console.log('✅ Sidekick: Cracking initialized');
+            } else {
+                console.warn('⚠️ Cracking module not available');
             }
 
             // Initialize Egg Helper Module

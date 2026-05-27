@@ -409,6 +409,7 @@
                 ${this.createToggle('book-notifier', '📚 Mission Book Notifier', 'Alerts when books are available in mission rewards (checks every 12 hours)')}
                 ${this.createToggle('locked-items', '🔒 Locked Items Manager', 'Lock inventory items to prevent accidental trading, selling, or deleting')}
                 ${this.createToggle('price-filler', '🛒 Price Filler', 'Auto-fills prices on the Item Market and Bazaar pages')}
+                ${this.createToggle('bazaar-filler', '🏪 Bazaar Filler', 'Auto-fills bazaar prices using the Weav3r API — peek button shows 5 lowest listings without opening a popup automatically')}
                 ${this.createToggle('auction-weapon-bonus', '🗡️ Auction Weapon Bonus', 'Displays weapon bonus stats and rarity highlights on the auction house')}
                 ${this.createToggle('legible-names', '🔤 Legible Player Names', 'Replaces small honor-bar name sprites with a larger, cleaner font')}
                 ${this.createToggle('special-gym-ratios', '🏋️ Special Gym Ratios', 'Warns when battle stat ratios risk losing access to specialist / combo gyms (gym.php)')}
@@ -938,6 +939,8 @@
                 <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">🧾 Crimes</h4>
                 ${this.createToggle('crime-disposal', '🧹 Disposal Helper', 'Highlights disposal options and shows max nerve for the Disposal crime')}
                 ${this.createToggle('crime-scamming', '🎭 Scamming Helper', 'Displays scam helper hints for the Scamming crime only')}
+                ${this.createToggle('crime-burglary', '🏠 Burglary Confidence', 'Displays burglary confidence percentage permanently next to the graphic')}
+                ${this.createToggle('crime-cracking', '💻 Cracking Helper', 'Shows word suggestions for the Cracking crime')}
                 <div id="sidekick-crimes-status" style="text-align: center; padding: 10px; border-radius: 5px; 
                                                         background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px; margin-top: 20px;">
                     Crime module settings loaded

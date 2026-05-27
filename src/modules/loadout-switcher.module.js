@@ -82,7 +82,7 @@
             this._startRfcvCapture();
 
             // Poll until the loadouts title element exists, then attach UI
-            this._intervalId = setInterval(() => this._tryAttach(), 500);
+            this._intervalId = setInterval(() => this._tryAttach(), 50);
 
             // Fetch titles after a short delay (rfcv might not be ready yet)
             setTimeout(() => this._fetchTitlesManually(), 1500);
@@ -268,6 +268,10 @@
                     align-items: center;
                     margin-left: 5px;
                     gap: 4px;
+                }
+                div.silmaril-torn-loadout-switcher-container button.torn-btn {
+                    height: 23px !important;
+                    line-height: 23px !important;
                 }
                 .wave-animation { position: relative; overflow: hidden; }
                 .wave {

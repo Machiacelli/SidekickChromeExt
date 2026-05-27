@@ -46,9 +46,9 @@
         const hours = Math.floor(seconds / 3600);
         const text =
             hours >= 72 ? `${Math.floor(hours / 24)}d`
-            : hours > 0 ? `${hours}h`
-            : seconds >= 0 ? `${Math.floor(seconds / 60)}m`
-            : '';
+                : hours > 0 ? `${hours}h`
+                    : seconds >= 0 ? `${Math.floor(seconds / 60)}m`
+                        : '';
         const color = hours >= 24 ? 't-gray-c' : hours >= 12 ? 't-yellow' : hours >= 0 ? 't-red' : '';
         return { seconds, hours, text, color };
     }
@@ -80,21 +80,21 @@
             return this.algo === 'merit'
                 ? { low: 2, medium: 2, high: 2, fail: -20 }
                 : this.algo === 'meritGrift'
-                ? { low: 0, medium: 1, high: 1, fail: 0 }
-                : { low: 0.5, medium: 1.5, high: 2.5, fail: -20 };
+                    ? { low: 0, medium: 1, high: 1, fail: 0 }
+                    : { low: 0.5, medium: 1.5, high: 2.5, fail: -20 };
         }
         get SAFE_CELL_SET() { return new Set(['neutral', 'low', 'medium', 'high', 'temptation']); }
         get DISPLACEMENT() {
             return {
-                1:  { strong: [[10,19],[15,29],[18,35],[21,39],[22,42],[23,44]], soft: [[3,7],[5,11],[6,13],[6,14],[7,15],[7,16]], back: [[-4,-2],[-6,-3],[-7,-4],[-8,-4],[-9,-4],[-9,-5]] },
-                20: { strong: [[8,15],[12,23],[15,28],[16,31],[18,33],[18,35]], soft: [[3,7],[5,11],[6,13],[6,14],[7,15],[7,16]], back: [[-4,-2],[-6,-3],[-7,-4],[-8,-4],[-9,-4],[-9,-5]] },
-                40: { strong: [[7,13],[11,20],[13,24],[14,27],[15,29],[16,30]], soft: [[3,6],[5,9],[6,11],[6,12],[7,13],[7,14]], back: [[-4,-2],[-6,-3],[-7,-4],[-8,-4],[-9,-4],[-9,-5]] },
-                60: { strong: [[6,11],[9,17],[11,20],[12,23],[13,24],[14,25]], soft: [[2,4],[3,6],[4,7],[4,8],[4,9],[5,9]], back: [[-4,-2],[-6,-3],[-7,-4],[-8,-4],[-9,-4],[-9,-5]] },
-                80: { strong: [[5,9],[8,14],[9,17],[10,19],[11,20],[12,21]], soft: [[2,3],[3,5],[4,6],[4,6],[4,7],[5,7]], back: [[-3,-2],[-5,-3],[-6,-4],[-6,-4],[-7,-4],[-7,-5]] },
+                1: { strong: [[10, 19], [15, 29], [18, 35], [21, 39], [22, 42], [23, 44]], soft: [[3, 7], [5, 11], [6, 13], [6, 14], [7, 15], [7, 16]], back: [[-4, -2], [-6, -3], [-7, -4], [-8, -4], [-9, -4], [-9, -5]] },
+                20: { strong: [[8, 15], [12, 23], [15, 28], [16, 31], [18, 33], [18, 35]], soft: [[3, 7], [5, 11], [6, 13], [6, 14], [7, 15], [7, 16]], back: [[-4, -2], [-6, -3], [-7, -4], [-8, -4], [-9, -4], [-9, -5]] },
+                40: { strong: [[7, 13], [11, 20], [13, 24], [14, 27], [15, 29], [16, 30]], soft: [[3, 6], [5, 9], [6, 11], [6, 12], [7, 13], [7, 14]], back: [[-4, -2], [-6, -3], [-7, -4], [-8, -4], [-9, -4], [-9, -5]] },
+                60: { strong: [[6, 11], [9, 17], [11, 20], [12, 23], [13, 24], [14, 25]], soft: [[2, 4], [3, 6], [4, 7], [4, 8], [4, 9], [5, 9]], back: [[-4, -2], [-6, -3], [-7, -4], [-8, -4], [-9, -4], [-9, -5]] },
+                80: { strong: [[5, 9], [8, 14], [9, 17], [10, 19], [11, 20], [12, 21]], soft: [[2, 3], [3, 5], [4, 6], [4, 6], [4, 7], [5, 7]], back: [[-3, -2], [-5, -3], [-6, -4], [-6, -4], [-7, -4], [-7, -5]] },
             };
         }
-        get MERIT_MASK_MAP() { return { temptation: 1n<<50n, sensitivity: 1n<<51n, hesitation: 1n<<52n, concern: 1n<<53n }; }
-        get MERIT_REQUIREMENT_MASK() { return 0xfn<<50n; }
+        get MERIT_MASK_MAP() { return { temptation: 1n << 50n, sensitivity: 1n << 51n, hesitation: 1n << 52n, concern: 1n << 53n }; }
+        get MERIT_REQUIREMENT_MASK() { return 0xfn << 50n; }
 
         constructor(algo, bar, targetLevel, round, suspicion, mark) {
             this.algo = algo; this.bar = bar; this.targetLevel = targetLevel;
@@ -131,17 +131,17 @@
                 return result;
             }
             const driftArray = this._getDriftArray(resolvingBitmap);
-            const [pb, pe] = singlePip !== undefined ? [singlePip, singlePip+1] : [0, 50];
+            const [pb, pe] = singlePip !== undefined ? [singlePip, singlePip + 1] : [0, 50];
             for (let pip = pb; pip < pe; pip++) {
                 const best = this._getCellResult(pip, resolvingBitmap);
                 if (this.bar[pip] === 'fail') { result[pip] = best; continue; }
                 if (!this._isResolved(pip, resolvingBitmap)) {
                     if (this.bar[pip] === 'hesitation') { result[pip] = this._visit(round, resolvingBitmap | this.resolvingMasks[pip], 0)[pip]; continue; }
                     if (this.bar[pip] === 'concern') {
-                        const rr = this._visit(round+1, resolvingBitmap | this.resolvingMasks[pip], 0);
-                        const ur = this._visit(round+1, resolvingBitmap, 0);
+                        const rr = this._visit(round + 1, resolvingBitmap | this.resolvingMasks[pip], 0);
+                        const ur = this._visit(round + 1, resolvingBitmap, 0);
                         const csr = this.CONCERN_SUCCESS_RATE_MAP[this.mark] ?? this.CONCERN_SUCCESS_RATE_MAP[''];
-                        const val = rr[pip].value * csr + (ur[pip].value - this.failureCost) * (1-csr) - this.BASE_ACTION_COST;
+                        const val = rr[pip].value * csr + (ur[pip].value - this.failureCost) * (1 - csr) - this.BASE_ACTION_COST;
                         result[pip] = { value: Math.max(0, val), action: val > 0 ? 'resolve' : 'abandon', multi: 0 };
                         continue;
                     }
@@ -149,21 +149,21 @@
                 for (let multi = minMulti; multi <= 5; multi++) {
                     const sus = this._estimateSuspicion(round + multi);
                     const nrr = this._visit(round + multi + 1, resolvingBitmap, 0);
-                    const actions = pip > 0 ? ['strong','soft','back'] : ['strong','soft'];
+                    const actions = pip > 0 ? ['strong', 'soft', 'back'] : ['strong', 'soft'];
                     for (const action of actions) {
                         const da = this.DISPLACEMENT[this.targetLevel.toString()]?.[action]?.[multi];
                         if (!da) continue;
                         const [mn, mx] = da;
                         let tot = 0;
                         for (let d = mn; d <= mx; d++) {
-                            const lp = Math.max(Math.min(pip+d, 49), 0);
+                            const lp = Math.max(Math.min(pip + d, 49), 0);
                             const np = driftArray[lp];
                             if (lp < sus || np < sus) { tot += this.CELL_VALUE_MAP.fail; }
                             else {
                                 if (!this.SAFE_CELL_SET.has(this.bar[lp]) && !this._isResolved(lp, resolvingBitmap)) tot -= this.failureCost;
                                 tot -= this.BASE_ACTION_COST;
                                 const lr = this.algo === 'merit' && np !== lp
-                                    ? this._visit(round+multi+1, resolvingBitmap | this.MERIT_MASK_MAP[this.bar[lp]], 0)
+                                    ? this._visit(round + multi + 1, resolvingBitmap | this.MERIT_MASK_MAP[this.bar[lp]], 0)
                                     : nrr;
                                 tot += lr[np].value;
                             }
@@ -185,9 +185,9 @@
             for (let pip = 0; pip < 50; pip++) {
                 let np = pip;
                 if (this.bar[pip] === 'temptation') {
-                    while (np+1<50 && (!this.SAFE_CELL_SET.has(this.bar[np]) || this.bar[np]==='temptation') && !this._isResolved(np, resolvingBitmap)) np++;
+                    while (np + 1 < 50 && (!this.SAFE_CELL_SET.has(this.bar[np]) || this.bar[np] === 'temptation') && !this._isResolved(np, resolvingBitmap)) np++;
                 } else if (this.bar[pip] === 'sensitivity') {
-                    while (np>0 && this.bar[np]!=='neutral' && !this._isResolved(np, resolvingBitmap)) np--;
+                    while (np > 0 && this.bar[np] !== 'neutral' && !this._isResolved(np, resolvingBitmap)) np--;
                 }
                 arr[pip] = np;
             }
@@ -203,7 +203,7 @@
 
         _estimateSuspicion(round) {
             if (round <= this.initialRound) return this.initialSuspicion;
-            const pre = [0,0,0,0,2,5,8,11,16,23,34,50][round] ?? 50;
+            const pre = [0, 0, 0, 0, 2, 5, 8, 11, 16, 23, 34, 50][round] ?? 50;
             const cur = Math.floor(this.initialSuspicion * 1.5 ** (round - this.initialRound));
             return Math.max(pre, cur);
         }
@@ -214,10 +214,10 @@
     // ── ScammingStore ─────────────────────────────────────────────────────────
     class ScammingStore {
         get TARGET_LEVEL_MAP() {
-            return { 'delivery scam':1,'family scam':1,'prize scam':1,'charity scam':20,'tech support scam':20,'vacation scam':40,'tax scam':40,'advance-fee scam':60,'job scam':60,'romance scam':80,'investment scam':80 };
+            return { 'delivery scam': 1, 'family scam': 1, 'prize scam': 1, 'charity scam': 20, 'tech support scam': 20, 'vacation scam': 40, 'tax scam': 40, 'advance-fee scam': 60, 'job scam': 60, 'romance scam': 80, 'investment scam': 80 };
         }
         get SPAM_ID_MAP() {
-            return { 295:'delivery',293:'family',291:'prize',297:'charity',299:'tech support',301:'vacation',303:'tax',305:'advance-fee',307:'job',309:'romance',311:'investment' };
+            return { 295: 'delivery', 293: 'family', 291: 'prize', 297: 'charity', 299: 'tech support', 301: 'vacation', 303: 'tax', 305: 'advance-fee', 307: 'job', 309: 'romance', 311: 'investment' };
         }
         constructor() {
             this.data = getValue('scamming', {});
@@ -281,8 +281,8 @@
                     if (stored.bar) {
                         for (let pip = 0; pip < 50; pip++) {
                             if (target.bar[pip] === stored.bar[pip]) continue;
-                            if (target.bar[pip] === 'fail' && stored.suspicion <= pip) { stored.suspicion = pip+1; updated = true; }
-                            if (target.bar[pip] === 'neutral' && (BigInt(stored.resolvingBitmap) & (1n<<BigInt(pip))) === 0n) { stored.resolvingBitmap = (BigInt(stored.resolvingBitmap) | (1n<<BigInt(pip))).toString(); updated = true; }
+                            if (target.bar[pip] === 'fail' && stored.suspicion <= pip) { stored.suspicion = pip + 1; updated = true; }
+                            if (target.bar[pip] === 'neutral' && (BigInt(stored.resolvingBitmap) & (1n << BigInt(pip))) === 0n) { stored.resolvingBitmap = (BigInt(stored.resolvingBitmap) | (1n << BigInt(pip))).toString(); updated = true; }
                         }
                         if (target.firstPip) {
                             if (stored.bar[target.firstPip] === 'temptation') stored.driftBitmap |= 1;
@@ -410,9 +410,9 @@
         }
 
         _buildHintEl(target, solution, lastSolution, showGriftNotice) {
-            const actionText = { strong:'Fast Fwd',soft:'Soft Fwd',back:'Back',capitalize:'$$$',abandon:'Abandon',resolve:'Resolve' }[solution.action] ?? 'N/A';
+            const actionText = { strong: 'Fast Fwd', soft: 'Soft Fwd', back: 'Back', capitalize: '$$$', abandon: 'Abandon', resolve: 'Resolve' }[solution.action] ?? 'N/A';
             const algo = target.algos?.[0];
-            const algoText = { exp:'Exp',merit:'Decep',meritGrift:'Grift' }[algo] ?? 'Score';
+            const algoText = { exp: 'Exp', merit: 'Decep', meritGrift: 'Grift' }[algo] ?? 'Score';
             const score = Math.floor(solution.value * 100);
             const scoreText = `${score}${algo === 'meritGrift' ? '%' : ''}`;
             const scoreColor = algo === 'meritGrift'
@@ -505,7 +505,7 @@
                 cells.forEach(c => c.querySelectorAll('.cm-sc-scale').forEach(e => e.remove()));
                 for (let i = 0; i < 50; i++) {
                     const dist = i - target.pip;
-                    const label = dist % 5 !== 0 || dist === 0 || dist < -5 ? '' : dist % 10 === 0 ? (dist/10).toString() : "'";
+                    const label = dist % 5 !== 0 || dist === 0 || dist < -5 ? '' : dist % 10 === 0 ? (dist / 10).toString() : "'";
                     let scaleEl = cells[i].querySelector('.cm-sc-scale');
                     if (!scaleEl) { scaleEl = document.createElement('div'); scaleEl.className = 'cm-sc-scale'; cells[i].appendChild(scaleEl); }
                     scaleEl.textContent = label;

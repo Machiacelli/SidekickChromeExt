@@ -642,7 +642,7 @@ const PriceFillerModule = (() => {
         if (wasActive) {
             btn.classList.remove('sk-pf-im-active');
             btn.textContent = 'Fill';
-            btn.style.background = '#2a4a7f';
+            btn.style.background = 'linear-gradient(135deg, #3a8a3e, #4fa854)';
             priceInputs.forEach(i => { i.value = ''; });
             qtyInputs?.forEach(i => { i.value = ''; });
             priceInputs[0]?.dispatchEvent(new Event('input', { bubbles: true }));
@@ -651,7 +651,7 @@ const PriceFillerModule = (() => {
         }
         btn.classList.add('sk-pf-im-active');
         btn.textContent = 'Clear';
-        btn.style.background = '#1a3a5f';
+        btn.style.background = 'linear-gradient(135deg, #1a4a2e, #254f30)';
         ensureImPopup();
         showImPopup(btn, null, true);
 
@@ -708,11 +708,11 @@ const PriceFillerModule = (() => {
         btn.className = 'sk-pf-im-btn';
         btn.textContent = 'Fill';
         btn.title = 'Fill price from cheapest Item Market listing';
-        btn.style.cssText = `cursor:pointer;background:#2a4a7f;color:#fff;border:none;
-            padding:0 8px;border-radius:3px;font-size:11px;height:26px;line-height:26px;
-            margin-right:4px;vertical-align:middle;flex-shrink:0;transition:background 0.15s;`;
-        btn.addEventListener('mouseenter', () => { if (!btn.classList.contains('sk-pf-im-active')) btn.style.background = '#3a6abf'; });
-        btn.addEventListener('mouseleave', () => { if (!btn.classList.contains('sk-pf-im-active')) btn.style.background = '#2a4a7f'; });
+        btn.style.cssText = `cursor:pointer;background:linear-gradient(135deg, #3a8a3e, #4fa854);color:#fff;border:none;
+            padding:0 8px;border-radius:4px;font-size:11px;font-weight:600;height:26px;line-height:26px;
+            margin-right:4px;vertical-align:middle;flex-shrink:0;transition:background 0.15s, box-shadow 0.15s;`;
+        btn.addEventListener('mouseenter', () => { if (!btn.classList.contains('sk-pf-im-active')) { btn.style.background = 'linear-gradient(135deg, #4aa84e, #62c066)'; btn.style.boxShadow = '0 0 6px rgba(79,168,84,0.5)'; } });
+        btn.addEventListener('mouseleave', () => { if (!btn.classList.contains('sk-pf-im-active')) { btn.style.background = 'linear-gradient(135deg, #3a8a3e, #4fa854)'; btn.style.boxShadow = ''; } });
         btn.addEventListener('click', e => handleImFill(e, itemId, priceInputs, qtyInputs));
 
         const group = priceWrapper.querySelector('.input-money-group') || priceWrapper;

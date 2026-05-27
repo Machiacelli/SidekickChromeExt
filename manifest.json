@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Sidekick",
-    "version": "1.2.19",
+    "version": "1.2.18",
     "description": "Enhanced sidebar and tools for Torn.com",
     "permissions": [
         "storage",
@@ -14,7 +14,10 @@
         "https://api.torn.com/*",
         "https://yata.yt/*",
         "https://notion-bug-proxy.akaffebtd.workers.dev/*",
-        "https://torn.synclayer.dev/*"
+        "https://torn.synclayer.dev/*",
+        "https://weav3r.dev/*",
+        "https://gitlab.com/*",
+        "https://*.workers.dev/*"
     ],
     "icons": {
         "16": "assets/icons/swissknife-16.png",
@@ -69,12 +72,14 @@
                 "src/modules/quick-deposit.module.js",
                 "src/modules/crime-notifier.module.js",
                 "src/modules/war-monitor.module.js",
-                "src/modules/last-jailed.module.js",
                 "src/modules/chat-alert.module.js",
                 "src/modules/mug-warning.module.js",
                 "src/modules/auto-gym-switch.module.js",
                 "src/modules/travel-stocks.module.js",
                 "src/modules/price-filler.module.js",
+                "src/modules/bazaar-filler.module.js",
+                "src/modules/burglary.module.js",
+                "src/modules/cracking.module.js",
                 "src/modules/disposal.module.js",
                 "src/modules/auction-weapon-bonus.module.js",
                 "src/modules/item-market-max-quantity.module.js",
