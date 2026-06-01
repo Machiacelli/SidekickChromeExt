@@ -117,6 +117,52 @@
             this.isEnabled = true;
             this.addConfidencePercentages();
             this._intervalId = setInterval(() => this.addConfidencePercentages(), 50);
+            this._watchForHeader();
+        },
+
+        // ── Header badge ──────────────────────────────────────────────────
+        _injectHeaderBadge() {
+            if (document.getElementById('sidekick-burglary-badge')) return;
+            const h4 = document.querySelector('div.appHeader___tG_Ot h4.heading___BtymB');
+            if (!h4) return;
+            const badge = document.createElement('span');
+            badge.id = 'sidekick-burglary-badge';
+            badge.title = 'Sidekick Burglary active';
+            badge.style.cssText = [
+                'display:inline-flex',
+                'align-items:center',
+                'justify-content:center',
+                'width:16px',
+                'height:16px',
+                'border-radius:50%',
+                'background:linear-gradient(135deg,#66BB6A,#4CAF50)',
+                'color:#fff',
+                'font-size:10px',
+                'font-weight:bold',
+                'margin-left:6px',
+                'vertical-align:middle',
+                'flex-shrink:0',
+                'box-shadow:0 0 4px rgba(102,187,106,0.6)',
+            ].join(';');
+            badge.textContent = '\u2713';
+            h4.appendChild(badge);
+        },
+
+        _removeHeaderBadge() {
+            const b = document.getElementById('sidekick-burglary-badge');
+            if (b) b.remove();
+        },
+
+        // Watch for the crimes SPA rendering/re-rendering the header
+        _watchForHeader() {
+            this._injectHeaderBadge();
+            if (this._headerObserver) return;
+            this._headerObserver = new MutationObserver(() => {
+                if (!document.getElementById('sidekick-burglary-badge')) {
+                    this._injectHeaderBadge();
+                }
+            });
+            this._headerObserver.observe(document.body, { childList: true, subtree: true });
         },
 
         disable() {
@@ -126,7 +172,12 @@
                 clearInterval(this._intervalId);
                 this._intervalId = null;
             }
-            
+            if (this._headerObserver) {
+                this._headerObserver.disconnect();
+                this._headerObserver = null;
+            }
+            this._removeHeaderBadge();
+
             // Clean up UI
             const displays = document.querySelectorAll('.conf-text-display');
             displays.forEach(d => d.remove());
