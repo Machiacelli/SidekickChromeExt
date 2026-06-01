@@ -117,24 +117,18 @@
                 const s = document.createElement('style');
                 s.id = 'sk-ft-btn-style';
                 s.textContent = `
+                    /* Only visual styles — layout/sizing left to Torn's .profile-button */
                     .sidekick-flight-tracker-btn {
                         position: relative;
-                        display: inline-flex;
-                        align-items: center;
-                        justify-content: center;
                         cursor: pointer;
-                        text-decoration: none;
                         outline: none;
-                        border-radius: 5px;
-                        transition: box-shadow 0.15s;
                     }
-                    .sidekick-flight-tracker-btn.sk-ft-tracking {
-                        box-shadow: 0 0 0 2px #4CAF50 inset;
-                        background: rgba(76,175,80,0.18);
+                    .sidekick-flight-tracker-btn.sk-ft-tracking svg {
+                        filter: drop-shadow(0 0 3px #4CAF50);
                     }
                     .sidekick-flight-tracker-btn .sk-ft-dot {
                         position: absolute;
-                        top: 8px;
+                        top: 6px;
                         right: 6px;
                         width: 7px;
                         height: 7px;
@@ -142,6 +136,7 @@
                         background: #4CAF50;
                         box-shadow: 0 0 4px #4CAF50;
                         display: none;
+                        pointer-events: none;
                     }
                     .sidekick-flight-tracker-btn.sk-ft-tracking .sk-ft-dot {
                         display: block;
@@ -170,27 +165,34 @@
             });
         },
 
-        // Sidekick logo rendered via CSS mask so the PNG's own background is hidden
-        _logoImg(isTracking) {
-            const url = chrome.runtime.getURL('assets/icons/swissknife-48.png');
-            // Mask extracts only the icon shape; we fill with white (idle) or green (tracking)
-            const color = isTracking ? '#4CAF50' : 'rgba(255,255,255,0.75)';
-            return `<span style="
-                display: inline-block;
-                width: 46px;
-                height: 46px;
-                background-color: ${color};
-                -webkit-mask-image: url(${url});
-                mask-image: url(${url});
-                -webkit-mask-size: 28px 28px;
-                mask-size: 28px 28px;
-                -webkit-mask-repeat: no-repeat;
-                mask-repeat: no-repeat;
-                -webkit-mask-position: center center;
-                mask-position: center center;
-                transition: background-color 0.15s;
-                flex-shrink: 0;
-            "></span>`;
+        // Inline SVG of the Sidekick Swiss knife — no PNG dependency, no background bleed.
+        // Uses currentColor so it inherits the icon colour from Torn's own CSS.
+        _knifesvg(isTracking) {
+            const col = isTracking ? '#4CAF50' : 'currentColor';
+            const gold = '#c8a020';
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="46" height="46"
+                    viewBox="0 0 46 46" class="icon___GP196">
+                <!-- Handle body: diagonal from bottom-left to upper-right -->
+                <path fill="${col}" d="
+                    M8,37 L8,39 C8,40.1 8.9,41 10,41 L13,41
+                    C14.1,41 15,40.1 15,39 L34,13
+                    C35.1,13 36,12.1 36,11 L36,8
+                    C36,6.9 35.1,6 34,6 L31,6
+                    C29.9,6 29,6.9 29,8 L10,34
+                    C8.9,34 8,34.9 8,36 Z"/>
+                <!-- Pivot hole -->
+                <circle cx="11" cy="38" r="1.5" fill="rgba(0,0,0,0.35)"/>
+                <!-- Blade 1: up-left from pivot (34,7) -->
+                <path fill="${col}" d="M30,7 L22,2 L25,2 L33,7 Z"/>
+                <!-- Blade 2: straight up -->
+                <path fill="${col}" d="M33,6 L31,1 L35,1 L33,6 Z"/>
+                <!-- Blade 3: up-right diagonal -->
+                <path fill="${col}" d="M34,7 L40,2 L42,4 L36,9 Z"/>
+                <!-- Blade 4: horizontal right -->
+                <path fill="${col}" d="M35,9 L44,8 L44,12 L35,12 Z"/>
+                <!-- Toothpick accent (gold) -->
+                <path fill="${gold}" d="M8,41 L6,44 L9,44 L9,41 Z"/>
+            </svg>`;
         },
 
         _setButtonState(btn, isTracking) {
@@ -198,7 +200,7 @@
             btn.setAttribute('aria-label', isTracking ? 'Flight tracker active' : 'Track flight');
             btn.classList.toggle('sk-ft-tracking', isTracking);
             btn.innerHTML = `
-                ${this._logoImg(isTracking)}
+                ${this._knifesvg(isTracking)}
                 <span class="sk-ft-dot"></span>
             `;
         },
@@ -443,58 +445,69 @@
 
             // Remove old window if it exists
             state.windowEl?.remove();
+            if (state._resizeListener) {
+                window.removeEventListener('resize', state._resizeListener);
+                state._resizeListener = null;
+            }
 
             // If anchorBtn is null (called from _refreshWindow), look it up
             const anchor = anchorBtn || document.getElementById(`sidekick-track-btn-${playerId}`);
 
             const win = document.createElement('div');
             win.id = `sidekick-ft-win-${playerId}`;
-
-            if (anchor) {
-                const rect = anchor.getBoundingClientRect();
-                const popupWidth = 300;
-                const leftPx = Math.max(8, rect.right - popupWidth);
-                const topPx = rect.bottom + 8;
-                win.style.cssText = `
-                    position: fixed;
-                    top: ${topPx}px;
-                    left: ${leftPx}px;
-                    min-width: 260px;
-                    max-width: 340px;
-                    background: #141414;
-                    border: 1px solid rgba(255,255,255,0.15);
-                    border-radius: 10px;
-                    padding: 0;
-                    color: #fff;
-                    font-family: Arial, sans-serif;
-                    font-size: 13px;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
-                    z-index: 9999999;
-                    user-select: none;
-                `;
-            } else {
-                win.style.cssText = `
-                    position: fixed;
-                    top: 200px;
-                    right: 10px;
-                    min-width: 260px;
-                    max-width: 340px;
-                    background: #141414;
-                    border: 1px solid rgba(255,255,255,0.15);
-                    border-radius: 10px;
-                    padding: 0;
-                    color: #fff;
-                    font-family: Arial, sans-serif;
-                    font-size: 13px;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
-                    z-index: 9999999;
-                    user-select: none;
-                `;
-            }
+            win.style.cssText = `
+                position: fixed;
+                min-width: 260px;
+                max-width: 340px;
+                background: #141414;
+                border: 1px solid rgba(255,255,255,0.15);
+                border-radius: 10px;
+                padding: 0;
+                color: #fff;
+                font-family: Arial, sans-serif;
+                font-size: 13px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+                z-index: 9999999;
+                user-select: none;
+            `;
 
             win.innerHTML = this._buildWindowHTML(playerId);
             document.body.appendChild(win);
             state.windowEl = win;
+
+            // Position helper — clamps to current viewport
+            const positionWindow = () => {
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
+                const pw = win.offsetWidth  || 300;
+                const ph = win.offsetHeight || 200;
+
+                let left, top;
+
+                if (anchor) {
+                    const rect = anchor.getBoundingClientRect();
+                    left = rect.right - pw;         // right-align with button
+                    top  = rect.bottom + 8;         // just below button
+                } else {
+                    left = vw - pw - 10;
+                    top  = 200;
+                }
+
+                // Clamp so the popup is always fully within the viewport
+                left = Math.max(8, Math.min(left, vw - pw - 8));
+                top  = Math.max(8, Math.min(top,  vh - ph - 8));
+
+                win.style.left = `${left}px`;
+                win.style.top  = `${top}px`;
+            };
+
+            // Position immediately, then again once painted (to get real dimensions)
+            positionWindow();
+            requestAnimationFrame(positionWindow);
+
+            // Reposition on every resize so it never goes off-screen
+            state._resizeListener = positionWindow;
+            window.addEventListener('resize', positionWindow);
 
             this._attachWindowListeners(win, playerId, anchor);
         },
@@ -590,6 +603,9 @@
             if (!state) return;
             this._clearCountdown(state);
             state.observer?.disconnect();
+            if (state._resizeListener) {
+                window.removeEventListener('resize', state._resizeListener);
+            }
             state.windowEl?.remove();
             this.tracking.delete(playerId);
 
