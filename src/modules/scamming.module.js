@@ -65,6 +65,41 @@
         return isCrimesPage() && window.location.hash.includes('/scamming');
     }
 
+    // ── Sidekick header badge ─────────────────────────────────────────────────
+    const BADGE_ID = 'sidekick-scamming-badge';
+
+    function injectHeaderBadge() {
+        if (document.getElementById(BADGE_ID)) return;
+        const h4 = document.querySelector('div.appHeader___tG_Ot h4.heading___BtymB');
+        if (!h4) return;
+        const badge = document.createElement('span');
+        badge.id = BADGE_ID;
+        badge.title = 'Sidekick Scamming active';
+        badge.style.cssText = [
+            'display:inline-flex',
+            'align-items:center',
+            'justify-content:center',
+            'width:16px',
+            'height:16px',
+            'border-radius:50%',
+            'background:linear-gradient(135deg,#66BB6A,#4CAF50)',
+            'color:#fff',
+            'font-size:10px',
+            'font-weight:bold',
+            'margin-left:6px',
+            'vertical-align:middle',
+            'flex-shrink:0',
+            'box-shadow:0 0 4px rgba(102,187,106,0.6)',
+        ].join(';');
+        badge.textContent = '\u2713';
+        h4.appendChild(badge);
+    }
+
+    function removeHeaderBadge() {
+        const b = document.getElementById(BADGE_ID);
+        if (b) b.remove();
+    }
+
     // ── ScammingSolver ────────────────────────────────────────────────────────
     class ScammingSolver {
         get BASE_ACTION_COST() { return this.algo === 'meritGrift' ? 0.001 : 0.02; }
@@ -679,6 +714,13 @@
         renderStyle();
         started = true;
         console.log('[Scamming] Module active');
+
+        // Inject badge — retry until the React header renders
+        const badgeInterval = setInterval(() => {
+            if (!isScammingPage()) { clearInterval(badgeInterval); removeHeaderBadge(); return; }
+            injectHeaderBadge();
+            if (document.getElementById(BADGE_ID)) clearInterval(badgeInterval);
+        }, 200);
     }
 
     // Intercept fetch immediately so we never miss the first crimes data request.
@@ -696,6 +738,7 @@
         } else {
             // Left scamming page — allow re-init on next visit
             started = false;
+            removeHeaderBadge();
         }
     }, 300);
 

@@ -10,17 +10,17 @@
     // ── Travel times per country (seconds) ────────────────────────────────────
     // Keyed by the normalized country name as it appears in Torn status text
     const TRAVEL_TIMES = {
-        'Mexico':                { standard: 26*60, airstrip: 18*60, business: 8*60  },
-        'Cayman Islands':        { standard: 35*60, airstrip: 25*60, business: 11*60 },
-        'Canada':                { standard: 41*60, airstrip: 29*60, business: 12*60 },
-        'Hawaii':                { standard: 134*60, airstrip: 94*60, business: 40*60},
-        'United Kingdom':        { standard: 159*60, airstrip: 111*60, business: 48*60},
-        'Argentina':             { standard: 167*60, airstrip: 117*60, business: 50*60},
-        'Switzerland':           { standard: 175*60, airstrip: 123*60, business: 53*60},
-        'Japan':                 { standard: 225*60, airstrip: 158*60, business: 68*60},
-        'China':                 { standard: 242*60, airstrip: 169*60, business: 72*60},
-        'United Arab Emirates':  { standard: 271*60, airstrip: 190*60, business: 81*60},
-        'South Africa':          { standard: 297*60, airstrip: 208*60, business: 89*60},
+        'Mexico': { standard: 26 * 60, airstrip: 18 * 60, business: 8 * 60 },
+        'Cayman Islands': { standard: 35 * 60, airstrip: 25 * 60, business: 11 * 60 },
+        'Canada': { standard: 41 * 60, airstrip: 29 * 60, business: 12 * 60 },
+        'Hawaii': { standard: 134 * 60, airstrip: 94 * 60, business: 40 * 60 },
+        'United Kingdom': { standard: 159 * 60, airstrip: 111 * 60, business: 48 * 60 },
+        'Argentina': { standard: 167 * 60, airstrip: 117 * 60, business: 50 * 60 },
+        'Switzerland': { standard: 175 * 60, airstrip: 123 * 60, business: 53 * 60 },
+        'Japan': { standard: 225 * 60, airstrip: 158 * 60, business: 68 * 60 },
+        'China': { standard: 242 * 60, airstrip: 169 * 60, business: 72 * 60 },
+        'United Arab Emirates': { standard: 271 * 60, airstrip: 190 * 60, business: 81 * 60 },
+        'South Africa': { standard: 297 * 60, airstrip: 208 * 60, business: 89 * 60 },
     };
 
     // Country name aliases from Torn status text
@@ -105,32 +105,67 @@
 
         // ── Button injection ──────────────────────────────────────────────────
         async _injectButton(playerId) {
-            if (document.querySelector('.sidekick-flight-tracker-btn')) return;
+            if (document.getElementById(`sidekick-track-btn-${playerId}`)) return;
 
-            const linksList = await this._waitForElement('#top-page-links-list', 5000);
-            if (!linksList) return;
-            if (document.querySelector('.sidekick-flight-tracker-btn')) return;
+            // Wait for the actions buttons-list to exist
+            const buttonsList = await this._waitForElement('div.buttons-list', 5000);
+            if (!buttonsList) return;
+            if (document.getElementById(`sidekick-track-btn-${playerId}`)) return;
+
+            // Inject a one-time style block for our button
+            if (!document.getElementById('sk-ft-btn-style')) {
+                const s = document.createElement('style');
+                s.id = 'sk-ft-btn-style';
+                s.textContent = `
+                    .sidekick-flight-tracker-btn {
+                        position: relative;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        cursor: pointer;
+                        text-decoration: none;
+                        touch-action: manipulation;
+                        outline: none;
+                        border-radius: 5px;
+                        background: rgba(255,255,255,0.08);
+                        transition: opacity 0.15s, box-shadow 0.15s, background 0.15s;
+                    }
+                    .sidekick-flight-tracker-btn:hover {
+                        background: rgba(255,255,255,0.14);
+                    }
+                    .sidekick-flight-tracker-btn.sk-ft-tracking {
+                        background: rgba(76,175,80,0.18);
+                        box-shadow: 0 0 0 2px #4CAF50 inset;
+                    }
+                    .sidekick-flight-tracker-btn .sk-ft-dot {
+                        position: absolute;
+                        top: 8px;
+                        right: 6px;
+                        width: 7px;
+                        height: 7px;
+                        border-radius: 50%;
+                        background: #4CAF50;
+                        box-shadow: 0 0 4px #4CAF50;
+                        display: none;
+                    }
+                    .sidekick-flight-tracker-btn.sk-ft-tracking .sk-ft-dot {
+                        display: block;
+                    }
+                `;
+                document.head.appendChild(s);
+            }
 
             const btn = document.createElement('a');
-            btn.className = 'sidekick-flight-tracker-btn t-clear h c-pointer line-h24 right';
             btn.id = `sidekick-track-btn-${playerId}`;
-            btn.style.cssText = 'outline:none;text-decoration:none;';
+            btn.className = 'sidekick-flight-tracker-btn profile-button';
+            btn.setAttribute('role', 'button');
+            btn.setAttribute('data-is-tooltip-opened', 'false');
+
             const isTracking = this.tracking.has(playerId);
             this._setButtonState(btn, isTracking);
 
-            // Insert after BSP button (to its left in float:right layout)
-            const bspBtn = linksList.querySelector('.TDup_divBtnBsp');
-            if (bspBtn) {
-                bspBtn.insertAdjacentElement('afterend', btn);
-            } else {
-                linksList.appendChild(btn);
-                // Watch for BSP appearing later
-                new MutationObserver((_, obs) => {
-                    const bsp = linksList.querySelector('.TDup_divBtnBsp');
-                    const ours = linksList.querySelector('.sidekick-flight-tracker-btn');
-                    if (bsp && ours) { bsp.insertAdjacentElement('afterend', ours); obs.disconnect(); }
-                }).observe(linksList, { childList: true });
-            }
+            // Prepend so it appears in the first row of the actions grid
+            buttonsList.prepend(btn);
 
             btn.addEventListener('click', e => {
                 e.preventDefault();
@@ -139,15 +174,26 @@
             });
         },
 
+        // Sidekick logo img — loaded from extension assets
+        _logoImg(isTracking) {
+            const url = chrome.runtime.getURL('assets/icons/swissknife-48.png');
+            const opacity = isTracking ? '1' : '0.55';
+            const filter = isTracking
+                ? 'drop-shadow(0 0 4px #4CAF50)'
+                : 'none';
+            return `<img src="${url}" width="28" height="28"
+                style="display:block;opacity:${opacity};filter:${filter};transition:opacity 0.15s,filter 0.15s;"
+                alt="Sidekick Flight Tracker">`;
+        },
+
         _setButtonState(btn, isTracking) {
-            const bg = isTracking
-                ? 'linear-gradient(135deg,#2196F3,#1976D2)'
-                : 'linear-gradient(135deg,#4CAF50,#45a049)';
-            const text = isTracking ? '✈️ Tracking ▸' : '✈️ Track';
-            btn.title = isTracking ? 'Click to view tracker' : 'Click to track this player';
-            btn.innerHTML = `<div style="background:${bg};color:white;padding:3px 8px;border-radius:4px;
-                font-size:11px;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.3);
-                white-space:nowrap;line-height:18px;display:inline-block;">${text}</div>`;
+            btn.title = isTracking ? 'Flight Tracker — click to view' : 'Track this player\'s flight';
+            btn.setAttribute('aria-label', isTracking ? 'Flight tracker active' : 'Track flight');
+            btn.classList.toggle('sk-ft-tracking', isTracking);
+            btn.innerHTML = `
+                ${this._logoImg(isTracking)}
+                <span class="sk-ft-dot"></span>
+            `;
         },
 
         // ── Button click ──────────────────────────────────────────────────────
@@ -200,16 +246,39 @@
             window.addEventListener('beforeunload', () => this._stopTracking(playerId), { once: true });
         },
 
-        // ── Read status from DOM ──────────────────────────────────────────────
+        // Read status from DOM — also falls back to 'home' when no travel text found
         _readStatus(playerId) {
             const state = this.tracking.get(playerId);
             if (!state) return;
 
             const { text, planeType } = this._scanStatusDOM();
-            if (!text) return;
+
+            // If no travel text found at all, player is in Torn
+            if (!text) {
+                const prevStatus = state.status;
+                state.status = 'home';
+                state.country = null;
+                if (prevStatus === 'returning') {
+                    this._clearCountdown(state);
+                    state.landingTime = null;
+                }
+                this._refreshWindow(playerId);
+                return;
+            }
 
             const parsed = this._parseStatus(text);
-            if (!parsed) return;
+            if (!parsed) {
+                // Text found but doesn't match travel patterns — treat as home
+                const prevStatus = state.status;
+                state.status = 'home';
+                state.country = null;
+                if (prevStatus === 'returning') {
+                    this._clearCountdown(state);
+                    state.landingTime = null;
+                }
+                this._refreshWindow(playerId);
+                return;
+            }
 
             const country = normalizeCountry(parsed.country);
             const prevStatus = state.status;
@@ -234,27 +303,43 @@
 
         // Scan page DOM for travel status text and plane type
         _scanStatusDOM() {
-            // First try elements with travel-related classes
-            const candidates = Array.from(document.querySelectorAll(
-                '[class*="status"], [class*="travel"], [class*="icons"], [class*="userStatus"]'
-            ));
-
-            for (const el of candidates) {
-                const text = el.textContent?.trim() || '';
-                if (this._parseStatus(text)) {
-                    const planeType = this._detectPlaneType(el);
-                    return { text, planeType };
+            // ── Priority 1: Torn profile travel banner ────────────────────────
+            // The banner appears as a styled div/anchor with text like
+            // "Torn to South Africa" or "South Africa to Torn"
+            const bannerSelectors = [
+                '[class*="travel"]',
+                '[class*="traveling"]',
+                'a[href*="travel"]',
+                '[class*="status"]',
+                '[class*="userStatus"]',
+                '[class*="icons"]',
+            ];
+            for (const sel of bannerSelectors) {
+                for (const el of document.querySelectorAll(sel)) {
+                    // Only check leaf-ish text (avoid grabbing whole page sections)
+                    const rawText = el.textContent?.trim() || '';
+                    // Use first line only when the element spans multiple lines
+                    const firstLine = rawText.split(/\n/)[0].trim();
+                    for (const candidate of [firstLine, rawText]) {
+                        if (!candidate || candidate.length > 80) continue;
+                        const parsed = this._parseStatus(candidate);
+                        if (parsed) {
+                            const planeType = this._detectPlaneType(el);
+                            return { text: candidate, planeType };
+                        }
+                    }
                 }
             }
 
-            // Fallback: broad text scan of content wrapper
+            // ── Priority 2: Broad text-node walk ──────────────────────────────
             const wrapper = document.querySelector('.content-wrapper, #mainContainer, body');
             if (!wrapper) return { text: null, planeType: null };
 
             const walker = document.createTreeWalker(wrapper, NodeFilter.SHOW_TEXT);
             let node;
             while ((node = walker.nextNode())) {
-                const text = node.textContent?.trim() || '';
+                const text = (node.textContent?.trim() || '');
+                if (!text || text.length > 80) continue;
                 if (this._parseStatus(text)) {
                     const planeType = this._detectPlaneType(node.parentElement);
                     return { text, planeType };
@@ -290,14 +375,26 @@
             if (!text) return null;
             let m;
 
-            m = text.match(/Traveling\s+to\s+(.+?)(?:\s*$|\n)/i);
+            // Outbound travel — several formats Torn uses:
+            // "Traveling to South Africa"
+            // "Torn to South Africa"  (profile page travel banner)
+            // "Traveling from Torn to South Africa"
+            m = text.match(/(?:Traveling(?:\s+from\s+Torn)?\s+to|Torn\s+to)\s+(.+?)(?:\s*$|\n)/i);
             if (m) return { status: 'traveling', country: m[1].trim() };
 
-            m = text.match(/Returning\s+to\s+Torn\s+from\s+(.+?)(?:\s*$|\n)/i);
-            if (m) return { status: 'returning', country: m[1].trim() };
+            // Returning
+            m = text.match(/Returning\s+to\s+Torn(?:\s+from\s+(.+?))?(?:\s*$|\n)/i);
+            if (m) return { status: 'returning', country: (m[1] || '').trim() || null };
 
+            // Already abroad "In Mexico"
             m = text.match(/^In\s+(.+?)(?:\s*$|\n)/i);
-            if (m) return { status: 'abroad', country: m[1].trim() };
+            if (m) {
+                const place = m[1].trim();
+                // Reject non-location phrases (faction, hospital, jail, etc.)
+                const NON_LOCATIONS = /^(a\s|the\s|jail|hospital|rehab|federal|your|our|their|his|her)/i;
+                if (NON_LOCATIONS.test(place)) return null;
+                return { status: 'abroad', country: place };
+            }
 
             return null;
         },
@@ -332,7 +429,7 @@
             }
         },
 
-        // ── Live tracker window ───────────────────────────────────────────────
+        // ── Live tracker window ─────────────────────────────────────────────────
         _openWindow(playerId, anchorBtn) {
             const state = this.tracking.get(playerId);
             if (!state) return;
@@ -340,31 +437,59 @@
             // Remove old window if it exists
             state.windowEl?.remove();
 
-            const rect = anchorBtn.getBoundingClientRect();
+            // If anchorBtn is null (called from _refreshWindow), look it up
+            const anchor = anchorBtn || document.getElementById(`sidekick-track-btn-${playerId}`);
+
             const win = document.createElement('div');
             win.id = `sidekick-ft-win-${playerId}`;
-            win.style.cssText = `
-                position: fixed;
-                top: ${rect.bottom + 8}px;
-                right: ${window.innerWidth - rect.right}px;
-                min-width: 260px;
-                max-width: 340px;
-                background: #141414;
-                border: 1px solid rgba(255,255,255,0.15);
-                border-radius: 10px;
-                padding: 0;
-                color: #fff;
-                font-family: Arial, sans-serif;
-                font-size: 13px;
-                box-shadow: 0 8px 32px rgba(0,0,0,0.7);
-                z-index: 9999999;
-                user-select: none;
-            `;
+
+            if (anchor) {
+                const rect = anchor.getBoundingClientRect();
+                const popupWidth = 300;
+                const leftPx = Math.max(8, rect.right - popupWidth);
+                const topPx = rect.bottom + 8;
+                win.style.cssText = `
+                    position: fixed;
+                    top: ${topPx}px;
+                    left: ${leftPx}px;
+                    min-width: 260px;
+                    max-width: 340px;
+                    background: #141414;
+                    border: 1px solid rgba(255,255,255,0.15);
+                    border-radius: 10px;
+                    padding: 0;
+                    color: #fff;
+                    font-family: Arial, sans-serif;
+                    font-size: 13px;
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+                    z-index: 9999999;
+                    user-select: none;
+                `;
+            } else {
+                win.style.cssText = `
+                    position: fixed;
+                    top: 200px;
+                    right: 10px;
+                    min-width: 260px;
+                    max-width: 340px;
+                    background: #141414;
+                    border: 1px solid rgba(255,255,255,0.15);
+                    border-radius: 10px;
+                    padding: 0;
+                    color: #fff;
+                    font-family: Arial, sans-serif;
+                    font-size: 13px;
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+                    z-index: 9999999;
+                    user-select: none;
+                `;
+            }
+
             win.innerHTML = this._buildWindowHTML(playerId);
             document.body.appendChild(win);
             state.windowEl = win;
 
-            this._attachWindowListeners(win, playerId, anchorBtn);
+            this._attachWindowListeners(win, playerId, anchor);
         },
 
         _buildWindowHTML(playerId) {
@@ -378,7 +503,7 @@
 
             const planeLabel = state.planeType === 'airstrip' ? '🛩️ Airstrip'
                 : state.planeType === 'business' ? '💼 Business'
-                : '✈️ Commercial';
+                    : '✈️ Commercial';
             const planeBadge = `<span style="font-size:11px;color:#999;margin-left:6px;">${planeLabel}</span>`;
 
             if (state.status === 'traveling' && state.country) {
@@ -407,6 +532,9 @@
                         </div>`;
                     }
                 }
+            } else if (state.status === 'home') {
+                statusLine = `🏠 In <strong>Torn</strong>`;
+                statusColor = '#aaa';
             } else {
                 statusLine = `<span style="color:#666">👁️ Monitoring status…</span>`;
             }

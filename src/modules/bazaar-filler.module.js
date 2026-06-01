@@ -12,11 +12,11 @@ const BazaarFillerModule = (() => {
     const CACHE_TTL_MS = 60 * 1000; // 60 seconds
 
     // Sidekick theme colours (green gradient family)
-    const CLR_BTN      = 'linear-gradient(135deg, #3a8a3e, #4fa854)';
-    const CLR_BTN_HVR  = 'linear-gradient(135deg, #4aa84e, #62c066)';
-    const CLR_CLR      = 'linear-gradient(135deg, #1a4a2e, #254f30)';
-    const CLR_SOLID    = '#4fa854';   // Solid fallback for outline / active ring
-    const CLR_PEEK     = 'rgba(79,168,84,0.18)';
+    const CLR_BTN = 'linear-gradient(135deg, #3a8a3e, #4fa854)';
+    const CLR_BTN_HVR = 'linear-gradient(135deg, #4aa84e, #62c066)';
+    const CLR_CLR = 'linear-gradient(135deg, #1a4a2e, #254f30)';
+    const CLR_SOLID = '#4fa854';   // Solid fallback for outline / active ring
+    const CLR_PEEK = 'rgba(79,168,84,0.18)';
     const CLR_PEEK_HVR = 'rgba(79,168,84,0.35)';
 
     // -----------------------------------------------------------------------
@@ -80,8 +80,8 @@ const BazaarFillerModule = (() => {
         const m = String(formula).match(/^([+-]?)(\d+(?:\.\d+)?)(%)?$/);
         if (!m) return num;
         const sign = m[1] === '-' ? -1 : 1;
-        const val  = parseFloat(m[2]);
-        const adj  = m[3] ? (num * val / 100) : val;
+        const val = parseFloat(m[2]);
+        const adj = m[3] ? (num * val / 100) : val;
         return Math.round(num + sign * adj);
     }
 
@@ -104,13 +104,13 @@ const BazaarFillerModule = (() => {
                 background: ${CLR_BTN};
                 color: #fff;
                 border: none;
-                padding: 0 9px;
+                padding: 0 8px;
                 border-radius: 4px;
                 font-size: 11px;
                 font-weight: 600;
-                height: 24px;
-                line-height: 24px;
-                margin-left: 6px;
+                height: 26px;
+                line-height: 26px;
+                margin-right: 4px;
                 vertical-align: middle;
                 flex-shrink: 0;
                 transition: background 0.15s, box-shadow 0.15s;
@@ -134,8 +134,8 @@ const BazaarFillerModule = (() => {
                 border-radius: 3px;
                 font-size: 11px;
                 width: 20px;
-                height: 18px;
-                margin-left: 5px;
+                height: 20px;
+                margin-left: 4px;
                 vertical-align: middle;
                 flex-shrink: 0;
                 transition: background 0.12s;
@@ -273,14 +273,14 @@ const BazaarFillerModule = (() => {
 
         // Update labels
         popup.querySelector('#sk-bf-delta-lbl').textContent = prefs.priceDelta;
-        popup.querySelector('#sk-bf-slot-lbl').textContent  = `#${prefs.slotOffset + 1}`;
+        popup.querySelector('#sk-bf-slot-lbl').textContent = `#${prefs.slotOffset + 1}`;
 
         // Position: RIGHT of the item row, vertically centred on the peek button
         const peekRect = peekBtn.getBoundingClientRect();
         // We'll position it after layout so we know popup height
         popup.style.display = 'block';
         popup.style.left = '-9999px';
-        popup.style.top  = '-9999px';
+        popup.style.top = '-9999px';
 
         // Render loading state
         renderPopupBody(popup, null, true);
@@ -294,7 +294,7 @@ const BazaarFillerModule = (() => {
         const rowRect = row.getBoundingClientRect();
 
         let left = rowRect.right + 10;
-        let top  = peekRect.top + window.scrollY - (popupH / 2) + (peekRect.height / 2);
+        let top = peekRect.top + window.scrollY - (popupH / 2) + (peekRect.height / 2);
 
         // Clamp to viewport
         if (left + popupW + 10 > window.innerWidth) left = rowRect.left - popupW - 10;
@@ -305,7 +305,7 @@ const BazaarFillerModule = (() => {
         }
 
         popup.style.left = `${left}px`;
-        popup.style.top  = `${top}px`;
+        popup.style.top = `${top}px`;
         activePopup = popup;
 
         // Fetch and render
@@ -380,7 +380,7 @@ const BazaarFillerModule = (() => {
         e.preventDefault();
         e.stopPropagation();
 
-        const btn       = e.currentTarget;
+        const btn = e.currentTarget;
         const wasActive = btn.classList.contains('sk-bf-active');
 
         if (wasActive) {
@@ -398,7 +398,7 @@ const BazaarFillerModule = (() => {
         btn.textContent = 'Clear';
 
         const listings = await fetchBazaarListings(itemId);
-        const price    = calcFillPrice(listings);
+        const price = calcFillPrice(listings);
 
         if (price !== null && price > 0) {
             const inputs = getPriceInputs();
@@ -425,7 +425,7 @@ const BazaarFillerModule = (() => {
             const priceWrap = li.querySelector('div.price');
             if (!priceWrap) return;
 
-            const image  = li.querySelector('div.image-wrap img');
+            const image = li.querySelector('div.image-wrap img');
             const itemId = extractItemId(image);
             if (!itemId) return;
 
@@ -439,7 +439,7 @@ const BazaarFillerModule = (() => {
 
         // --- Fill button (lives in priceWrap next to the price input) ---
         const fillBtn = document.createElement('button');
-        fillBtn.type      = 'button';
+        fillBtn.type = 'button';
         fillBtn.className = 'sk-bf-btn';
         fillBtn.textContent = 'Fill';
         fillBtn.title = 'Fill price from cheapest Bazaar listing (Weav3r)';
@@ -459,7 +459,7 @@ const BazaarFillerModule = (() => {
         // --- Peek button (tiny 👁, same row) ---
         const peekBtn = document.createElement('span');
         peekBtn.className = 'sk-bf-peek';
-        peekBtn.title     = 'Show 5 lowest bazaar prices';
+        peekBtn.title = 'Show 5 lowest bazaar prices';
         peekBtn.innerHTML = '👁';
 
         peekBtn.addEventListener('click', e => {
@@ -475,7 +475,7 @@ const BazaarFillerModule = (() => {
         });
 
         const group = priceWrap.querySelector('.input-money-group') || priceWrap.firstElementChild || priceWrap;
-        group.style.display    = 'flex';
+        group.style.display = 'flex';
         group.style.alignItems = 'center';
         group.prepend(fillBtn);
         group.append(peekBtn);
@@ -490,7 +490,7 @@ const BazaarFillerModule = (() => {
             // Target the price container instead of desc
             const priceWrap = row.querySelector('div[class*=price___], div.price');
             if (!priceWrap) return;
-            const image  = row.querySelector('div[class*=imgContainer___] img, div.image-wrap img');
+            const image = row.querySelector('div[class*=imgContainer___] img, div.image-wrap img');
             const itemId = extractItemId(image);
             if (!itemId) return;
 
@@ -503,7 +503,7 @@ const BazaarFillerModule = (() => {
         if (priceWrap.querySelector('.sk-bf-btn')) return;
 
         const fillBtn = document.createElement('button');
-        fillBtn.type      = 'button';
+        fillBtn.type = 'button';
         fillBtn.className = 'sk-bf-btn';
         fillBtn.textContent = 'Fill';
         fillBtn.title = 'Fill price from cheapest Bazaar listing (Weav3r)';
@@ -542,7 +542,7 @@ const BazaarFillerModule = (() => {
 
         const peekBtn = document.createElement('span');
         peekBtn.className = 'sk-bf-peek';
-        peekBtn.title     = 'Show 5 lowest bazaar prices';
+        peekBtn.title = 'Show 5 lowest bazaar prices';
         peekBtn.innerHTML = '👁';
 
         peekBtn.addEventListener('click', e => {
@@ -561,8 +561,7 @@ const BazaarFillerModule = (() => {
         });
 
         const group = priceWrap.querySelector('.input-money-group') || priceWrap.firstElementChild || priceWrap;
-        group.style.display    = 'flex';
-        group.style.alignItems = 'center';
+        group.style.cssText = (group.style.cssText || '') + 'display:flex!important;align-items:center!important;flex-wrap:nowrap!important;';
         group.prepend(fillBtn);
         group.append(peekBtn);
     }
@@ -581,7 +580,7 @@ const BazaarFillerModule = (() => {
     // -----------------------------------------------------------------------
     function runPageScan() {
         const hash = window.location.hash;
-        if (hash.startsWith('#/add'))    processAddPage();
+        if (hash.startsWith('#/add')) processAddPage();
         if (hash.startsWith('#/manage')) processManagePage();
         // Also try both in case hash is empty or unknown
         if (!hash) { processAddPage(); processManagePage(); }

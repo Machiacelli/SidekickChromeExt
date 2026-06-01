@@ -1,8 +1,6 @@
 /**
  * Sidekick Chrome Extension - Random Target Module
- * Creates a floating draggable button that selects random attack targets
- * Version: 2.0.0
- * Author: Machiacelli
+ * Creates a floating draggable button that selects random attack targets  
  */
 
 (function () {
@@ -356,7 +354,7 @@
             if (config.enableApiChecks && apiKey) {
                 try {
                     console.log(`🔄 Checking user ${randomId} with API...`);
-                    const response = await fetch(`https://api.torn.com/user/${randomId}?selections=basic,personalstats&key=${apiKey}`);
+                    const response = await fetch(`https://api.torn.com/user/${randomId}?selections=profile,personalstats&key=${apiKey}`);
                     const user = await response.json();
 
                     if (user.error) {
@@ -419,7 +417,7 @@
 
         // Open attack page for specific user ID
         openAttackPage(userId) {
-            const attackUrl = `https://www.torn.com/loader.php?sid=attack&user2ID=${userId}`;
+            const attackUrl = `https://www.torn.com/page.php?sid=attack&user2ID=${userId}`;
 
             console.log("✅ Opening attack page:", attackUrl);
 

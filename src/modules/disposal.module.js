@@ -50,6 +50,41 @@ const DisposalModule = (() => {
         return isCrimesPage() && window.location.hash.includes(DISPOSAL_HASH);
     }
 
+    // ── Sidekick header badge ─────────────────────────────────────────────────
+    const BADGE_ID = 'sidekick-disposal-badge';
+
+    function injectHeaderBadge() {
+        if (document.getElementById(BADGE_ID)) return;
+        const h4 = document.querySelector('div.appHeader___tG_Ot h4.heading___BtymB');
+        if (!h4) return;
+        const badge = document.createElement('span');
+        badge.id = BADGE_ID;
+        badge.title = 'Sidekick Disposal active';
+        badge.style.cssText = [
+            'display:inline-flex',
+            'align-items:center',
+            'justify-content:center',
+            'width:16px',
+            'height:16px',
+            'border-radius:50%',
+            'background:linear-gradient(135deg,#66BB6A,#4CAF50)',
+            'color:#fff',
+            'font-size:10px',
+            'font-weight:bold',
+            'margin-left:6px',
+            'vertical-align:middle',
+            'flex-shrink:0',
+            'box-shadow:0 0 4px rgba(102,187,106,0.6)',
+        ].join(';');
+        badge.textContent = '\u2713';
+        h4.appendChild(badge);
+    }
+
+    function removeHeaderBadge() {
+        const b = document.getElementById(BADGE_ID);
+        if (b) b.remove();
+    }
+
     // ── Core logic ────────────────────────────────────────────────────────────
 
     // Idempotent — always re-applies so React-recreated DOM nodes get colored
@@ -119,10 +154,18 @@ const DisposalModule = (() => {
         startObserver();
         startPolling();
         console.log('[Disposal] Active on disposal page');
+
+        // Inject badge — retry until the React header renders
+        const badgeInterval = setInterval(() => {
+            if (!isDisposalPage()) { clearInterval(badgeInterval); removeHeaderBadge(); return; }
+            injectHeaderBadge();
+            if (document.getElementById(BADGE_ID)) clearInterval(badgeInterval);
+        }, 200);
     }
 
     function deactivate() {
         stopAll();
+        removeHeaderBadge();
     }
 
     // ── URL watchdog ─────────────────────────────────────────────────────────

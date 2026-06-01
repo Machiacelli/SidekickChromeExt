@@ -32,6 +32,9 @@
         popupEnabled: true,
         screenFlashEnabled: true,
         floatingDisplayEnabled: true,
+        currentChainSeconds: 0,
+        displayFlashIntervalId: null,
+        floatingPosition: { top: '10px', left: 'auto', right: '10px' },
         floatingDisplay: null,
         monitorInterval: null,
         alertThresholdSeconds: 240, // 4 minutes
@@ -76,6 +79,7 @@
                     this.popupEnabled = saved.popupEnabled !== false;
                     this.screenFlashEnabled = saved.screenFlashEnabled !== false;
                     this.floatingDisplayEnabled = saved.floatingDisplayEnabled !== false;
+                    if (saved.floatingPosition) this.floatingPosition = saved.floatingPosition;
                     this.alertThresholdSeconds = saved.alertThresholdSeconds || 240;
                 } else {
                     this.isEnabled = false;
@@ -107,6 +111,7 @@
                     popupEnabled: this.popupEnabled,
                     screenFlashEnabled: this.screenFlashEnabled,
                     floatingDisplayEnabled: this.floatingDisplayEnabled,
+                    floatingPosition: this.floatingPosition,
                     alertThresholdSeconds: this.alertThresholdSeconds
                 });
                 console.log('💾 Chain Timer settings saved');
@@ -173,20 +178,21 @@
             this.removeFloatingDisplay();
 
             this.floatingDisplay = document.createElement('div');
-            this.floatingDisplay.id = 'sidekick-chain-timer';
+            this.floatingDisplay.id = 'sidekick-chain-timer-float';
             this.floatingDisplay.style.cssText = `
                 position: fixed;
-                top: 80px;
-                right: 15px;
-                background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+                top: ${this.floatingPosition.top};
+                left: ${this.floatingPosition.left};
+                right: ${this.floatingPosition.right};
+                z-index: 2147483647;background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
                 border: 1px solid #444;
                 border-radius: 8px;
                 padding: 12px 16px;
                 color: #fff;
                 font-family: 'Courier New', monospace;
-                font-size: 14px;
-                z-index: 9999;
-                min-width: 160px;
+                border-radius: 8px;
+                padding: 10px;
+                min-width: 140px;
                 min-height: 80px;
                 text-align: center;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.3);
@@ -249,6 +255,12 @@
             document.addEventListener('mouseup', () => {
                 if (isDragging) {
                     this.floatingDisplay.style.cursor = 'move';
+                    this.floatingPosition = {
+                        top: this.floatingDisplay.style.top,
+                        left: this.floatingDisplay.style.left,
+                        right: 'auto'
+                    };
+                    this.saveSettings();
                 }
                 isDragging = false;
             });
@@ -352,14 +364,14 @@
         getChainData() {
             // Try multiple selectors for chain time
             const timeSelectors = [
-                '.bar-timeleft___B9RGV',
+                '[class*="bar-timeleft"]',
                 '[class*="chain-time"]',
                 '.chain-time',
                 '.timeleft'
             ];
 
             const lengthSelectors = [
-                '.bar-value___uxnah',
+                '[class*="bar-value"]',
                 '[class*="chain-length"]',
                 '.chain-length',
                 '.chain-count'
@@ -368,6 +380,7 @@
             let timeLeft = null;
             let length = null;
             let status = 'Monitoring...';
+            let timeElement = null;
 
             // Find time element
             for (const selector of timeSelectors) {
@@ -376,17 +389,45 @@
                     const text = element.textContent.trim();
                     if (text.includes(':') && !text.includes('ended')) {
                         timeLeft = text;
+                        timeElement = element;
                         break;
                     }
                 }
             }
 
             // Find length element
-            for (const selector of lengthSelectors) {
-                const element = document.querySelector(selector);
-                if (element && element.textContent.trim()) {
-                    length = element.textContent.trim();
-                    break;
+            // First try to find it near the time element to avoid getting energy/nerve bars
+            if (timeElement) {
+                let parent = timeElement.parentElement;
+                // Go up to 5 levels to find the common container
+                for (let i = 0; i < 5 && parent; i++) {
+                    for (const selector of lengthSelectors) {
+                        const valElement = parent.querySelector(selector);
+                        if (valElement && valElement.textContent.trim()) {
+                            length = valElement.textContent.trim();
+                            break;
+                        }
+                    }
+                    if (length) break;
+                    parent = parent.parentElement;
+                }
+            }
+
+            // Fallback if not found nearby
+            if (!length) {
+                for (const selector of lengthSelectors) {
+                    const elements = document.querySelectorAll(selector);
+                    for (const element of elements) {
+                        if (element && element.textContent.trim()) {
+                            const val = element.textContent.trim();
+                            // Skip if it looks like an energy/nerve bar (e.g. "375/150")
+                            if (!val.includes('/')) {
+                                length = val;
+                                break;
+                            }
+                        }
+                    }
+                    if (length) break;
                 }
             }
 

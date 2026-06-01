@@ -130,9 +130,7 @@
                     // Show user-friendly notification about missing API key
                     if (window.SidekickModules?.UI?.showNotification) {
                         window.SidekickModules.UI.showNotification(
-                            'Debt Tracker - API Key Required',
-                            'Automatic payment detection requires an API key. Please add your API key in Settings (⚙️ button).',
-                            'warning'
+                            'Debt Tracker - API Key Required'
                         );
                     }
                 }
@@ -145,15 +143,9 @@
         testPaymentDetection() {
             console.log("💰 === Testing Payment Detection Patterns ===");
 
-            // Test with your specific log format
-            const testLogs = [
-                { log: "You were sent $14 from cybex with the message: Loan", timestamp: Math.floor(Date.now() / 1000) },
-                { log: "You sent $100 to cybex with the message: loan payment", timestamp: Math.floor(Date.now() / 1000) }
-            ];
-
             console.log("💰 Current debts/loans:", this.debtsAndLoans);
 
-            testLogs.forEach((log, index) => {
+            this.debtsAndLoans.forEach((log, index) => {
                 console.log(`💰 Testing log ${index + 1}: ${log.log}`);
                 this.handleMoneyTransfer(log);
             });

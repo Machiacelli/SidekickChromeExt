@@ -72,30 +72,15 @@
             this.dict = [];
             this.dictLoaded = false;
             this.dictLoading = false;
-            this.remoteWords = new Set();
-            this.statusEl = null;
             this.prevRowStates = new Map();
             this.panelUpdateTimers = new Map();
             this.LAST_INPUT = { key: null, time: 0 };
-
-            this.outboxFlushTimer = null;
-            this.lastOutboxPost = 0;
-            this.autoSyncTimer = null;
-            this.autoSyncInFlight = false;
 
             this.MIN_LENGTH = 4;
             this.MAX_LENGTH = 10;
             this.WORDLIST_URL = 'https://gitlab.com/kalilinux/packages/seclists/-/raw/kali/master/Passwords/Common-Credentials/Pwdb_top-1000000.txt?ref_type=heads';
             this.DOWNLOAD_MIN_DELTA = 20;
-            this.CF_WORKER_ORIGIN = 'https://torn-crack-files.siraua.workers.dev';
-            this.CF_ADD_WORD_URL = `${this.CF_WORKER_ORIGIN}/submit`;
-            this.CF_STORAGE_BASE = `${this.CF_WORKER_ORIGIN}/words`;
-            this.METADATA_URL = `${this.CF_STORAGE_BASE}/metadata.json`;
 
-            this.SYNC_MIN_INTERVAL_MS = 24 * 60 * 60 * 1000;
-            this.OUTBOX_FLUSH_INTERVAL_MS = 5 * 1000;
-            this.OUTBOX_POST_INTERVAL_MS = 2000;
-            this.OUTBOX_BATCH_SIZE = 5;
             this.DB_NAME = 'crack';
             this.STORE_NAME = 'dictionary';
             this.EXCL_STORAGE_PREFIX = 'crack_excl_';
@@ -114,7 +99,9 @@
 
             // Load dict
             this.loadDict();
-            this.startAutoSyncHeartbeat();
+
+            // Start nav watcher for header badge
+            this.startNavWatcher();
         },
 
         stopModule() {
@@ -122,29 +109,82 @@
                 clearInterval(this._intervalId);
                 this._intervalId = null;
             }
-            if (this.autoSyncTimer) {
-                clearInterval(this.autoSyncTimer);
-                this.autoSyncTimer = null;
-            }
-            if (this.outboxFlushTimer) {
-                clearTimeout(this.outboxFlushTimer);
-                this.outboxFlushTimer = null;
+            if (this._navWatcher) {
+                clearInterval(this._navWatcher);
+                this._navWatcher = null;
             }
             if (this.keydownHandler) {
                 window.removeEventListener('keydown', this.keydownHandler, true);
                 this.keydownHandler = null;
             }
 
-            // Cleanup UI
-            if (this.statusEl && this.statusEl.parentNode) {
-                this.statusEl.parentNode.removeChild(this.statusEl);
-                this.statusEl = null;
-            }
+            // Remove header badge
+            const badge = document.getElementById('sidekick-cracking-badge');
+            if (badge) badge.remove();
+
+            // Cleanup UI panels
             const panels = document.querySelectorAll('.__crackhelp_panel');
             panels.forEach(p => p.remove());
         },
 
+        // ── Status (console-only, no DOM element) ────────────────────────────
+        setStatus(msg) {
+            if (this.debug && msg) console.log('[Crack] Status:', msg);
+        },
+
         crackLog(...args) { if (this.debug) console.log('[Crack]', ...args); },
+
+        // ── Header Badge ─────────────────────────────────────────────────────
+
+        injectHeaderBadge() {
+            // Only on cracking page
+            if (window.location.hash !== '#/cracking') return;
+            if (document.getElementById('sidekick-cracking-badge')) return;
+
+            const header = document.querySelector('div.appHeader___tG_Ot h4.heading___BtymB');
+            if (!header) return;
+
+            const badge = document.createElement('span');
+            badge.id = 'sidekick-cracking-badge';
+            badge.title = 'Sidekick Cracking active';
+            badge.style.cssText = [
+                'display:inline-flex',
+                'align-items:center',
+                'justify-content:center',
+                'width:16px',
+                'height:16px',
+                'border-radius:50%',
+                'background:linear-gradient(135deg,#66BB6A,#4CAF50)',
+                'color:#fff',
+                'font-size:10px',
+                'font-weight:bold',
+                'margin-left:6px',
+                'vertical-align:middle',
+                'flex-shrink:0',
+                'box-shadow:0 0 4px rgba(102,187,106,0.6)',
+            ].join(';');
+            badge.textContent = '✓';
+            header.appendChild(badge);
+        },
+
+        startNavWatcher() {
+            if (this._navWatcher) return;
+            let lastUrl = window.location.href;
+            this._navWatcher = setInterval(() => {
+                const cur = window.location.href;
+                if (cur !== lastUrl) {
+                    lastUrl = cur;
+                    // Remove stale badge when leaving the page
+                    const old = document.getElementById('sidekick-cracking-badge');
+                    if (old) old.remove();
+                }
+                this.injectHeaderBadge();
+            }, 400);
+            // Also attempt immediately
+            this.injectHeaderBadge();
+        },
+
+        // ── Theme ─────────────────────────────────────────────────────────────
 
         getTheme() {
             return {
@@ -155,14 +195,6 @@
                 sugText: '#4fa854', // Sidekick Green
                 sugFontPx: 12,
             };
-        },
-
-        applyStatusBadgeTheme(el) {
-            const t = this.getTheme();
-            if (!el) return;
-            el.style.background = t.uiBg;
-            el.style.color = t.uiText;
-            el.style.border = `1px solid ${t.uiBorder}`;
         },
 
         styleSugSpan(sp) {
@@ -195,27 +227,7 @@
             }
         },
 
-        ensureStatusBadge() {
-            if (this.statusEl) return this.statusEl;
-            this.statusEl = document.createElement('div');
-            this.statusEl.id = '__crack_status';
-            this.statusEl.style.cssText = `
-                  position: fixed; right: 10px; bottom: 40px; z-index: 10000;
-                  padding:6px 8px; font-size:11px; font-family:monospace; opacity:0.9;
-                  border-radius:6px;
-                `;
-            this.statusEl.textContent = 'Dictionary: Idle';
-            document.body.appendChild(this.statusEl);
-            this.applyStatusBadgeTheme(this.statusEl);
-            return this.statusEl;
-        },
-
-        setStatus(msg) {
-            const text = `Dictionary: ${msg}`;
-            const badge = this.ensureStatusBadge();
-            if (badge.textContent !== text) badge.textContent = text;
-            this.crackLog('STATUS →', msg);
-        },
+        // ── Network helpers ───────────────────────────────────────────────────
 
         gmRequest(opts) {
             return new Promise(async (resolve, reject) => {
@@ -240,25 +252,17 @@
                         responseText = await res.text();
                     }
 
-                    const gmResponse = {
+                    resolve({
                         status: res.status,
                         statusText: res.statusText,
-                        responseText: responseText,
-                        response: response,
+                        responseText,
+                        response,
                         responseHeaders: [...res.headers].map(([k, v]) => `${k}: ${v}`).join('\r\n')
-                    };
-
-                    resolve(gmResponse);
+                    });
                 } catch (err) {
                     reject(err);
                 }
             });
-        },
-
-        getHeader(headers, name) {
-            const re = new RegExp('^' + name + ':\\s*(.*)$', 'mi');
-            const m = headers && headers.match ? headers.match(re) : null;
-            return m ? m[1].trim() : null;
         },
 
         isGzipPath(pathOrUrl) {
@@ -286,10 +290,7 @@
             return res.responseText || '';
         },
 
-        metadataURL(force = false) {
-            const ts = force ? Date.now() : Math.floor(Date.now() / 60000);
-            return `${this.METADATA_URL}?cb=${ts}`;
-        },
+        // ── IndexedDB ─────────────────────────────────────────────────────────
 
         openDB() {
             return new Promise((resolve, reject) => {
@@ -322,14 +323,7 @@
             });
         },
 
-        async idbClear() {
-            const db = await this.openDB();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction(this.STORE_NAME, 'readwrite');
-                tx.objectStore(this.STORE_NAME).clear();
-                tx.oncomplete = resolve; tx.onerror = () => reject(tx.error);
-            });
-        },
+        // ── Key capture ───────────────────────────────────────────────────────
 
         captureKey(k) {
             if (!k) return;
@@ -338,6 +332,8 @@
             this.LAST_INPUT.key = k.toUpperCase();
             this.LAST_INPUT.time = performance.now();
         },
+
+        // ── Dictionary loading ────────────────────────────────────────────────
 
         async commitBucketsToIDB(buckets) {
             for (const lenStr of Object.keys(buckets)) {
@@ -352,7 +348,7 @@
         },
 
         async fetchAndIndex(url, onProgress) {
-            this.setStatus('Downloading base wordlist …');
+            this.setStatus('Downloading base wordlist…');
             let res;
             try {
                 res = await this.gmRequest({ method: 'GET', url, timeout: 90000, responseType: 'text' });
@@ -406,7 +402,7 @@
             if (!hasData) {
                 this.crackLog('No cache found. Downloading dictionary…');
                 const MAX_TRIES = 4;
-                const DELAYS = [0, 3000, 10000, 30000]; // ms
+                const DELAYS = [0, 3000, 10000, 30000];
                 let ok = false, lastErr = null;
 
                 for (let attempt = 0; attempt < MAX_TRIES; attempt++) {
@@ -439,257 +435,10 @@
 
             this.dictLoaded = true;
             this.dictLoading = false;
-            this.setStatus('Ready');
+            this.setStatus('');
         },
 
-        async fetchRemoteMeta(force = false) {
-            try {
-                const lastSync = Number(await this.idbGet('cf_last_sync_ts')) || 0;
-                const now = Date.now();
-                if (!force && (now - lastSync) < this.SYNC_MIN_INTERVAL_MS) {
-                    this.crackLog('Skipping fetchRemoteMeta (recent sync)');
-                    const cachedMeta = await this.idbGet('cf_metadata') || {};
-                    return {
-                        count: cachedMeta.count || Number(await this.idbGet('cf_remote_count')) || 0,
-                        etag: '',
-                        snapshot_path: cachedMeta.snapshot_path || null,
-                        diff_path: cachedMeta.diff_path || null,
-                        generated_at: cachedMeta.generated_at || null
-                    };
-                }
-
-                const metaUrl = this.metadataURL(force);
-                this.crackLog('Fetching metadata.json ->', metaUrl);
-                const metaRes = await this.gmRequest({ method: 'GET', url: metaUrl, timeout: 10000, responseType: 'text' });
-
-                if (metaRes.status !== 200) {
-                    this.crackLog('metadata.json not available; using cached meta only', metaRes.status);
-                    const cachedMeta = await this.idbGet('cf_metadata') || {};
-                    return {
-                        count: cachedMeta.count || Number(await this.idbGet('cf_remote_count')) || 0,
-                        etag: '',
-                        snapshot_path: cachedMeta.snapshot_path || null,
-                        diff_path: cachedMeta.diff_path || null,
-                        generated_at: cachedMeta.generated_at || null
-                    };
-                }
-
-                const meta = JSON.parse(metaRes.responseText || '{}');
-                const toSave = {
-                    count: meta.count || 0,
-                    etag: '',
-                    snapshot_path: meta.snapshot_path || meta.latest_path || null,
-                    diff_path: meta.diff_path || null,
-                    generated_at: meta.generated_at || null
-                };
-
-                await this.idbSet('cf_metadata', toSave);
-                await this.idbSet('cf_remote_count', toSave.count);
-                await this.idbSet('cf_last_sync_ts', Date.now());
-
-                return { count: toSave.count, etag: '', snapshot_path: toSave.snapshot_path, diff_path: toSave.diff_path, generated_at: toSave.generated_at };
-            } catch (e) {
-                this.crackLog('fetchRemoteMeta failed:', e);
-                return { count: Number(await this.idbGet('cf_remote_count')) || 0, etag: '', snapshot_path: null, diff_path: null, generated_at: null };
-            }
-        },
-
-        async downloadCommunityWordlist(meta, ifNoneMatchEtag) {
-            try {
-                if (!meta || !meta.snapshot_path) {
-                    this.crackLog('No snapshot_path in metadata.');
-                    return 0;
-                }
-
-                const snapshotUrl = `${this.CF_STORAGE_BASE}/${meta.snapshot_path}`;
-                this.crackLog('Fetching snapshot ->', snapshotUrl);
-
-                const headers = {};
-                if (ifNoneMatchEtag) headers['If-None-Match'] = ifNoneMatchEtag;
-
-                const isGz = this.isGzipPath(meta.snapshot_path);
-                const res = await this.gmRequest({ method: 'GET', url: snapshotUrl, headers, timeout: 45000, responseType: isGz ? 'arraybuffer' : 'text' });
-
-                const remoteEtag = this.getHeader(res.responseHeaders, 'ETag') || '';
-                if (remoteEtag) await this.idbSet('cf_remote_etag', remoteEtag);
-
-                if (res.status === 304) {
-                    this.crackLog('Snapshot unchanged (304)');
-                    await this.idbSet('cf_last_downloaded_count', meta.count || 0);
-                    await this.idbSet('cf_last_sync_ts', Date.now());
-                    return 0;
-                }
-
-                if (res.status !== 200) {
-                    this.crackLog('Snapshot fetch failed, status:', res.status);
-                    return 0;
-                }
-
-                const text = await this.responseToText(res, meta.snapshot_path);
-                this.setStatus('Indexing snapshot…');
-                const lines = text.split(/\r?\n/);
-                const buckets = {};
-                let processed = 0;
-
-                for (const raw of lines) {
-                    processed++;
-                    const word = (raw || '').trim().toUpperCase();
-                    if (!word) continue;
-                    if (!/^[A-Z0-9_.]+$/.test(word)) continue;
-                    const L = word.length;
-                    if (L < this.MIN_LENGTH || L > this.MAX_LENGTH) continue;
-                    if (!buckets[L]) buckets[L] = new Set();
-                    buckets[L].add(word);
-                    if (processed % 5000 === 0) await new Promise(r => setTimeout(r, 0));
-                }
-
-                await this.commitBucketsToIDB(buckets);
-                this.setStatus('Snapshot indexed');
-
-                await this.idbSet('cf_remote_count', meta.count || 0);
-                await this.idbSet('cf_last_downloaded_count', meta.count || 0);
-                await this.idbSet('cf_last_sync_ts', Date.now());
-
-                await this.idbSet('cf_metadata', {
-                    snapshot_path: meta.snapshot_path,
-                    diff_path: meta.diff_path || null,
-                    count: meta.count || 0,
-                    generated_at: meta.generated_at || null,
-                    etag: remoteEtag || ''
-                });
-
-                return 1;
-            } catch (e) {
-                this.crackLog('downloadCommunityWordlist failed:', e);
-                return 0;
-            }
-        },
-
-        async checkRemoteAndMaybeDownload(force = false) {
-            const meta = await this.fetchRemoteMeta(force);
-
-            const lastDownloaded = (await this.idbGet('cf_last_downloaded_count')) || 0;
-            const remoteCount = meta.count || Number(await this.idbGet('cf_remote_count')) || 0;
-            const delta = Math.max(0, remoteCount - lastDownloaded);
-
-            if (!force && delta < this.DOWNLOAD_MIN_DELTA) {
-                this.crackLog(`Skip download: delta=${delta} < ${this.DOWNLOAD_MIN_DELTA}`);
-                await this.idbSet('cf_pending_delta', delta);
-                return 0;
-            }
-
-            this.setStatus(force ? 'Manual sync…' : `Syncing (+${delta})…`);
-            const etag = (await this.idbGet('cf_remote_etag')) || '';
-            const added = await this.downloadCommunityWordlist(meta, etag);
-            await this.idbSet('cf_pending_delta', 0);
-            return added;
-        },
-
-        async msUntilEligibleSync() {
-            const last = Number(await this.idbGet('cf_last_sync_ts')) || 0;
-            const remain = last + this.SYNC_MIN_INTERVAL_MS - Date.now();
-            return Math.max(0, remain);
-        },
-
-        startAutoSyncHeartbeat() {
-            if (this.autoSyncTimer) return;
-            this.autoSyncTimer = setInterval(async () => {
-                if (this.autoSyncInFlight) return;
-                try {
-                    const remain = await this.msUntilEligibleSync();
-                    if (remain > 0) return;
-
-                    this.autoSyncInFlight = true;
-                    this.setStatus('Auto-syncing community words…');
-
-                    const added = await this.checkRemoteAndMaybeDownload(false);
-
-                    const remoteCount = await this.idbGet('cf_remote_count');
-                    const delta = await this.idbGet('cf_pending_delta');
-                    if (added && added > 0) {
-                        this.setStatus(`Ready (+${added}, remote: ${remoteCount})`);
-                    } else {
-                        this.setStatus(`Ready (remote ${remoteCount}${delta ? `, +${delta} pending` : ''})`);
-                    }
-                } catch (e) {
-                    this.crackLog('Auto-sync failed', e);
-                    this.setStatus('Ready');
-                } finally {
-                    this.autoSyncInFlight = false;
-                }
-            }, 1000);
-        },
-
-        async enqueueOutbox(word) {
-            if (!word) return;
-            const w = word.toUpperCase();
-            let out = await this.idbGet('cf_outbox') || [];
-            if (!out.includes(w)) {
-                out.push(w);
-                await this.idbSet('cf_outbox', out);
-                this.crackLog('Enqueued word to outbox:', w);
-                this.ensureOutboxFlushScheduled();
-            }
-        },
-
-        ensureOutboxFlushScheduled() {
-            if (this.outboxFlushTimer) return;
-            this.outboxFlushTimer = setTimeout(() => this.flushOutbox(), this.OUTBOX_FLUSH_INTERVAL_MS);
-        },
-
-        async flushOutbox() {
-            this.outboxFlushTimer = null;
-            let out = await this.idbGet('cf_outbox') || [];
-            if (!out || out.length === 0) return;
-
-            while (out.length > 0) {
-                const batch = out.splice(0, this.OUTBOX_BATCH_SIZE);
-                const now = Date.now();
-                const sinceLast = now - this.lastOutboxPost;
-                if (sinceLast < this.OUTBOX_POST_INTERVAL_MS) await new Promise(r => setTimeout(r, this.OUTBOX_POST_INTERVAL_MS - sinceLast));
-
-                try {
-                    await this.gmRequest({
-                        method: 'POST',
-                        url: this.CF_ADD_WORD_URL,
-                        headers: { 'Content-Type': 'application/json' },
-                        data: JSON.stringify({ words: batch }),
-                        timeout: 15000
-                    });
-
-                    this.crackLog('Flushed outbox batch:', batch.length);
-                    for (const w of batch) {
-                        this.remoteWords.add(w);
-                        await this.addWordToLocalCache(w);
-                    }
-                } catch (e) {
-                    this.crackLog('Batch POST failed, falling back to single POSTs', e);
-                    for (const w of batch) {
-                        try {
-                            await this.gmRequest({
-                                method: 'POST',
-                                url: this.CF_ADD_WORD_URL,
-                                headers: { 'Content-Type': 'application/json' },
-                                data: JSON.stringify({ word: w }),
-                                timeout: 10000
-                            });
-
-                            this.crackLog('Flushed outbox (single):', w);
-                            this.remoteWords.add(w);
-                            await this.addWordToLocalCache(w);
-                            await new Promise(r => setTimeout(r, this.OUTBOX_POST_INTERVAL_MS));
-                        } catch (ee) {
-                            this.crackLog('Single POST failed for', w, ee);
-                            out.unshift(w);
-                            break;
-                        }
-                    }
-                }
-
-                this.lastOutboxPost = Date.now();
-                await this.idbSet('cf_outbox', out);
-            }
-        },
+        // ── Exclusions ────────────────────────────────────────────────────────
 
         loadExclusions(rowKey, len) {
             const raw = sessionStorage.getItem(this.EXCL_STORAGE_PREFIX + rowKey + '_' + len);
@@ -733,6 +482,8 @@
             }
         },
 
+        // ── Suggestions ───────────────────────────────────────────────────────
+
         async suggest(pattern, rowKey) {
             const len = pattern.length;
             if (len < this.MIN_LENGTH || len > this.MAX_LENGTH) return [];
@@ -740,7 +491,7 @@
                 const chunk = await this.idbGet(`len_${len}`); if (!chunk) return [];
                 this.dict[len] = chunk;
             }
-            const maxSug = 5; // Hardcoded requirement
+            const maxSug = 5;
             const maxCandidates = maxSug * 50;
             const worker = new Worker(URL.createObjectURL(new Blob([`
                   self.onmessage = function(e) {
@@ -770,6 +521,8 @@
             return filtered.slice(0, maxSug);
         },
 
+        // ── Panel ─────────────────────────────────────────────────────────────
+
         prependPanelToRow(row, pat, rowKey) {
             let panel = row.querySelector('.__crackhelp_panel');
 
@@ -790,12 +543,6 @@
                 panel.updateSuggestions = async () => {
                     const curPat = panel.dataset.pattern || '';
                     const curRowKey = panel.dataset.rowkey;
-
-                    const showOnComplete = true; // Always show
-                    if (!showOnComplete && curPat && !curPat.includes('*')) {
-                        if (listDiv.childNodes.length) listDiv.innerHTML = '';
-                        return;
-                    }
 
                     this.applyPanelTheme(panel);
 
@@ -854,6 +601,8 @@
             return panel;
         },
 
+        // ── Local word cache ──────────────────────────────────────────────────
+
         async isWordInLocalDict(word) {
             const len = word.length;
             if (!this.dict[len]) {
@@ -875,12 +624,16 @@
             }
         },
 
+        // ── Row key ───────────────────────────────────────────────────────────
+
         getRowKey(crimeOption) {
             if (!crimeOption.dataset.crackKey) {
                 crimeOption.dataset.crackKey = String(Date.now()) + '-' + Math.floor(Math.random() * 100000);
             }
             return crimeOption.dataset.crackKey;
         },
+
+        // ── Slot sensors ──────────────────────────────────────────────────────
 
         attachSlotSensors(crimeOption, rowKey) {
             if (crimeOption.dataset.crackDelegated === '1') return;
@@ -926,6 +679,8 @@
             crimeOption.addEventListener('transitionend', onVisualCue, true);
         },
 
+        // ── Main scan loop ────────────────────────────────────────────────────
+
         scanCrimePage() {
             if (location.hash !== '#/cracking') return;
 
@@ -967,36 +722,20 @@
                 }
                 this.prevRowStates.set(rowKey, { chars: curChars, lastInput: prev.lastInput, time: now });
 
+                // Save fully-revealed words to local cache only
                 if (!/[*]/.test(patText)) {
                     const newWord = patText.toUpperCase();
-                    if (!/^[A-Z0-9_.]+$/.test(newWord)) {
-                        this.crackLog('Revealed word contains invalid chars. skippin:', newWord);
-                    } else {
+                    if (/^[A-Z0-9_.]+$/.test(newWord)) {
                         (async () => {
                             const localHas = await this.isWordInLocalDict(newWord);
-                            const supHas = this.remoteWords.has(newWord);
-                            if (!localHas && !supHas) {
-                                await this.addWordToLocalCache(newWord);
-                                await this.enqueueOutbox(newWord);
-                            } else if (supHas && !localHas) {
+                            if (!localHas) {
                                 await this.addWordToLocalCache(newWord);
                             }
                         })();
                     }
                 }
 
-                const showOnComplete = true; // Always show
-                const isComplete = patText && !patText.includes('*');
-                if (isComplete && !showOnComplete) {
-                    const existing = crimeOption.querySelector('.__crackhelp_panel');
-                    if (existing) {
-                        const key = existing.dataset.rowkey;
-                        if (this.panelUpdateTimers.has(key)) { clearTimeout(this.panelUpdateTimers.get(key)); this.panelUpdateTimers.delete(key); }
-                        existing.remove();
-                    }
-                } else {
-                    if (!/^[*]+$/.test(patText)) this.prependPanelToRow(crimeOption, patText, rowKey);
-                }
+                if (!/^[*]+$/.test(patText)) this.prependPanelToRow(crimeOption, patText, rowKey);
             }
         }
     };
