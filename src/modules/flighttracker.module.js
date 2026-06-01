@@ -117,13 +117,28 @@
                 const s = document.createElement('style');
                 s.id = 'sk-ft-btn-style';
                 s.textContent = `
-                    /* Only visual styles — layout/sizing left to Torn's .profile-button */
                     .sidekick-flight-tracker-btn {
                         position: relative;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
                         cursor: pointer;
                         outline: none;
+                        background: transparent;
+                        border: none;
+                        text-decoration: none;
+                        touch-action: manipulation;
+                        -webkit-tap-highlight-color: transparent;
+                    }
+                    .sidekick-flight-tracker-btn svg {
+                        opacity: 0.65;
+                        transition: opacity 0.15s;
+                    }
+                    .sidekick-flight-tracker-btn:hover svg {
+                        opacity: 1;
                     }
                     .sidekick-flight-tracker-btn.sk-ft-tracking svg {
+                        opacity: 1;
                         filter: drop-shadow(0 0 3px #4CAF50);
                     }
                     .sidekick-flight-tracker-btn .sk-ft-dot {
@@ -147,15 +162,18 @@
 
             const btn = document.createElement('a');
             btn.id = `sidekick-track-btn-${playerId}`;
-            btn.className = 'sidekick-flight-tracker-btn profile-button';
+            // Do NOT add 'profile-button' — Torn's JS processes that class and
+            // applies type-based colouring; without a profile-button-* type class
+            // it falls back to green. We style ourselves instead.
+            btn.className = 'sidekick-flight-tracker-btn';
             btn.setAttribute('role', 'button');
             btn.setAttribute('data-is-tooltip-opened', 'false');
-            btn.style.touchAction = 'manipulation'; // match native button inline style
 
             const isTracking = this.tracking.has(playerId);
             this._setButtonState(btn, isTracking);
 
-            // Append at the end — original position
+            // Append at end — we're not using profile-button class so Torn's
+            // :last-child green rule won't affect us
             buttonsList.appendChild(btn);
 
             btn.addEventListener('click', e => {
@@ -165,34 +183,13 @@
             });
         },
 
-        // Inline SVG of the Sidekick Swiss knife — no PNG dependency, no background bleed.
-        // Uses currentColor so it inherits the icon colour from Torn's own CSS.
-        _knifesvg(isTracking) {
-            const col = isTracking ? '#4CAF50' : 'currentColor';
-            const gold = '#c8a020';
-            return `<svg xmlns="http://www.w3.org/2000/svg" width="46" height="46"
-                    viewBox="0 0 46 46" class="icon___GP196">
-                <!-- Handle body: diagonal from bottom-left to upper-right -->
-                <path fill="${col}" d="
-                    M8,37 L8,39 C8,40.1 8.9,41 10,41 L13,41
-                    C14.1,41 15,40.1 15,39 L34,13
-                    C35.1,13 36,12.1 36,11 L36,8
-                    C36,6.9 35.1,6 34,6 L31,6
-                    C29.9,6 29,6.9 29,8 L10,34
-                    C8.9,34 8,34.9 8,36 Z"/>
-                <!-- Pivot hole -->
-                <circle cx="11" cy="38" r="1.5" fill="rgba(0,0,0,0.35)"/>
-                <!-- Blade 1: up-left from pivot (34,7) -->
-                <path fill="${col}" d="M30,7 L22,2 L25,2 L33,7 Z"/>
-                <!-- Blade 2: straight up -->
-                <path fill="${col}" d="M33,6 L31,1 L35,1 L33,6 Z"/>
-                <!-- Blade 3: up-right diagonal -->
-                <path fill="${col}" d="M34,7 L40,2 L42,4 L36,9 Z"/>
-                <!-- Blade 4: horizontal right -->
-                <path fill="${col}" d="M35,9 L44,8 L44,12 L35,12 Z"/>
-                <!-- Toothpick accent (gold) -->
-                <path fill="${gold}" d="M8,41 L6,44 L9,44 L9,41 Z"/>
-            </svg>`;
+        // Sidekick project icon — loaded as img at native button size (46x46)
+        _iconImg(isTracking) {
+            const url = chrome.runtime.getURL('assets/icons/swissknife-48.png');
+            const style = isTracking
+                ? 'display:block;opacity:1;filter:drop-shadow(0 0 4px #4CAF50);'
+                : 'display:block;opacity:0.65;';
+            return `<img src="${url}" width="46" height="46" style="${style}" alt="Sidekick">`;
         },
 
         _setButtonState(btn, isTracking) {
@@ -200,7 +197,7 @@
             btn.setAttribute('aria-label', isTracking ? 'Flight tracker active' : 'Track flight');
             btn.classList.toggle('sk-ft-tracking', isTracking);
             btn.innerHTML = `
-                ${this._knifesvg(isTracking)}
+                ${this._iconImg(isTracking)}
                 <span class="sk-ft-dot"></span>
             `;
         },
