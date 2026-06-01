@@ -122,13 +122,15 @@
                         display: inline-flex;
                         align-items: center;
                         justify-content: center;
+                        width: 46px;
+                        height: 46px;
                         cursor: pointer;
                         text-decoration: none;
                         touch-action: manipulation;
                         outline: none;
                         border-radius: 5px;
                         background: rgba(255,255,255,0.08);
-                        transition: opacity 0.15s, box-shadow 0.15s, background 0.15s;
+                        transition: box-shadow 0.15s, background 0.15s;
                     }
                     .sidekick-flight-tracker-btn:hover {
                         background: rgba(255,255,255,0.14);
@@ -164,8 +166,8 @@
             const isTracking = this.tracking.has(playerId);
             this._setButtonState(btn, isTracking);
 
-            // Prepend so it appears in the first row of the actions grid
-            buttonsList.prepend(btn);
+            // Append at the end — original position
+            buttonsList.appendChild(btn);
 
             btn.addEventListener('click', e => {
                 e.preventDefault();
