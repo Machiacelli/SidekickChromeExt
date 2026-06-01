@@ -122,22 +122,15 @@
                         display: inline-flex;
                         align-items: center;
                         justify-content: center;
-                        width: 46px;
-                        height: 46px;
                         cursor: pointer;
                         text-decoration: none;
-                        touch-action: manipulation;
                         outline: none;
                         border-radius: 5px;
-                        background: rgba(255,255,255,0.08);
-                        transition: box-shadow 0.15s, background 0.15s;
-                    }
-                    .sidekick-flight-tracker-btn:hover {
-                        background: rgba(255,255,255,0.14);
+                        transition: box-shadow 0.15s;
                     }
                     .sidekick-flight-tracker-btn.sk-ft-tracking {
-                        background: rgba(76,175,80,0.18);
                         box-shadow: 0 0 0 2px #4CAF50 inset;
+                        background: rgba(76,175,80,0.18);
                     }
                     .sidekick-flight-tracker-btn .sk-ft-dot {
                         position: absolute;
@@ -162,6 +155,7 @@
             btn.className = 'sidekick-flight-tracker-btn profile-button';
             btn.setAttribute('role', 'button');
             btn.setAttribute('data-is-tooltip-opened', 'false');
+            btn.style.touchAction = 'manipulation'; // match native button inline style
 
             const isTracking = this.tracking.has(playerId);
             this._setButtonState(btn, isTracking);
@@ -176,16 +170,27 @@
             });
         },
 
-        // Sidekick logo img — loaded from extension assets
+        // Sidekick logo rendered via CSS mask so the PNG's own background is hidden
         _logoImg(isTracking) {
             const url = chrome.runtime.getURL('assets/icons/swissknife-48.png');
-            const opacity = isTracking ? '1' : '0.55';
-            const filter = isTracking
-                ? 'drop-shadow(0 0 4px #4CAF50)'
-                : 'none';
-            return `<img src="${url}" width="28" height="28"
-                style="display:block;opacity:${opacity};filter:${filter};transition:opacity 0.15s,filter 0.15s;"
-                alt="Sidekick Flight Tracker">`;
+            // Mask extracts only the icon shape; we fill with white (idle) or green (tracking)
+            const color = isTracking ? '#4CAF50' : 'rgba(255,255,255,0.75)';
+            return `<span style="
+                display: inline-block;
+                width: 46px;
+                height: 46px;
+                background-color: ${color};
+                -webkit-mask-image: url(${url});
+                mask-image: url(${url});
+                -webkit-mask-size: 28px 28px;
+                mask-size: 28px 28px;
+                -webkit-mask-repeat: no-repeat;
+                mask-repeat: no-repeat;
+                -webkit-mask-position: center center;
+                mask-position: center center;
+                transition: background-color 0.15s;
+                flex-shrink: 0;
+            "></span>`;
         },
 
         _setButtonState(btn, isTracking) {
