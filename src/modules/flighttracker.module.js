@@ -183,13 +183,13 @@
             });
         },
 
-        // Sidekick project icon — loaded as img at native button size (46x46)
+        // Sidekick project icon — loaded as img, sized to match native buttons (~38px)
         _iconImg(isTracking) {
             const url = chrome.runtime.getURL('assets/icons/swissknife-48.png');
             const style = isTracking
                 ? 'display:block;opacity:1;filter:drop-shadow(0 0 4px #4CAF50);'
                 : 'display:block;opacity:0.65;';
-            return `<img src="${url}" width="46" height="46" style="${style}" alt="Sidekick">`;
+            return `<img src="${url}" width="38" height="38" style="${style}" alt="Sidekick">`;
         },
 
         _setButtonState(btn, isTracking) {
@@ -386,23 +386,35 @@
             // "Torn to South Africa"  (profile page travel banner)
             // "Traveling from Torn to South Africa"
             m = text.match(/(?:Traveling(?:\s+from\s+Torn)?\s+to|Torn\s+to)\s+(.+?)(?:\s*$|\n)/i);
-            if (m) return { status: 'traveling', country: m[1].trim() };
+            if (m) {
+                const dest = m[1].trim();
+                if (this._isTornCountry(dest)) return { status: 'traveling', country: dest };
+            }
 
             // Returning
             m = text.match(/Returning\s+to\s+Torn(?:\s+from\s+(.+?))?(?:\s*$|\n)/i);
             if (m) return { status: 'returning', country: (m[1] || '').trim() || null };
 
-            // Already abroad "In Mexico"
+            // Already abroad — ONLY accept known Torn travel destinations
             m = text.match(/^In\s+(.+?)(?:\s*$|\n)/i);
             if (m) {
                 const place = m[1].trim();
-                // Reject non-location phrases (faction, hospital, jail, etc.)
-                const NON_LOCATIONS = /^(a\s|the\s|jail|hospital|rehab|federal|your|our|their|his|her)/i;
-                if (NON_LOCATIONS.test(place)) return null;
-                return { status: 'abroad', country: place };
+                if (this._isTornCountry(place)) return { status: 'abroad', country: place };
             }
 
             return null;
+        },
+
+        // Torn’s exact travel destinations (case-insensitive allowlist)
+        _isTornCountry(name) {
+            const TORN_COUNTRIES = [
+                'Mexico', 'Cayman Islands', 'Canada', 'Hawaii',
+                'United Kingdom', 'UK', 'Argentina', 'Switzerland',
+                'Japan', 'China', 'UAE', 'Dubai', 'South Africa',
+            ];
+            const n = name.trim().toLowerCase();
+            return TORN_COUNTRIES.some(c => c.toLowerCase() === n ||
+                n.startsWith(c.toLowerCase()));
         },
 
         // ── Countdown ─────────────────────────────────────────────────────────
