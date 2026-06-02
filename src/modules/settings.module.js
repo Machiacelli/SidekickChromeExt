@@ -941,12 +941,14 @@
                 ${this.createToggle('crime-scamming', '🎭 Scamming Helper', 'Displays scam helper hints for the Scamming crime only')}
                 ${this.createToggle('crime-burglary', '🏠 Burglary Confidence', 'Displays burglary confidence percentage permanently next to the graphic')}
                 ${this.createToggle('crime-cracking', '💻 Cracking Helper', 'Shows word suggestions for the Cracking crime')}
+                ${this.createToggle('crime-sfc', '🔍 Search for Cash', 'Highlights the best Search for Cash location based on current density and time-based scoring')}
                 <div id="sidekick-crimes-status" style="text-align: center; padding: 10px; border-radius: 5px; 
                                                         background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px; margin-top: 20px;">
                     Crime module settings loaded
                 </div>
             `;
         },
+
 
         attachCrimesTabListeners(panel) {
             // Placeholder for future crime module tab event listeners if required
@@ -2864,10 +2866,10 @@
         },
 
         attachMissionTrackerTabListeners(panel) {
-            const intervalSlider  = panel.querySelector('#mission-tracker-interval');
+            const intervalSlider = panel.querySelector('#mission-tracker-interval');
             const intervalDisplay = panel.querySelector('#mission-tracker-interval-display');
-            const newTabCheck     = panel.querySelector('#mission-tracker-newtab');
-            const statusDiv       = panel.querySelector('#sidekick-missiontracker-status');
+            const newTabCheck = panel.querySelector('#mission-tracker-newtab');
+            const statusDiv = panel.querySelector('#sidekick-missiontracker-status');
 
             if (intervalSlider && intervalDisplay) {
                 intervalSlider.addEventListener('input', async () => {
@@ -2903,14 +2905,14 @@
             try {
                 const data = await window.SidekickModules.Core.ChromeStorage.get('sidekick_settings');
                 const s = data?.['mission-tracker'] || {};
-                const intervalSlider  = panel.querySelector('#mission-tracker-interval');
+                const intervalSlider = panel.querySelector('#mission-tracker-interval');
                 const intervalDisplay = panel.querySelector('#mission-tracker-interval-display');
-                const newTabCheck     = panel.querySelector('#mission-tracker-newtab');
+                const newTabCheck = panel.querySelector('#mission-tracker-newtab');
                 const mins = s.checkIntervalMinutes || 30;
-                if (intervalSlider)  intervalSlider.value = mins;
+                if (intervalSlider) intervalSlider.value = mins;
                 const label = mins >= 60 ? (mins % 60 === 0 ? (mins / 60) + 'h' : Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm') : mins + ' min';
                 if (intervalDisplay) intervalDisplay.textContent = label;
-                if (newTabCheck)     newTabCheck.checked = s.openInNewTab || false;
+                if (newTabCheck) newTabCheck.checked = s.openInNewTab || false;
             } catch (e) {
                 console.error('Failed to load Mission Tracker settings:', e);
             }
@@ -2948,12 +2950,12 @@
 
                 <div id="hco-mode-cards" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
                     ${['0:Disabled:🔓:Shows the full outcome as normal.',
-                       '1:Hidden:🚫:Hides the outcome panel entirely. Fastest for bulk crimes.',
-                       '2:Minimal:📋:Removes story text. Keeps result & rewards.',
-                       '3:Toast:🔔:Shows a small pop-up instead of the panel.']
-                        .map(s => {
-                            const [id, name, icon, desc] = s.split(':');
-                            return `<div class="hco-mode-card" data-mode="${id}" style="
+                    '1:Hidden:🚫:Hides the outcome panel entirely. Fastest for bulk crimes.',
+                    '2:Minimal:📋:Removes story text. Keeps result & rewards.',
+                    '3:Toast:🔔:Shows a small pop-up instead of the panel.']
+                    .map(s => {
+                        const [id, name, icon, desc] = s.split(':');
+                        return `<div class="hco-mode-card" data-mode="${id}" style="
                                 padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;
                                 background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1);
                             ">
@@ -2961,8 +2963,8 @@
                                 <div style="font-weight: 700; color: #fff; font-size: 13px; margin-bottom: 4px;">${name}</div>
                                 <div style="font-size: 11px; color: #aaa; line-height: 1.4;">${desc}</div>
                             </div>`;
-                        }).join('')
-                    }
+                    }).join('')
+                }
                 </div>
 
                 <div id="sidekick-hidecrime-status" style="text-align: center; padding: 10px; border-radius: 5px;
@@ -2981,7 +2983,7 @@
                 modeCards.forEach(c => {
                     const active = parseInt(c.dataset.mode, 10) === modeId;
                     c.style.borderColor = active ? '#ef5350' : 'rgba(255,255,255,0.1)';
-                    c.style.background  = active ? 'rgba(239,83,80,0.12)' : 'rgba(255,255,255,0.05)';
+                    c.style.background = active ? 'rgba(239,83,80,0.12)' : 'rgba(255,255,255,0.05)';
                 });
                 if (window.SidekickModules.HideCrimeOutcome) {
                     window.SidekickModules.HideCrimeOutcome.mode = modeId;
@@ -3003,9 +3005,9 @@
                 });
             });
 
-            const toggle    = panel.querySelector('#hide-crime-outcome-toggle');
-            const track     = toggle?.querySelector('.hco-toggle-track');
-            const thumb     = toggle?.querySelector('.hco-toggle-thumb');
+            const toggle = panel.querySelector('#hide-crime-outcome-toggle');
+            const track = toggle?.querySelector('.hco-toggle-track');
+            const thumb = toggle?.querySelector('.hco-toggle-thumb');
 
             if (toggle) {
                 toggle.addEventListener('click', async () => {
@@ -3013,7 +3015,7 @@
                     window.SidekickModules.HideCrimeOutcome.isEnabled = !window.SidekickModules.HideCrimeOutcome.isEnabled;
                     const on = window.SidekickModules.HideCrimeOutcome.isEnabled;
                     if (track) track.style.background = on ? 'rgba(76,175,80,0.85)' : 'rgba(255,255,255,0.2)';
-                    if (thumb) thumb.style.transform  = on ? 'translateX(26px)' : 'translateX(0)';
+                    if (thumb) thumb.style.transform = on ? 'translateX(26px)' : 'translateX(0)';
                     await window.SidekickModules.HideCrimeOutcome.saveSettings();
                     window.SidekickModules.HideCrimeOutcome.apply();
                     this.showAutoSaveStatus(statusDiv, on ? 'Enabled ✓' : 'Disabled ✓');
@@ -3033,14 +3035,14 @@
                 modeCards.forEach(c => {
                     const active = parseInt(c.dataset.mode, 10) === mode;
                     c.style.borderColor = active ? '#ef5350' : 'rgba(255,255,255,0.1)';
-                    c.style.background  = active ? 'rgba(239,83,80,0.12)' : 'rgba(255,255,255,0.05)';
+                    c.style.background = active ? 'rgba(239,83,80,0.12)' : 'rgba(255,255,255,0.05)';
                 });
 
                 // Reflect enabled state in custom toggle
                 const toggleTrack = panel.querySelector('#hide-crime-outcome-toggle .hco-toggle-track');
                 const toggleThumb = panel.querySelector('#hide-crime-outcome-toggle .hco-toggle-thumb');
                 if (toggleTrack) toggleTrack.style.background = s.isEnabled ? 'rgba(76,175,80,0.85)' : 'rgba(255,255,255,0.2)';
-                if (toggleThumb) toggleThumb.style.transform  = s.isEnabled ? 'translateX(26px)' : 'translateX(0)';
+                if (toggleThumb) toggleThumb.style.transform = s.isEnabled ? 'translateX(26px)' : 'translateX(0)';
             } catch (e) {
                 console.error('Failed to load Hide Crime Outcome settings:', e);
             }
@@ -3097,7 +3099,7 @@
         },
 
         attachHolidayTabListeners(panel) {
-            const toggle   = panel.querySelector('#holiday-egghunt-toggle');
+            const toggle = panel.querySelector('#holiday-egghunt-toggle');
             const resetBtn = panel.querySelector('#holiday-egghunt-reset');
             const statusDiv = panel.querySelector('#sidekick-holiday-status');
 

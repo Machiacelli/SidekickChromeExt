@@ -79,6 +79,7 @@
                 "src/modules/price-filler.module.js",
                 "src/modules/bazaar-filler.module.js",
                 "src/modules/burglary.module.js",
+                "src/modules/search-for-cash.module.js",
                 "src/modules/cracking.module.js",
                 "src/modules/disposal.module.js",
                 "src/modules/auction-weapon-bonus.module.js",

@@ -476,6 +476,16 @@
                 console.warn('⚠️ Cracking module not available');
             }
 
+            // Initialize Search for Cash Module
+            console.log('🔍 Sidekick: Initializing Search for Cash...');
+            if (window.SidekickModules.SearchForCash?.init) {
+                await window.SidekickModules.SearchForCash.init();
+                console.log('✅ Sidekick: Search for Cash initialized');
+            } else {
+                console.warn('⚠️ Search for Cash module not available');
+            }
+
+
             // Initialize Egg Helper Module
             console.log('🎉 Sidekick: Initializing Egg Helper Module...');
             if (window.SidekickModules.Holiday?.init) {

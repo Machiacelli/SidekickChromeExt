@@ -119,26 +119,16 @@
                 s.textContent = `
                     .sidekick-flight-tracker-btn {
                         position: relative;
-                        display: inline-flex;
-                        align-items: center;
-                        justify-content: center;
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        width: 38px !important;
+                        height: 38px !important;
+                        max-width: 38px !important;
+                        max-height: 38px !important;
+                        overflow: hidden !important;
                         cursor: pointer;
                         outline: none;
-                        background: transparent;
-                        border: none;
-                        text-decoration: none;
-                        touch-action: manipulation;
-                        -webkit-tap-highlight-color: transparent;
-                    }
-                    .sidekick-flight-tracker-btn svg {
-                        opacity: 0.65;
-                        transition: opacity 0.15s;
-                    }
-                    .sidekick-flight-tracker-btn:hover svg {
-                        opacity: 1;
-                    }
-                    .sidekick-flight-tracker-btn.sk-ft-tracking svg {
-                        opacity: 1;
                         filter: drop-shadow(0 0 3px #4CAF50);
                     }
                     .sidekick-flight-tracker-btn .sk-ft-dot {
@@ -183,13 +173,12 @@
             });
         },
 
-        // Sidekick project icon — loaded as img, sized to match native buttons (~38px)
+        // Sidekick project icon — sized 28px inside a constrained 38×38 button
         _iconImg(isTracking) {
-            const url = chrome.runtime.getURL('assets/icons/swissknife-48.png');
-            const style = isTracking
-                ? 'display:block;opacity:1;filter:drop-shadow(0 0 4px #4CAF50);'
-                : 'display:block;opacity:0.65;';
-            return `<img src="${url}" width="38" height="38" style="${style}" alt="Sidekick">`;
+            const url   = chrome.runtime.getURL('assets/icons/swissknife-48.png');
+            const extra = isTracking ? 'filter:drop-shadow(0 0 4px #4CAF50);opacity:1;' : 'opacity:0.65;';
+            // Enforce 28×28 via style so no external CSS can override the attribute
+            return `<img src="${url}" style="display:block;width:28px;height:28px;max-width:28px;max-height:28px;${extra}" alt="Sidekick">`;
         },
 
         _setButtonState(btn, isTracking) {
