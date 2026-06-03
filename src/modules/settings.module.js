@@ -1133,14 +1133,14 @@
 
     </div>
     <nav class="sk-prev-nav">
-      <button class="sk-nav-item active" data-section="general"><div class="sk-nav-icon">&#x2699;</div><span class="sk-nav-label">General</span></button>
-      <button class="sk-nav-item" data-section="features"><div class="sk-nav-icon">&#x2B1B;</div><span class="sk-nav-label">Features</span></button>
-      <button class="sk-nav-item" data-section="profile"><div class="sk-nav-icon">&#x2B1B;</div><span class="sk-nav-label">Profile</span></button>
-      <button class="sk-nav-item" data-section="crimes"><div class="sk-nav-icon">&#x2B1B;</div><span class="sk-nav-label">Crimes</span></button>
-      <button class="sk-nav-item" data-section="mugging"><div class="sk-nav-icon">&#x2B1B;</div><span class="sk-nav-label">Mugging</span></button>
-      <button class="sk-nav-item" data-section="war"><div class="sk-nav-icon">&#x2B1B;</div><span class="sk-nav-label">War</span></button>
-      <button class="sk-nav-item" data-section="missions"><div class="sk-nav-icon">&#x2B1B;</div><span class="sk-nav-label">Missions</span></button>
-      <button class="sk-nav-item" data-section="events"><div class="sk-nav-icon">&#x2B1B;</div><span class="sk-nav-label">Events</span></button>
+      <button class="sk-nav-item active" data-section="general"><div class="sk-nav-icon"><img class="sk-nav-icon-img" data-icon="General.png"></div><span class="sk-nav-label">General</span></button>
+      <button class="sk-nav-item" data-section="features"><div class="sk-nav-icon"><img class="sk-nav-icon-img" data-icon="Features.png"></div><span class="sk-nav-label">Features</span></button>
+      <button class="sk-nav-item" data-section="profile"><div class="sk-nav-icon"><img class="sk-nav-icon-img" data-icon="Profile.png"></div><span class="sk-nav-label">Profile</span></button>
+      <button class="sk-nav-item" data-section="crimes"><div class="sk-nav-icon"><img class="sk-nav-icon-img" data-icon="Crimes.png"></div><span class="sk-nav-label">Crimes</span></button>
+      <button class="sk-nav-item" data-section="mugging"><div class="sk-nav-icon"><img class="sk-nav-icon-img" data-icon="MugCalc.png"></div><span class="sk-nav-label">Mugging</span></button>
+      <button class="sk-nav-item" data-section="war"><div class="sk-nav-icon"><img class="sk-nav-icon-img" data-icon="War.png"></div><span class="sk-nav-label">War</span></button>
+      <button class="sk-nav-item" data-section="missions"><div class="sk-nav-icon"><img class="sk-nav-icon-img" data-icon="Missions.png"></div><span class="sk-nav-label">Missions</span></button>
+      <button class="sk-nav-item" data-section="events"><div class="sk-nav-icon"><img class="sk-nav-icon-img" data-icon="Events.png"></div><span class="sk-nav-label">Events</span></button>
     </nav>
   </div>
 
@@ -1274,6 +1274,7 @@
       </div>
       <div class="sk-scroll">
         <div class="sk-subtab-panel active" id="skp-tab-helpers">
+          <!-- Search for Cash -->
           <div class="sk-row" style="align-items:flex-start;gap:12px;">
             <div class="sk-row-info">
               <div class="sk-row-title">Search for Cash</div>
@@ -1288,10 +1289,36 @@
             <label class="sk-field-label" style="margin-top:8px;">Check Interval (seconds)</label>
             <input type="number" class="sk-input" min="10" max="300" value="30">
             <div class="sk-hint">Minimum 10s -- recommended 30s</div>
-            <label class="sk-field-label" style="margin-top:8px;">SFC Score Threshold</label>
-            <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-val">80%</span></div>
-            <div class="sk-hint">Alert when SFC score meets or exceeds this value</div>
+            <label class="sk-field-label" style="margin-top:10px;">SFC Score Threshold -- alert per location</label>
+            <div class="sk-subtab-bar sk-shelf-tabs" style="margin:6px 0 0;font-size:11px;">
+              <button class="sk-subtab-btn active" data-tab="sfcloc-city">City</button>
+              <button class="sk-subtab-btn" data-tab="sfcloc-lake">Lake</button>
+              <button class="sk-subtab-btn" data-tab="sfcloc-park">Park</button>
+              <button class="sk-subtab-btn" data-tab="sfcloc-beach">Beach</button>
+              <button class="sk-subtab-btn" data-tab="sfcloc-woods">Woods</button>
+              <button class="sk-subtab-btn" data-tab="sfcloc-fields">Fields</button>
+            </div>
+            <div class="sk-subtab-panel active" id="skp-tab-sfcloc-city" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-city-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-city-val">80%</span></div>
+            </div>
+            <div class="sk-subtab-panel" id="skp-tab-sfcloc-lake" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-lake-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-lake-val">80%</span></div>
+            </div>
+            <div class="sk-subtab-panel" id="skp-tab-sfcloc-park" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-park-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-park-val">80%</span></div>
+            </div>
+            <div class="sk-subtab-panel" id="skp-tab-sfcloc-beach" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-beach-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-beach-val">80%</span></div>
+            </div>
+            <div class="sk-subtab-panel" id="skp-tab-sfcloc-woods" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-woods-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-woods-val">80%</span></div>
+            </div>
+            <div class="sk-subtab-panel" id="skp-tab-sfcloc-fields" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-fields-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-fields-val">80%</span></div>
+            </div>
           </div>
+
+          <!-- Shoplifting -->
           <div class="sk-row" style="align-items:flex-start;gap:12px;margin-top:4px;">
             <div class="sk-row-info">
               <div class="sk-row-title">Shoplifting</div>
@@ -1302,14 +1329,55 @@
           </div>
           <div class="sk-shelf" id="skp-shelf-shoplift" style="display:none;">
             <div class="sk-sh" style="margin-top:0;font-size:10px;">Shoplifting Alert Settings</div>
-            <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Enable Shoplifting Alert</div><div class="sk-row-desc">Notify when shoplifting security drops low enough</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+            <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Enable Shoplifting Alert</div><div class="sk-row-desc">Notify when security drops low enough</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
             <label class="sk-field-label" style="margin-top:8px;">Check Interval (seconds)</label>
             <input type="number" class="sk-input" min="10" max="300" value="30">
             <div class="sk-hint">Minimum 10s -- recommended 30s</div>
-            <label class="sk-field-label" style="margin-top:8px;">Security Alert Threshold (%)</label>
-            <div class="sk-slider-row"><input type="range" min="0" max="100" value="20" class="skp-slider" data-out="skp-shoplift-val" data-suffix="%"><span class="sk-slider-val" id="skp-shoplift-val">20%</span></div>
-            <div class="sk-hint">Alert when security is at or below this level</div>
+            <label class="sk-field-label" style="margin-top:10px;">Security Threshold -- alert per shop</label>
+            <div class="sk-subtab-bar sk-shelf-tabs" style="margin:6px 0 0;font-size:11px;">
+              <button class="sk-subtab-btn active" data-tab="shop-sally">Sally's</button>
+              <button class="sk-subtab-btn" data-tab="shop-bits">Bits n Bobs</button>
+              <button class="sk-subtab-btn" data-tab="shop-tc">TC Clothing</button>
+              <button class="sk-subtab-btn" data-tab="shop-super">Super Store</button>
+              <button class="sk-subtab-btn" data-tab="shop-pharm">Pharmacy</button>
+              <button class="sk-subtab-btn" data-tab="shop-cyber">Cyber Force</button>
+              <button class="sk-subtab-btn" data-tab="shop-jewel">Jewelry</button>
+              <button class="sk-subtab-btn" data-tab="shop-als">Big Al's</button>
+            </div>
+            <div class="sk-subtab-panel active" id="skp-tab-shop-sally" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="0" max="100" value="20" class="skp-slider" data-out="skp-shop-sally-val" data-suffix="%"><span class="sk-slider-val" id="skp-shop-sally-val">20%</span></div>
+              <div class="sk-hint">Alert when security is at or below this level</div>
+            </div>
+            <div class="sk-subtab-panel" id="skp-tab-shop-bits" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="0" max="100" value="20" class="skp-slider" data-out="skp-shop-bits-val" data-suffix="%"><span class="sk-slider-val" id="skp-shop-bits-val">20%</span></div>
+              <div class="sk-hint">Alert when security is at or below this level</div>
+            </div>
+            <div class="sk-subtab-panel" id="skp-tab-shop-tc" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="0" max="100" value="20" class="skp-slider" data-out="skp-shop-tc-val" data-suffix="%"><span class="sk-slider-val" id="skp-shop-tc-val">20%</span></div>
+              <div class="sk-hint">Alert when security is at or below this level</div>
+            </div>
+            <div class="sk-subtab-panel" id="skp-tab-shop-super" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="0" max="100" value="20" class="skp-slider" data-out="skp-shop-super-val" data-suffix="%"><span class="sk-slider-val" id="skp-shop-super-val">20%</span></div>
+              <div class="sk-hint">Alert when security is at or below this level</div>
+            </div>
+            <div class="sk-subtab-panel" id="skp-tab-shop-pharm" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="0" max="100" value="20" class="skp-slider" data-out="skp-shop-pharm-val" data-suffix="%"><span class="sk-slider-val" id="skp-shop-pharm-val">20%</span></div>
+              <div class="sk-hint">Alert when security is at or below this level</div>
+            </div>
+            <div class="sk-subtab-panel" id="skp-tab-shop-cyber" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="0" max="100" value="20" class="skp-slider" data-out="skp-shop-cyber-val" data-suffix="%"><span class="sk-slider-val" id="skp-shop-cyber-val">20%</span></div>
+              <div class="sk-hint">Alert when security is at or below this level</div>
+            </div>
+            <div class="sk-subtab-panel" id="skp-tab-shop-jewel" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="0" max="100" value="20" class="skp-slider" data-out="skp-shop-jewel-val" data-suffix="%"><span class="sk-slider-val" id="skp-shop-jewel-val">20%</span></div>
+              <div class="sk-hint">Alert when security is at or below this level</div>
+            </div>
+            <div class="sk-subtab-panel" id="skp-tab-shop-als" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="0" max="100" value="20" class="skp-slider" data-out="skp-shop-als-val" data-suffix="%"><span class="sk-slider-val" id="skp-shop-als-val">20%</span></div>
+              <div class="sk-hint">Alert when security is at or below this level</div>
+            </div>
           </div>
+
           <div class="sk-row" style="margin-top:4px;"><div class="sk-row-info"><div class="sk-row-title">Burglary</div><div class="sk-row-desc">Shows confidence percentage next to the burglary graphic</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Disposal</div><div class="sk-row-desc">Highlights best options and shows maximum nerve cost for Disposal</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Cracking</div><div class="sk-row-desc">Shows word suggestions while solving the Cracking crime</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
@@ -1325,10 +1393,8 @@
             <option value="2">Minimal -- hide story text, keep rewards</option>
             <option value="3">Toast -- replace panel with a small pop-up card</option>
           </select>
-          <div class="sk-hint" style="margin-top:6px;">Hidden and Toast modes remove the outcome panel. Minimal keeps the reward summary but hides narrative text.</div>
-          <div class="sk-sh" style="margin-top:18px;">Toast Settings</div>
-          <div class="sk-info">These settings apply when Toast mode is selected above.</div>
-          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Color by Result</div><div class="sk-row-desc">Toast border color changes based on success, failure, or jail</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-hint" style="margin-top:6px;">Hidden and Toast modes remove the outcome panel. Minimal keeps rewards but hides narrative text.</div>
+          <div class="sk-row" style="margin-top:12px;"><div class="sk-row-info"><div class="sk-row-title">Color by Result</div><div class="sk-row-desc">Toast border color changes based on success, failure, or jail</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <label class="sk-field-label" style="margin-top:8px;">Toast Duration (seconds)</label>
           <div class="sk-slider-row"><input type="range" min="2" max="10" value="5" class="skp-slider" data-out="skp-toast-val" data-suffix="s"><span class="sk-slider-val" id="skp-toast-val">5s</span></div>
         </div>
@@ -1350,13 +1416,36 @@
           <input type="number" class="sk-input" min="0" max="10" placeholder="0">
           <label class="sk-field-label">Plunder % (20-49%)</label>
           <input type="number" class="sk-input" min="20" max="49" step="0.01" placeholder="e.g. 35.5">
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">No Plunder Weapon</div><div class="sk-row-desc">Disables plunder bonus calculation</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <label class="sk-field-label" style="margin-top:6px;">Minimum Threshold ($)</label>
+          <div class="sk-row" style="align-items:center;gap:8px;margin-top:6px;">
+            <input type="checkbox" id="skp-no-plunder" style="width:14px;height:14px;accent-color:#5fcc6a;cursor:pointer;flex-shrink:0;">
+            <label for="skp-no-plunder" style="font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;line-height:1.3;">No Plunder Weapon <span style="color:rgba(255,255,255,0.4);font-size:10px;">— disables plunder bonus calculation</span></label>
+          </div>
+          <label class="sk-field-label" style="margin-top:10px;">Minimum Threshold ($)</label>
           <input type="number" class="sk-input" min="0" placeholder="Only alert above this value">
         </div>
         <div class="sk-subtab-panel" id="skp-tab-mugwarn">
           <div class="sk-sh">Mug Warning</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Enable Mug Warning</div><div class="sk-row-desc">Show warning banner when mug-risk detected</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-info">Prevent Double-Mugging: Alerts appear when you view a profile or attack page for someone you mugged recently.</div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Mug Warning</div><div class="sk-row-desc">Show warning modal when viewing a recently mugged player</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <label class="sk-field-label" style="margin-top:10px;">Warning Window (hours)</label>
+          <input type="number" class="sk-input" min="1" max="72" value="24" placeholder="24">
+          <div class="sk-hint">Alert if you mugged the target within this many hours</div>
+          <div class="sk-sh" style="margin-top:16px;">Warning Appearance</div>
+          <label class="sk-field-label">Modal Background Color</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="color" value="#ff4d4d" style="width:36px;height:28px;border:none;border-radius:4px;cursor:pointer;background:none;padding:0;">
+            <span style="font-size:11px;color:rgba(255,255,255,0.45);">#ff4d4d</span>
+          </div>
+          <label class="sk-field-label" style="margin-top:8px;">Modal Text Color</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="color" value="#ffffff" style="width:36px;height:28px;border:none;border-radius:4px;cursor:pointer;background:none;padding:0;">
+            <span style="font-size:11px;color:rgba(255,255,255,0.45);">#ffffff</span>
+          </div>
+          <label class="sk-field-label" style="margin-top:8px;">Button Text Color</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="color" value="#ffffff" style="width:36px;height:28px;border:none;border-radius:4px;cursor:pointer;background:none;padding:0;">
+            <span style="font-size:11px;color:rgba(255,255,255,0.45);">#ffffff</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1393,6 +1482,13 @@
             const logoImg = overlay.querySelector('#skp-logo-img');
             if (logoImg) logoImg.src = chrome.runtime.getURL('assets/icons/sidekick-logo.png');
 
+            // Load sidebar nav icons
+            overlay.querySelectorAll('.sk-nav-icon-img').forEach(img => {
+                const icon = img.getAttribute('data-icon');
+                if (icon) img.src = chrome.runtime.getURL('assets/icons/' + icon);
+                img.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block;';
+            });
+
             // Close on backdrop click
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) overlay.remove();
@@ -1417,16 +1513,28 @@
                 });
             });
 
-            // Sub-tab navigation
+            // Sub-tab navigation (section-level and shelf-level)
             overlay.querySelectorAll('.sk-subtab-bar').forEach(bar => {
+                const isShelfTab = bar.classList.contains('sk-shelf-tabs');
                 bar.querySelectorAll('.sk-subtab-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
-                        const section = bar.closest('.sk-sec-page');
-                        bar.querySelectorAll('.sk-subtab-btn').forEach(b => b.classList.remove('active'));
-                        btn.classList.add('active');
-                        section.querySelectorAll('.sk-subtab-panel').forEach(p => p.classList.remove('active'));
-                        const panel2 = section.querySelector('#skp-tab-' + btn.dataset.tab);
-                        if (panel2) panel2.classList.add('active');
+                        if (isShelfTab) {
+                            const shelf = bar.closest('.sk-shelf');
+                            bar.querySelectorAll('.sk-subtab-btn').forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            if (shelf) {
+                                shelf.querySelectorAll('.sk-subtab-panel').forEach(p => p.classList.remove('active'));
+                                const panel = shelf.querySelector('#skp-tab-' + btn.dataset.tab);
+                                if (panel) panel.classList.add('active');
+                            }
+                        } else {
+                            const section = bar.closest('.sk-sec-page');
+                            bar.querySelectorAll('.sk-subtab-btn').forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            section.querySelectorAll(':scope > .sk-scroll > .sk-subtab-panel').forEach(p => p.classList.remove('active'));
+                            const panel2 = section.querySelector('#skp-tab-' + btn.dataset.tab);
+                            if (panel2) panel2.classList.add('active');
+                        }
                     });
                 });
             });
