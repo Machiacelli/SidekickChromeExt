@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Sidekick Chrome Extension - Settings Module V2
  * Comprehensive settings panel with all module toggles and configurations
  * Version: 2.0.0
@@ -1133,14 +1133,14 @@
 
     </div>
     <nav class="sk-prev-nav">
-      <button class="sk-nav-item active" data-section="general"><div class="sk-nav-icon">⚙️</div><span class="sk-nav-label">General</span></button>
-      <button class="sk-nav-item" data-section="features"><div class="sk-nav-icon">🧩</div><span class="sk-nav-label">Features</span></button>
-      <button class="sk-nav-item" data-section="profile"><div class="sk-nav-icon">👤</div><span class="sk-nav-label">Profile</span></button>
-      <button class="sk-nav-item" data-section="crimes"><div class="sk-nav-icon">🎭</div><span class="sk-nav-label">Crimes</span></button>
-      <button class="sk-nav-item" data-section="mugging"><div class="sk-nav-icon">🥊</div><span class="sk-nav-label">Mugging</span></button>
-      <button class="sk-nav-item" data-section="war"><div class="sk-nav-icon">⚔️</div><span class="sk-nav-label">War</span></button>
-      <button class="sk-nav-item" data-section="missions"><div class="sk-nav-icon">🎯</div><span class="sk-nav-label">Missions</span></button>
-      <button class="sk-nav-item" data-section="events"><div class="sk-nav-icon">🥚</div><span class="sk-nav-label">Events</span></button>
+      <button class="sk-nav-item active" data-section="general"><div class="sk-nav-icon">&#x2699;</div><span class="sk-nav-label">General</span></button>
+      <button class="sk-nav-item" data-section="features"><div class="sk-nav-icon">&#x2B1B;</div><span class="sk-nav-label">Features</span></button>
+      <button class="sk-nav-item" data-section="profile"><div class="sk-nav-icon">&#x2B1B;</div><span class="sk-nav-label">Profile</span></button>
+      <button class="sk-nav-item" data-section="crimes"><div class="sk-nav-icon">&#x2B1B;</div><span class="sk-nav-label">Crimes</span></button>
+      <button class="sk-nav-item" data-section="mugging"><div class="sk-nav-icon">&#x2B1B;</div><span class="sk-nav-label">Mugging</span></button>
+      <button class="sk-nav-item" data-section="war"><div class="sk-nav-icon">&#x2B1B;</div><span class="sk-nav-label">War</span></button>
+      <button class="sk-nav-item" data-section="missions"><div class="sk-nav-icon">&#x2B1B;</div><span class="sk-nav-label">Missions</span></button>
+      <button class="sk-nav-item" data-section="events"><div class="sk-nav-icon">&#x2B1B;</div><span class="sk-nav-label">Events</span></button>
     </nav>
   </div>
 
@@ -1148,15 +1148,15 @@
   <div class="sk-prev-content">
     <div class="sk-prev-topbar">
       <span class="sk-prev-title" id="skp-title">General Settings</span>
-      <button class="sk-prev-close" id="skp-close">×</button>
+      <button class="sk-prev-close" id="skp-close">&times;</button>
     </div>
 
     <!-- GENERAL -->
     <div class="sk-sec-page active" id="skp-general">
       <div class="sk-subtab-bar">
-        <button class="sk-subtab-btn active" data-tab="api">🔑 API Key</button>
-        <button class="sk-subtab-btn" data-tab="backup">💾 Backup &amp; Export</button>
-        <button class="sk-subtab-btn" data-tab="notifications">🔔 Notifications</button>
+        <button class="sk-subtab-btn active" data-tab="api">API Key</button>
+        <button class="sk-subtab-btn" data-tab="backup">Backup &amp; Export</button>
+        <button class="sk-subtab-btn" data-tab="notifications">Notifications</button>
       </div>
       <div class="sk-scroll">
         <div class="sk-subtab-panel active" id="skp-tab-api">
@@ -1164,99 +1164,65 @@
           <label class="sk-field-label">API Key</label>
           <input type="password" class="sk-input" placeholder="Enter your Torn API key...">
           <div class="sk-hint">Get your key at <a href="https://www.torn.com/preferences.php#tab=api" target="_blank" style="color:#5fcc6a;text-decoration:none;font-weight:600;">torn.com/preferences.php#tab=api</a></div>
-          <div class="sk-btn-row"><button class="sk-btn sk-btn-primary">🧪 Test Connection</button><button class="sk-btn sk-btn-ghost">👁 Show Key</button></div>
+          <div class="sk-btn-row"><button class="sk-btn sk-btn-primary">Test Connection</button><button class="sk-btn sk-btn-ghost">Show Key</button></div>
           <div class="sk-status">Enter your API key and click Test Connection</div>
         </div>
         <div class="sk-subtab-panel" id="skp-tab-backup">
           <div class="sk-sh">Data Export &amp; Import</div>
-          <div class="sk-info">💾 Export all Sidekick settings and data before uninstalling. Import a backup file to fully restore everything after reinstalling.</div>
-          <div class="sk-btn-row"><button class="sk-btn sk-btn-primary">📤 Export Data</button><button class="sk-btn sk-btn-ghost">📥 Import Data</button></div>
+          <div class="sk-info">Export all Sidekick settings and data before uninstalling. Import a backup file to fully restore everything after reinstalling.</div>
+          <div class="sk-btn-row"><button class="sk-btn sk-btn-primary">Export Data</button><button class="sk-btn sk-btn-ghost">Import Data</button></div>
           <div class="sk-hint" style="text-align:center;margin-top:-4px;">Exports a .json backup file to your Downloads folder</div>
         </div>
         <div class="sk-subtab-panel" id="skp-tab-notifications">
           <div class="sk-sh">In-Page Notifications</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🔊 Notification Sounds</div><div class="sk-row-desc">Play a sound when in-page notifications appear</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">⏱️ Auto-dismiss</div><div class="sk-row-desc">Automatically hide notifications after a timeout</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Notification Sounds</div><div class="sk-row-desc">Play a sound when in-page notifications appear</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Auto-dismiss</div><div class="sk-row-desc">Automatically hide notifications after a timeout</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-sh" style="margin-top:14px;">Notification Duration</div>
           <div class="sk-slider-row"><input type="range" min="2" max="10" value="5" class="skp-slider" data-out="skp-notif-val" data-suffix="s"><span class="sk-slider-val" id="skp-notif-val">5s</span></div>
           <div class="sk-hint">How long notifications stay visible before auto-dismissing</div>
           <div class="sk-sh" style="margin-top:14px;">System Notifications</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🖥️ Windows Notifications</div><div class="sk-row-desc">OS-level toasts even when Torn is in the background</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-info" style="margin-top:6px;">ℹ️ Windows notifications are used by Crime Notifier and Chain Timer alerts when the Torn tab is not focused.</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Windows Notifications</div><div class="sk-row-desc">OS-level toasts even when Torn is in the background</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-info" style="margin-top:6px;">Used by Crime Notifier and Chain Timer alerts when the Torn tab is not focused.</div>
         </div>
       </div>
     </div>
 
-    <!-- FEATURES -->
+    <!-- FEATURES (untouched) -->
     <div class="sk-sec-page" id="skp-features">
-      <div class="sk-subtab-bar">
-        <button class="sk-subtab-btn active" data-tab="combat">⚔️ Combat</button>
-        <button class="sk-subtab-btn" data-tab="economy">💰 Economy</button>
-        <button class="sk-subtab-btn" data-tab="training">💪 Training</button>
-        <button class="sk-subtab-btn" data-tab="tools">🔧 Tools</button>
-      </div>
-      <div class="sk-scroll">
-        <div class="sk-subtab-panel active" id="skp-tab-combat">
-          <div class="sk-sh">Combat Modules</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">⚔️ Fast Attack</div><div class="sk-row-desc">Moves Start Fight button over weapon</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🎲 Random Target</div><div class="sk-row-desc">Adds random target picker on attack pages</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🛡️ Refill Blocker</div><div class="sk-row-desc">Prevents accidental refills</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🗡️ Auction Weapon Bonus</div><div class="sk-row-desc">Shows bonus stats on auction house</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">👕 Loadout Switcher</div><div class="sk-row-desc">Quick loadout change buttons on Items page</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🏎️ Racing Alert</div><div class="sk-row-desc">Flashes icon when not in a race</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-        </div>
-        <div class="sk-subtab-panel" id="skp-tab-economy">
-          <div class="sk-sh">Economy & Market</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🏪 Bazaar Filler</div><div class="sk-row-desc">Auto-fills bazaar prices via Weav3r API</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🛒 Price Filler</div><div class="sk-row-desc">Auto-fills prices on Item Market</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">💰 Bunker Bucks</div><div class="sk-row-desc">Tracks bunker investment value</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🔒 Locked Items</div><div class="sk-row-desc">Lock inventory items to prevent trading</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-        </div>
-        <div class="sk-subtab-panel" id="skp-tab-training">
-          <div class="sk-sh">Training Modules</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">💪 Auto Gym Switch</div><div class="sk-row-desc">Switches to best gym before training</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🚫 Block Training</div><div class="sk-row-desc">Prevents accidental gym training</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🏋️ Special Gym Ratios</div><div class="sk-row-desc">Warns when stat ratios risk specialist gym access</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-        </div>
-        <div class="sk-subtab-panel" id="skp-tab-tools">
-          <div class="sk-sh">Utility Tools</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">📊 OC Weights</div><div class="sk-row-desc">Shows Organised Crime weight breakdowns</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">✈️ Travel Arc</div><div class="sk-row-desc">Shows travel time arc on world map</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-        </div>
+      <div class="sk-scroll" style="display:flex;align-items:center;justify-content:center;height:100%;">
+        <div style="text-align:center;color:rgba(255,255,255,0.25);font-size:13px;line-height:1.7;">Features settings<br>coming soon</div>
       </div>
     </div>
 
     <!-- PROFILE -->
     <div class="sk-sec-page" id="skp-profile">
       <div class="sk-subtab-bar">
-        <button class="sk-subtab-btn active" data-tab="personal">💪 Personal</button>
-        <button class="sk-subtab-btn" data-tab="gym">🏋️ Gym</button>
-        <button class="sk-subtab-btn" data-tab="money">💰 Economy</button>
+        <button class="sk-subtab-btn active" data-tab="personal">Personal</button>
+        <button class="sk-subtab-btn" data-tab="gym">Gym</button>
+        <button class="sk-subtab-btn" data-tab="money">Economy</button>
       </div>
       <div class="sk-scroll">
         <div class="sk-subtab-panel active" id="skp-tab-personal">
           <div class="sk-sh">Combat &amp; Loadout</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">⚔️ Fast Attack</div><div class="sk-row-desc">Moves Start Fight button directly over your equipped weapon for faster attacking</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">👕 Loadout Switcher</div><div class="sk-row-desc">Adds quick loadout change buttons on the Items page</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Fast Attack</div><div class="sk-row-desc">Moves Start Fight button directly over your equipped weapon for faster attacking</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Loadout Switcher</div><div class="sk-row-desc">Adds quick loadout change buttons on the Items page</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-sh" style="margin-top:18px;">Inventory</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🔒 Locked Items Manager</div><div class="sk-row-desc">Lock inventory items to prevent accidental trading or selling</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">📊 Weapon XP Tracker</div><div class="sk-row-desc">Tracks weapon experience progress and shows XP gain rates</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Locked Items Manager</div><div class="sk-row-desc">Lock inventory items to prevent accidental trading or selling</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Weapon XP Tracker</div><div class="sk-row-desc">Tracks weapon experience progress and shows XP gain rates</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
         <div class="sk-subtab-panel" id="skp-tab-gym">
           <div class="sk-sh">Gym Modules</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🏋️ Special Gym Ratios</div><div class="sk-row-desc">Warns when your stat ratios risk losing access to specialist gyms</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🚫 Block Training</div><div class="sk-row-desc">Prevents accidental gym training clicks</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🔄 Auto Gym</div><div class="sk-row-desc">Automatically switches to the best available gym before training</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Special Gym Ratios</div><div class="sk-row-desc">Warns when your stat ratios risk losing access to specialist gyms</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Auto Gym</div><div class="sk-row-desc">Automatically switches to the best available gym before training</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Block Training</div><div class="sk-row-desc">Prevents accidental gym training clicks</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
         <div class="sk-subtab-panel" id="skp-tab-money">
           <div class="sk-sh">Market &amp; Pricing</div>
-
-          <!-- Item Market Filler -->
           <div class="sk-row" style="align-items:flex-start;gap:12px;">
             <div class="sk-row-info">
-              <div class="sk-row-title">&#x1F6D2; Item Market Filler</div>
+              <div class="sk-row-title">Item Market Filler</div>
               <div class="sk-row-desc">Auto-fills prices on Item Market listings using live market data</div>
-              <div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-market" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">&#x2699;&#xFE0F; Settings &#x25BE;</button></div>
+              <div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-market" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">Settings &#x25BE;</button></div>
             </div>
             <label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label>
           </div>
@@ -1268,13 +1234,11 @@
             <label class="sk-field-label" style="margin-top:8px;">Slot (cheapest = 1)</label>
             <input type="number" class="sk-input" min="1" max="10" value="1" placeholder="1">
           </div>
-
-          <!-- Bazaar Filler -->
           <div class="sk-row" style="align-items:flex-start;gap:12px;margin-top:4px;">
             <div class="sk-row-info">
-              <div class="sk-row-title">&#x1F3EA; Bazaar Filler</div>
+              <div class="sk-row-title">Bazaar Filler</div>
               <div class="sk-row-desc">Auto-fills your bazaar prices using Weav3r market API data</div>
-              <div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-bazaar" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">&#x2699;&#xFE0F; Settings &#x25BE;</button></div>
+              <div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-bazaar" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">Settings &#x25BE;</button></div>
             </div>
             <label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label>
           </div>
@@ -1286,18 +1250,18 @@
             <label class="sk-field-label" style="margin-top:8px;">Slot (cheapest = 1)</label>
             <input type="number" class="sk-input" min="1" max="10" value="1" placeholder="1">
           </div>
-
-          <div class="sk-row" style="margin-top:4px;"><div class="sk-row-info"><div class="sk-row-title">&#x1F4E6; Item Market Max Quantity</div><div class="sk-row-desc">Adds a button to fill max quantity when buying from Item Market</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-
+          <div class="sk-row" style="margin-top:4px;"><div class="sk-row-info"><div class="sk-row-title">Item Market Max Quantity</div><div class="sk-row-desc">Adds a button to fill max quantity when buying from Item Market</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-sh" style="margin-top:18px;">Quick Deposit</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">&#x1F3E6; Quick Deposit</div><div class="sk-row-desc">Makes your money display clickable for fast vault deposits</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Quick Deposit</div><div class="sk-row-desc">Makes your money display clickable for fast vault deposits</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <label class="sk-field-label" style="margin-top:10px;">Deposit Target</label>
           <select class="sk-select" id="skp-deposit-target"><option>Faction Vault</option><option>Property Vault</option><option>Company Vault</option><option value="ghost">Ghost Trade</option></select>
           <div class="sk-ghost-trade-row" id="skp-ghost-row" style="display:none;">
-            <div class="sk-info" style="margin-top:8px;">&#x1F47B; Auto-detected when you visit a ghost trade page. Used as the deposit target when Ghost Trade is selected above.</div>
+            <div class="sk-info" style="margin-top:8px;">Auto-detected when you visit a ghost trade page. Used as the deposit target when Ghost Trade is selected above.</div>
             <input type="text" class="sk-input" placeholder="No ghost trade detected yet" readonly style="opacity:0.55;cursor:not-allowed;">
-            <button class="sk-btn sk-btn-danger" style="width:100%;">&#x2715; Clear Ghost Trade ID</button>
+            <button class="sk-btn sk-btn-danger" style="width:100%;">Clear Ghost Trade ID</button>
           </div>
+          <div class="sk-sh" style="margin-top:18px;">Bunker</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Bunker Bucks</div><div class="sk-row-desc">Displays live value of your bunker investments on the Torn City page</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
       </div>
     </div>
@@ -1305,31 +1269,68 @@
     <!-- CRIMES -->
     <div class="sk-sec-page" id="skp-crimes">
       <div class="sk-subtab-bar">
-        <button class="sk-subtab-btn active" data-tab="helpers">🎭 Helpers</button>
-        <button class="sk-subtab-btn" data-tab="notifier">🚨 Notifier</button>
-        <button class="sk-subtab-btn" data-tab="hideout">👻 Hide Outcome</button>
+        <button class="sk-subtab-btn active" data-tab="helpers">Helpers</button>
+        <button class="sk-subtab-btn" data-tab="outcome">Outcome</button>
       </div>
       <div class="sk-scroll">
         <div class="sk-subtab-panel active" id="skp-tab-helpers">
-          <div class="sk-sh">Crime Helpers</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🧹 Disposal Helper</div><div class="sk-row-desc">Highlights options & shows max nerve for Disposal</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🎭 Scamming Helper</div><div class="sk-row-desc">Hints for the Scamming crime</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🏠 Burglary Confidence</div><div class="sk-row-desc">Shows confidence % next to the graphic</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">💻 Cracking Helper</div><div class="sk-row-desc">Word suggestions for the Cracking crime</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🔍 Search for Cash</div><div class="sk-row-desc">Highlights best SFC location by scoring</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row" style="align-items:flex-start;gap:12px;">
+            <div class="sk-row-info">
+              <div class="sk-row-title">Search for Cash</div>
+              <div class="sk-row-desc">Highlights the best SFC location by scoring and alerts when your threshold is met</div>
+              <div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-sfc" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">Settings &#x25BE;</button></div>
+            </div>
+            <label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label>
+          </div>
+          <div class="sk-shelf" id="skp-shelf-sfc" style="display:none;">
+            <div class="sk-sh" style="margin-top:0;font-size:10px;">SFC Alert Settings</div>
+            <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Enable SFC Alert</div><div class="sk-row-desc">Notify when SFC score reaches threshold</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+            <label class="sk-field-label" style="margin-top:8px;">Check Interval (seconds)</label>
+            <input type="number" class="sk-input" min="10" max="300" value="30">
+            <div class="sk-hint">Minimum 10s -- recommended 30s</div>
+            <label class="sk-field-label" style="margin-top:8px;">SFC Score Threshold</label>
+            <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-val">80%</span></div>
+            <div class="sk-hint">Alert when SFC score meets or exceeds this value</div>
+          </div>
+          <div class="sk-row" style="align-items:flex-start;gap:12px;margin-top:4px;">
+            <div class="sk-row-info">
+              <div class="sk-row-title">Shoplifting</div>
+              <div class="sk-row-desc">Monitors shoplifting security and alerts when it drops to a safe level</div>
+              <div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-shoplift" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">Settings &#x25BE;</button></div>
+            </div>
+            <label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label>
+          </div>
+          <div class="sk-shelf" id="skp-shelf-shoplift" style="display:none;">
+            <div class="sk-sh" style="margin-top:0;font-size:10px;">Shoplifting Alert Settings</div>
+            <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Enable Shoplifting Alert</div><div class="sk-row-desc">Notify when shoplifting security drops low enough</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+            <label class="sk-field-label" style="margin-top:8px;">Check Interval (seconds)</label>
+            <input type="number" class="sk-input" min="10" max="300" value="30">
+            <div class="sk-hint">Minimum 10s -- recommended 30s</div>
+            <label class="sk-field-label" style="margin-top:8px;">Security Alert Threshold (%)</label>
+            <div class="sk-slider-row"><input type="range" min="0" max="100" value="20" class="skp-slider" data-out="skp-shoplift-val" data-suffix="%"><span class="sk-slider-val" id="skp-shoplift-val">20%</span></div>
+            <div class="sk-hint">Alert when security is at or below this level</div>
+          </div>
+          <div class="sk-row" style="margin-top:4px;"><div class="sk-row-info"><div class="sk-row-title">Burglary</div><div class="sk-row-desc">Shows confidence percentage next to the burglary graphic</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Disposal</div><div class="sk-row-desc">Highlights best options and shows maximum nerve cost for Disposal</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Cracking</div><div class="sk-row-desc">Shows word suggestions while solving the Cracking crime</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Scamming</div><div class="sk-row-desc">Provides hints and assistance for the Scamming crime</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
-        <div class="sk-subtab-panel" id="skp-tab-notifier">
-          <div class="sk-sh">Crime Notifier</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🚨 Enable Crime Notifier</div><div class="sk-row-desc">Monitor shoplifting security & SFC %</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <label class="sk-field-label" style="margin-top:10px;">Check Interval (seconds)</label>
-          <input type="number" class="sk-input" min="10" max="300" value="30">
-          <div class="sk-hint">Minimum 10s — recommended 30s</div>
-          <div class="sk-sh">SFC Alert Threshold</div>
-          <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-val">80%</span></div>
-        </div>
-        <div class="sk-subtab-panel" id="skp-tab-hideout">
-          <div class="sk-sh">Hide Crime Outcome</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🦹 Hide Outcome</div><div class="sk-row-desc">Hides crime result text until you hover</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        <div class="sk-subtab-panel" id="skp-tab-outcome">
+          <div class="sk-sh">Crime Outcome Display</div>
+          <div class="sk-info">Controls how the crime result panel is shown after committing a crime.</div>
+          <label class="sk-field-label" style="margin-top:12px;">Display Mode</label>
+          <select class="sk-select" id="skp-outcome-mode">
+            <option value="0">Disabled -- show outcome normally</option>
+            <option value="1">Hidden -- remove the outcome panel entirely</option>
+            <option value="2">Minimal -- hide story text, keep rewards</option>
+            <option value="3">Toast -- replace panel with a small pop-up card</option>
+          </select>
+          <div class="sk-hint" style="margin-top:6px;">Hidden and Toast modes remove the outcome panel. Minimal keeps the reward summary but hides narrative text.</div>
+          <div class="sk-sh" style="margin-top:18px;">Toast Settings</div>
+          <div class="sk-info">These settings apply when Toast mode is selected above.</div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Color by Result</div><div class="sk-row-desc">Toast border color changes based on success, failure, or jail</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <label class="sk-field-label" style="margin-top:8px;">Toast Duration (seconds)</label>
+          <div class="sk-slider-row"><input type="range" min="2" max="10" value="5" class="skp-slider" data-out="skp-toast-val" data-suffix="s"><span class="sk-slider-val" id="skp-toast-val">5s</span></div>
         </div>
       </div>
     </div>
@@ -1337,104 +1338,52 @@
     <!-- MUGGING -->
     <div class="sk-sec-page" id="skp-mugging">
       <div class="sk-subtab-bar">
-        <button class="sk-subtab-btn active" data-tab="mugcalc">🥊 Calculator</button>
-        <button class="sk-subtab-btn" data-tab="mugwarn">⚠️ Warning</button>
+        <button class="sk-subtab-btn active" data-tab="mugcalc">Calculator</button>
+        <button class="sk-subtab-btn" data-tab="mugwarn">Warning</button>
       </div>
       <div class="sk-scroll">
         <div class="sk-subtab-panel active" id="skp-tab-mugcalc">
           <div class="sk-sh">Mug Calculator</div>
-          <div class="sk-info">ℹ️ Shows potential mug values when browsing Item Market and Bazaars.</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🥊 Enable Mug Calculator</div><div class="sk-row-desc">Shows mug value info on Market & Bazaar</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <label class="sk-field-label" style="margin-top:10px;">Mug Merits (0–10)</label>
+          <div class="sk-info">Shows potential mug values when browsing Item Market and Bazaars.</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Enable Mug Calculator</div><div class="sk-row-desc">Shows mug value info on Market &amp; Bazaar</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <label class="sk-field-label" style="margin-top:10px;">Mug Merits (0-10)</label>
           <input type="number" class="sk-input" min="0" max="10" placeholder="0">
-          <label class="sk-field-label">Plunder % (20–49%)</label>
+          <label class="sk-field-label">Plunder % (20-49%)</label>
           <input type="number" class="sk-input" min="20" max="49" step="0.01" placeholder="e.g. 35.5">
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🚫 No Plunder Weapon</div><div class="sk-row-desc">Disables plunder bonus calculation</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">No Plunder Weapon</div><div class="sk-row-desc">Disables plunder bonus calculation</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <label class="sk-field-label" style="margin-top:6px;">Minimum Threshold ($)</label>
           <input type="number" class="sk-input" min="0" placeholder="Only alert above this value">
         </div>
         <div class="sk-subtab-panel" id="skp-tab-mugwarn">
           <div class="sk-sh">Mug Warning</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">⚠️ Enable Mug Warning</div><div class="sk-row-desc">Show warning banner when mug-risk detected</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Enable Mug Warning</div><div class="sk-row-desc">Show warning banner when mug-risk detected</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
       </div>
     </div>
 
-    <!-- WAR -->
+    <!-- WAR (untouched) -->
     <div class="sk-sec-page" id="skp-war">
-      <div class="sk-subtab-bar">
-        <button class="sk-subtab-btn active" data-tab="chaintimer">⛓️ Chain Timer</button>
-        <button class="sk-subtab-btn" data-tab="warmon">📡 War Monitor</button>
-        <button class="sk-subtab-btn" data-tab="chainview">🔭 Chain View</button>
-      </div>
-      <div class="sk-scroll">
-        <div class="sk-subtab-panel active" id="skp-tab-chaintimer">
-          <div class="sk-sh">Chain Timer</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">⏱️ Enable Chain Timer</div><div class="sk-row-desc">Floating chain countdown on screen</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🔔 Enable Alerts</div><div class="sk-row-desc">Sound & popup when timer is low</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">💥 Screen Flash</div><div class="sk-row-desc">Flash red when chain about to expire</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🖥️ Floating Timer Display</div><div class="sk-row-desc">Show timer on screen (alerts still work)</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-sh" style="margin-top:14px;">Alert Threshold</div>
-          <div class="sk-slider-row"><input type="range" min="1" max="5" step="0.5" value="4" class="skp-slider" data-out="skp-chain-val" data-suffix=" min"><span class="sk-slider-val" id="skp-chain-val">4 min</span></div>
-        </div>
-        <div class="sk-subtab-panel" id="skp-tab-warmon">
-          <div class="sk-sh">War Monitor</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">📡 Enable War Monitor</div><div class="sk-row-desc">Monitor faction war status and activity</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-ph" style="margin-top:12px;"><span class="sk-ph-icon">🛡️</span><div class="sk-ph-title">More War Settings</div><div class="sk-ph-desc">Coming soon</div></div>
-        </div>
-        <div class="sk-subtab-panel" id="skp-tab-chainview">
-          <div class="sk-sh">Extended Chain View</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">⛓️ Extended Chain View</div><div class="sk-row-desc">Show more than 10 chain attacks on faction page</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-        </div>
+      <div class="sk-scroll" style="display:flex;align-items:center;justify-content:center;height:100%;">
+        <div style="text-align:center;color:rgba(255,255,255,0.25);font-size:13px;line-height:1.7;">War settings<br>coming soon</div>
       </div>
     </div>
 
-    <!-- MISSIONS -->
+    <!-- MISSIONS (untouched) -->
     <div class="sk-sec-page" id="skp-missions">
-      <div class="sk-subtab-bar">
-        <button class="sk-subtab-btn active" data-tab="tracker">📋 Tracker</button>
-        <button class="sk-subtab-btn" data-tab="booknotif">📚 Book Notifier</button>
-      </div>
-      <div class="sk-scroll">
-        <div class="sk-subtab-panel active" id="skp-tab-tracker">
-          <div class="sk-sh">Mission Tracker</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🎯 Enable Mission Tracker</div><div class="sk-row-desc">Track mission progress and objectives</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-ph" style="margin-top:12px;"><span class="sk-ph-icon">🗺️</span><div class="sk-ph-title">Mission Tracker Config</div><div class="sk-ph-desc">More options in a future update</div></div>
-        </div>
-        <div class="sk-subtab-panel" id="skp-tab-booknotif">
-          <div class="sk-sh">Mission Book Notifier</div>
-          <div class="sk-info">📚 Checks every 12 hours and alerts when books appear as mission rewards.</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">📚 Enable Book Notifier</div><div class="sk-row-desc">Get alerted when books appear in rewards</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-        </div>
+      <div class="sk-scroll" style="display:flex;align-items:center;justify-content:center;height:100%;">
+        <div style="text-align:center;color:rgba(255,255,255,0.25);font-size:13px;line-height:1.7;">Missions settings<br>coming soon</div>
       </div>
     </div>
 
-    <!-- EVENTS -->
+    <!-- EVENTS (untouched) -->
     <div class="sk-sec-page" id="skp-events">
-      <div class="sk-subtab-bar">
-        <button class="sk-subtab-btn active" data-tab="holiday">🥚 Holiday</button>
-        <button class="sk-subtab-btn" data-tab="deposit">🏦 Quick Deposit</button>
-      </div>
-      <div class="sk-scroll">
-        <div class="sk-subtab-panel active" id="skp-tab-holiday">
-          <div class="sk-sh">Holiday Events</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🥚 Holiday Helper</div><div class="sk-row-desc">Assists with seasonal Torn events</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-ph" style="margin-top:12px;"><span class="sk-ph-icon">🎄</span><div class="sk-ph-title">No Active Holiday</div><div class="sk-ph-desc">Configuration appears during events</div></div>
-        </div>
-        <div class="sk-subtab-panel" id="skp-tab-deposit">
-          <div class="sk-sh">Quick Deposit</div>
-          <div class="sk-info">🏦 Click your money display for fast deposits to faction vault, property vault, company vault, or ghost trades.</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🏦 Enable Quick Deposit</div><div class="sk-row-desc">Makes money display clickable for deposits</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <label class="sk-field-label" style="margin-top:10px;">Deposit Target</label>
-          <select class="sk-select"><option>Faction Vault</option><option>Property Vault</option><option>Company Vault</option><option>Ghost Trade</option></select>
-          <div class="sk-sh" style="margin-top:14px;">Ghost Trade</div>
-          <input type="text" class="sk-input" placeholder="Auto-detected when you visit a ghost trade page" readonly style="opacity:0.5;cursor:not-allowed;">
-          <button class="sk-btn sk-btn-danger" style="width:100%;">✕ Clear Ghost Trade ID</button>
-        </div>
+      <div class="sk-scroll" style="display:flex;align-items:center;justify-content:center;height:100%;">
+        <div style="text-align:center;color:rgba(255,255,255,0.25);font-size:13px;line-height:1.7;">Events settings<br>coming soon</div>
       </div>
     </div>
 
   </div><!-- /sk-prev-content -->
+</div><!-- /sk-prev -->
 </div><!-- /sk-prev -->
 `;
 
