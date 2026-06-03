@@ -106,11 +106,18 @@
                                                          display: flex; flex-direction: column; padding: 20px 0;">
                         <!-- Header in Sidebar -->
                         <div style="padding: 0 20px 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                            <h3 style="margin: 0; background: linear-gradient(135deg, #66BB6A, #ffad5a); 
+                            <h3 style="margin: 0 0 12px 0; background: linear-gradient(135deg, #66BB6A, #ffad5a); 
                                        -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
                                        background-clip: text; font-size: 18px; font-weight: bold;">
                                 ⚙️ Settings
                             </h3>
+                            <button id="sidekick-preview-new-ui"
+                                    style="width: 100%; padding: 8px 10px; background: linear-gradient(135deg, rgba(95,204,106,0.15), rgba(255,173,90,0.15));
+                                           border: 1px solid rgba(95,204,106,0.4); border-radius: 8px; color: #fff;
+                                           font-size: 11px; font-weight: 700; cursor: pointer; letter-spacing: 0.3px;
+                                           transition: all 0.2s ease; font-family: Arial, sans-serif; line-height: 1.3;">
+                                🚧 Preview New UI
+                            </button>
                         </div>
                         
                         <!-- Sidebar Tabs -->
@@ -954,6 +961,559 @@
             // Placeholder for future crime module tab event listeners if required
         },
 
+        // 🚧 TEMP: Create and inject the new settings UI preview as an in-page overlay
+        createPreviewPanel() {
+            // Remove any existing preview
+            const existing = document.querySelector('.sidekick-preview-panel');
+            if (existing) { existing.remove(); return; }
+
+            const overlay = document.createElement('div');
+            overlay.className = 'sidekick-preview-panel';
+            overlay.style.cssText = `
+                position: fixed; inset: 0; z-index: 9999999;
+                background: rgba(0,0,0,0.7);
+                display: flex; align-items: center; justify-content: center;
+                backdrop-filter: blur(4px);
+                font-family: 'Segoe UI', Arial, sans-serif;
+            `;
+
+            overlay.innerHTML = `
+<style>
+.sk-prev *, .sk-prev *::before, .sk-prev *::after { box-sizing: border-box; margin: 0; padding: 0; }
+.sk-prev {
+    --bg:#141414; --surface:#1e1e1e; --surface2:#252525; --surface3:#2e2e2e;
+    --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.14);
+    --green:#5fcc6a; --orange:#ffad5a; --text:#f0f0f0; --muted:rgba(255,255,255,0.45);
+    --grad:linear-gradient(135deg,#5fcc6a,#ffad5a); --radius:10px;
+    width:920px; height:780px; display:flex;
+    background:var(--surface); border:1px solid var(--border2); border-radius:16px;
+    overflow:hidden; box-shadow:0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04);
+    color:var(--text);
+}
+.sk-prev-sidebar {
+    width:200px; background:var(--bg); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; flex-shrink:0;
+}
+.sk-prev-sidebar-head {
+    padding:0; border-bottom:1px solid var(--border); flex-shrink:0; overflow:hidden;
+}
+.sk-prev-logo {
+    font-size:16px; font-weight:700;
+    background:var(--grad); -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent; background-clip:text;
+}
+.sk-prev-ver { font-size:10px; color:var(--muted); margin-top:2px; }
+.sk-prev-nav {
+    flex:1; padding:8px 6px; overflow-y:auto; scrollbar-width:none;
+}
+.sk-prev-nav::-webkit-scrollbar{display:none;}
+.sk-nav-item {
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    padding:12px 6px; border-radius:var(--radius); cursor:pointer;
+    transition:background .18s,color .18s; border:none; background:transparent;
+    color:var(--muted); width:100%; margin-bottom:2px; position:relative;
+}
+.sk-nav-item:hover{background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.8);}
+.sk-nav-item.active{background:rgba(95,204,106,0.1);color:#fff;}
+.sk-nav-item.active::before{
+    content:''; position:absolute; left:0; top:50%; transform:translateY(-50%);
+    height:55%; width:3px; background:var(--grad); border-radius:0 3px 3px 0;
+}
+.sk-nav-icon {
+    width:42px; height:42px; border-radius:9px; border:1.5px solid var(--border2);
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; background:var(--surface2); transition:all .2s;
+}
+.sk-nav-item.active .sk-nav-icon,
+.sk-nav-item:hover .sk-nav-icon {
+    border-color:rgba(95,204,106,0.45);
+    box-shadow:0 0 14px rgba(95,204,106,0.2),0 0 28px rgba(255,173,90,0.1);
+}
+.sk-nav-label{font-size:11px;font-weight:600;letter-spacing:.2px;text-align:center;white-space:nowrap;}
+.sk-prev-content{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.sk-prev-topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 24px; border-bottom:1px solid var(--border); flex-shrink:0;
+}
+.sk-prev-title{
+    font-size:20px;font-weight:700;
+    background:var(--grad);-webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;background-clip:text;
+    letter-spacing:-0.3px;
+}
+.sk-prev-close{
+    width:28px;height:28px;background:var(--surface3);border:1px solid var(--border2);
+    border-radius:50%;color:var(--muted);font-size:16px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1;
+}
+.sk-prev-close:hover{background:rgba(255,80,80,.15);color:#ff6b6b;border-color:rgba(255,80,80,.3);}
+.sk-subtab-bar{
+    display:flex;gap:2px;padding:10px 24px 0;
+    border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.sk-subtab-btn{
+    padding:7px 14px;font-size:12px;font-weight:600;background:transparent;
+    border:none;border-bottom:2px solid transparent;color:var(--muted);
+    cursor:pointer;transition:all .15s;border-radius:6px 6px 0 0;margin-bottom:-1px;
+    white-space:nowrap;
+}
+.sk-subtab-btn:hover{color:rgba(255,255,255,.75);background:rgba(255,255,255,.04);}
+.sk-subtab-btn.active{color:#fff;border-bottom-color:var(--green);}
+.sk-scroll{flex:1;overflow-y:auto;padding:20px 24px;scrollbar-width:none;}
+.sk-scroll::-webkit-scrollbar{display:none;}
+.sk-subtab-panel{display:none;}
+.sk-subtab-panel.active{display:block;}
+.sk-sec-page{display:none;flex:1;flex-direction:column;overflow:hidden;}
+.sk-sec-page.active{display:flex;}
+.sk-sh{
+    font-size:11px;font-weight:700;letter-spacing:0.8px;color:rgba(255,255,255,0.6);
+    text-transform:uppercase;margin:0 0 10px;padding-bottom:8px;
+    border-bottom:1px solid rgba(255,255,255,0.12);
+}
+.sk-sh:not(:first-child){margin-top:20px;}
+.sk-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 14px;background:var(--surface2);border:1px solid var(--border);
+    border-radius:var(--radius);margin-bottom:5px;gap:14px;
+    transition:border-color .15s,background .15s;
+}
+.sk-row:hover{border-color:var(--border2);background:var(--surface3);}
+.sk-row-info{flex:1;min-width:0;}
+.sk-row-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.sk-row-desc{font-size:11px;color:var(--muted);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sk-tog{position:relative;width:40px;height:21px;flex-shrink:0;cursor:pointer;}
+.sk-tog input{opacity:0;width:0;height:0;position:absolute;}
+.sk-tog-track{position:absolute;inset:0;background:rgba(255,255,255,.15);border-radius:21px;transition:background .25s;}
+.sk-tog input:checked~.sk-tog-track{background:linear-gradient(135deg,var(--green),var(--orange));}
+.sk-tog-thumb{position:absolute;top:2.5px;left:2.5px;width:16px;height:16px;background:white;border-radius:50%;transition:transform .25s cubic-bezier(.4,0,.2,1);box-shadow:0 1px 4px rgba(0,0,0,.3);}
+.sk-tog input:checked~.sk-tog-thumb{transform:translateX(19px);}
+.sk-field-label{font-size:12px;font-weight:600;color:rgba(255,255,255,.7);margin-bottom:6px;display:block;}
+.sk-input{
+    width:100%;background:var(--surface3);border:1px solid var(--border2);
+    border-radius:8px;color:var(--text);padding:9px 12px;font-size:13px;
+    font-family:inherit;outline:none;transition:border-color .15s;
+    margin-bottom:10px;
+}
+.sk-input:focus{border-color:var(--green);}
+.sk-input::placeholder{color:var(--muted);}
+.sk-select{
+    width:100%;background:var(--surface3);border:1px solid var(--border2);
+    border-radius:8px;color:var(--text);padding:9px 12px;font-size:13px;
+    font-family:inherit;outline:none;appearance:none;cursor:pointer;margin-bottom:10px;
+}
+.sk-select option{background:#1e1e1e;}
+.sk-hint{font-size:11px;color:var(--muted);margin-top:-6px;margin-bottom:10px;line-height:1.4;}
+.sk-btn-row{display:flex;gap:8px;margin-bottom:10px;}
+.sk-btn{padding:9px 16px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit;flex:1;}
+.sk-btn-primary{background:var(--grad);color:#111;}
+.sk-btn-ghost{background:var(--surface3);border:1px solid var(--border2);color:var(--muted);}
+.sk-btn-ghost:hover{color:var(--text);}
+.sk-btn-danger{background:rgba(255,80,80,.1);border:1px solid rgba(255,80,80,.25);color:#ff6b6b;}
+.sk-info{padding:10px 12px;background:rgba(33,150,243,.08);border-left:3px solid #2196F3;border-radius:0 8px 8px 0;font-size:11px;color:rgba(255,255,255,.65);line-height:1.5;margin-bottom:12px;}
+.sk-ph{padding:36px 16px;text-align:center;background:var(--surface2);border:1px dashed var(--border2);border-radius:12px;margin-bottom:10px;}
+.sk-ph-icon{font-size:34px;margin-bottom:8px;display:block;}
+.sk-ph-title{font-size:13px;font-weight:600;color:rgba(255,255,255,.45);margin-bottom:3px;}
+.sk-ph-desc{font-size:11px;color:var(--muted);}
+.sk-slider-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.sk-slider-row input[type=range]{flex:1;accent-color:var(--green);cursor:pointer;}
+.sk-slider-val{font-size:13px;font-weight:700;color:var(--green);min-width:34px;text-align:right;}
+.sk-shelf{
+    background:var(--surface2);border:1px solid var(--border2);border-radius:10px;
+    padding:14px 16px;margin:6px 0 10px;animation:skShelfIn .18s ease;
+}
+@keyframes skShelfIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+.sk-status{padding:9px 12px;border-radius:8px;background:rgba(95,204,106,.08);border:1px solid rgba(95,204,106,.18);font-size:12px;color:var(--green);text-align:center;margin-top:4px;}
+</style>
+
+<div class="sk-prev">
+  <!-- SIDEBAR -->
+  <div class="sk-prev-sidebar">
+    <div class="sk-prev-sidebar-head">
+      <img id="skp-logo-img" style="width:100%;height:auto;display:block;object-fit:cover;">
+
+    </div>
+    <nav class="sk-prev-nav">
+      <button class="sk-nav-item active" data-section="general"><div class="sk-nav-icon">⚙️</div><span class="sk-nav-label">General</span></button>
+      <button class="sk-nav-item" data-section="features"><div class="sk-nav-icon">🧩</div><span class="sk-nav-label">Features</span></button>
+      <button class="sk-nav-item" data-section="profile"><div class="sk-nav-icon">👤</div><span class="sk-nav-label">Profile</span></button>
+      <button class="sk-nav-item" data-section="crimes"><div class="sk-nav-icon">🎭</div><span class="sk-nav-label">Crimes</span></button>
+      <button class="sk-nav-item" data-section="mugging"><div class="sk-nav-icon">🥊</div><span class="sk-nav-label">Mugging</span></button>
+      <button class="sk-nav-item" data-section="war"><div class="sk-nav-icon">⚔️</div><span class="sk-nav-label">War</span></button>
+      <button class="sk-nav-item" data-section="missions"><div class="sk-nav-icon">🎯</div><span class="sk-nav-label">Missions</span></button>
+      <button class="sk-nav-item" data-section="events"><div class="sk-nav-icon">🥚</div><span class="sk-nav-label">Events</span></button>
+    </nav>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="sk-prev-content">
+    <div class="sk-prev-topbar">
+      <span class="sk-prev-title" id="skp-title">General Settings</span>
+      <button class="sk-prev-close" id="skp-close">×</button>
+    </div>
+
+    <!-- GENERAL -->
+    <div class="sk-sec-page active" id="skp-general">
+      <div class="sk-subtab-bar">
+        <button class="sk-subtab-btn active" data-tab="api">🔑 API Key</button>
+        <button class="sk-subtab-btn" data-tab="backup">💾 Backup &amp; Export</button>
+        <button class="sk-subtab-btn" data-tab="notifications">🔔 Notifications</button>
+      </div>
+      <div class="sk-scroll">
+        <div class="sk-subtab-panel active" id="skp-tab-api">
+          <div class="sk-sh">Torn API Key</div>
+          <label class="sk-field-label">API Key</label>
+          <input type="password" class="sk-input" placeholder="Enter your Torn API key...">
+          <div class="sk-hint">Get your key at <a href="https://www.torn.com/preferences.php#tab=api" target="_blank" style="color:#5fcc6a;text-decoration:none;font-weight:600;">torn.com/preferences.php#tab=api</a></div>
+          <div class="sk-btn-row"><button class="sk-btn sk-btn-primary">🧪 Test Connection</button><button class="sk-btn sk-btn-ghost">👁 Show Key</button></div>
+          <div class="sk-status">Enter your API key and click Test Connection</div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-backup">
+          <div class="sk-sh">Data Export &amp; Import</div>
+          <div class="sk-info">💾 Export all Sidekick settings and data before uninstalling. Import a backup file to fully restore everything after reinstalling.</div>
+          <div class="sk-btn-row"><button class="sk-btn sk-btn-primary">📤 Export Data</button><button class="sk-btn sk-btn-ghost">📥 Import Data</button></div>
+          <div class="sk-hint" style="text-align:center;margin-top:-4px;">Exports a .json backup file to your Downloads folder</div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-notifications">
+          <div class="sk-sh">In-Page Notifications</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🔊 Notification Sounds</div><div class="sk-row-desc">Play a sound when in-page notifications appear</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">⏱️ Auto-dismiss</div><div class="sk-row-desc">Automatically hide notifications after a timeout</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-sh" style="margin-top:14px;">Notification Duration</div>
+          <div class="sk-slider-row"><input type="range" min="2" max="10" value="5" class="skp-slider" data-out="skp-notif-val" data-suffix="s"><span class="sk-slider-val" id="skp-notif-val">5s</span></div>
+          <div class="sk-hint">How long notifications stay visible before auto-dismissing</div>
+          <div class="sk-sh" style="margin-top:14px;">System Notifications</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🖥️ Windows Notifications</div><div class="sk-row-desc">OS-level toasts even when Torn is in the background</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-info" style="margin-top:6px;">ℹ️ Windows notifications are used by Crime Notifier and Chain Timer alerts when the Torn tab is not focused.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FEATURES -->
+    <div class="sk-sec-page" id="skp-features">
+      <div class="sk-subtab-bar">
+        <button class="sk-subtab-btn active" data-tab="combat">⚔️ Combat</button>
+        <button class="sk-subtab-btn" data-tab="economy">💰 Economy</button>
+        <button class="sk-subtab-btn" data-tab="training">💪 Training</button>
+        <button class="sk-subtab-btn" data-tab="tools">🔧 Tools</button>
+      </div>
+      <div class="sk-scroll">
+        <div class="sk-subtab-panel active" id="skp-tab-combat">
+          <div class="sk-sh">Combat Modules</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">⚔️ Fast Attack</div><div class="sk-row-desc">Moves Start Fight button over weapon</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🎲 Random Target</div><div class="sk-row-desc">Adds random target picker on attack pages</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🛡️ Refill Blocker</div><div class="sk-row-desc">Prevents accidental refills</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🗡️ Auction Weapon Bonus</div><div class="sk-row-desc">Shows bonus stats on auction house</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">👕 Loadout Switcher</div><div class="sk-row-desc">Quick loadout change buttons on Items page</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🏎️ Racing Alert</div><div class="sk-row-desc">Flashes icon when not in a race</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-economy">
+          <div class="sk-sh">Economy & Market</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🏪 Bazaar Filler</div><div class="sk-row-desc">Auto-fills bazaar prices via Weav3r API</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🛒 Price Filler</div><div class="sk-row-desc">Auto-fills prices on Item Market</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">💰 Bunker Bucks</div><div class="sk-row-desc">Tracks bunker investment value</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🔒 Locked Items</div><div class="sk-row-desc">Lock inventory items to prevent trading</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-training">
+          <div class="sk-sh">Training Modules</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">💪 Auto Gym Switch</div><div class="sk-row-desc">Switches to best gym before training</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🚫 Block Training</div><div class="sk-row-desc">Prevents accidental gym training</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🏋️ Special Gym Ratios</div><div class="sk-row-desc">Warns when stat ratios risk specialist gym access</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-tools">
+          <div class="sk-sh">Utility Tools</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">📊 OC Weights</div><div class="sk-row-desc">Shows Organised Crime weight breakdowns</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">✈️ Travel Arc</div><div class="sk-row-desc">Shows travel time arc on world map</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="sk-sec-page" id="skp-profile">
+      <div class="sk-subtab-bar">
+        <button class="sk-subtab-btn active" data-tab="personal">💪 Personal</button>
+        <button class="sk-subtab-btn" data-tab="gym">🏋️ Gym</button>
+        <button class="sk-subtab-btn" data-tab="money">💰 Economy</button>
+      </div>
+      <div class="sk-scroll">
+        <div class="sk-subtab-panel active" id="skp-tab-personal">
+          <div class="sk-sh">Combat &amp; Loadout</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">⚔️ Fast Attack</div><div class="sk-row-desc">Moves Start Fight button directly over your equipped weapon for faster attacking</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">👕 Loadout Switcher</div><div class="sk-row-desc">Adds quick loadout change buttons on the Items page</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-sh" style="margin-top:18px;">Inventory</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🔒 Locked Items Manager</div><div class="sk-row-desc">Lock inventory items to prevent accidental trading or selling</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">📊 Weapon XP Tracker</div><div class="sk-row-desc">Tracks weapon experience progress and shows XP gain rates</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-gym">
+          <div class="sk-sh">Gym Modules</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🏋️ Special Gym Ratios</div><div class="sk-row-desc">Warns when your stat ratios risk losing access to specialist gyms</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🚫 Block Training</div><div class="sk-row-desc">Prevents accidental gym training clicks</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🔄 Auto Gym</div><div class="sk-row-desc">Automatically switches to the best available gym before training</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-money">
+          <div class="sk-sh">Market &amp; Pricing</div>
+
+          <!-- Item Market Filler -->
+          <div class="sk-row" style="align-items:flex-start;gap:12px;">
+            <div class="sk-row-info">
+              <div class="sk-row-title">&#x1F6D2; Item Market Filler</div>
+              <div class="sk-row-desc">Auto-fills prices on Item Market listings using live market data</div>
+              <div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-market" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">&#x2699;&#xFE0F; Settings &#x25BE;</button></div>
+            </div>
+            <label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label>
+          </div>
+          <div class="sk-shelf" id="skp-shelf-market" style="display:none;">
+            <div class="sk-sh" style="margin-top:0;font-size:10px;">Item Market Filler Settings</div>
+            <label class="sk-field-label">Price Offset Formula</label>
+            <input type="text" class="sk-input" placeholder="e.g. -1 or -1% or -1[1]" value="-1">
+            <div class="sk-hint">-1 = cheapest minus $1 &nbsp;|&nbsp; -1% = 1% below &nbsp;|&nbsp; -1[1] = 2nd cheapest minus $1</div>
+            <label class="sk-field-label" style="margin-top:8px;">Slot (cheapest = 1)</label>
+            <input type="number" class="sk-input" min="1" max="10" value="1" placeholder="1">
+          </div>
+
+          <!-- Bazaar Filler -->
+          <div class="sk-row" style="align-items:flex-start;gap:12px;margin-top:4px;">
+            <div class="sk-row-info">
+              <div class="sk-row-title">&#x1F3EA; Bazaar Filler</div>
+              <div class="sk-row-desc">Auto-fills your bazaar prices using Weav3r market API data</div>
+              <div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-bazaar" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">&#x2699;&#xFE0F; Settings &#x25BE;</button></div>
+            </div>
+            <label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label>
+          </div>
+          <div class="sk-shelf" id="skp-shelf-bazaar" style="display:none;">
+            <div class="sk-sh" style="margin-top:0;font-size:10px;">Bazaar Filler Settings</div>
+            <label class="sk-field-label">Price Offset Formula</label>
+            <input type="text" class="sk-input" placeholder="e.g. -1 or -1% or -1[1]" value="-1">
+            <div class="sk-hint">-1 = cheapest minus $1 &nbsp;|&nbsp; -1% = 1% below &nbsp;|&nbsp; -1[1] = 2nd cheapest minus $1</div>
+            <label class="sk-field-label" style="margin-top:8px;">Slot (cheapest = 1)</label>
+            <input type="number" class="sk-input" min="1" max="10" value="1" placeholder="1">
+          </div>
+
+          <div class="sk-row" style="margin-top:4px;"><div class="sk-row-info"><div class="sk-row-title">&#x1F4E6; Item Market Max Quantity</div><div class="sk-row-desc">Adds a button to fill max quantity when buying from Item Market</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+
+          <div class="sk-sh" style="margin-top:18px;">Quick Deposit</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">&#x1F3E6; Quick Deposit</div><div class="sk-row-desc">Makes your money display clickable for fast vault deposits</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <label class="sk-field-label" style="margin-top:10px;">Deposit Target</label>
+          <select class="sk-select" id="skp-deposit-target"><option>Faction Vault</option><option>Property Vault</option><option>Company Vault</option><option value="ghost">Ghost Trade</option></select>
+          <div class="sk-ghost-trade-row" id="skp-ghost-row" style="display:none;">
+            <div class="sk-info" style="margin-top:8px;">&#x1F47B; Auto-detected when you visit a ghost trade page. Used as the deposit target when Ghost Trade is selected above.</div>
+            <input type="text" class="sk-input" placeholder="No ghost trade detected yet" readonly style="opacity:0.55;cursor:not-allowed;">
+            <button class="sk-btn sk-btn-danger" style="width:100%;">&#x2715; Clear Ghost Trade ID</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CRIMES -->
+    <div class="sk-sec-page" id="skp-crimes">
+      <div class="sk-subtab-bar">
+        <button class="sk-subtab-btn active" data-tab="helpers">🎭 Helpers</button>
+        <button class="sk-subtab-btn" data-tab="notifier">🚨 Notifier</button>
+        <button class="sk-subtab-btn" data-tab="hideout">👻 Hide Outcome</button>
+      </div>
+      <div class="sk-scroll">
+        <div class="sk-subtab-panel active" id="skp-tab-helpers">
+          <div class="sk-sh">Crime Helpers</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🧹 Disposal Helper</div><div class="sk-row-desc">Highlights options & shows max nerve for Disposal</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🎭 Scamming Helper</div><div class="sk-row-desc">Hints for the Scamming crime</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🏠 Burglary Confidence</div><div class="sk-row-desc">Shows confidence % next to the graphic</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">💻 Cracking Helper</div><div class="sk-row-desc">Word suggestions for the Cracking crime</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🔍 Search for Cash</div><div class="sk-row-desc">Highlights best SFC location by scoring</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-notifier">
+          <div class="sk-sh">Crime Notifier</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🚨 Enable Crime Notifier</div><div class="sk-row-desc">Monitor shoplifting security & SFC %</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <label class="sk-field-label" style="margin-top:10px;">Check Interval (seconds)</label>
+          <input type="number" class="sk-input" min="10" max="300" value="30">
+          <div class="sk-hint">Minimum 10s — recommended 30s</div>
+          <div class="sk-sh">SFC Alert Threshold</div>
+          <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-val">80%</span></div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-hideout">
+          <div class="sk-sh">Hide Crime Outcome</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🦹 Hide Outcome</div><div class="sk-row-desc">Hides crime result text until you hover</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MUGGING -->
+    <div class="sk-sec-page" id="skp-mugging">
+      <div class="sk-subtab-bar">
+        <button class="sk-subtab-btn active" data-tab="mugcalc">🥊 Calculator</button>
+        <button class="sk-subtab-btn" data-tab="mugwarn">⚠️ Warning</button>
+      </div>
+      <div class="sk-scroll">
+        <div class="sk-subtab-panel active" id="skp-tab-mugcalc">
+          <div class="sk-sh">Mug Calculator</div>
+          <div class="sk-info">ℹ️ Shows potential mug values when browsing Item Market and Bazaars.</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🥊 Enable Mug Calculator</div><div class="sk-row-desc">Shows mug value info on Market & Bazaar</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <label class="sk-field-label" style="margin-top:10px;">Mug Merits (0–10)</label>
+          <input type="number" class="sk-input" min="0" max="10" placeholder="0">
+          <label class="sk-field-label">Plunder % (20–49%)</label>
+          <input type="number" class="sk-input" min="20" max="49" step="0.01" placeholder="e.g. 35.5">
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🚫 No Plunder Weapon</div><div class="sk-row-desc">Disables plunder bonus calculation</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <label class="sk-field-label" style="margin-top:6px;">Minimum Threshold ($)</label>
+          <input type="number" class="sk-input" min="0" placeholder="Only alert above this value">
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-mugwarn">
+          <div class="sk-sh">Mug Warning</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">⚠️ Enable Mug Warning</div><div class="sk-row-desc">Show warning banner when mug-risk detected</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WAR -->
+    <div class="sk-sec-page" id="skp-war">
+      <div class="sk-subtab-bar">
+        <button class="sk-subtab-btn active" data-tab="chaintimer">⛓️ Chain Timer</button>
+        <button class="sk-subtab-btn" data-tab="warmon">📡 War Monitor</button>
+        <button class="sk-subtab-btn" data-tab="chainview">🔭 Chain View</button>
+      </div>
+      <div class="sk-scroll">
+        <div class="sk-subtab-panel active" id="skp-tab-chaintimer">
+          <div class="sk-sh">Chain Timer</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">⏱️ Enable Chain Timer</div><div class="sk-row-desc">Floating chain countdown on screen</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🔔 Enable Alerts</div><div class="sk-row-desc">Sound & popup when timer is low</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">💥 Screen Flash</div><div class="sk-row-desc">Flash red when chain about to expire</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🖥️ Floating Timer Display</div><div class="sk-row-desc">Show timer on screen (alerts still work)</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-sh" style="margin-top:14px;">Alert Threshold</div>
+          <div class="sk-slider-row"><input type="range" min="1" max="5" step="0.5" value="4" class="skp-slider" data-out="skp-chain-val" data-suffix=" min"><span class="sk-slider-val" id="skp-chain-val">4 min</span></div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-warmon">
+          <div class="sk-sh">War Monitor</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">📡 Enable War Monitor</div><div class="sk-row-desc">Monitor faction war status and activity</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-ph" style="margin-top:12px;"><span class="sk-ph-icon">🛡️</span><div class="sk-ph-title">More War Settings</div><div class="sk-ph-desc">Coming soon</div></div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-chainview">
+          <div class="sk-sh">Extended Chain View</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">⛓️ Extended Chain View</div><div class="sk-row-desc">Show more than 10 chain attacks on faction page</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MISSIONS -->
+    <div class="sk-sec-page" id="skp-missions">
+      <div class="sk-subtab-bar">
+        <button class="sk-subtab-btn active" data-tab="tracker">📋 Tracker</button>
+        <button class="sk-subtab-btn" data-tab="booknotif">📚 Book Notifier</button>
+      </div>
+      <div class="sk-scroll">
+        <div class="sk-subtab-panel active" id="skp-tab-tracker">
+          <div class="sk-sh">Mission Tracker</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🎯 Enable Mission Tracker</div><div class="sk-row-desc">Track mission progress and objectives</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-ph" style="margin-top:12px;"><span class="sk-ph-icon">🗺️</span><div class="sk-ph-title">Mission Tracker Config</div><div class="sk-ph-desc">More options in a future update</div></div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-booknotif">
+          <div class="sk-sh">Mission Book Notifier</div>
+          <div class="sk-info">📚 Checks every 12 hours and alerts when books appear as mission rewards.</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">📚 Enable Book Notifier</div><div class="sk-row-desc">Get alerted when books appear in rewards</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EVENTS -->
+    <div class="sk-sec-page" id="skp-events">
+      <div class="sk-subtab-bar">
+        <button class="sk-subtab-btn active" data-tab="holiday">🥚 Holiday</button>
+        <button class="sk-subtab-btn" data-tab="deposit">🏦 Quick Deposit</button>
+      </div>
+      <div class="sk-scroll">
+        <div class="sk-subtab-panel active" id="skp-tab-holiday">
+          <div class="sk-sh">Holiday Events</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🥚 Holiday Helper</div><div class="sk-row-desc">Assists with seasonal Torn events</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-ph" style="margin-top:12px;"><span class="sk-ph-icon">🎄</span><div class="sk-ph-title">No Active Holiday</div><div class="sk-ph-desc">Configuration appears during events</div></div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-deposit">
+          <div class="sk-sh">Quick Deposit</div>
+          <div class="sk-info">🏦 Click your money display for fast deposits to faction vault, property vault, company vault, or ghost trades.</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">🏦 Enable Quick Deposit</div><div class="sk-row-desc">Makes money display clickable for deposits</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <label class="sk-field-label" style="margin-top:10px;">Deposit Target</label>
+          <select class="sk-select"><option>Faction Vault</option><option>Property Vault</option><option>Company Vault</option><option>Ghost Trade</option></select>
+          <div class="sk-sh" style="margin-top:14px;">Ghost Trade</div>
+          <input type="text" class="sk-input" placeholder="Auto-detected when you visit a ghost trade page" readonly style="opacity:0.5;cursor:not-allowed;">
+          <button class="sk-btn sk-btn-danger" style="width:100%;">✕ Clear Ghost Trade ID</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sk-prev-content -->
+</div><!-- /sk-prev -->
+`;
+
+            document.body.appendChild(overlay);
+
+            // Set logo via chrome.runtime.getURL (avoids white background from external hosts)
+            const logoImg = overlay.querySelector('#skp-logo-img');
+            if (logoImg) logoImg.src = chrome.runtime.getURL('assets/icons/sidekick-logo.png');
+
+            // Close on backdrop click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.remove();
+            });
+
+            // Close button
+            overlay.querySelector('#skp-close').addEventListener('click', () => overlay.remove());
+
+            // Section navigation
+            const sectionTitles = {
+                general:'General Settings', features:'Features', profile:'Profile',
+                crimes:'Crimes', mugging:'Mugging', war:'War', missions:'Missions', events:'Events'
+            };
+            overlay.querySelectorAll('.sk-nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    overlay.querySelectorAll('.sk-nav-item').forEach(n => n.classList.remove('active'));
+                    item.classList.add('active');
+                    overlay.querySelectorAll('.sk-sec-page').forEach(p => p.classList.remove('active'));
+                    const page = overlay.querySelector('#skp-' + item.dataset.section);
+                    if (page) page.classList.add('active');
+                    overlay.querySelector('#skp-title').textContent = sectionTitles[item.dataset.section] || '';
+                });
+            });
+
+            // Sub-tab navigation
+            overlay.querySelectorAll('.sk-subtab-bar').forEach(bar => {
+                bar.querySelectorAll('.sk-subtab-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const section = bar.closest('.sk-sec-page');
+                        bar.querySelectorAll('.sk-subtab-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        section.querySelectorAll('.sk-subtab-panel').forEach(p => p.classList.remove('active'));
+                        const panel2 = section.querySelector('#skp-tab-' + btn.dataset.tab);
+                        if (panel2) panel2.classList.add('active');
+                    });
+                });
+            });
+
+            // Sliders
+            overlay.querySelectorAll('.skp-slider').forEach(slider => {
+                const outId = slider.dataset.out;
+                const suffix = slider.dataset.suffix || '';
+                const out = overlay.querySelector('#' + outId);
+                if (out) slider.addEventListener('input', () => { out.textContent = slider.value + suffix; });
+            });
+
+            // Ghost Trade row: show/hide based on deposit target selection
+            const depositSel = overlay.querySelector('#skp-deposit-target');
+            const ghostRow = overlay.querySelector('#skp-ghost-row');
+            if (depositSel && ghostRow) {
+                depositSel.addEventListener('change', () => {
+                    ghostRow.style.display = depositSel.value === 'ghost' ? 'block' : 'none';
+                });
+            }
+
+            // Shelf toggle buttons (settings expand/collapse)
+            overlay.querySelectorAll('.sk-shelf-toggle').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const shelf = overlay.querySelector('#' + btn.dataset.shelf);
+                    if (!shelf) return;
+                    const open = shelf.style.display !== 'none';
+                    shelf.style.display = open ? 'none' : 'block';
+                    // Rotate arrow indicator
+                    btn.innerHTML = open
+                        ? '⚙️ Settings ▾'
+                        : '⚙️ Settings ▴';
+                });
+            });
+        },
+
         // Attach all event listeners
         attachEventListeners(panel) {
             // Tab switching for sidebar
@@ -981,6 +1541,22 @@
                 closeBtn.style.background = 'rgba(255,255,255,0.1)';
                 closeBtn.style.transform = 'scale(1)';
             });
+
+            // 🚧 TEMP — Preview New UI button
+            const previewBtn = panel.querySelector('#sidekick-preview-new-ui');
+            if (previewBtn) {
+                previewBtn.addEventListener('click', () => {
+                    this.createPreviewPanel();
+                });
+                previewBtn.addEventListener('mouseenter', () => {
+                    previewBtn.style.background = 'linear-gradient(135deg, rgba(95,204,106,0.28), rgba(255,173,90,0.28))';
+                    previewBtn.style.borderColor = 'rgba(95,204,106,0.7)';
+                });
+                previewBtn.addEventListener('mouseleave', () => {
+                    previewBtn.style.background = 'linear-gradient(135deg, rgba(95,204,106,0.15), rgba(255,173,90,0.15))';
+                    previewBtn.style.borderColor = 'rgba(95,204,106,0.4)';
+                });
+            }
 
 
 

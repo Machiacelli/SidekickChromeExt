@@ -561,7 +561,10 @@ const BazaarFillerModule = (() => {
         });
 
         const group = priceWrap.querySelector('.input-money-group') || priceWrap.firstElementChild || priceWrap;
-        group.style.cssText = (group.style.cssText || '') + 'display:flex!important;align-items:center!important;flex-wrap:nowrap!important;';
+        group.style.cssText = (group.style.cssText || '') + 'display:flex!important;align-items:center!important;flex-wrap:nowrap!important;min-width:160px!important;';
+        // Widen the actual price text input so full values like "49,999" are visible
+        const priceInput = group.querySelector('input[type="text"], input[type="number"], input:not([type])');
+        if (priceInput) priceInput.style.cssText = (priceInput.style.cssText || '') + 'min-width:80px!important;width:80px!important;';
         group.prepend(fillBtn);
         group.append(peekBtn);
     }

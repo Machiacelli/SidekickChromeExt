@@ -54,7 +54,8 @@
         },
 
         addConfidencePercentages() {
-            // Only run on crimes page
+            // Only run on the burglary sub-page
+            if (!window.location.hash.includes('burglary')) return;
             if (!window.location.href.includes('crimes')) return;
 
             const bars = document.querySelectorAll('div[class^="progressBar"][class*="vertical"]');
@@ -118,10 +119,30 @@
             this.addConfidencePercentages();
             this._intervalId = setInterval(() => this.addConfidencePercentages(), 50);
             this._watchForHeader();
+            this._startNavWatcher();
+        },
+
+        // Watch URL changes so badge disappears when leaving burglary
+        _startNavWatcher() {
+            if (this._navWatcher) return;
+            let lastHash = window.location.hash;
+            this._navWatcher = setInterval(() => {
+                const cur = window.location.hash;
+                if (cur !== lastHash) {
+                    lastHash = cur;
+                    if (!cur.includes('burglary')) {
+                        this._removeHeaderBadge();
+                    } else {
+                        this._injectHeaderBadge();
+                    }
+                }
+            }, 300);
         },
 
         // ── Header badge ──────────────────────────────────────────────────
         _injectHeaderBadge() {
+            // Only show badge on the burglary sub-page
+            if (!window.location.hash.includes('burglary')) return;
             if (document.getElementById('sidekick-burglary-badge')) return;
             const h4 = document.querySelector('div.appHeader___tG_Ot h4.heading___BtymB');
             if (!h4) return;
@@ -171,6 +192,10 @@
             if (this._intervalId) {
                 clearInterval(this._intervalId);
                 this._intervalId = null;
+            }
+            if (this._navWatcher) {
+                clearInterval(this._navWatcher);
+                this._navWatcher = null;
             }
             if (this._headerObserver) {
                 this._headerObserver.disconnect();

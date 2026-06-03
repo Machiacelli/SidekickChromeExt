@@ -344,7 +344,20 @@
                 const merged = Array.from(new Set([...existing, ...newArr]));
                 await this.idbSet(`len_${L}`, merged);
                 this.dict[L] = merged;
+                this._buildIndex(L); // rebuild fast-lookup index
             }
+        },
+
+        // Build a first-char bucket index for O(1) narrowing
+        _buildIndex(len) {
+            if (!this.dictIndex) this.dictIndex = [];
+            const idx = {};
+            for (const word of (this.dict[len] || [])) {
+                const c = word[0];
+                if (!idx[c]) idx[c] = [];
+                idx[c].push(word);
+            }
+            this.dictIndex[len] = idx;
         },
 
         async fetchAndIndex(url, onProgress) {
@@ -435,6 +448,11 @@
 
             this.dictLoaded = true;
             this.dictLoading = false;
+            // Build fast-lookup index for all loaded lengths
+            if (!this.dictIndex) this.dictIndex = [];
+            for (let len = this.MIN_LENGTH; len <= this.MAX_LENGTH; len++) {
+                if (this.dict[len]) this._buildIndex(len);
+            }
             this.setStatus('');
         },
 
@@ -462,10 +480,11 @@
             if (!panel) return;
             const key = panel.dataset.rowkey;
             if (this.panelUpdateTimers.has(key)) clearTimeout(this.panelUpdateTimers.get(key));
+            // Use 0ms debounce — we want suggestions instantly after state change
             this.panelUpdateTimers.set(key, setTimeout(() => {
                 panel.updateSuggestions();
                 this.panelUpdateTimers.delete(key);
-            }, 50));
+            }, 0));
         },
 
         addExclusion(rowKey, pos, letter, len) {
@@ -484,41 +503,39 @@
 
         // ── Suggestions ───────────────────────────────────────────────────────
 
-        async suggest(pattern, rowKey) {
+        suggest(pattern, rowKey) {
             const len = pattern.length;
             if (len < this.MIN_LENGTH || len > this.MAX_LENGTH) return [];
-            if (!this.dict[len]) {
-                const chunk = await this.idbGet(`len_${len}`); if (!chunk) return [];
-                this.dict[len] = chunk;
-            }
+            if (!this.dict[len]) return []; // dict not yet loaded for this length
+
             const maxSug = 5;
-            const maxCandidates = maxSug * 50;
-            const worker = new Worker(URL.createObjectURL(new Blob([`
-                  self.onmessage = function(e) {
-                    const { dictChunk, pattern, max } = e.data;
-                    const regex = new RegExp('^' + pattern.replace(/[*]/g, '.') + '$');
-                    const out = [];
-                    for (const word of dictChunk) {
-                      if (regex.test(word)) out.push(word);
-                      if (out.length >= max) break;
-                    }
-                    self.postMessage(out);
-                  };
-                `], { type: 'application/javascript' })));
-            const candidates = await new Promise((resolve) => {
-                worker.onmessage = (e) => { worker.terminate(); resolve([...new Set(e.data)]); };
-                worker.postMessage({ dictChunk: this.dict[len], pattern: pattern.toUpperCase(), max: maxCandidates });
-            });
+            const pat = pattern.toUpperCase();
+
+            // Narrow candidates using first-char index if available
+            const idx = this.dictIndex && this.dictIndex[len];
+            let candidates;
+            if (idx && pat[0] !== '*') {
+                // known first char — only scan ~1/26th of the list
+                candidates = idx[pat[0]] || [];
+            } else {
+                candidates = this.dict[len];
+            }
 
             const exSets = this.loadExclusions(rowKey, len);
-            const filtered = candidates.filter(w => {
+            const results = [];
+
+            outer: for (const word of candidates) {
+                // Plain char-by-char match — much faster than RegExp for this case
                 for (let i = 0; i < len; i++) {
-                    const s = exSets[i];
-                    if (s && s.has(w[i])) return false;
+                    const pc = pat[i];
+                    if (pc !== '*' && pc !== word[i]) continue outer;
+                    const ex = exSets[i];
+                    if (ex && ex.has(word[i])) continue outer;
                 }
-                return true;
-            });
-            return filtered.slice(0, maxSug);
+                results.push(word);
+                if (results.length >= maxSug) break;
+            }
+            return results;
         },
 
         // ── Panel ─────────────────────────────────────────────────────────────
@@ -540,7 +557,7 @@
                 listDiv.style.cssText = 'margin-top:2px;';
                 panel.appendChild(listDiv);
 
-                panel.updateSuggestions = async () => {
+                panel.updateSuggestions = () => {
                     const curPat = panel.dataset.pattern || '';
                     const curRowKey = panel.dataset.rowkey;
 
@@ -553,9 +570,7 @@
                         return;
                     }
 
-                    const seq = ++panel._seq;
-                    const sugs = await this.suggest(curPat, curRowKey);
-                    if (seq !== panel._seq) return;
+                    const sugs = this.suggest(curPat, curRowKey);
 
                     let i = 0;
                     for (; i < sugs.length; i++) {
