@@ -1189,33 +1189,23 @@
     <!-- FEATURES -->
     <div class="sk-sec-page" id="skp-features">
       <div class="sk-subtab-bar">
-        <button class="sk-subtab-btn active" data-tab="feat-combat">Combat</button>
-        <button class="sk-subtab-btn" data-tab="feat-utility">Utility</button>
-        <button class="sk-subtab-btn" data-tab="feat-medical">Medical</button>
+        <button class="sk-subtab-btn active" data-tab="feat-utility">Utility</button>
+        <button class="sk-subtab-btn" data-tab="feat-reminders">Reminders</button>
       </div>
       <div class="sk-scroll">
-        <div class="sk-subtab-panel active" id="skp-tab-feat-combat">
-          <div class="sk-sh">Combat Features</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Random Target</div><div class="sk-row-desc">Adds a random target picker button on attack pages to help you find a target quickly</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Refill Blocker</div><div class="sk-row-desc">Prevents accidental refill clicks by adding a confirmation step before using nerve refills</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-sh" style="margin-top:18px;">Alerts</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Racing Alert</div><div class="sk-row-desc">Flashes the extension icon when you are not currently in a race</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-        </div>
-        <div class="sk-subtab-panel" id="skp-tab-feat-utility">
-          <div class="sk-sh">UI &amp; Display</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Time on Tab</div><div class="sk-row-desc">Shows the current Torn City time directly in the browser tab title</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        <div class="sk-subtab-panel active" id="skp-tab-feat-utility">
+          <div class="sk-sh">Utility</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Time on Tab</div><div class="sk-row-desc">Display remaining travel time, hospital time, raceway time, and time left for chain on tab title.</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Legible Player Names</div><div class="sk-row-desc">Improves readability of player names by formatting them with better spacing and styling</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-sh" style="margin-top:18px;">Items</div>
-          <div class="sk-row" style="align-items:flex-start;gap:12px;">
-            <div class="sk-row-info">
-              <div class="sk-row-title">Xanax Viewer</div>
-              <div class="sk-row-desc">Shows how many Xanax you have used and tracks daily usage on your profile and item pages</div>
-            </div>
-            <label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label>
-          </div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Random Target</div><div class="sk-row-desc">Adds a floater that opens a random level 1 profile</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Refill Blocker</div><div class="sk-row-desc">Prevents accidental nerve and energy refills by showing a confirmation before using refill items</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Xanax Viewer</div><div class="sk-row-desc">View individual Xanax usage</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Auction Weapon Bonus</div><div class="sk-row-desc">Displays weapon bonuses + stats next to weapon name in auction house</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
-        <div class="sk-subtab-panel" id="skp-tab-feat-medical">
-          <div class="sk-sh">Blood Bag Reminder</div>
+        <div class="sk-subtab-panel" id="skp-tab-feat-reminders">
+          <div class="sk-sh">Alerts</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Racing Alert</div><div class="sk-row-desc">Flashes the extension icon when you are not currently in a race</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-sh" style="margin-top:18px;">Blood Bag Reminder</div>
           <div class="sk-info">Shows a blood bag icon in the status bar when your life and medical cooldown conditions are met, reminding you to fill blood bags.</div>
           <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Blood Bag Reminder</div><div class="sk-row-desc">Show icon when conditions to fill blood bags are met</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <label class="sk-field-label" style="margin-top:10px;">Bags to Fill</label>
