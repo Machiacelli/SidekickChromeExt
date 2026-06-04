@@ -1199,8 +1199,18 @@
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Legible Player Names</div><div class="sk-row-desc">Improves readability of player names by formatting them with better spacing and styling</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Random Target</div><div class="sk-row-desc">Adds a floater that opens a random level 1 profile</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Refill Blocker</div><div class="sk-row-desc">Prevents accidental nerve and energy refills by showing a confirmation before using refill items</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Xanax Viewer</div><div class="sk-row-desc">View individual Xanax usage</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Auction Weapon Bonus</div><div class="sk-row-desc">Displays weapon bonuses + stats next to weapon name in auction house</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row" style="align-items:flex-start;gap:12px;"><div class="sk-row-info"><div class="sk-row-title">Xanax Viewer</div><div class="sk-row-desc">View individual Xanax usage</div><div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-xanax" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">Settings &#x25BE;</button></div></div><label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-shelf" id="skp-shelf-xanax" style="display:none;">
+            <div class="sk-sh" style="margin-top:0;font-size:10px;">Xanax Viewer Settings</div>
+            <label class="sk-field-label">Auto-fetch limit on faction page</label>
+            <div class="sk-slider-row"><input type="range" min="0" max="100" value="0" class="skp-slider" data-out="skp-xanax-autolimit-val" data-suffix=" members"><span class="sk-slider-val" id="skp-xanax-autolimit-val">0 members</span></div>
+            <div class="sk-hint">Automatically fetch Xanax data for this many members (closest level to yours) when visiting a faction page. 0 = disabled.</div>
+            <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Show Relative Value</div><div class="sk-row-desc">Show Xanax count relative to your own count instead of absolute</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+            <div class="sk-sh" style="margin-top:10px;font-size:10px;">Cache</div>
+            <div class="sk-hint">Stores fetched Xanax data locally to avoid repeated API calls.</div>
+            <button class="sk-btn sk-btn-danger" style="width:100%;margin-top:6px;">Clear Cached Profiles</button>
+          </div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Auction Weapon Bonus</div><div class="sk-row-desc">Displays weapon bonuses & stats next to weapon name in auction house</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
         <div class="sk-subtab-panel" id="skp-tab-feat-reminders">
           <div class="sk-sh">Alerts</div>
@@ -1240,7 +1250,10 @@
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Locked Items Manager</div><div class="sk-row-desc">Lock inventory items to prevent accidental trading or selling</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-row" style="align-items:flex-start;gap:12px;"><div class="sk-row-info"><div class="sk-row-title">Weapon XP Tracker</div><div class="sk-row-desc">Tracks weapon experience progress and shows XP gain rates</div><div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-wxp" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">View Stats &#x25BE;</button></div></div><label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-shelf" id="skp-shelf-wxp" style="display:none;">
-            <div class="sk-sh" style="margin-top:0;font-size:10px;">Weapon XP by Category</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <div class="sk-sh" style="margin-top:0;font-size:10px;margin-bottom:0;">Weapon XP by Category</div>
+              <span id="skp-wxp-zero-link" style="display:none;font-size:10px;color:#5fcc6a;cursor:pointer;text-decoration:underline;" onclick="(function(){var w=window.open('','wxp_zero','width=420,height=500');if(w){w.document.write(window.skpWxpZeroHTML||'<p>No data</p>');w.document.close();}})()">View 0% weapons</span>
+            </div>
             <div class="sk-subtab-bar sk-shelf-tabs" style="margin:4px 0 6px;font-size:11px;">
               <button class="sk-subtab-btn active" data-tab="wxp-melee">Melee</button>
               <button class="sk-subtab-btn" data-tab="wxp-pistol">Pistol</button>
@@ -1250,15 +1263,14 @@
               <button class="sk-subtab-btn" data-tab="wxp-heavy">Heavy</button>
               <button class="sk-subtab-btn" data-tab="wxp-temp">Temp</button>
             </div>
-            <div class="sk-subtab-panel active" id="skp-tab-wxp-melee" style="padding-top:4px;"><div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:8px 10px;font-size:11px;color:rgba(255,255,255,0.45);text-align:center;">Enable the module and visit your weapons page to load Melee data</div></div>
-            <div class="sk-subtab-panel" id="skp-tab-wxp-pistol" style="padding-top:4px;"><div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:8px 10px;font-size:11px;color:rgba(255,255,255,0.45);text-align:center;">Enable the module and visit your weapons page to load Pistol data</div></div>
-            <div class="sk-subtab-panel" id="skp-tab-wxp-smg" style="padding-top:4px;"><div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:8px 10px;font-size:11px;color:rgba(255,255,255,0.45);text-align:center;">Enable the module and visit your weapons page to load SMG data</div></div>
-            <div class="sk-subtab-panel" id="skp-tab-wxp-shotgun" style="padding-top:4px;"><div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:8px 10px;font-size:11px;color:rgba(255,255,255,0.45);text-align:center;">Enable the module and visit your weapons page to load Shotgun data</div></div>
-            <div class="sk-subtab-panel" id="skp-tab-wxp-rifle" style="padding-top:4px;"><div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:8px 10px;font-size:11px;color:rgba(255,255,255,0.45);text-align:center;">Enable the module and visit your weapons page to load Rifle data</div></div>
-            <div class="sk-subtab-panel" id="skp-tab-wxp-heavy" style="padding-top:4px;"><div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:8px 10px;font-size:11px;color:rgba(255,255,255,0.45);text-align:center;">Enable the module and visit your weapons page to load Heavy data</div></div>
-            <div class="sk-subtab-panel" id="skp-tab-wxp-temp" style="padding-top:4px;"><div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:8px 10px;font-size:11px;color:rgba(255,255,255,0.45);text-align:center;">Enable the module and visit your weapons page to load Temp data</div></div>
+            <div class="sk-subtab-panel active" id="skp-tab-wxp-melee" style="padding-top:4px;"><div class="skp-wxp-cat-content" data-cat="melee"><div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:center;padding:8px;">Enable the module and visit your weapons page to load Melee data</div></div></div>
+            <div class="sk-subtab-panel" id="skp-tab-wxp-pistol" style="padding-top:4px;"><div class="skp-wxp-cat-content" data-cat="pistol"><div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:center;padding:8px;">Enable the module and visit your weapons page to load Pistol data</div></div></div>
+            <div class="sk-subtab-panel" id="skp-tab-wxp-smg" style="padding-top:4px;"><div class="skp-wxp-cat-content" data-cat="smg"><div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:center;padding:8px;">Enable the module and visit your weapons page to load SMG data</div></div></div>
+            <div class="sk-subtab-panel" id="skp-tab-wxp-shotgun" style="padding-top:4px;"><div class="skp-wxp-cat-content" data-cat="shotgun"><div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:center;padding:8px;">Enable the module and visit your weapons page to load Shotgun data</div></div></div>
+            <div class="sk-subtab-panel" id="skp-tab-wxp-rifle" style="padding-top:4px;"><div class="skp-wxp-cat-content" data-cat="rifle"><div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:center;padding:8px;">Enable the module and visit your weapons page to load Rifle data</div></div></div>
+            <div class="sk-subtab-panel" id="skp-tab-wxp-heavy" style="padding-top:4px;"><div class="skp-wxp-cat-content" data-cat="heavy"><div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:center;padding:8px;">Enable the module and visit your weapons page to load Heavy data</div></div></div>
+            <div class="sk-subtab-panel" id="skp-tab-wxp-temp" style="padding-top:4px;"><div class="skp-wxp-cat-content" data-cat="temp"><div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:center;padding:8px;">Enable the module and visit your weapons page to load Temp data</div></div></div>
           </div>
-        </div>
         <div class="sk-subtab-panel" id="skp-tab-gym">
           <div class="sk-sh">Gym Modules</div>
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Special Gym Ratios</div><div class="sk-row-desc">Warns when your stat ratios risk losing access to specialist gyms</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
@@ -1338,7 +1350,7 @@
             <label class="sk-field-label" style="margin-top:8px;">Check Interval (seconds)</label>
             <input type="number" class="sk-input" min="10" max="300" value="30">
             <div class="sk-hint">Minimum 10s -- recommended 30s</div>
-            <label class="sk-field-label" style="margin-top:10px;">SFC Score Threshold -- alert per location</label>
+            <label class="sk-field-label" style="margin-top:10px;">SFC Score Threshold per location</label>
             <div class="sk-subtab-bar sk-shelf-tabs" style="margin:6px 0 0;font-size:11px;">
               <button class="sk-subtab-btn active" data-tab="sfcloc-trash">Trash</button>
               <button class="sk-subtab-btn" data-tab="sfcloc-subway">Subway</button>
@@ -1388,7 +1400,7 @@
             <label class="sk-field-label" style="margin-top:8px;">Check Interval (seconds)</label>
             <input type="number" class="sk-input" min="10" max="300" value="30">
             <div class="sk-hint">Minimum 10s -- recommended 30s</div>
-            <label class="sk-field-label" style="margin-top:10px;">Security Threshold -- alert per shop</label>
+            <label class="sk-field-label" style="margin-top:10px;">Security Threshold per shop</label>
             <div class="sk-subtab-bar sk-shelf-tabs" style="margin:6px 0 0;font-size:11px;">
               <button class="sk-subtab-btn active" data-tab="shop-sally">Sally's</button>
               <button class="sk-subtab-btn" data-tab="shop-bits">Bits n Bobs</button>
@@ -1396,7 +1408,7 @@
               <button class="sk-subtab-btn" data-tab="shop-super">Super Store</button>
               <button class="sk-subtab-btn" data-tab="shop-pharm">Pharmacy</button>
               <button class="sk-subtab-btn" data-tab="shop-cyber">Cyber Force</button>
-              <button class="sk-subtab-btn" data-tab="shop-jewel">Jewelry</button>
+              <button class="sk-subtab-btn" data-tab="shop-jewel">Jewelry Store</button>
               <button class="sk-subtab-btn" data-tab="shop-als">Big Al's</button>
             </div>
             <div class="sk-subtab-panel active" id="skp-tab-shop-sally" style="padding-top:8px;">
@@ -1511,28 +1523,81 @@
       </div>
     </div>
 
-    <!-- WAR (untouched) -->
+    <!-- WAR -->
     <div class="sk-sec-page" id="skp-war">
-      <div class="sk-scroll" style="display:flex;align-items:center;justify-content:center;height:100%;">
-        <div style="text-align:center;color:rgba(255,255,255,0.25);font-size:13px;line-height:1.7;">War settings<br>coming soon</div>
+      <div class="sk-subtab-bar">
+        <button class="sk-subtab-btn active" data-tab="war-chain">Chain Timer</button>
+        <button class="sk-subtab-btn" data-tab="war-monitor">War Monitor</button>
+        <button class="sk-subtab-btn" data-tab="war-chainview">Chain View</button>
+      </div>
+      <div class="sk-scroll">
+        <div class="sk-subtab-panel active" id="skp-tab-war-chain">
+          <div class="sk-sh">Chain Timer</div>
+          <div class="sk-info">Floating countdown timer for your faction chain. Alerts you before the chain expires.</div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Chain Timer</div><div class="sk-row-desc">Show floating chain countdown timer on all Torn pages</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-sh" style="margin-top:16px;">Alert Settings</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Enable Alerts</div><div class="sk-row-desc">Trigger alerts when chain timer reaches the threshold</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Browser Popup Alert</div><div class="sk-row-desc">Show a browser dialog popup when the chain is about to expire</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Screen Flash</div><div class="sk-row-desc">Flash the screen red when the chain timer hits the alert threshold</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <label class="sk-field-label" style="margin-top:10px;">Alert Threshold (minutes)</label>
+          <div class="sk-slider-row"><input type="range" min="1" max="15" value="4" class="skp-slider" data-out="skp-chain-thresh-val" data-suffix=" min"><span class="sk-slider-val" id="skp-chain-thresh-val">4 min</span></div>
+          <div class="sk-hint">Alert when chain has this many minutes remaining</div>
+          <div class="sk-sh" style="margin-top:16px;">Display</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Floating Display</div><div class="sk-row-desc">Show floating timer widget on the page (draggable and resizable)</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-war-monitor">
+          <div class="sk-sh">War Monitor</div>
+          <div class="sk-info">Monitors active faction wars and notifies you of incoming attacks and score changes.</div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable War Monitor</div><div class="sk-row-desc">Monitor faction war scores and alert on significant changes</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-war-chainview">
+          <div class="sk-sh">Extended Chain View</div>
+          <div class="sk-info">Shows more than 10 chain attacks on the faction page, giving you a full view of the current chain history.</div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Extended Chain View</div><div class="sk-row-desc">Show more than 10 chain attacks on faction page</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
       </div>
     </div>
 
-    <!-- MISSIONS (untouched) -->
+    <!-- MISSIONS -->
     <div class="sk-sec-page" id="skp-missions">
-      <div class="sk-scroll" style="display:flex;align-items:center;justify-content:center;height:100%;">
-        <div style="text-align:center;color:rgba(255,255,255,0.25);font-size:13px;line-height:1.7;">Missions settings<br>coming soon</div>
+      <div class="sk-subtab-bar">
+        <button class="sk-subtab-btn active" data-tab="miss-notifier">Book Notifier</button>
+        <button class="sk-subtab-btn" data-tab="miss-tracker">Tracker</button>
+      </div>
+      <div class="sk-scroll">
+        <div class="sk-subtab-panel active" id="skp-tab-miss-notifier">
+          <div class="sk-sh">Mission Book Notifier</div>
+          <div class="sk-info">Alerts when books become available in mission rewards. Checks periodically in the background.</div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Book Notifier</div><div class="sk-row-desc">Alerts when books are available in mission rewards (checks every 12 hours)</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-miss-tracker">
+          <div class="sk-sh">Mission Tracker</div>
+          <div class="sk-info">Tracks your mission progress and displays a summary of completed and active missions.</div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Mission Tracker</div><div class="sk-row-desc">Track and display mission progress on mission pages</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
       </div>
     </div>
 
-    <!-- EVENTS (untouched) -->
+    <!-- EVENTS -->
     <div class="sk-sec-page" id="skp-events">
-      <div class="sk-scroll" style="display:flex;align-items:center;justify-content:center;height:100%;">
-        <div style="text-align:center;color:rgba(255,255,255,0.25);font-size:13px;line-height:1.7;">Events settings<br>coming soon</div>
+      <div class="sk-subtab-bar">
+        <button class="sk-subtab-btn active" data-tab="ev-calendar">Calendar</button>
+        <button class="sk-subtab-btn" data-tab="ev-egg">Egg Helper</button>
+      </div>
+      <div class="sk-scroll">
+        <div class="sk-subtab-panel active" id="skp-tab-ev-calendar">
+          <div class="sk-sh">Event Calendar</div>
+          <div class="sk-info">Displays upcoming Torn City events in a calendar view so you never miss a special event.</div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Event Calendar</div><div class="sk-row-desc">Show upcoming events in a calendar widget</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-ev-egg">
+          <div class="sk-sh">Egg Helper</div>
+          <div class="sk-info">Assists with seasonal egg hunt events by tracking found eggs and showing hints.</div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Egg Helper</div><div class="sk-row-desc">Show egg hunt tracker and hints during seasonal events</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
       </div>
     </div>
 
-  </div><!-- /sk-prev-content -->
 </div><!-- /sk-prev -->
 </div><!-- /sk-prev -->
 `;
@@ -1542,6 +1607,46 @@
             // Set logo via chrome.runtime.getURL (avoids white background from external hosts)
             const logoImg = overlay.querySelector('#skp-logo-img');
             if (logoImg) logoImg.src = chrome.runtime.getURL('assets/icons/sidekick-logo.png');
+
+            // Load WXP data from WeaponExp module storage
+            (async () => {
+                try {
+                    const wxpData = await window.SidekickModules?.Core?.ChromeStorage?.get('sidekick_weapon_exp');
+                    if (!wxpData || !wxpData.weapons) return;
+                    const weapons = wxpData.weapons; // array of {name, category, xp_pct}
+                    const catMap = {melee:'melee',pistol:'pistol',smg:'smg',shotgun:'shotgun',rifle:'rifle',heavy:'heavy',temp:'temp'};
+                    const grouped = {};
+                    const zeroWeapons = [];
+                    weapons.forEach(w => {
+                        const cat = (w.category || '').toLowerCase().replace(/\s+/g,'');
+                        const key = catMap[cat] || cat;
+                        if (!grouped[key]) grouped[key] = [];
+                        grouped[key].push(w);
+                        if ((w.xp_pct || 0) === 0) zeroWeapons.push(w.name || 'Unknown');
+                    });
+                    // Populate each category panel
+                    const overlay = document.getElementById('skp-overlay');
+                    if (!overlay) return;
+                    overlay.querySelectorAll('.skp-wxp-cat-content').forEach(el => {
+                        const cat = el.getAttribute('data-cat');
+                        const items = grouped[cat] || [];
+                        if (!items.length) return;
+                        el.innerHTML = items.map(w => {
+                            const pct = Math.min(100, Math.max(0, w.xp_pct || 0));
+                            return '<div class="skp-wxp-row"><span class="skp-wxp-name">' + (w.name||'?') + '</span><div class="skp-wxp-bar-wrap"><div class="skp-wxp-bar" style="width:'+pct+'%"></div></div><span class="skp-wxp-pct">'+pct+'%</span></div>';
+                        }).join('');
+                    });
+                    // Show zero-weapons link if any
+                    if (zeroWeapons.length) {
+                        const zeroLink = overlay.querySelector('#skp-wxp-zero-link');
+                        if (zeroLink) {
+                            zeroLink.style.display = 'inline';
+                            const zeroHTML = '<html><body style="font-family:sans-serif;padding:16px;background:#1a1a2e;color:#fff;"><h3 style="margin-top:0;">Weapons at 0% XP</h3><ul style="line-height:2;">' + zeroWeapons.map(n=>'<li>'+n+'</li>').join('') + '</ul></body></html>';
+                            window.skpWxpZeroHTML = zeroHTML;
+                        }
+                    }
+                } catch(e) { /* No weapon data yet */ }
+            })();
 
             // Load sidebar nav icons
             overlay.querySelectorAll('.sk-nav-icon-img').forEach(img => {
@@ -1629,6 +1734,14 @@
                         ? '⚙️ Settings ▾'
                         : '⚙️ Settings ▴';
                 });
+            });
+
+            // Drag-scroll for shelf tab bars
+            overlay.querySelectorAll('.sk-shelf-tabs').forEach(bar => {
+                let isDown = false, startX = 0, scrollLeft = 0;
+                bar.addEventListener('mousedown', e => { isDown = true; startX = e.pageX - bar.offsetLeft; scrollLeft = bar.scrollLeft; bar.style.cursor = 'grabbing'; e.preventDefault(); });
+                document.addEventListener('mouseup', () => { isDown = false; bar.style.cursor = 'grab'; });
+                bar.addEventListener('mousemove', e => { if (!isDown) return; e.preventDefault(); bar.scrollLeft = scrollLeft - (e.pageX - bar.offsetLeft - startX); });
             });
         },
 
