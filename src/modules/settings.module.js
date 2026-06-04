@@ -411,8 +411,7 @@
                 ${this.createToggle('refill-blocker', '🛡️ Refill Blocker', 'Prevents accidental refills when bars aren\'t empty')}
                 ${this.createToggle('extended-chain-view', '⛓️ Extended Chain View', 'Shows more than 10 chain attacks on faction page')}
                 ${this.createToggle('mug-calculator', '🥊 Mug Calculator', 'Shows mug value calculations on Item Market and Bazaars')}
-                ${this.createToggle('weapon-exp-tracker', '📊 Weapon XP Tracker', 'Displays weapon experience tracking')}
-                ${this.createToggle('auto-gym-switch', '💪 Auto Gym Switch', 'Automatically switches to best gym before training')}
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Weapon XP Tracker</div><div class="sk-row-desc">Tracks weapon experience progress and shows XP gain rates</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
                 ${this.createToggle('book-notifier', '📚 Mission Book Notifier', 'Alerts when books are available in mission rewards (checks every 12 hours)')}
                 ${this.createToggle('locked-items', '🔒 Locked Items Manager', 'Lock inventory items to prevent accidental trading, selling, or deleting')}
                 ${this.createToggle('price-filler', '🛒 Price Filler', 'Auto-fills prices on the Item Market and Bazaar pages')}
@@ -1187,10 +1186,51 @@
       </div>
     </div>
 
-    <!-- FEATURES (untouched) -->
+    <!-- FEATURES -->
     <div class="sk-sec-page" id="skp-features">
-      <div class="sk-scroll" style="display:flex;align-items:center;justify-content:center;height:100%;">
-        <div style="text-align:center;color:rgba(255,255,255,0.25);font-size:13px;line-height:1.7;">Features settings<br>coming soon</div>
+      <div class="sk-subtab-bar">
+        <button class="sk-subtab-btn active" data-tab="feat-combat">Combat</button>
+        <button class="sk-subtab-btn" data-tab="feat-utility">Utility</button>
+        <button class="sk-subtab-btn" data-tab="feat-medical">Medical</button>
+      </div>
+      <div class="sk-scroll">
+        <div class="sk-subtab-panel active" id="skp-tab-feat-combat">
+          <div class="sk-sh">Combat Features</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Random Target</div><div class="sk-row-desc">Adds a random target picker button on attack pages to help you find a target quickly</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Refill Blocker</div><div class="sk-row-desc">Prevents accidental refill clicks by adding a confirmation step before using nerve refills</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-sh" style="margin-top:18px;">Alerts</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Racing Alert</div><div class="sk-row-desc">Flashes the extension icon when you are not currently in a race</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-feat-utility">
+          <div class="sk-sh">UI &amp; Display</div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Time on Tab</div><div class="sk-row-desc">Shows the current Torn City time directly in the browser tab title</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Legible Player Names</div><div class="sk-row-desc">Improves readability of player names by formatting them with better spacing and styling</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-sh" style="margin-top:18px;">Items</div>
+          <div class="sk-row" style="align-items:flex-start;gap:12px;">
+            <div class="sk-row-info">
+              <div class="sk-row-title">Xanax Viewer</div>
+              <div class="sk-row-desc">Shows how many Xanax you have used and tracks daily usage on your profile and item pages</div>
+            </div>
+            <label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label>
+          </div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-feat-medical">
+          <div class="sk-sh">Blood Bag Reminder</div>
+          <div class="sk-info">Shows a blood bag icon in the status bar when your life and medical cooldown conditions are met, reminding you to fill blood bags.</div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Blood Bag Reminder</div><div class="sk-row-desc">Show icon when conditions to fill blood bags are met</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <label class="sk-field-label" style="margin-top:10px;">Bags to Fill</label>
+          <select class="sk-select">
+            <option value="1">1 bag (life &gt; 30%)</option>
+            <option value="2" selected>2 bags (life &gt; 60%)</option>
+            <option value="3">3 bags (life &gt; 90%)</option>
+          </select>
+          <label class="sk-field-label" style="margin-top:8px;">Click Destination</label>
+          <select class="sk-select">
+            <option value="items" selected>Items page (medical)</option>
+            <option value="bazaar">Bazaar (add items)</option>
+          </select>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Open in New Tab</div><div class="sk-row-desc">Opens the destination page in a new browser tab when clicking the blood bag icon</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
       </div>
     </div>
 
@@ -1208,7 +1248,26 @@
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Loadout Switcher</div><div class="sk-row-desc">Adds quick loadout change buttons on the Items page</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-sh" style="margin-top:18px;">Inventory</div>
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Locked Items Manager</div><div class="sk-row-desc">Lock inventory items to prevent accidental trading or selling</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Weapon XP Tracker</div><div class="sk-row-desc">Tracks weapon experience progress and shows XP gain rates</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row" style="align-items:flex-start;gap:12px;"><div class="sk-row-info"><div class="sk-row-title">Weapon XP Tracker</div><div class="sk-row-desc">Tracks weapon experience progress and shows XP gain rates</div><div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-wxp" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">View Stats &#x25BE;</button></div></div><label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-shelf" id="skp-shelf-wxp" style="display:none;">
+            <div class="sk-sh" style="margin-top:0;font-size:10px;">Weapon XP by Category</div>
+            <div class="sk-subtab-bar sk-shelf-tabs" style="margin:4px 0 6px;font-size:11px;">
+              <button class="sk-subtab-btn active" data-tab="wxp-melee">Melee</button>
+              <button class="sk-subtab-btn" data-tab="wxp-pistol">Pistol</button>
+              <button class="sk-subtab-btn" data-tab="wxp-smg">SMG</button>
+              <button class="sk-subtab-btn" data-tab="wxp-shotgun">Shotgun</button>
+              <button class="sk-subtab-btn" data-tab="wxp-rifle">Rifle</button>
+              <button class="sk-subtab-btn" data-tab="wxp-heavy">Heavy</button>
+              <button class="sk-subtab-btn" data-tab="wxp-temp">Temp</button>
+            </div>
+            <div class="sk-subtab-panel active" id="skp-tab-wxp-melee" style="padding-top:4px;"><div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:8px 10px;font-size:11px;color:rgba(255,255,255,0.45);text-align:center;">Enable the module and visit your weapons page to load Melee data</div></div>
+            <div class="sk-subtab-panel" id="skp-tab-wxp-pistol" style="padding-top:4px;"><div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:8px 10px;font-size:11px;color:rgba(255,255,255,0.45);text-align:center;">Enable the module and visit your weapons page to load Pistol data</div></div>
+            <div class="sk-subtab-panel" id="skp-tab-wxp-smg" style="padding-top:4px;"><div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:8px 10px;font-size:11px;color:rgba(255,255,255,0.45);text-align:center;">Enable the module and visit your weapons page to load SMG data</div></div>
+            <div class="sk-subtab-panel" id="skp-tab-wxp-shotgun" style="padding-top:4px;"><div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:8px 10px;font-size:11px;color:rgba(255,255,255,0.45);text-align:center;">Enable the module and visit your weapons page to load Shotgun data</div></div>
+            <div class="sk-subtab-panel" id="skp-tab-wxp-rifle" style="padding-top:4px;"><div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:8px 10px;font-size:11px;color:rgba(255,255,255,0.45);text-align:center;">Enable the module and visit your weapons page to load Rifle data</div></div>
+            <div class="sk-subtab-panel" id="skp-tab-wxp-heavy" style="padding-top:4px;"><div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:8px 10px;font-size:11px;color:rgba(255,255,255,0.45);text-align:center;">Enable the module and visit your weapons page to load Heavy data</div></div>
+            <div class="sk-subtab-panel" id="skp-tab-wxp-temp" style="padding-top:4px;"><div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:8px 10px;font-size:11px;color:rgba(255,255,255,0.45);text-align:center;">Enable the module and visit your weapons page to load Temp data</div></div>
+          </div>
         </div>
         <div class="sk-subtab-panel" id="skp-tab-gym">
           <div class="sk-sh">Gym Modules</div>
@@ -1291,30 +1350,36 @@
             <div class="sk-hint">Minimum 10s -- recommended 30s</div>
             <label class="sk-field-label" style="margin-top:10px;">SFC Score Threshold -- alert per location</label>
             <div class="sk-subtab-bar sk-shelf-tabs" style="margin:6px 0 0;font-size:11px;">
-              <button class="sk-subtab-btn active" data-tab="sfcloc-city">City</button>
-              <button class="sk-subtab-btn" data-tab="sfcloc-lake">Lake</button>
-              <button class="sk-subtab-btn" data-tab="sfcloc-park">Park</button>
+              <button class="sk-subtab-btn active" data-tab="sfcloc-trash">Trash</button>
+              <button class="sk-subtab-btn" data-tab="sfcloc-subway">Subway</button>
+              <button class="sk-subtab-btn" data-tab="sfcloc-junkyard">Junkyard</button>
               <button class="sk-subtab-btn" data-tab="sfcloc-beach">Beach</button>
-              <button class="sk-subtab-btn" data-tab="sfcloc-woods">Woods</button>
-              <button class="sk-subtab-btn" data-tab="sfcloc-fields">Fields</button>
+              <button class="sk-subtab-btn" data-tab="sfcloc-cemetery">Cemetery</button>
+              <button class="sk-subtab-btn" data-tab="sfcloc-fountain">Fountain</button>
             </div>
-            <div class="sk-subtab-panel active" id="skp-tab-sfcloc-city" style="padding-top:8px;">
-              <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-city-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-city-val">80%</span></div>
+            <div class="sk-subtab-panel active" id="skp-tab-sfcloc-trash" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-trash-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-trash-val">80%</span></div>
+              <div class="sk-hint">Alert when Trash score meets or exceeds this value</div>
             </div>
-            <div class="sk-subtab-panel" id="skp-tab-sfcloc-lake" style="padding-top:8px;">
-              <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-lake-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-lake-val">80%</span></div>
+            <div class="sk-subtab-panel" id="skp-tab-sfcloc-subway" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-subway-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-subway-val">80%</span></div>
+              <div class="sk-hint">Alert when Subway score meets or exceeds this value</div>
             </div>
-            <div class="sk-subtab-panel" id="skp-tab-sfcloc-park" style="padding-top:8px;">
-              <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-park-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-park-val">80%</span></div>
+            <div class="sk-subtab-panel" id="skp-tab-sfcloc-junkyard" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-junkyard-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-junkyard-val">80%</span></div>
+              <div class="sk-hint">Alert when Junkyard score meets or exceeds this value</div>
             </div>
             <div class="sk-subtab-panel" id="skp-tab-sfcloc-beach" style="padding-top:8px;">
               <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-beach-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-beach-val">80%</span></div>
+              <div class="sk-hint">Alert when Beach score meets or exceeds this value</div>
             </div>
-            <div class="sk-subtab-panel" id="skp-tab-sfcloc-woods" style="padding-top:8px;">
-              <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-woods-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-woods-val">80%</span></div>
+            <div class="sk-subtab-panel" id="skp-tab-sfcloc-cemetery" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-cemetery-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-cemetery-val">80%</span></div>
+              <div class="sk-hint">Alert when Cemetery score meets or exceeds this value</div>
             </div>
-            <div class="sk-subtab-panel" id="skp-tab-sfcloc-fields" style="padding-top:8px;">
-              <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-fields-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-fields-val">80%</span></div>
+            <div class="sk-subtab-panel" id="skp-tab-sfcloc-fountain" style="padding-top:8px;">
+              <div class="sk-slider-row"><input type="range" min="50" max="100" value="80" class="skp-slider" data-out="skp-sfc-fountain-val" data-suffix="%"><span class="sk-slider-val" id="skp-sfc-fountain-val">80%</span></div>
+              <div class="sk-hint">Alert when Fountain score meets or exceeds this value</div>
             </div>
           </div>
 
@@ -1345,36 +1410,42 @@
               <button class="sk-subtab-btn" data-tab="shop-als">Big Al's</button>
             </div>
             <div class="sk-subtab-panel active" id="skp-tab-shop-sally" style="padding-top:8px;">
-              <div class="sk-slider-row"><input type="range" min="0" max="100" value="20" class="skp-slider" data-out="skp-shop-sally-val" data-suffix="%"><span class="sk-slider-val" id="skp-shop-sally-val">20%</span></div>
-              <div class="sk-hint">Alert when security is at or below this level</div>
+              <div class="sk-hint" style="margin-bottom:6px;">Alert when these are disabled:</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><input type="checkbox" checked style="width:13px;height:13px;accent-color:#5fcc6a;cursor:pointer;"><label style="font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;">Cameras</label></div>
             </div>
             <div class="sk-subtab-panel" id="skp-tab-shop-bits" style="padding-top:8px;">
-              <div class="sk-slider-row"><input type="range" min="0" max="100" value="20" class="skp-slider" data-out="skp-shop-bits-val" data-suffix="%"><span class="sk-slider-val" id="skp-shop-bits-val">20%</span></div>
-              <div class="sk-hint">Alert when security is at or below this level</div>
+              <div class="sk-hint" style="margin-bottom:6px;">Alert when these are disabled:</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><input type="checkbox" checked style="width:13px;height:13px;accent-color:#5fcc6a;cursor:pointer;"><label style="font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;">Cameras</label></div>
             </div>
             <div class="sk-subtab-panel" id="skp-tab-shop-tc" style="padding-top:8px;">
-              <div class="sk-slider-row"><input type="range" min="0" max="100" value="20" class="skp-slider" data-out="skp-shop-tc-val" data-suffix="%"><span class="sk-slider-val" id="skp-shop-tc-val">20%</span></div>
-              <div class="sk-hint">Alert when security is at or below this level</div>
+              <div class="sk-hint" style="margin-bottom:6px;">Alert when these are disabled:</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><input type="checkbox" checked style="width:13px;height:13px;accent-color:#5fcc6a;cursor:pointer;"><label style="font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;">Cameras</label></div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><input type="checkbox" checked style="width:13px;height:13px;accent-color:#5fcc6a;cursor:pointer;"><label style="font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;">Checkpoint</label></div>
             </div>
             <div class="sk-subtab-panel" id="skp-tab-shop-super" style="padding-top:8px;">
-              <div class="sk-slider-row"><input type="range" min="0" max="100" value="20" class="skp-slider" data-out="skp-shop-super-val" data-suffix="%"><span class="sk-slider-val" id="skp-shop-super-val">20%</span></div>
-              <div class="sk-hint">Alert when security is at or below this level</div>
+              <div class="sk-hint" style="margin-bottom:6px;">Alert when these are disabled:</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><input type="checkbox" checked style="width:13px;height:13px;accent-color:#5fcc6a;cursor:pointer;"><label style="font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;">Cameras</label></div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><input type="checkbox" checked style="width:13px;height:13px;accent-color:#5fcc6a;cursor:pointer;"><label style="font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;">Checkpoint</label></div>
             </div>
             <div class="sk-subtab-panel" id="skp-tab-shop-pharm" style="padding-top:8px;">
-              <div class="sk-slider-row"><input type="range" min="0" max="100" value="20" class="skp-slider" data-out="skp-shop-pharm-val" data-suffix="%"><span class="sk-slider-val" id="skp-shop-pharm-val">20%</span></div>
-              <div class="sk-hint">Alert when security is at or below this level</div>
+              <div class="sk-hint" style="margin-bottom:6px;">Alert when these are disabled:</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><input type="checkbox" checked style="width:13px;height:13px;accent-color:#5fcc6a;cursor:pointer;"><label style="font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;">Cameras</label></div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><input type="checkbox" checked style="width:13px;height:13px;accent-color:#5fcc6a;cursor:pointer;"><label style="font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;">Checkpoint</label></div>
             </div>
             <div class="sk-subtab-panel" id="skp-tab-shop-cyber" style="padding-top:8px;">
-              <div class="sk-slider-row"><input type="range" min="0" max="100" value="20" class="skp-slider" data-out="skp-shop-cyber-val" data-suffix="%"><span class="sk-slider-val" id="skp-shop-cyber-val">20%</span></div>
-              <div class="sk-hint">Alert when security is at or below this level</div>
+              <div class="sk-hint" style="margin-bottom:6px;">Alert when these are disabled:</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><input type="checkbox" checked style="width:13px;height:13px;accent-color:#5fcc6a;cursor:pointer;"><label style="font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;">Cameras</label></div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><input type="checkbox" checked style="width:13px;height:13px;accent-color:#5fcc6a;cursor:pointer;"><label style="font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;">Guard</label></div>
             </div>
             <div class="sk-subtab-panel" id="skp-tab-shop-jewel" style="padding-top:8px;">
-              <div class="sk-slider-row"><input type="range" min="0" max="100" value="20" class="skp-slider" data-out="skp-shop-jewel-val" data-suffix="%"><span class="sk-slider-val" id="skp-shop-jewel-val">20%</span></div>
-              <div class="sk-hint">Alert when security is at or below this level</div>
+              <div class="sk-hint" style="margin-bottom:6px;">Alert when these are disabled:</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><input type="checkbox" checked style="width:13px;height:13px;accent-color:#5fcc6a;cursor:pointer;"><label style="font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;">Cameras</label></div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><input type="checkbox" checked style="width:13px;height:13px;accent-color:#5fcc6a;cursor:pointer;"><label style="font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;">Guard</label></div>
             </div>
             <div class="sk-subtab-panel" id="skp-tab-shop-als" style="padding-top:8px;">
-              <div class="sk-slider-row"><input type="range" min="0" max="100" value="20" class="skp-slider" data-out="skp-shop-als-val" data-suffix="%"><span class="sk-slider-val" id="skp-shop-als-val">20%</span></div>
-              <div class="sk-hint">Alert when security is at or below this level</div>
+              <div class="sk-hint" style="margin-bottom:6px;">Alert when these are disabled:</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><input type="checkbox" checked style="width:13px;height:13px;accent-color:#5fcc6a;cursor:pointer;"><label style="font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;">Cameras</label></div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><input type="checkbox" checked style="width:13px;height:13px;accent-color:#5fcc6a;cursor:pointer;"><label style="font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;">Guards</label></div>
             </div>
           </div>
 
@@ -1417,7 +1488,7 @@
           <label class="sk-field-label">Plunder % (20-49%)</label>
           <input type="number" class="sk-input" min="20" max="49" step="0.01" placeholder="e.g. 35.5">
           <div class="sk-row" style="align-items:center;gap:8px;margin-top:6px;">
-            <input type="checkbox" id="skp-no-plunder" style="width:14px;height:14px;accent-color:#5fcc6a;cursor:pointer;flex-shrink:0;">
+          <div style="display:inline-flex;align-items:center;gap:6px;margin-top:6px;"><input type="checkbox" id="skp-no-plunder" style="width:13px;height:13px;accent-color:#5fcc6a;cursor:pointer;flex-shrink:0;"><label for="skp-no-plunder" style="font-size:11px;color:rgba(255,255,255,0.65);cursor:pointer;white-space:nowrap;">No Plunder Weapon <span style="color:rgba(255,255,255,0.35);font-size:10px;">— disables plunder bonus</span></label></div>
             <label for="skp-no-plunder" style="font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;line-height:1.3;">No Plunder Weapon <span style="color:rgba(255,255,255,0.4);font-size:10px;">— disables plunder bonus calculation</span></label>
           </div>
           <label class="sk-field-label" style="margin-top:10px;">Minimum Threshold ($)</label>
@@ -1499,8 +1570,8 @@
 
             // Section navigation
             const sectionTitles = {
-                general:'General Settings', features:'Features', profile:'Profile',
-                crimes:'Crimes', mugging:'Mugging', war:'War', missions:'Missions', events:'Events'
+                general: 'General Settings', features: 'Features', profile: 'Profile',
+                crimes: 'Crimes', mugging: 'Mugging', war: 'War', missions: 'Missions', events: 'Events'
             };
             overlay.querySelectorAll('.sk-nav-item').forEach(item => {
                 item.addEventListener('click', () => {
