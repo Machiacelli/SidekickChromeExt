@@ -483,13 +483,17 @@
                     console.error(`❌ Xanax Viewer: Error fetching stats for user ${uid}:`, error);
                 }
 
-                // Return default values on error
-                return {
-                    xantaken: 0,
-                    cantaken: 0,
-                    lsdtaken: 0,
-                    refills: 0
-                };
+                // Fallback to cached data if available (handles throttle/rate-limit)
+                try {
+                    const cache = await this.getXanaxViewerCache();
+                    if (cache[uid]) {
+                        console.log(`💊 Xanax Viewer: Using cached data for user ${uid}`);
+                        return cache[uid];
+                    }
+                } catch {}
+
+                // Return default values if no cache
+                return { xantaken: 0, cantaken: 0, lsdtaken: 0, refills: 0 };
             }
         },
 

@@ -25,6 +25,7 @@ const WeaponExpModule = (() => {
         'melatonin',
         'tyrosine',
         'serotonin',
+        'epinephrine',
         'flash grenade',
         'smoke grenade',
         'pepper spray',
@@ -83,21 +84,76 @@ const WeaponExpModule = (() => {
             const apiKey = await window.SidekickModules.Core.ChromeStorage.get('sidekick_api_key');
             if (!apiKey) return;
 
+            const CS = window.SidekickModules.Core.ChromeStorage;
+            const CACHE_KEY = 'sidekick_wxp_cache';
+
             try {
                 const response = await fetch(`https://api.torn.com/user/?selections=weaponexp&key=${apiKey}`);
+
+                // Handle HTTP-level throttling
+                if (response.status === 429) {
+                    console.warn('[Sidekick] WXP: API rate limited (429), loading cached data...');
+                    const cached = await CS.get(CACHE_KEY);
+                    if (cached?.weaponexp) {
+                        weArray = cached.weaponexp;
+                        this.modifyPage(weArray);
+                        this.showThrottleNotice();
+                    }
+                    return;
+                }
+
                 const data = await response.json();
 
                 if (data.error) {
+                    // Error code 5 = Too many requests, fallback to cache
+                    if (data.error.code === 5 || data.error.code === 13) {
+                        console.warn('[Sidekick] WXP: API throttled (code ' + data.error.code + '), loading cached data...');
+                        const cached = await CS.get(CACHE_KEY);
+                        if (cached?.weaponexp) {
+                            weArray = cached.weaponexp;
+                            this.modifyPage(weArray);
+                            this.showThrottleNotice();
+                        }
+                        return;
+                    }
                     console.error('[Sidekick] Weapon XP API Error:', data.error);
                     return;
                 }
 
                 weArray = data.weaponexp;
                 console.log('[Sidekick] Weapon XP: Data loaded, found', weArray?.length || 0, 'weapons');
+
+                // Persist to cache for throttle fallback
+                await CS.set(CACHE_KEY, { weaponexp: weArray, cachedAt: Date.now() });
+
                 this.modifyPage(weArray);
             } catch (error) {
                 console.error('[Sidekick] Weapon XP: Failed to fetch data:', error);
+                // Network error — try cache
+                try {
+                    const CS2 = window.SidekickModules?.Core?.ChromeStorage;
+                    if (CS2) {
+                        const cached = await CS2.get(CACHE_KEY);
+                        if (cached?.weaponexp) {
+                            weArray = cached.weaponexp;
+                            this.modifyPage(weArray);
+                            this.showThrottleNotice();
+                        }
+                    }
+                } catch {}
             }
+        },
+
+        showThrottleNotice() {
+            // Show a subtle banner that cached data is being shown
+            const existing = document.getElementById('sk-wxp-throttle-notice');
+            if (existing) return;
+            const notice = document.createElement('div');
+            notice.id = 'sk-wxp-throttle-notice';
+            notice.style.cssText = 'position:fixed;bottom:10px;right:10px;background:rgba(255,173,90,0.15);border:1px solid rgba(255,173,90,0.4);color:#ffad5a;font-size:11px;padding:6px 10px;border-radius:6px;z-index:999997;font-family:sans-serif;';
+            notice.textContent = 'WXP: Showing cached data (API throttled)';
+            document.body.appendChild(notice);
+            setTimeout(() => notice.remove(), 8000);
         },
 
         modifyPage(array, pageChange = false) {

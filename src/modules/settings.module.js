@@ -70,7 +70,7 @@
                 ${this.createToggle('refill-blocker', '🛡️ Refill Blocker', 'Prevents accidental refills when bars aren\'t empty')}
                 ${this.createToggle('extended-chain-view', '⛓️ Extended Chain View', 'Shows more than 10 chain attacks on faction page')}
                 ${this.createToggle('mug-calculator', '🥊 Mug Calculator', 'Shows mug value calculations on Item Market and Bazaars')}
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Weapon XP Tracker</div><div class="sk-row-desc">Tracks weapon experience progress and shows XP gain rates</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Weapon XP Tracker</div><div class="sk-row-desc">Tracks weapon experience progress and shows XP gain rates</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-wxp"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
                 ${this.createToggle('book-notifier', '📚 Mission Book Notifier', 'Alerts when books are available in mission rewards (checks every 12 hours)')}
                 ${this.createToggle('locked-items', '🔒 Locked Items Manager', 'Lock inventory items to prevent accidental trading, selling, or deleting')}
                 ${this.createToggle('price-filler', '🛒 Price Filler', 'Auto-fills prices on the Item Market and Bazaar pages')}
@@ -678,7 +678,7 @@
     height:55%; width:3px; background:var(--grad); border-radius:0 3px 3px 0;
 }
 .sk-nav-icon {
-    width:42px; height:42px; border-radius:9px; border:1.5px solid var(--border2);
+    width:36px; height:36px; border-radius:8px; border:1.5px solid var(--border2);
     display:flex; align-items:center; justify-content:center;
     font-size:20px; background:var(--surface2); transition:all .2s;
 }
@@ -687,7 +687,7 @@
     border-color:rgba(95,204,106,0.45);
     box-shadow:0 0 14px rgba(95,204,106,0.2),0 0 28px rgba(255,173,90,0.1);
 }
-.sk-nav-label{font-size:10.5px;font-weight:600;letter-spacing:.2px;text-align:center;white-space:normal;word-break:break-word;line-height:1.2;}
+.sk-nav-label{font-size:10px;font-weight:600;letter-spacing:0;text-align:center;white-space:normal;word-break:break-word;line-height:1.2;max-width:100%;}
 .sk-prev-content{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .sk-prev-topbar{
     display:flex;align-items:center;justify-content:space-between;
@@ -850,15 +850,16 @@
       <div class="sk-subtab-bar">
         <button class="sk-subtab-btn active" data-tab="feat-utility">Utility</button>
         <button class="sk-subtab-btn" data-tab="feat-reminders">Reminders</button>
+        <button class="sk-subtab-btn" data-tab="feat-medical">Medical</button>
       </div>
       <div class="sk-scroll">
         <div class="sk-subtab-panel active" id="skp-tab-feat-utility">
           <div class="sk-sh">Utility</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Time on Tab</div><div class="sk-row-desc">Display remaining travel time, hospital time, raceway time, and time left for chain on tab title.</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Legible Player Names</div><div class="sk-row-desc">Improves readability of player names by formatting them with better spacing and styling</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Random Target</div><div class="sk-row-desc">Adds a floater that opens a random level 1 profile</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Refill Blocker</div><div class="sk-row-desc">Prevents accidental nerve and energy refills by showing a confirmation before using refill items</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row" style="align-items:flex-start;gap:12px;"><div class="sk-row-info"><div class="sk-row-title">Xanax Viewer</div><div class="sk-row-desc">View individual Xanax usage</div><div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-xanax" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">Settings &#x25BE;</button></div></div><label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Time on Tab</div><div class="sk-row-desc">Display remaining travel time, hospital time, raceway time, and time left for chain on tab title.</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-time-on-tab" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Legible Player Names</div><div class="sk-row-desc">Improves readability of player names by formatting them with better spacing and styling</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-legible-names" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Random Target</div><div class="sk-row-desc">Adds a floater that opens a random level 1 profile</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-random-target" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Refill Blocker</div><div class="sk-row-desc">Prevents accidental nerve and energy refills by showing a confirmation before using refill items</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-refill-blocker" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row" style="align-items:flex-start;gap:12px;"><div class="sk-row-info"><div class="sk-row-title">Xanax Viewer</div><div class="sk-row-desc">View individual Xanax usage</div><div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-xanax" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">Settings &#x25BE;</button></div></div><label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox" id="skp-tog-xanax-viewer" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-shelf" id="skp-shelf-xanax" style="display:none;">
             <div class="sk-sh" style="margin-top:0;font-size:10px;">Xanax Viewer Settings</div>
             <label class="sk-field-label">Auto-fetch limit on faction page</label>
@@ -869,14 +870,14 @@
             <div class="sk-hint">Stores fetched Xanax data locally to avoid repeated API calls.</div>
             <button class="sk-btn sk-btn-danger" style="width:100%;margin-top:6px;">Clear Cached Profiles</button>
           </div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Auction Weapon Bonus</div><div class="sk-row-desc">Displays weapon bonuses & stats next to weapon name in auction house</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Auction Weapon Bonus</div><div class="sk-row-desc">Displays weapon bonuses & stats next to weapon name in auction house</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-auction-bonus" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
         <div class="sk-subtab-panel" id="skp-tab-feat-reminders">
           <div class="sk-sh">Alerts</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Racing Alert</div><div class="sk-row-desc">Flashes the extension icon when you are not currently in a race</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Racing Alert</div><div class="sk-row-desc">Flashes the extension icon when you are not currently in a race</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-racing-alert" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-sh" style="margin-top:18px;">Blood Bag Reminder</div>
           <div class="sk-info">Shows a blood bag icon in the status bar when your life and medical cooldown conditions are met, reminding you to fill blood bags.</div>
-          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Blood Bag Reminder</div><div class="sk-row-desc">Show icon when conditions to fill blood bags are met</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Blood Bag Reminder</div><div class="sk-row-desc">Show icon when conditions to fill blood bags are met</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-blood-bag" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <label class="sk-field-label" style="margin-top:10px;">Bags to Fill</label>
           <select class="sk-select">
             <option value="1">1 bag (life &gt; 30%)</option>
@@ -889,6 +890,30 @@
             <option value="bazaar">Bazaar (add items)</option>
           </select>
           <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Open in New Tab</div><div class="sk-row-desc">Opens the destination page in a new browser tab when clicking the blood bag icon</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+        </div>
+        <div class="sk-subtab-panel" id="skp-tab-feat-medical">
+          <div class="sk-sh">Smart Medical Button</div>
+          <div class="sk-info">A draggable floater button that auto-selects and uses the best available medical item to reduce your hospital time. Adapted from BBSmalls' Torn Smart FAK Button. Morphine is always included when available.</div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Smart Medical Button</div><div class="sk-row-desc">Show the smart medical floater on all Torn pages</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-smart-medical"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <label class="sk-field-label" style="margin-top:12px;">Item Source</label>
+          <select class="sk-select" id="skp-med-item-source">
+            <option value="Personal Items" selected>Personal Items</option>
+            <option value="Faction Armory">Faction Armory</option>
+          </select>
+          <div class="sk-hint">Where to use items from when clicking the button</div>
+          <label class="sk-field-label" style="margin-top:12px;">Blood Bag Type</label>
+          <select class="sk-select" id="skp-med-blood-type">
+            <option value="Disabled" selected>Disabled</option>
+            <option value="A+">A+</option>
+            <option value="A-">A-</option>
+            <option value="B+">B+</option>
+            <option value="B-">B-</option>
+            <option value="AB+">AB+</option>
+            <option value="AB-">AB-</option>
+            <option value="O+">O+</option>
+            <option value="O-">O-</option>
+          </select>
+          <div class="sk-hint">Select your blood type to enable blood bag usage. Disabled = no blood bags used.</div>
         </div>
       </div>
     </div>
@@ -903,10 +928,10 @@
       <div class="sk-scroll">
         <div class="sk-subtab-panel active" id="skp-tab-personal">
           <div class="sk-sh">Combat &amp; Loadout</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Fast Attack</div><div class="sk-row-desc">Moves Start Fight button directly over your equipped weapon for faster attacking</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Loadout Switcher</div><div class="sk-row-desc">Adds quick loadout change buttons on the Items page</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Fast Attack</div><div class="sk-row-desc">Moves Start Fight button directly over your equipped weapon for faster attacking</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-fast-attack" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Loadout Switcher</div><div class="sk-row-desc">Adds quick loadout change buttons on the Items page</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-loadout" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-sh" style="margin-top:18px;">Inventory</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Locked Items Manager</div><div class="sk-row-desc">Lock inventory items to prevent accidental trading or selling</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Locked Items Manager</div><div class="sk-row-desc">Lock inventory items to prevent accidental trading or selling</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-locked-items"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-row" style="align-items:flex-start;gap:12px;"><div class="sk-row-info"><div class="sk-row-title">Weapon XP Tracker</div><div class="sk-row-desc">Tracks weapon experience progress and shows XP gain rates</div><div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-wxp" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">View Stats &#x25BE;</button></div></div><label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-shelf" id="skp-shelf-wxp" style="display:none;">
             <div class="sk-info" style="margin-bottom:8px;">Opens a full weapon stats window showing XP % per weapon, finishing hits progress, and a list of weapons you have not yet trained.</div>
@@ -915,9 +940,9 @@
         </div>
         <div class="sk-subtab-panel" id="skp-tab-gym">
           <div class="sk-sh">Gym Modules</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Special Gym Ratios</div><div class="sk-row-desc">Warns when your stat ratios risk losing access to specialist gyms</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Auto Gym</div><div class="sk-row-desc">Automatically switches to the best available gym before training</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Block Training</div><div class="sk-row-desc">Prevents accidental gym training clicks</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Special Gym Ratios</div><div class="sk-row-desc">Warns when your stat ratios risk losing access to specialist gyms</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-gym-ratios" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Auto Gym</div><div class="sk-row-desc">Automatically switches to the best available gym before training</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-auto-gym"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Block Training</div><div class="sk-row-desc">Prevents accidental gym training clicks</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-block-training"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
         <div class="sk-subtab-panel" id="skp-tab-money">
           <div class="sk-sh">Market &amp; Pricing</div>
@@ -955,7 +980,7 @@
           </div>
           <div class="sk-row" style="margin-top:4px;"><div class="sk-row-info"><div class="sk-row-title">Item Market Max Quantity</div><div class="sk-row-desc">Adds a button to fill max quantity when buying from Item Market</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-sh" style="margin-top:18px;">Quick Deposit</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Quick Deposit</div><div class="sk-row-desc">Makes your money display clickable for fast vault deposits</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Quick Deposit</div><div class="sk-row-desc">Makes your money display clickable for fast vault deposits</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-quick-deposit"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <label class="sk-field-label" style="margin-top:10px;">Deposit Target</label>
           <select class="sk-select" id="skp-deposit-target"><option>Faction Vault</option><option>Property Vault</option><option>Company Vault</option><option value="ghost">Ghost Trade</option></select>
           <div class="sk-ghost-trade-row" id="skp-ghost-row" style="display:none;">
@@ -964,7 +989,7 @@
             <button class="sk-btn sk-btn-danger" style="width:100%;">Clear Ghost Trade ID</button>
           </div>
           <div class="sk-sh" style="margin-top:18px;">Bunker</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Bunker Bucks</div><div class="sk-row-desc">Displays live value of your bunker investments on the Torn City page</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Bunker Bucks</div><div class="sk-row-desc">Displays live value of your bunker investments on the Torn City page</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-bunker-bucks" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
       </div>
     </div>
@@ -1093,10 +1118,10 @@
             </div>
           </div>
 
-          <div class="sk-row" style="margin-top:4px;"><div class="sk-row-info"><div class="sk-row-title">Burglary</div><div class="sk-row-desc">Shows confidence percentage next to the burglary graphic</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Disposal</div><div class="sk-row-desc">Highlights best options and shows maximum nerve cost for Disposal</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Cracking</div><div class="sk-row-desc">Shows word suggestions while solving the Cracking crime</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Scamming</div><div class="sk-row-desc">Provides hints and assistance for the Scamming crime</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row" style="margin-top:4px;"><div class="sk-row-info"><div class="sk-row-title">Burglary</div><div class="sk-row-desc">Shows confidence percentage next to the burglary graphic</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-burglary" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Disposal</div><div class="sk-row-desc">Highlights best options and shows maximum nerve cost for Disposal</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-disposal" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Cracking</div><div class="sk-row-desc">Shows word suggestions while solving the Cracking crime</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-cracking" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Scamming</div><div class="sk-row-desc">Provides hints and assistance for the Scamming crime</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-scamming" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
         <div class="sk-subtab-panel" id="skp-tab-outcome">
           <div class="sk-sh">Crime Outcome Display</div>
@@ -1173,7 +1198,7 @@
         <div class="sk-subtab-panel active" id="skp-tab-war-chain">
           <div class="sk-sh">Chain Timer</div>
           <div class="sk-info">Floating countdown timer for your faction chain. Alerts you before the chain expires.</div>
-          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Chain Timer</div><div class="sk-row-desc">Show floating chain countdown timer on all Torn pages</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Chain Timer</div><div class="sk-row-desc">Show floating chain countdown timer on all Torn pages</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-chain-timer" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-sh" style="margin-top:16px;">Alert Settings</div>
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Enable Alerts</div><div class="sk-row-desc">Trigger alerts when chain timer reaches the threshold</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Browser Popup Alert</div><div class="sk-row-desc">Show a browser dialog popup when the chain is about to expire</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
@@ -1187,12 +1212,12 @@
         <div class="sk-subtab-panel" id="skp-tab-war-monitor">
           <div class="sk-sh">War Monitor</div>
           <div class="sk-info">Monitors active faction wars and notifies you of incoming attacks and score changes.</div>
-          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable War Monitor</div><div class="sk-row-desc">Show travel status and hospital time and sort by hospital time on war page</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable War Monitor</div><div class="sk-row-desc">Show travel status and hospital time and sort by hospital time on war page</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-war-monitor"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
         <div class="sk-subtab-panel" id="skp-tab-war-chainview">
           <div class="sk-sh">Extended Chain View</div>
           <div class="sk-info">Shows more than 10 chain attacks on the faction page, giving you a full view of the current chain history.</div>
-          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Extended Chain View</div><div class="sk-row-desc">Show more than 10 chain attacks on faction page</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Extended Chain View</div><div class="sk-row-desc">Show more than 10 chain attacks on faction page</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-chain-view" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
       </div>
     </div>
@@ -1207,12 +1232,12 @@
         <div class="sk-subtab-panel active" id="skp-tab-miss-notifier">
           <div class="sk-sh">Mission Book Notifier</div>
           <div class="sk-info">Alerts when books become available in mission rewards. Checks periodically in the background.</div>
-          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Book Notifier</div><div class="sk-row-desc">Alerts when books are available in mission rewards (checks every 12 hours)</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Book Notifier</div><div class="sk-row-desc">Alerts when books are available in mission rewards (checks every 12 hours)</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-book-notifier" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
         <div class="sk-subtab-panel" id="skp-tab-miss-tracker">
           <div class="sk-sh">Mission Tracker</div>
           <div class="sk-info">Tracks your mission progress and displays a summary of completed and active missions.</div>
-          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Mission Tracker</div><div class="sk-row-desc">Tracks if there is an active mission and displays an icon</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Mission Tracker</div><div class="sk-row-desc">Tracks if there is an active mission and displays an icon</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-mission-tracker" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
       </div>
     </div>
@@ -1227,12 +1252,12 @@
         <div class="sk-subtab-panel active" id="skp-tab-ev-calendar">
           <div class="sk-sh">Event Calendar</div>
           <div class="sk-info">Displays upcoming Torn City events in a calendar view so you never miss a special event.</div>
-          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Event Calendar</div><div class="sk-row-desc">Show upcoming events in a calendar widget</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Event Calendar</div><div class="sk-row-desc">Show upcoming events in a calendar widget</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-event-calendar" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
         <div class="sk-subtab-panel" id="skp-tab-ev-egg">
           <div class="sk-sh">Easter</div>
           <div class="sk-info">Assists with seasonal egg hunt events by tracking found eggs and showing hints.</div>
-          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Egg Helper</div><div class="sk-row-desc">Assists with seasonal easter egg hunt events by tracking found eggs and showing hints</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Egg Helper</div><div class="sk-row-desc">Assists with seasonal easter egg hunt events by tracking found eggs and showing hints</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-easter" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
       </div>
     </div>
@@ -1269,11 +1294,11 @@
 
             // Close on backdrop click
             overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) overlay.remove();
+                if (e.target === overlay) { overlay.remove(); document.body.style.overflow = ''; }
             });
 
             // Close button
-            overlay.querySelector('#skp-close').addEventListener('click', () => overlay.remove());
+            overlay.querySelector('#skp-close').addEventListener('click', () => { overlay.remove(); document.body.style.overflow = ''; });
 
             // Section navigation
             const sectionTitles = {
@@ -1341,10 +1366,7 @@
                     if (!shelf) return;
                     const open = shelf.style.display !== 'none';
                     shelf.style.display = open ? 'none' : 'block';
-                    // Rotate arrow indicator
-                    btn.innerHTML = open
-                        ? '⚙️ Settings ▾'
-                        : '⚙️ Settings ▴';
+                    btn.innerHTML = open ? 'Settings ▾' : 'Settings ▴';
                 });
             });
 
@@ -1355,6 +1377,151 @@
                 document.addEventListener('mouseup', () => { isDown = false; bar.style.cursor = 'grab'; });
                 bar.addEventListener('mousemove', e => { if (!isDown) return; e.preventDefault(); bar.scrollLeft = scrollLeft - (e.pageX - bar.offsetLeft - startX); });
             });
+
+            // ─── k/m shorthand for mug calculator threshold ────────────────
+            const mugThreshInput = overlay.querySelector('.sk-input[placeholder="Only alert above this value"]');
+            if (mugThreshInput) {
+                mugThreshInput.addEventListener('blur', () => {
+                    const raw = mugThreshInput.value.trim().toLowerCase();
+                    if (/^\d+(\.\d+)?k$/.test(raw)) mugThreshInput.value = Math.round(parseFloat(raw)*1000);
+                    else if (/^\d+(\.\d+)?m$/.test(raw)) mugThreshInput.value = Math.round(parseFloat(raw)*1000000);
+                });
+            }
+
+            // ─── Unified settings save/load for all toggle switches ────────
+            const CS = () => window.SidekickModules?.Core?.ChromeStorage;
+
+            // Toggle save/load map: [inputSelector, storageKey, subKey|null, defaultEnabled]
+            // subKey=null means the top-level object has {isEnabled: bool}
+            // subKey='X' means object at sidekick_settings['X'].isEnabled
+            const TOGGLE_MAP = [
+                // Personal
+                ['#skp-tog-fast-attack',      'sidekick_attack_button_mover', null,              true],
+                ['#skp-tog-loadout',          'sidekick_settings',            'loadout-switcher', false],
+                ['#skp-tog-locked-items',     'sidekick_settings',            'locked-items',     false],
+                ['#skp-tog-wxp',              'sidekick_weapon_xp_tracker',   null,              false],
+                // Gym
+                ['#skp-tog-gym-ratios',       'sidekick_settings',            'special-gym-ratios', true],
+                ['#skp-tog-auto-gym',         'sidekick_settings',            'auto-gym-switch',  false],
+                ['#skp-tog-block-training',   'sidekick_block_training',      null,              false],
+                // Economy
+                ['#skp-tog-market-filler',    'sidekick_settings',            'price-filler',    false],
+                ['#skp-tog-bazaar-filler',    'sidekick_settings',            'bazaar-filler',   false],
+                ['#skp-tog-quick-deposit',    'sidekick_settings',            'quick-deposit',   false],
+                ['#skp-tog-bunker-bucks',     'sidekick_settings',            'bunker-bucks',    false],
+                // Utility
+                ['#skp-tog-time-on-tab',      'sidekick_time_on_tab',         null,              false],
+                ['#skp-tog-random-target',    'sidekick_random_target',       null,              false],
+                ['#skp-tog-legible-names',    'sidekick_settings',            'legible-names',   false],
+                ['#skp-tog-xanax-viewer',     'sidekick_xanax_viewer',        null,              false],
+                ['#skp-tog-refill-blocker',   'sidekick_refill_blocker',      null,              false],
+                ['#skp-tog-auction-bonus',    'sidekick_settings',            'auction-weapon-bonus', false],
+                // Reminders
+                ['#skp-tog-racing-alert',     'sidekick_racing_alert',        null,              false],
+                ['#skp-tog-blood-bag',        'sidekick_settings',            'blood-bag-reminder', false],
+                // Crimes
+                ['#skp-tog-sfc',              'sidekick_settings',            'search-for-cash', false],
+                ['#skp-tog-shoplifting',      'sidekick_settings',            'crime-notifier',  false],
+                ['#skp-tog-burglary',         'sidekick_settings',            'crime-burglary',  false],
+                ['#skp-tog-disposal',         'sidekick_settings',            'crime-disposal',  false],
+                ['#skp-tog-cracking',         'sidekick_settings',            'crime-cracking',  false],
+                ['#skp-tog-scamming',         'sidekick_settings',            'crime-scamming',  false],
+                // War
+                ['#skp-tog-chain-timer',      'sidekick_chain_timer',         null,              false],
+                ['#skp-tog-war-monitor',      'sidekick_war_monitor',         null,              false],
+                ['#skp-tog-chain-view',       'sidekick_extended_chain_view', null,              false],
+                // Missions
+                ['#skp-tog-book-notifier',    'sidekick_settings',            'book-notifier',   false],
+                ['#skp-tog-mission-tracker',  'sidekick_settings',            'mission-tracker', false],
+                // Events
+                ['#skp-tog-event-calendar',   'sidekick_settings',            'event-calendar',  false],
+                ['#skp-tog-easter',           'sidekick_holiday',             null,              false],
+                // Medical
+                ['#skp-tog-smart-medical',    'sidekick_smart_medical',       null,              false],
+            ];
+
+            // Helper: read isEnabled from storage
+            async function loadToggle(storageKey, subKey) {
+                if (!CS()) return false;
+                const data = await CS().get(storageKey) || {};
+                if (subKey) {
+                    return (data[subKey] && data[subKey].isEnabled === true);
+                }
+                return data.isEnabled === true;
+            }
+
+            // Helper: write isEnabled to storage
+            async function saveToggle(storageKey, subKey, enabled) {
+                if (!CS()) return;
+                if (subKey) {
+                    const data = await CS().get(storageKey) || {};
+                    if (!data[subKey]) data[subKey] = {};
+                    data[subKey].isEnabled = enabled;
+                    await CS().set(storageKey, data);
+                } else {
+                    const data = await CS().get(storageKey) || {};
+                    data.isEnabled = enabled;
+                    await CS().set(storageKey, data);
+                }
+            }
+
+            // Load all toggles from storage
+            (async () => {
+                // Load API key into input
+                const apiKey = CS() ? await CS().get('sidekick_api_key') : null;
+                const apiInput = overlay.querySelector('#skp-api-key');
+                if (apiInput && apiKey) apiInput.value = apiKey;
+
+                // Load all module toggles
+                for (const [sel, storKey, subKey] of TOGGLE_MAP) {
+                    const inp = overlay.querySelector(sel);
+                    if (!inp) continue;
+                    try {
+                        const enabled = await loadToggle(storKey, subKey);
+                        inp.checked = enabled;
+                    } catch(e) { /* storage not ready */ }
+                }
+            })();
+
+            // Wire change events for all toggles
+            for (const [sel, storKey, subKey] of TOGGLE_MAP) {
+                const inp = overlay.querySelector(sel);
+                if (!inp) continue;
+                inp.addEventListener('change', async () => {
+                    try { await saveToggle(storKey, subKey, inp.checked); } catch(e) {}
+                });
+            }
+
+            // ─── Medical settings: load and wire dropdowns ─────────────────
+            const medItemSrc   = overlay.querySelector('#skp-med-item-source');
+            const medBloodType = overlay.querySelector('#skp-med-blood-type');
+            if (medItemSrc || medBloodType) {
+                (async () => {
+                    const medData = CS() ? (await CS().get('sidekick_smart_medical') || {}) : {};
+                    if (medItemSrc  && medData.itemSource)  medItemSrc.value  = medData.itemSource;
+                    if (medBloodType && medData.bloodType)  medBloodType.value = medData.bloodType;
+                })();
+                if (medItemSrc) {
+                    medItemSrc.addEventListener('change', async () => {
+                        if (!CS()) return;
+                        const d = await CS().get('sidekick_smart_medical') || {};
+                        d.itemSource = medItemSrc.value;
+                        await CS().set('sidekick_smart_medical', d);
+                        if (window.SidekickModules?.SmartMedicalButton?.updateSetting)
+                            window.SidekickModules.SmartMedicalButton.updateSetting('itemSource', medItemSrc.value);
+                    });
+                }
+                if (medBloodType) {
+                    medBloodType.addEventListener('change', async () => {
+                        if (!CS()) return;
+                        const d = await CS().get('sidekick_smart_medical') || {};
+                        d.bloodType = medBloodType.value;
+                        await CS().set('sidekick_smart_medical', d);
+                        if (window.SidekickModules?.SmartMedicalButton?.updateSetting)
+                            window.SidekickModules.SmartMedicalButton.updateSetting('bloodType', medBloodType.value);
+                    });
+                }
+            }
         },
 
         // Attach all event listeners
