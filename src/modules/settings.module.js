@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Sidekick Chrome Extension - Settings Module V2
  * Comprehensive settings panel with all module toggles and configurations
  * Version: 2.0.0
@@ -1250,27 +1250,10 @@
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Locked Items Manager</div><div class="sk-row-desc">Lock inventory items to prevent accidental trading or selling</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-row" style="align-items:flex-start;gap:12px;"><div class="sk-row-info"><div class="sk-row-title">Weapon XP Tracker</div><div class="sk-row-desc">Tracks weapon experience progress and shows XP gain rates</div><div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-wxp" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">View Stats &#x25BE;</button></div></div><label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-shelf" id="skp-shelf-wxp" style="display:none;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-              <div class="sk-sh" style="margin-top:0;font-size:10px;margin-bottom:0;">Weapon XP by Category</div>
-              <span id="skp-wxp-zero-link" style="display:none;font-size:10px;color:#5fcc6a;cursor:pointer;text-decoration:underline;" onclick="(function(){var w=window.open('','wxp_zero','width=420,height=500');if(w){w.document.write(window.skpWxpZeroHTML||'<p>No data</p>');w.document.close();}})()">View 0% weapons</span>
-            </div>
-            <div class="sk-subtab-bar sk-shelf-tabs" style="margin:4px 0 6px;font-size:11px;">
-              <button class="sk-subtab-btn active" data-tab="wxp-melee">Melee</button>
-              <button class="sk-subtab-btn" data-tab="wxp-pistol">Pistol</button>
-              <button class="sk-subtab-btn" data-tab="wxp-smg">SMG</button>
-              <button class="sk-subtab-btn" data-tab="wxp-shotgun">Shotgun</button>
-              <button class="sk-subtab-btn" data-tab="wxp-rifle">Rifle</button>
-              <button class="sk-subtab-btn" data-tab="wxp-heavy">Heavy</button>
-              <button class="sk-subtab-btn" data-tab="wxp-temp">Temp</button>
-            </div>
-            <div class="sk-subtab-panel active" id="skp-tab-wxp-melee" style="padding-top:4px;"><div class="skp-wxp-cat-content" data-cat="melee"><div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:center;padding:8px;">Enable the module and visit your weapons page to load Melee data</div></div></div>
-            <div class="sk-subtab-panel" id="skp-tab-wxp-pistol" style="padding-top:4px;"><div class="skp-wxp-cat-content" data-cat="pistol"><div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:center;padding:8px;">Enable the module and visit your weapons page to load Pistol data</div></div></div>
-            <div class="sk-subtab-panel" id="skp-tab-wxp-smg" style="padding-top:4px;"><div class="skp-wxp-cat-content" data-cat="smg"><div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:center;padding:8px;">Enable the module and visit your weapons page to load SMG data</div></div></div>
-            <div class="sk-subtab-panel" id="skp-tab-wxp-shotgun" style="padding-top:4px;"><div class="skp-wxp-cat-content" data-cat="shotgun"><div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:center;padding:8px;">Enable the module and visit your weapons page to load Shotgun data</div></div></div>
-            <div class="sk-subtab-panel" id="skp-tab-wxp-rifle" style="padding-top:4px;"><div class="skp-wxp-cat-content" data-cat="rifle"><div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:center;padding:8px;">Enable the module and visit your weapons page to load Rifle data</div></div></div>
-            <div class="sk-subtab-panel" id="skp-tab-wxp-heavy" style="padding-top:4px;"><div class="skp-wxp-cat-content" data-cat="heavy"><div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:center;padding:8px;">Enable the module and visit your weapons page to load Heavy data</div></div></div>
-            <div class="sk-subtab-panel" id="skp-tab-wxp-temp" style="padding-top:4px;"><div class="skp-wxp-cat-content" data-cat="temp"><div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:center;padding:8px;">Enable the module and visit your weapons page to load Temp data</div></div></div>
+            <div class="sk-info" style="margin-bottom:8px;">Opens a full weapon stats window showing XP % per weapon, finishing hits progress, and a list of weapons you have not yet trained.</div>
+            <button id="skp-wxp-overview-btn" class="sk-btn sk-btn-primary" style="width:100%;">View Weapon XP Stats</button>
           </div>
+        </div>
         <div class="sk-subtab-panel" id="skp-tab-gym">
           <div class="sk-sh">Gym Modules</div>
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Special Gym Ratios</div><div class="sk-row-desc">Warns when your stat ratios risk losing access to specialist gyms</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
@@ -1489,10 +1472,7 @@
           <input type="number" class="sk-input" min="0" max="10" placeholder="0">
           <label class="sk-field-label">Plunder % (20-49%)</label>
           <input type="number" class="sk-input" min="20" max="49" step="0.01" placeholder="e.g. 35.5">
-          <div class="sk-row" style="align-items:center;gap:8px;margin-top:6px;">
           <div style="display:inline-flex;align-items:center;gap:6px;margin-top:6px;"><input type="checkbox" id="skp-no-plunder" style="width:13px;height:13px;accent-color:#5fcc6a;cursor:pointer;flex-shrink:0;"><label for="skp-no-plunder" style="font-size:11px;color:rgba(255,255,255,0.65);cursor:pointer;white-space:nowrap;">No Plunder Weapon <span style="color:rgba(255,255,255,0.35);font-size:10px;">— disables plunder bonus</span></label></div>
-            <label for="skp-no-plunder" style="font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;line-height:1.3;">No Plunder Weapon <span style="color:rgba(255,255,255,0.4);font-size:10px;">— disables plunder bonus calculation</span></label>
-          </div>
           <label class="sk-field-label" style="margin-top:10px;">Minimum Threshold ($)</label>
           <input type="number" class="sk-input" min="0" placeholder="Only alert above this value">
         </div>
@@ -1608,45 +1588,18 @@
             const logoImg = overlay.querySelector('#skp-logo-img');
             if (logoImg) logoImg.src = chrome.runtime.getURL('assets/icons/sidekick-logo.png');
 
-            // Load WXP data from WeaponExp module storage
-            (async () => {
-                try {
-                    const wxpData = await window.SidekickModules?.Core?.ChromeStorage?.get('sidekick_weapon_exp');
-                    if (!wxpData || !wxpData.weapons) return;
-                    const weapons = wxpData.weapons; // array of {name, category, xp_pct}
-                    const catMap = {melee:'melee',pistol:'pistol',smg:'smg',shotgun:'shotgun',rifle:'rifle',heavy:'heavy',temp:'temp'};
-                    const grouped = {};
-                    const zeroWeapons = [];
-                    weapons.forEach(w => {
-                        const cat = (w.category || '').toLowerCase().replace(/\s+/g,'');
-                        const key = catMap[cat] || cat;
-                        if (!grouped[key]) grouped[key] = [];
-                        grouped[key].push(w);
-                        if ((w.xp_pct || 0) === 0) zeroWeapons.push(w.name || 'Unknown');
-                    });
-                    // Populate each category panel
-                    const overlay = document.getElementById('skp-overlay');
-                    if (!overlay) return;
-                    overlay.querySelectorAll('.skp-wxp-cat-content').forEach(el => {
-                        const cat = el.getAttribute('data-cat');
-                        const items = grouped[cat] || [];
-                        if (!items.length) return;
-                        el.innerHTML = items.map(w => {
-                            const pct = Math.min(100, Math.max(0, w.xp_pct || 0));
-                            return '<div class="skp-wxp-row"><span class="skp-wxp-name">' + (w.name||'?') + '</span><div class="skp-wxp-bar-wrap"><div class="skp-wxp-bar" style="width:'+pct+'%"></div></div><span class="skp-wxp-pct">'+pct+'%</span></div>';
-                        }).join('');
-                    });
-                    // Show zero-weapons link if any
-                    if (zeroWeapons.length) {
-                        const zeroLink = overlay.querySelector('#skp-wxp-zero-link');
-                        if (zeroLink) {
-                            zeroLink.style.display = 'inline';
-                            const zeroHTML = '<html><body style="font-family:sans-serif;padding:16px;background:#1a1a2e;color:#fff;"><h3 style="margin-top:0;">Weapons at 0% XP</h3><ul style="line-height:2;">' + zeroWeapons.map(n=>'<li>'+n+'</li>').join('') + '</ul></body></html>';
-                            window.skpWxpZeroHTML = zeroHTML;
-                        }
+            // Weapon XP overview button
+            const wxpOverviewBtn = overlay.querySelector('#skp-wxp-overview-btn');
+            if (wxpOverviewBtn) {
+                wxpOverviewBtn.addEventListener('click', () => {
+                    if (window.SidekickModules?.WeaponExpTracker?.openWeaponsOverview) {
+                        window.SidekickModules.WeaponExpTracker.openWeaponsOverview();
+                    } else {
+                        alert('Weapon XP Tracker module not loaded. Please enable it and reload the page.');
                     }
-                } catch(e) { /* No weapon data yet */ }
-            })();
+                });
+            }
+
 
             // Load sidebar nav icons
             overlay.querySelectorAll('.sk-nav-icon-img').forEach(img => {

@@ -3,7 +3,7 @@
  * Display burglary confidence percentage permanently next to the graphic
  */
 
-(function() {
+(function () {
     'use strict';
 
     console.log('🏠 Loading Sidekick Burglary Module...');
@@ -206,7 +206,7 @@
             // Clean up UI
             const displays = document.querySelectorAll('.conf-text-display');
             displays.forEach(d => d.remove());
-            
+
             const sections = document.querySelectorAll('.statusSection___esgMf');
             sections.forEach(s => {
                 s.style.paddingLeft = '';
