@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Sidekick Chrome Extension - Settings Module V2
  * Comprehensive settings panel with all module toggles and configurations
  * Version: 2.0.0
@@ -51,349 +51,8 @@
 
         // Create comprehensive settings panel UI
         createSettingsPanel() {
-            console.log("⚙️ Settings: Creating comprehensive settings panel");
-
-            // Remove existing panel if present
-            const existingPanel = document.querySelector('.sidekick-settings-panel');
-            if (existingPanel) {
-                existingPanel.remove();
-                console.log("⚙️ Settings: Removed existing panel");
-                return; // Toggle behavior
-            }
-
-            const panel = document.createElement('div');
-            panel.className = 'sidekick-settings-panel';
-            panel.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                width: 850px;
-                height: 750px;
-                background: #1a1a1a;
-                border: 1px solid rgba(255,255,255,0.2);
-                border-radius: 12px;
-                z-index: 999999;
-                box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-                font-family: Arial, sans-serif;
-                overflow: hidden;
-            `;
-
-            // Resolve icon paths before building HTML
-            const iconGeneral = chrome.runtime.getURL('icons/settings-general.png');
-            const iconFeatures = chrome.runtime.getURL('icons/settings-features.png');
-            const iconXanax = chrome.runtime.getURL('icons/settings-xanax.png');
-            const iconChain = chrome.runtime.getURL('icons/settings-chain.png');
-            const iconNotifications = chrome.runtime.getURL('icons/settings-notifications.png');
-            const iconMugcalc = chrome.runtime.getURL('icons/settings-mugcalc.png');
-            const iconBloodBag = chrome.runtime.getURL('assets/icons/blood-bag-settings.png');
-            const iconQuickDeposit = chrome.runtime.getURL('icons/settings-quickdeposit.png');
-            const iconCrimeNotifier = chrome.runtime.getURL('icons/settings-crimenotifier.png');
-
-            panel.innerHTML = `
-                <style>
-                    .settings-content-scroll::-webkit-scrollbar {
-                        display: none;
-                    }
-                    .settings-content-scroll {
-                        -ms-overflow-style: none;
-                        scrollbar-width: none;
-                    }
-                </style>
-                <div style="display: flex; height: 750px; position: relative;">
-                    <!-- SIDEBAR NAVIGATION -->
-                    <div class="settings-sidebar" style="width: 200px; background: #242424; border-right: 1px solid rgba(255,255,255,0.1); 
-                                                         display: flex; flex-direction: column; padding: 20px 0;">
-                        <!-- Header in Sidebar -->
-                        <div style="padding: 0 20px 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                            <h3 style="margin: 0 0 12px 0; background: linear-gradient(135deg, #66BB6A, #ffad5a); 
-                                       -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
-                                       background-clip: text; font-size: 18px; font-weight: bold;">
-                                ⚙️ Settings
-                            </h3>
-                            <button id="sidekick-preview-new-ui"
-                                    style="width: 100%; padding: 8px 10px; background: linear-gradient(135deg, rgba(95,204,106,0.15), rgba(255,173,90,0.15));
-                                           border: 1px solid rgba(95,204,106,0.4); border-radius: 8px; color: #fff;
-                                           font-size: 11px; font-weight: 700; cursor: pointer; letter-spacing: 0.3px;
-                                           transition: all 0.2s ease; font-family: Arial, sans-serif; line-height: 1.3;">
-                                🚧 Preview New UI
-                            </button>
-                        </div>
-                        
-                        <!-- Sidebar Tabs -->
-                        <div style="flex: 1; padding-top: 10px; overflow-y: auto; overflow-x: hidden;">
-                            <style>
-                                .settings-sidebar > div:last-of-type::-webkit-scrollbar {
-                                    display: none;
-                                }
-                                .settings-sidebar > div:last-of-type {
-                                    -ms-overflow-style: none;
-                                    scrollbar-width: none;
-                                }
-                            </style>
-                            <button class="settings-sidebar-tab active" data-tab="general" 
-                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
-                                           border: none; color: white; cursor: pointer; font-size: 12px; font-weight: 500; 
-                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="${iconGeneral}" style="width: 48px; height: 48px; margin-bottom: 8px; filter: drop-shadow(0 0 12px rgba(102, 187, 106, 0.8)) drop-shadow(0 0 24px rgba(255, 173, 90, 0.6)); transition: all 0.3s ease;">
-                                <span>General</span>
-                            </button>
-                            <button class="settings-sidebar-tab" data-tab="modules" 
-                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
-                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
-                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="${iconFeatures}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
-                                <span>Features</span>
-                            </button>
-                            <button class="settings-sidebar-tab" data-tab="xanax" 
-                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
-                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
-                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="${iconXanax}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
-                                <span>Xanax</span>
-                            </button>
-                            <button class="settings-sidebar-tab" data-tab="chain" 
-                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
-                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
-                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="${iconChain}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
-                                <span>Chain Timer</span>
-                            </button>
-                            <button class="settings-sidebar-tab" data-tab="notifications" 
-                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
-                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
-                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="${iconNotifications}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
-                                <span>Notifications</span>
-                            </button>
-                            <button class="settings-sidebar-tab" data-tab="mugcalc" 
-                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
-                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
-                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="${iconMugcalc}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
-                                <span>Mug Calculator</span>
-                            </button>
-                            <button class="settings-sidebar-tab" data-tab="bloodbag" 
-                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
-                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
-                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="${iconBloodBag}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
-                                <span>Blood Bags</span>
-                            </button>
-                            <button class="settings-sidebar-tab" data-tab="quickdeposit" 
-                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
-                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
-                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="${iconQuickDeposit}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
-                                <span>Quick Deposit</span>
-                            </button>
-                            <button class="settings-sidebar-tab" data-tab="crimenotifier" 
-                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
-                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
-                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <img src="${iconCrimeNotifier}" style="width: 48px; height: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">
-                                <span>Crime Notifier</span>
-                            </button>
-                            <button class="settings-sidebar-tab" data-tab="crimes" 
-                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
-                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
-                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <div style="font-size: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">🧱</div>
-                                <span>Crimes</span>
-                            </button>
-                            <button class="settings-sidebar-tab" data-tab="mugwarning" 
-                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
-                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
-                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <div style="font-size: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">⚠️</div>
-                                <span>Mug Warning</span>
-                            </button>
-                            <button class="settings-sidebar-tab" data-tab="missiontracker" 
-                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
-                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
-                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <div style="font-size: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">🎯</div>
-                                <span>Missions</span>
-                            </button>
-                            <button class="settings-sidebar-tab" data-tab="hidecrime" 
-                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
-                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
-                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <div style="font-size: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">🦹</div>
-                                <span>Hide Crime</span>
-                            </button>
-                            <button class="settings-sidebar-tab" data-tab="holiday" 
-                                    style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; background: transparent; 
-                                           border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 12px; font-weight: 500; 
-                                           transition: all 0.3s ease; margin-bottom: 8px; border-radius: 8px;">
-                                <div style="font-size: 48px; margin-bottom: 8px; opacity: 0.7; transition: all 0.3s ease;">🥚</div>
-                                <span>Egg Helper</span>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- MAIN CONTENT AREA -->
-                    <div style="flex: 1; display: flex; flex-direction: column;">
-                        <!-- Top Bar with Close -->
-                        <div style="padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: flex-end; gap: 10px;">
-                            <button id="sidekick-close-settings" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
-                                                            color: #fff; width: 32px; height: 32px; border-radius: 50%; 
-                                                            cursor: pointer; font-size: 18px; display: flex; align-items: center; 
-                                                            justify-content: center; transition: all 0.2s ease;" 
-                                    title="Close Settings">×</button>
-                        </div>
-                        
-                        <!-- Content Container -->
-                        <div class="settings-content-scroll" style="flex: 1; overflow-y: auto; padding: 30px;">
-                            
-                            <!-- GENERAL TAB -->
-                            <div class="settings-tab-content" id="settings-tab-general" style="position: relative; opacity: 1; pointer-events: auto;">
-                                <div style="margin-bottom: 20px;">
-                                    <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Torn API Key:</label>
-                                    <input type="text" id="sidekick-api-key" placeholder="Enter your API key..." 
-                                           style="width: 100%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
-                                                  color: #fff; padding: 10px; border-radius: 5px; box-sizing: border-box;">
-                                    <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
-                                        Get your API key from: <a href="https://www.torn.com/preferences.php#tab=api" target="_blank" style="background: linear-gradient(135deg, #66BB6A, #ffad5a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: bold;">Torn Preferences</a>
-                                    </div>
-                                </div>
-                                
-                                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                                    <button id="sidekick-test-api" style="width: 100%; padding: 10px; background: #2196F3; 
-                                                                     border: none; color: white; border-radius: 5px; 
-                                                                     font-weight: bold; cursor: pointer;">
-                                        🧪 Test
-                                    </button>
-                                </div>
-                                
-                                <div id="sidekick-api-status" style="text-align: center; padding: 10px; border-radius: 5px; 
-                                                                 background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;">
-                                    Enter your API key and click Save
-                                </div>
-                                
-                                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 25px 0;">
-                                
-                                <!-- Calendar Refresh Section -->
-                                <div style="background: rgba(33, 150, 243, 0.1); border-left: 3px solid #2196F3; padding: 12px; border-radius: 5px; margin-bottom: 15px;">
-                                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
-                                        📅 <strong>Event Calendar:</strong> Automatically updates yearly. Use refresh to force update event dates (e.g., Christmas Town).
-                                    </div>
-                                </div>
-                                
-                                <button id="sidekick-refresh-calendar" style="width: 100%; padding: 10px; background: #2196F3; 
-                                                                               border: none; color: white; border-radius: 5px; 
-                                                                               font-weight: bold; cursor: pointer; margin-bottom: 15px;">
-                                    🔄 Refresh Event Calendar
-                                </button>
-                                
-                                <div id="sidekick-calendar-status" style="text-align: center; padding: 10px; border-radius: 5px; 
-                                                                         background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;">
-                                    Last updated: <span id="calendar-last-year">Never</span>
-                                </div>
-                                
-                                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 25px 0;">
-                                
-                                <!-- Data Export/Import Section -->
-                                <div style="background: rgba(76, 175, 80, 0.1); border-left: 3px solid #4CAF50; padding: 12px; border-radius: 5px; margin-bottom: 15px;">
-                                    <div style="font-size: 13px; color: #ccc; line-height: 1.5;">
-                                        💾 <strong>Backup & Restore:</strong> Export all your data before uninstalling. Import to restore everything after reinstalling.
-                                    </div>
-                                </div>
-                                
-                                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                                    <button id="sidekick-export-data" style="flex: 1; padding: 10px; background: #4CAF50; 
-                                                                               border: none; color: white; border-radius: 5px; 
-                                                                               font-weight: bold; cursor: pointer;">
-                                        📤 Export Data
-                                    </button>
-                                    <button id="sidekick-import-data" style="flex: 1; padding: 10px; background: #2196F3; 
-                                                                               border: none; color: white; border-radius: 5px; 
-                                                                               font-weight: bold; cursor: pointer;">
-                                        📥 Import Data
-                                    </button>
-                                </div>
-                                
-                                <div id="sidekick-backup-status" style="text-align: center; padding: 10px; border-radius: 5px; 
-                                                                        background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;">
-                                    No backup loaded
-                                </div>
-                                
-                                <!-- Hidden file input -->
-                                <input type="file" id="sidekick-import-file" accept=".json" style="display: none;">
-                            </div>
-                            
-                            <!-- MODULES TAB -->
-                            <div class="settings-tab-content" id="settings-tab-modules" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
-                                ${this.createModuleTogglesHTML()}
-                            </div>
-                            
-                            <!-- XANAX VIEWER TAB -->
-                            <div class="settings-tab-content" id="settings-tab-xanax" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
-                                ${this.createXanaxSettingsHTML()}
-                            </div>
-                            
-                            <!-- CHAIN TIMER TAB -->
-                            <div class="settings-tab-content" id="settings-tab-chain" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
-                                ${this.createChainTimerSettingsHTML()}
-                            </div>
-                            
-                            <!-- NOTIFICATIONS TAB -->
-                            <div class="settings-tab-content" id="settings-tab-notifications" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
-                                ${this.createNotificationsSettingsHTML()}
-                            </div>
-                            
-                            <!-- MUG CALCULATOR TAB -->
-                            <div class="settings-tab-content" id="settings-tab-mugcalc" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
-                                ${this.createMugCalculatorSettingsHTML()}
-                            </div>
-                            
-                            <!-- BLOOD BAG REMINDER TAB -->
-                            <div class="settings-tab-content" id="settings-tab-bloodbag" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
-                                ${this.createBloodBagSettingsHTML()}
-                            </div>
-                            
-                            <!-- QUICK DEPOSIT TAB -->
-                            <div class="settings-tab-content" id="settings-tab-quickdeposit" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
-                                ${this.createQuickDepositSettingsHTML()}
-                            </div>
-                            
-                            <!-- CRIME NOTIFIER TAB -->
-                            <div class="settings-tab-content" id="settings-tab-crimenotifier" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
-                                ${this.createCrimeNotifierSettingsHTML()}
-                            </div>
-
-                            <!-- CRIMES TAB -->
-                            <div class="settings-tab-content" id="settings-tab-crimes" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
-                                ${this.createCrimesSettingsHTML()}
-                            </div>
-                            
-                            <!-- MUG WARNING TAB -->
-                            <div class="settings-tab-content" id="settings-tab-mugwarning" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
-                                ${this.createMugWarningSettingsHTML()}
-                            </div>
-
-                            <!-- MISSION TRACKER TAB -->
-                            <div class="settings-tab-content" id="settings-tab-missiontracker" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
-                                ${this.createMissionTrackerSettingsHTML()}
-                            </div>
-
-                            <!-- HIDE CRIME OUTCOME TAB -->
-                            <div class="settings-tab-content" id="settings-tab-hidecrime" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
-                                ${this.createHideCrimeOutcomeSettingsHTML()}
-                            </div>
-
-                            <!-- HOLIDAY TAB -->
-                            <div class="settings-tab-content" id="settings-tab-holiday" style="position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none;">
-                                ${this.createHolidaySettingsHTML()}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            document.body.appendChild(panel);
-            this.attachEventListeners(panel);
-            this.loadAllSettings();
+            // Migrated: opens the new settings UI directly
+            this.createPreviewPanel();
         },
 
         // Create HTML for module toggles
@@ -960,7 +619,7 @@
             // Placeholder for future crime module tab event listeners if required
         },
 
-        // 🚧 TEMP: Create and inject the new settings UI preview as an in-page overlay
+        // Create and inject the new settings UI as an in-page overlay
         createPreviewPanel() {
             // Remove any existing preview
             const existing = document.querySelector('.sidekick-preview-panel');
@@ -1028,7 +687,7 @@
     border-color:rgba(95,204,106,0.45);
     box-shadow:0 0 14px rgba(95,204,106,0.2),0 0 28px rgba(255,173,90,0.1);
 }
-.sk-nav-label{font-size:11px;font-weight:600;letter-spacing:.2px;text-align:center;white-space:nowrap;}
+.sk-nav-label{font-size:10.5px;font-weight:600;letter-spacing:.2px;text-align:center;white-space:normal;word-break:break-word;line-height:1.2;}
 .sk-prev-content{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .sk-prev-topbar{
     display:flex;align-items:center;justify-content:space-between;
@@ -1520,7 +1179,7 @@
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Browser Popup Alert</div><div class="sk-row-desc">Show a browser dialog popup when the chain is about to expire</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Screen Flash</div><div class="sk-row-desc">Flash the screen red when the chain timer hits the alert threshold</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <label class="sk-field-label" style="margin-top:10px;">Alert Threshold (minutes)</label>
-          <div class="sk-slider-row"><input type="range" min="1" max="15" value="4" class="skp-slider" data-out="skp-chain-thresh-val" data-suffix=" min"><span class="sk-slider-val" id="skp-chain-thresh-val">4 min</span></div>
+          <div class="sk-slider-row"><input type="range" min="1" max="4" value="4" class="skp-slider" data-out="skp-chain-thresh-val" data-suffix=" min"><span class="sk-slider-val" id="skp-chain-thresh-val">4 min</span></div>
           <div class="sk-hint">Alert when chain has this many minutes remaining</div>
           <div class="sk-sh" style="margin-top:16px;">Display</div>
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Floating Display</div><div class="sk-row-desc">Show floating timer widget on the page (draggable and resizable)</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
@@ -1528,7 +1187,7 @@
         <div class="sk-subtab-panel" id="skp-tab-war-monitor">
           <div class="sk-sh">War Monitor</div>
           <div class="sk-info">Monitors active faction wars and notifies you of incoming attacks and score changes.</div>
-          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable War Monitor</div><div class="sk-row-desc">Monitor faction war scores and alert on significant changes</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable War Monitor</div><div class="sk-row-desc">Show travel status and hospital time and sort by hospital time on war page</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
         <div class="sk-subtab-panel" id="skp-tab-war-chainview">
           <div class="sk-sh">Extended Chain View</div>
@@ -1553,7 +1212,7 @@
         <div class="sk-subtab-panel" id="skp-tab-miss-tracker">
           <div class="sk-sh">Mission Tracker</div>
           <div class="sk-info">Tracks your mission progress and displays a summary of completed and active missions.</div>
-          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Mission Tracker</div><div class="sk-row-desc">Track and display mission progress on mission pages</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Mission Tracker</div><div class="sk-row-desc">Tracks if there is an active mission and displays an icon</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
       </div>
     </div>
@@ -1562,7 +1221,7 @@
     <div class="sk-sec-page" id="skp-events">
       <div class="sk-subtab-bar">
         <button class="sk-subtab-btn active" data-tab="ev-calendar">Calendar</button>
-        <button class="sk-subtab-btn" data-tab="ev-egg">Egg Helper</button>
+        <button class="sk-subtab-btn" data-tab="ev-egg">Easter</button>
       </div>
       <div class="sk-scroll">
         <div class="sk-subtab-panel active" id="skp-tab-ev-calendar">
@@ -1571,9 +1230,9 @@
           <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Event Calendar</div><div class="sk-row-desc">Show upcoming events in a calendar widget</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
         <div class="sk-subtab-panel" id="skp-tab-ev-egg">
-          <div class="sk-sh">Egg Helper</div>
+          <div class="sk-sh">Easter</div>
           <div class="sk-info">Assists with seasonal egg hunt events by tracking found eggs and showing hints.</div>
-          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Egg Helper</div><div class="sk-row-desc">Show egg hunt tracker and hints during seasonal events</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Egg Helper</div><div class="sk-row-desc">Assists with seasonal easter egg hunt events by tracking found eggs and showing hints</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
       </div>
     </div>
@@ -1726,9 +1385,8 @@
                 closeBtn.style.transform = 'scale(1)';
             });
 
-            // 🚧 TEMP — Preview New UI button
-            const previewBtn = panel.querySelector('#sidekick-preview-new-ui');
-            if (previewBtn) {
+            // (legacy preview button removed — new UI is now primary)
+            if (false) {
                 previewBtn.addEventListener('click', () => {
                     this.createPreviewPanel();
                 });
