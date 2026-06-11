@@ -288,17 +288,28 @@ const PriceFillerModule = (() => {
         s.id = 'sk-pf-bazaar-styles';
         s.textContent = `
             .sk-pf-check {
-                width:18px; height:18px; border-radius:4px;
+                width:15px; height:15px; border-radius:3px;
                 appearance:none; outline:none; cursor:pointer;
-                position:absolute; top:6px; left:6px;
                 border:1px solid #4e535a; background:#2f3237;
+                flex-shrink:0;
             }
             .sk-pf-check:checked { background:#5b9bd5; border-color:#5b9bd5; }
-            .sk-pf-check-wrap {
+            .sk-pf-add-wrap {
                 position:absolute; top:50%; right:8px;
                 width:30px; height:30px;
                 transform:translateY(-50%); cursor:pointer;
+                display:flex; align-items:center; justify-content:center;
             }
+            .sk-pf-manage-btn {
+                display:inline-flex; align-items:center; gap:4px;
+                padding:2px 7px; margin-right:4px;
+                background:rgba(91,155,213,0.12); border:1px solid rgba(91,155,213,0.3);
+                border-radius:4px; cursor:pointer; font-size:11px; color:#5b9bd5;
+                white-space:nowrap; flex-shrink:0; transition:background .15s;
+                height:22px; line-height:1;
+            }
+            .sk-pf-manage-btn:hover { background:rgba(91,155,213,0.25); }
+            .sk-pf-manage-btn.active { background:rgba(91,155,213,0.3); border-color:#5b9bd5; }
             .sk-pf-settings-link {
                 display:inline-flex; align-items:center; gap:6px;
                 padding:4px 8px; margin:0 4px;
@@ -317,10 +328,10 @@ const PriceFillerModule = (() => {
 
         if (hash === '#/add') {
             document.querySelectorAll('.items-cont .title-wrap').forEach(titleWrap => {
-                if (titleWrap.querySelector('.sk-pf-check-wrap')) return;
+                if (titleWrap.querySelector('.sk-pf-add-wrap')) return;
                 titleWrap.style.position = 'relative';
                 const wrap = document.createElement('div');
-                wrap.className = 'sk-pf-check-wrap';
+                wrap.className = 'sk-pf-add-wrap';
                 const cb = document.createElement('input');
                 cb.type = 'checkbox';
                 cb.className = 'sk-pf-check';
@@ -335,21 +346,34 @@ const PriceFillerModule = (() => {
         }
 
         if (hash === '#/manage') {
+            // Inject a compact Fill button into the price column area (not inside .desc which is cramped)
             document.querySelectorAll('.item___jLJcf').forEach(row => {
-                const desc = row.querySelector('.desc___VJSNQ');
-                if (!desc || desc.querySelector('.sk-pf-check-wrap')) return;
-                desc.style.position = 'relative';
-                const wrap = document.createElement('div');
-                wrap.className = 'sk-pf-check-wrap';
-                const cb = document.createElement('input');
-                cb.type = 'checkbox';
-                cb.className = 'sk-pf-check';
-                cb.addEventListener('change', async (e) => {
+                if (row.querySelector('.sk-pf-manage-btn')) return;
+
+                // Find the price input wrapper
+                const priceWrap = row.querySelector('.price___DoKP7');
+                if (!priceWrap) return;
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'sk-pf-manage-btn';
+                btn.textContent = 'Fill';
+                btn.title = 'Fill price using Price Filler settings';
+
+                let isFilled = false;
+                btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    await fillManageRow(row, cb.checked).catch(err => console.error('[PriceFiller]', err));
+                    isFilled = !isFilled;
+                    btn.classList.toggle('active', isFilled);
+                    btn.textContent = isFilled ? 'Clear' : 'Fill';
+                    await fillManageRow(row, isFilled).catch(err => console.error('[PriceFiller]', err));
                 });
-                wrap.appendChild(cb);
-                desc.appendChild(wrap);
+
+                // Insert button before the price input wrapper, inside the price cell
+                priceWrap.style.display = 'flex';
+                priceWrap.style.alignItems = 'center';
+                priceWrap.style.gap = '4px';
+                priceWrap.insertBefore(btn, priceWrap.firstChild);
             });
         }
     }

@@ -94,7 +94,7 @@ const BookNotifierModule = {
         if (bookName && !['No API key', 'API error', 'No missions data', 'Check failed'].includes(bookName)) {
             // Book found — green, hyperlinked
             section.style.color = '#4CAF50';
-            section.innerHTML = `<span class="title">Book: </span><a href="https://www.torn.com/missions.php" target="_blank" style="color:#4CAF50;font-weight:bold;text-decoration:none;">${bookName}</a>`;
+            section.innerHTML = `<a href="https://www.torn.com/missions.php" target="_blank" style="color:#4CAF50;font-weight:bold;text-decoration:none;"><span class="title">Book: </span>${bookName}</a>`;
         } else if (bookName) {
             // Error state
             section.style.color = '#e57373';

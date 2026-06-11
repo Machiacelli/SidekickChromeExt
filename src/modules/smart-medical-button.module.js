@@ -1,7 +1,6 @@
 /**
  * Sidekick Smart Medical Button
  * Adapted from BBSmalls [3908857] Torn Smart FAK Button v4.43
- * Original: https://greasyfork.org/scripts/568502
  * Sidekick port: uses ChromeStorage, universal API key, morphine always included
  */
 
@@ -13,15 +12,14 @@
     const PERSONAL_URL = 'https://www.torn.com/item.php';
     const FACTION_URL  = 'https://www.torn.com/factions.php?step=your&type=1#/tab=armoury';
 
-    // Item definitions — morphine always included, blood bag conditional on type setting
+    // Item definitions — morphine always included
     let ITEMS = {
-        'Small First Aid Kit': { id: 68, removes: 1200, cd: 600,  baseRemoves: 1200 },
-        'First Aid Kit':       { id: 67, removes: 2400, cd: 900,  baseRemoves: 2400 },
-        'Morphine':            { id: 66, removes: 4200, cd: 1200, baseRemoves: 4200 },
-        'Blood Bag':           { id: null, removes: 7200, cd: 1800, baseRemoves: 7200 }
+        'Small First Aid Kit': { id: 68, removes: 1200, cd: 600,  baseRemoves: 1200, color: '#c0392b', icon: '🩹' },
+        'First Aid Kit':       { id: 67, removes: 2400, cd: 900,  baseRemoves: 2400, color: '#1a6fc4', icon: '🩹' },
+        'Morphine':            { id: 66, removes: 4200, cd: 1200, baseRemoves: 4200, color: '#e87722', icon: '💉' },
+        'Blood Bag':           { id: null, removes: 7200, cd: 1800, baseRemoves: 7200, color: '#9333ea', icon: '🩸' }
     };
 
-    const BLOOD_TYPES   = ['Disabled', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
     const BLOOD_BAG_IDS = { 'A+':732,'A-':733,'B+':734,'B-':735,'AB+':736,'AB-':737,'O+':738,'O-':739 };
 
     let cachedTimer       = 0;
@@ -31,9 +29,9 @@
     let settings          = { itemSource: 'Personal Items', bloodType: 'Disabled' };
     let perkFetchInterval = null;
     let pollInterval      = null;
+    let cdInterval        = null;
 
-    // ─── Storage helpers ─────────────────────────────────────────────────────
-
+    // ─── Storage ──────────────────────────────────────────────────────────────
     const CS = () => window.SidekickModules?.Core?.ChromeStorage;
 
     async function loadSettings() {
@@ -50,54 +48,43 @@
         await CS().set(STORAGE_KEY, { ...current, ...patch });
     }
 
-    // ─── Helpers ─────────────────────────────────────────────────────────────
-
-    const getApiKey     = async () => CS() ? (await CS().get('sidekick_api_key') || '') : '';
-    const bloodEnabled  = () => settings.bloodType !== 'Disabled';
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+    const getApiKey = async () => CS() ? (await CS().get('sidekick_api_key') || '') : '';
+    const bloodEnabled = () => settings.bloodType !== 'Disabled';
 
     const formatTime = sec => {
-        if (sec <= 0) return '';
-        const m = Math.floor(sec / 60), s = sec % 60;
-        return m > 0 ? `${m}m ${s.toString().padStart(2, '0')}s` : `${s}s`;
-    };
-
-    const formatCDTime = sec => {
-        if (sec <= 0) return '0:00:00';
+        if (sec <= 0) return 'Out';
         const h = Math.floor(sec / 3600);
         const m = Math.floor((sec % 3600) / 60);
         const s = sec % 60;
-        return `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        if (h > 0) return `${h}h ${m}m`;
+        if (m > 0) return `${m}m ${s.toString().padStart(2,'0')}s`;
+        return `${s}s`;
     };
 
-    function inHospital()      { return !!document.querySelector('a[aria-label^="Hospital:"]'); }
-    function isOnPersonalPage(){ return window.location.href.toLowerCase().includes('item.php'); }
-    function isOnFactionPage() {
-        const u = window.location.href.toLowerCase();
-        return u.includes('factions.php') && u.includes('tab=armoury');
-    }
+    const formatCDTime = sec => {
+        if (sec <= 0) return null;
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        return m > 0 ? `${m}m ${s.toString().padStart(2,'0')}s` : `${s}s`;
+    };
 
-    // ─── Medical cooldown from sessionStorage ─────────────────────────────────
+    function inHospital() { return !!document.querySelector('a[aria-label^="Hospital:"]'); }
 
-    function getSidebarData() {
+    // ─── Medical cooldown ────────────────────────────────────────────────────
+    function getMedicalCooldownInfo() {
         try {
             const key = Object.keys(sessionStorage).find(k => /sidebarData\d+/.test(k));
-            return key ? JSON.parse(sessionStorage.getItem(key)) : null;
+            const data = key ? JSON.parse(sessionStorage.getItem(key)) : null;
+            const med = data?.statusIcons?.icons?.medical_cooldown;
+            if (!med) return null;
+            const remaining = Math.max(0, Math.round(med.timerExpiresAt - Date.now() / 1000));
+            return { remaining, isActive: remaining > 0 };
         } catch { return null; }
     }
 
-    function getMedicalCooldownInfo() {
-        const data = getSidebarData();
-        if (!data) return null;
-        const med = data?.statusIcons?.icons?.medical_cooldown;
-        if (!med) return null;
-        const nowSec       = Date.now() / 1000;
-        const remainingSec = Math.max(0, Math.round(med.timerExpiresAt - nowSec));
-        return { remainingSec, isActive: remainingSec > 0 };
-    }
-
-    // ─── API: Medical effectiveness perk ─────────────────────────────────────
-
-    async function fetchPerksAndUpdateThresholds() {
+    // ─── API: Perks ───────────────────────────────────────────────────────────
+    async function fetchPerks() {
         const key = await getApiKey();
         if (!key || key.length !== 16) return;
         try {
@@ -105,7 +92,6 @@
             if (!res.ok) return;
             const data = await res.json();
             if (data.error) return;
-
             let bonus = 0;
             [...(data.education_perks || []), ...(data.faction_perks || [])].forEach(p => {
                 if (typeof p === 'string' && p.includes('medical item effectiveness')) {
@@ -113,28 +99,25 @@
                     if (m) bonus += parseInt(m[1], 10);
                 }
             });
-
             totalMedicalBonus = Math.min(bonus, 50);
             const mult = 1 + totalMedicalBonus / 100;
             Object.keys(ITEMS).forEach(n => { ITEMS[n].removes = Math.round(ITEMS[n].baseRemoves * mult); });
-            updateButtonDisplay();
+            updateDisplay();
         } catch {}
     }
 
     // ─── Item selection ───────────────────────────────────────────────────────
-
     function selectBestItem(timer) {
         if (timer <= 0) return null;
         const available = [
             { name: 'Small First Aid Kit', ...ITEMS['Small First Aid Kit'] },
             { name: 'First Aid Kit',       ...ITEMS['First Aid Kit'] },
-            { name: 'Morphine',            ...ITEMS['Morphine'] },  // always included
+            { name: 'Morphine',            ...ITEMS['Morphine'] },
         ];
         if (bloodEnabled()) available.push({
-            name: `Blood Bag: ${settings.bloodType}`,
+            name: 'Blood Bag',
             id:   BLOOD_BAG_IDS[settings.bloodType],
-            removes: ITEMS['Blood Bag'].removes,
-            cd:      ITEMS['Blood Bag'].cd
+            ...ITEMS['Blood Bag']
         });
         available.sort((a, b) => a.removes - b.removes);
         for (const item of available) if (item.removes >= timer) return item;
@@ -143,57 +126,71 @@
         );
     }
 
-    function getButtonColor(timer) {
-        if (timer <= 0) return '#555';
-        const item = selectBestItem(timer);
-        if (!item) return '#555';
-        if (item.name.startsWith('Blood Bag')) return '#9333ea';
-        if (item.name === 'Morphine')          return '#e87722';
-        if (item.name === 'First Aid Kit')     return '#1a6fc4';
-        return '#c82333';
-    }
-
-    // ─── Display ─────────────────────────────────────────────────────────────
-
-    function updateButtonDisplay() {
-        const container = document.getElementById('sk-med-container');
-        if (!container) return;
-        const timerEl = container.querySelector('#sk-med-timer');
-        const btnEl   = container.querySelector('#sk-med-btn');
-        if (cachedTimer <= 0) {
-            timerEl.textContent    = 'No Hosp';
-            btnEl.style.background = '#555';
-        } else {
-            timerEl.textContent    = formatTime(cachedTimer);
-            btnEl.style.background = getButtonColor(cachedTimer);
-        }
-        updateCooldownDisplay();
-    }
-
-    function updateCooldownDisplay() {
-        const el = document.getElementById('sk-med-cd-text');
+    // ─── Display ──────────────────────────────────────────────────────────────
+    function updateDisplay() {
+        const el = document.getElementById('sk-med-floater');
         if (!el) return;
+
+        const timerEl  = el.querySelector('#sk-med-timer');
+        const ringEl   = el.querySelector('#sk-med-ring');
+        const labelEl  = el.querySelector('#sk-med-label');
+        const cdEl     = el.querySelector('#sk-med-cd');
+        const glowEl   = el.querySelector('#sk-med-glow');
+
+        const hosp = inHospital();
+        const item = hosp && cachedTimer > 0 ? selectBestItem(cachedTimer) : null;
+
+        // Timer text
+        if (timerEl) timerEl.textContent = (hosp && cachedTimer > 0) ? formatTime(cachedTimer) : (hosp ? '...' : '—');
+
+        // Item label
+        if (labelEl) {
+            if (item) {
+                const shortNames = {
+                    'Small First Aid Kit': 'Small FAK',
+                    'First Aid Kit': 'FAK',
+                    'Morphine': 'Morphine',
+                    'Blood Bag': `BB ${settings.bloodType}`
+                };
+                labelEl.textContent = shortNames[item.name] || item.name;
+            } else {
+                labelEl.textContent = hosp ? 'Calculating...' : 'Not in hospital';
+            }
+        }
+
+        // Ring color gradient based on best item
+        const itemColor = item?.color || (hosp ? '#5fcc6a' : '#444');
+        if (ringEl) {
+            ringEl.style.stroke = itemColor;
+        }
+        if (glowEl) {
+            glowEl.style.filter = `drop-shadow(0 0 8px ${itemColor}60)`;
+        }
+
+        // Medical CD badge
         const med = getMedicalCooldownInfo();
-        el.textContent = (med && med.isActive) ? `CD ${formatCDTime(med.remainingSec)}` : 'No Med CD';
+        if (cdEl) {
+            const cdTime = med?.isActive ? formatCDTime(med.remaining) : null;
+            cdEl.style.display = cdTime ? 'flex' : 'none';
+            cdEl.textContent = cdTime || '';
+        }
     }
 
     // ─── Position / dragging ─────────────────────────────────────────────────
-
-    const POS_KEY    = 'sk-med-pos';
-    const savePos    = (x, y) => { try { localStorage.setItem(POS_KEY, JSON.stringify({ xPct: x/window.innerWidth, yPct: y/window.innerHeight })); } catch {} };
-    const loadPos    = () => { try { const p = JSON.parse(localStorage.getItem(POS_KEY)); return p ? { x: Math.round(p.xPct*window.innerWidth), y: Math.round(p.yPct*window.innerHeight) } : null; } catch { return null; } };
-    const clamp      = (x, y, w, h) => ({ x: Math.min(Math.max(4,x), window.innerWidth-w-4), y: Math.min(Math.max(4,y), window.innerHeight-h-4) });
-
-    function restorePosition() {
-        const el = document.getElementById('sk-med-container');
-        if (!el) return;
-        const pos = loadPos();
-        if (pos) {
-            const r = el.getBoundingClientRect();
-            const c = clamp(pos.x, pos.y, r.width, r.height);
-            el.style.left = c.x + 'px'; el.style.top = c.y + 'px';
-        }
-    }
+    const POS_KEY = 'sk-med-pos';
+    const savePos = (x, y) => {
+        try { localStorage.setItem(POS_KEY, JSON.stringify({ xPct: x/window.innerWidth, yPct: y/window.innerHeight })); } catch {}
+    };
+    const loadPos = () => {
+        try {
+            const p = JSON.parse(localStorage.getItem(POS_KEY));
+            return p ? { x: Math.round(p.xPct*window.innerWidth), y: Math.round(p.yPct*window.innerHeight) } : null;
+        } catch { return null; }
+    };
+    const clamp = (x, y, w, h) => ({
+        x: Math.min(Math.max(8, x), window.innerWidth  - w - 8),
+        y: Math.min(Math.max(8, y), window.innerHeight - h - 8)
+    });
 
     function enableDragging(el, handle) {
         let drag=false, startX, startY, initX, initY;
@@ -207,10 +204,10 @@
             if (!drag) return;
             const ev = e.touches ? e.touches[0] : e;
             const dx=ev.clientX-startX, dy=ev.clientY-startY;
-            if (Math.abs(dx)>6 || Math.abs(dy)>6) isDragging=true;
+            if (Math.abs(dx)>5 || Math.abs(dy)>5) isDragging=true;
             const r=el.getBoundingClientRect();
             const c=clamp(initX+dx, initY+dy, r.width, r.height);
-            el.style.left=c.x+'px'; el.style.top=c.y+'px';
+            el.style.left=c.x+'px'; el.style.top=c.y+'px'; el.style.right='auto';
         };
         const end = () => {
             if (!drag) return; drag=false;
@@ -229,7 +226,6 @@
     }
 
     // ─── Hospital polling ─────────────────────────────────────────────────────
-
     async function fetchHospitalTime() {
         try {
             const res  = await fetch('/page.php?sid=UserApiData', { credentials:'include', headers:{'X-Requested-With':'XMLHttpRequest'} });
@@ -246,13 +242,15 @@
             if (!isEnabled) return;
             const hosp = inHospital();
             const t = hosp ? await fetchHospitalTime() : 0;
-            if (t !== cachedTimer) { cachedTimer = t; updateButtonDisplay(); }
-            updateCooldownDisplay();
-        }, 1000);
+            if (t !== cachedTimer) { cachedTimer = t; updateDisplay(); }
+        }, 2000);
+
+        // CD updates every second
+        if (cdInterval) clearInterval(cdInterval);
+        cdInterval = setInterval(() => updateDisplay(), 1000);
     }
 
     // ─── Item use ─────────────────────────────────────────────────────────────
-
     async function useItem(item) {
         if (!item?.id) return false;
         try {
@@ -266,141 +264,233 @@
         } catch { return false; }
     }
 
+    function isOnPersonalPage(){ return window.location.href.toLowerCase().includes('item.php'); }
+    function isOnFactionPage() {
+        const u = window.location.href.toLowerCase();
+        return u.includes('factions.php') && u.includes('tab=armoury');
+    }
     function isOnCorrectPage() {
         return (settings.itemSource === 'Personal Items' && isOnPersonalPage()) ||
                (settings.itemSource === 'Faction Armory' && isOnFactionPage());
     }
 
     async function onButtonClick() {
-        if (isDragging || cachedTimer <= 0) return;
+        if (isDragging || cachedTimer <= 0 || !inHospital()) return;
         const item = selectBestItem(cachedTimer);
         if (!item) return;
+
+        const el = document.getElementById('sk-med-floater');
+        if (el) {
+            el.style.transform = 'scale(0.9)';
+            setTimeout(() => { el.style.transform = ''; }, 150);
+        }
+
         if (isOnCorrectPage()) {
             const ok = await useItem(item);
-            if (ok) setTimeout(updateButtonDisplay, 800);
+            if (ok) {
+                cachedTimer = Math.max(0, cachedTimer - (item.removes || 1200));
+                updateDisplay();
+                setTimeout(async () => {
+                    cachedTimer = await fetchHospitalTime();
+                    updateDisplay();
+                }, 1500);
+            }
         } else {
             window.location.href = settings.itemSource === 'Faction Armory' ? FACTION_URL : PERSONAL_URL;
         }
     }
 
-    // ─── UI injection ─────────────────────────────────────────────────────────
-
-    function injectUI() {
-        if (document.getElementById('sk-med-container')) return;
-
-        const container = document.createElement('div');
-        container.id = 'sk-med-container';
-        container.innerHTML = `
-            <div id="sk-med-btn-wrap">
-                <div id="sk-med-btn" title="Click to use best med item · Drag to move">
-                    <div id="sk-med-icon">✚</div>
-                    <div id="sk-med-timer"></div>
-                </div>
-                <div id="sk-med-cd-box">
-                    <div id="sk-med-cd-text">No Med CD</div>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(container);
-
-        // Position
-        const pos = loadPos();
-        if (pos) {
-            const r = container.getBoundingClientRect();
-            const c = clamp(pos.x, pos.y, r.width, r.height);
-            container.style.left = c.x+'px'; container.style.top = c.y+'px';
-        } else {
-            // Default: next to random target floater (top-right area)
-            container.style.right = '80px'; container.style.top = '120px';
-        }
-
-        const btn = container.querySelector('#sk-med-btn');
-        btn.addEventListener('click', onButtonClick);
-        btn.addEventListener('touchend', e => { if (!isDragging) { e.preventDefault(); onButtonClick(); } }, { passive: false });
-
-        enableDragging(container, btn);
-        window.addEventListener('resize', restorePosition);
-    }
-
-    function removeUI() {
-        const el = document.getElementById('sk-med-container');
-        if (el) el.remove();
-        if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
-        if (perkFetchInterval) { clearInterval(perkFetchInterval); perkFetchInterval = null; }
-    }
-
     // ─── Styles ───────────────────────────────────────────────────────────────
-
     function injectStyles() {
         if (document.getElementById('sk-med-styles')) return;
         const style = document.createElement('style');
         style.id = 'sk-med-styles';
         style.textContent = `
-            #sk-med-container {
-                position: fixed; z-index: 999998;
-                display: flex; flex-direction: column; align-items: center;
+            #sk-med-floater {
+                position: fixed;
+                z-index: 999998;
+                width: 72px;
                 user-select: none;
+                transition: transform .12s ease;
+                right: 16px;
+                top: 130px;
             }
-            #sk-med-btn-wrap { position: relative; width: 52px; height: 62px; }
-            #sk-med-btn {
-                position: absolute; top: 0;
-                width: 52px; height: 52px; border-radius: 50%;
-                background: #555; border: 2.5px solid rgba(255,255,255,0.25);
-                display: flex; justify-content: center; align-items: center;
-                overflow: hidden; cursor: pointer; transition: all .15s;
+            #sk-med-body {
+                position: relative;
+                width: 72px;
+                height: 72px;
+                cursor: pointer;
             }
-            #sk-med-btn:hover { transform: scale(1.1); filter: brightness(1.15); }
-            #sk-med-icon {
-                font-size: 28px; position: absolute;
-                top: calc(50% - 5px); left: 50%;
-                transform: translate(-50%, -50%);
-                pointer-events: none; color: #fff; text-shadow: 0 0 4px rgba(0,0,0,0.6);
+            #sk-med-svg {
+                position: absolute;
+                top: 0; left: 0;
+                width: 72px; height: 72px;
+            }
+            #sk-med-bg-circle {
+                fill: #141920;
+                stroke: rgba(255,255,255,0.06);
+                stroke-width: 1.5;
+            }
+            #sk-med-ring {
+                fill: none;
+                stroke: #5fcc6a;
+                stroke-width: 3;
+                stroke-linecap: round;
+                transition: stroke .3s ease;
+                transform-origin: 36px 36px;
+                transform: rotate(-90deg);
+            }
+            #sk-med-cross {
+                fill: rgba(255,255,255,0.9);
+            }
+            #sk-med-inner {
+                position: absolute;
+                top: 0; left: 0; right: 0; bottom: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                pointer-events: none;
             }
             #sk-med-timer {
-                position: absolute; bottom: 8px; left: 50%;
+                font-size: 12px;
+                font-weight: 700;
+                color: #fff;
+                font-family: 'Inter', 'Roboto', sans-serif;
+                text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+                letter-spacing: -0.5px;
+                line-height: 1;
+                margin-top: 2px;
+            }
+            #sk-med-label {
+                font-size: 8px;
+                color: rgba(255,255,255,0.45);
+                font-family: 'Inter', 'Roboto', sans-serif;
+                text-align: center;
+                padding: 0 4px;
+                line-height: 1.2;
+                margin-top: 1px;
+                max-width: 60px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            #sk-med-cd {
+                position: absolute;
+                bottom: -18px;
+                left: 50%;
                 transform: translateX(-50%);
-                font-size: 10px; color: #fff; font-weight: bold;
-                text-shadow: 0 0 3px black; pointer-events: none; white-space: nowrap;
+                background: rgba(139, 0, 0, 0.85);
+                border: 1px solid rgba(255,80,80,0.3);
+                border-radius: 8px;
+                padding: 2px 6px;
+                font-size: 9px;
+                font-weight: 600;
+                color: #ffaaaa;
+                font-family: 'Inter', 'Roboto', sans-serif;
+                white-space: nowrap;
+                display: none;
             }
-            #sk-med-cd-box {
-                position: absolute; top: 48px; left: -8px; width: 68px; height: 18px;
-                background: #8b0000; border: 1.5px solid rgba(255,255,255,0.25);
-                border-radius: 5px; display: flex; align-items: center; box-sizing: border-box;
+            #sk-med-floater:hover #sk-med-body {
+                transform: scale(1.06);
             }
-            #sk-med-cd-text {
-                font-size: 9.5px; color: #fff; text-align: center;
-                flex-grow: 1; pointer-events: none;
+            #sk-med-body {
+                transition: transform .15s ease;
+            }
+            #sk-med-glow {
+                transition: filter .3s ease;
             }
         `;
         document.head.appendChild(style);
     }
 
-    // ─── Public module API ────────────────────────────────────────────────────
+    // ─── UI injection ─────────────────────────────────────────────────────────
+    function injectUI() {
+        if (document.getElementById('sk-med-floater')) return;
 
+        const floater = document.createElement('div');
+        floater.id = 'sk-med-floater';
+
+        // SVG ring with cross icon
+        floater.innerHTML = `
+            <div id="sk-med-body" title="Click to use best medical item · Drag to move">
+                <svg id="sk-med-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+                    <g id="sk-med-glow">
+                        <circle id="sk-med-bg-circle" cx="36" cy="36" r="33"/>
+                        <!-- Dashed ring track -->
+                        <circle cx="36" cy="36" r="30"
+                            fill="none"
+                            stroke="rgba(255,255,255,0.05)"
+                            stroke-width="3"
+                            stroke-dasharray="3 4"/>
+                        <!-- Active ring -->
+                        <circle id="sk-med-ring"
+                            cx="36" cy="36" r="30"
+                            stroke-dasharray="188.5"
+                            stroke-dashoffset="0"/>
+                        <!-- Medical cross icon -->
+                        <g id="sk-med-cross">
+                            <!-- Horizontal bar -->
+                            <rect x="24" y="31" width="24" height="10" rx="2.5" fill="rgba(255,255,255,0.88)"/>
+                            <!-- Vertical bar -->
+                            <rect x="31" y="24" width="10" height="24" rx="2.5" fill="rgba(255,255,255,0.88)"/>
+                        </g>
+                    </g>
+                </svg>
+                <div id="sk-med-inner">
+                    <div id="sk-med-timer">—</div>
+                    <div id="sk-med-label">Ready</div>
+                </div>
+            </div>
+            <div id="sk-med-cd"></div>
+        `;
+
+        document.body.appendChild(floater);
+
+        // Position
+        const pos = loadPos();
+        if (pos) {
+            const c = clamp(pos.x, pos.y, 72, 72);
+            floater.style.left = c.x + 'px';
+            floater.style.top  = c.y + 'px';
+            floater.style.right = 'auto';
+        }
+
+        const body = floater.querySelector('#sk-med-body');
+        body.addEventListener('click', onButtonClick);
+        body.addEventListener('touchend', e => { if (!isDragging) { e.preventDefault(); onButtonClick(); } }, { passive: false });
+
+        enableDragging(floater, body);
+        window.addEventListener('resize', () => {
+            const r = floater.getBoundingClientRect();
+            const c = clamp(r.left, r.top, r.width, r.height);
+            floater.style.left = c.x + 'px'; floater.style.top = c.y + 'px';
+        });
+    }
+
+    function removeUI() {
+        document.getElementById('sk-med-floater')?.remove();
+        document.getElementById('sk-med-styles')?.remove();
+        if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+        if (cdInterval)   { clearInterval(cdInterval);   cdInterval   = null; }
+        if (perkFetchInterval) { clearInterval(perkFetchInterval); perkFetchInterval = null; }
+    }
+
+    // ─── Module API ───────────────────────────────────────────────────────────
     const SmartMedicalButton = {
         name: 'SmartMedicalButton',
 
         async initialize() {
             if (!window.SidekickModules?.Core?.ChromeStorage) return;
-
             await loadSettings();
-
             if (!isEnabled) return;
-
             injectStyles();
             injectUI();
-
             cachedTimer = inHospital() ? await fetchHospitalTime() : 0;
-            updateButtonDisplay();
-
+            updateDisplay();
             startPolling();
-            setInterval(updateCooldownDisplay, 1000);
-
-            // Fetch perks after 2s, then every 15 min
-            setTimeout(() => fetchPerksAndUpdateThresholds(), 2000);
-            perkFetchInterval = setInterval(() => fetchPerksAndUpdateThresholds(), 15 * 60 * 1000);
-
+            setTimeout(() => fetchPerks(), 2000);
+            perkFetchInterval = setInterval(() => fetchPerks(), 15 * 60 * 1000);
             console.log('[Sidekick] Smart Medical Button initialized');
         },
 
@@ -410,11 +500,11 @@
             injectStyles();
             injectUI();
             cachedTimer = inHospital() ? await fetchHospitalTime() : 0;
-            updateButtonDisplay();
+            updateDisplay();
             startPolling();
             if (!perkFetchInterval) {
-                setTimeout(() => fetchPerksAndUpdateThresholds(), 500);
-                perkFetchInterval = setInterval(() => fetchPerksAndUpdateThresholds(), 15*60*1000);
+                setTimeout(() => fetchPerks(), 500);
+                perkFetchInterval = setInterval(() => fetchPerks(), 15*60*1000);
             }
         },
 
@@ -424,11 +514,10 @@
             removeUI();
         },
 
-        // Called from settings panel to update item source / blood type
         async updateSetting(key, value) {
             settings[key] = value;
             await saveSettings({ [key]: value });
-            updateButtonDisplay();
+            updateDisplay();
         },
 
         destroy() { removeUI(); }
@@ -437,7 +526,6 @@
     if (!window.SidekickModules) window.SidekickModules = {};
     window.SidekickModules.SmartMedicalButton = SmartMedicalButton;
 
-    // Auto-init after core is ready
     const tryInit = () => {
         if (window.SidekickModules?.Core?.ChromeStorage) {
             SmartMedicalButton.initialize();

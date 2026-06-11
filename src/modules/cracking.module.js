@@ -1,6 +1,5 @@
 /**
  * Sidekick Chrome Extension - Cracking Module
- * Ported from Simple Cracking Helper by SirAua
  */
 
 (function () {

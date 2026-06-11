@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Sidekick Chrome Extension - Settings Module V2
  * Comprehensive settings panel with all module toggles and configurations
  * Version: 2.0.0
@@ -932,7 +932,7 @@
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Loadout Switcher</div><div class="sk-row-desc">Adds quick loadout change buttons on the Items page</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-loadout" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-sh" style="margin-top:18px;">Inventory</div>
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Locked Items Manager</div><div class="sk-row-desc">Lock inventory items to prevent accidental trading or selling</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-locked-items"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row" style="align-items:flex-start;gap:12px;"><div class="sk-row-info"><div class="sk-row-title">Weapon XP Tracker</div><div class="sk-row-desc">Tracks weapon experience progress and shows XP gain rates</div><div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-wxp" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">View Stats &#x25BE;</button></div></div><label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row" style="align-items:flex-start;gap:12px;"><div class="sk-row-info"><div class="sk-row-title">Weapon XP Tracker</div><div class="sk-row-desc">Tracks weapon experience progress and shows XP gain rates</div><div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-wxp" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">View Stats &#x25BE;</button></div></div><label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox" id="skp-tog-wxp"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-shelf" id="skp-shelf-wxp" style="display:none;">
             <div class="sk-info" style="margin-bottom:8px;">Opens a full weapon stats window showing XP % per weapon, finishing hits progress, and a list of weapons you have not yet trained.</div>
             <button id="skp-wxp-overview-btn" class="sk-btn sk-btn-primary" style="width:100%;">View Weapon XP Stats</button>
@@ -952,7 +952,7 @@
               <div class="sk-row-desc">Auto-fills prices on Item Market listings using live market data</div>
               <div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-market" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">Settings &#x25BE;</button></div>
             </div>
-            <label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label>
+            <label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox" id="skp-tog-market-filler"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label>
           </div>
           <div class="sk-shelf" id="skp-shelf-market" style="display:none;">
             <div class="sk-sh" style="margin-top:0;font-size:10px;">Item Market Filler Settings</div>
@@ -968,7 +968,7 @@
               <div class="sk-row-desc">Auto-fills your bazaar prices using Weav3r market API data</div>
               <div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-bazaar" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">Settings &#x25BE;</button></div>
             </div>
-            <label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label>
+            <label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox" id="skp-tog-bazaar-filler" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label>
           </div>
           <div class="sk-shelf" id="skp-shelf-bazaar" style="display:none;">
             <div class="sk-sh" style="margin-top:0;font-size:10px;">Bazaar Filler Settings</div>
@@ -978,7 +978,7 @@
             <label class="sk-field-label" style="margin-top:8px;">Slot (cheapest = 1)</label>
             <input type="number" class="sk-input" min="1" max="10" value="1" placeholder="1">
           </div>
-          <div class="sk-row" style="margin-top:4px;"><div class="sk-row-info"><div class="sk-row-title">Item Market Max Quantity</div><div class="sk-row-desc">Adds a button to fill max quantity when buying from Item Market</div></div><label class="sk-tog"><input type="checkbox"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row" style="margin-top:4px;"><div class="sk-row-info"><div class="sk-row-title">Item Market Max Quantity</div><div class="sk-row-desc">Adds a button to fill max quantity when buying from Item Market</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-market-max-qty"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-sh" style="margin-top:18px;">Quick Deposit</div>
           <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Quick Deposit</div><div class="sk-row-desc">Makes your money display clickable for fast vault deposits</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-quick-deposit"><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <label class="sk-field-label" style="margin-top:10px;">Deposit Target</label>
@@ -1009,7 +1009,7 @@
               <div class="sk-row-desc">Highlights the best SFC location by scoring and alerts when your threshold is met</div>
               <div style="margin-top:5px;"><button class="sk-shelf-toggle" data-shelf="skp-shelf-sfc" style="background:none;border:none;padding:0;color:#5fcc6a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">Settings &#x25BE;</button></div>
             </div>
-            <label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label>
+            <label class="sk-tog" style="flex-shrink:0;margin-top:2px;"><input type="checkbox" id="skp-tog-sfc" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label>
           </div>
           <div class="sk-shelf" id="skp-shelf-sfc" style="display:none;">
             <div class="sk-sh" style="margin-top:0;font-size:10px;">SFC Alert Settings</div>
@@ -1200,14 +1200,14 @@
           <div class="sk-info">Floating countdown timer for your faction chain. Alerts you before the chain expires.</div>
           <div class="sk-row" style="margin-top:8px;"><div class="sk-row-info"><div class="sk-row-title">Enable Chain Timer</div><div class="sk-row-desc">Show floating chain countdown timer on all Torn pages</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-chain-timer" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <div class="sk-sh" style="margin-top:16px;">Alert Settings</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Enable Alerts</div><div class="sk-row-desc">Trigger alerts when chain timer reaches the threshold</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Browser Popup Alert</div><div class="sk-row-desc">Show a browser dialog popup when the chain is about to expire</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Screen Flash</div><div class="sk-row-desc">Flash the screen red when the chain timer hits the alert threshold</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Enable Alerts</div><div class="sk-row-desc">Trigger alerts when chain timer reaches the threshold</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-ct-alerts" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Browser Popup Alert</div><div class="sk-row-desc">Show a browser dialog popup when the chain is about to expire</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-ct-popup" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Screen Flash</div><div class="sk-row-desc">Flash the screen red when the chain timer hits the alert threshold</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-ct-flash" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
           <label class="sk-field-label" style="margin-top:10px;">Alert Threshold (minutes)</label>
-          <div class="sk-slider-row"><input type="range" min="1" max="4" value="4" class="skp-slider" data-out="skp-chain-thresh-val" data-suffix=" min"><span class="sk-slider-val" id="skp-chain-thresh-val">4 min</span></div>
+          <div class="sk-slider-row"><input type="range" min="1" max="4" value="4" id="skp-ct-threshold" class="skp-slider" data-out="skp-chain-thresh-val" data-suffix=" min"><span class="sk-slider-val" id="skp-chain-thresh-val">4 min</span></div>
           <div class="sk-hint">Alert when chain has this many minutes remaining</div>
           <div class="sk-sh" style="margin-top:16px;">Display</div>
-          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Floating Display</div><div class="sk-row-desc">Show floating timer widget on the page (draggable and resizable)</div></div><label class="sk-tog"><input type="checkbox" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
+          <div class="sk-row"><div class="sk-row-info"><div class="sk-row-title">Floating Display</div><div class="sk-row-desc">Show floating timer widget on the page (draggable and resizable)</div></div><label class="sk-tog"><input type="checkbox" id="skp-tog-ct-floating" checked><div class="sk-tog-track"></div><div class="sk-tog-thumb"></div></label></div>
         </div>
         <div class="sk-subtab-panel" id="skp-tab-war-monitor">
           <div class="sk-sh">War Monitor</div>
@@ -1405,6 +1405,7 @@
                 ['#skp-tog-auto-gym',         'sidekick_settings',            'auto-gym-switch',  false],
                 ['#skp-tog-block-training',   'sidekick_block_training',      null,              false],
                 // Economy
+                ['#skp-tog-market-max-qty',  'sidekick_market_max_qty',    null,              true],
                 ['#skp-tog-market-filler',    'sidekick_settings',            'price-filler',    false],
                 ['#skp-tog-bazaar-filler',    'sidekick_settings',            'bazaar-filler',   false],
                 ['#skp-tog-quick-deposit',    'sidekick_settings',            'quick-deposit',   false],
@@ -1420,7 +1421,7 @@
                 ['#skp-tog-racing-alert',     'sidekick_racing_alert',        null,              false],
                 ['#skp-tog-blood-bag',        'sidekick_settings',            'blood-bag-reminder', false],
                 // Crimes
-                ['#skp-tog-sfc',              'sidekick_settings',            'search-for-cash', false],
+                ['#skp-tog-sfc',              'sidekick_settings',            'crime-sfc',       false],
                 ['#skp-tog-shoplifting',      'sidekick_settings',            'crime-notifier',  false],
                 ['#skp-tog-burglary',         'sidekick_settings',            'crime-burglary',  false],
                 ['#skp-tog-disposal',         'sidekick_settings',            'crime-disposal',  false],
@@ -1521,6 +1522,65 @@
                             window.SidekickModules.SmartMedicalButton.updateSetting('bloodType', medBloodType.value);
                     });
                 }
+            }
+
+            // ─── Chain Timer sub-settings save/load ────────────────────────
+            const CT_KEY = 'sidekick_chain_timer';
+            const ctSubMap = [
+                ['#skp-tog-ct-alerts',   'alertsEnabled'],
+                ['#skp-tog-ct-popup',    'popupEnabled'],
+                ['#skp-tog-ct-flash',    'screenFlashEnabled'],
+                ['#skp-tog-ct-floating', 'floatingDisplayEnabled'],
+            ];
+            // Load chain timer sub-settings
+            (async () => {
+                if (!CS()) return;
+                const ctData = await CS().get(CT_KEY) || {};
+                ctSubMap.forEach(([sel, key]) => {
+                    const el = overlay.querySelector(sel);
+                    if (!el) return;
+                    // Default true unless explicitly false
+                    el.checked = ctData[key] !== false;
+                });
+                // Load threshold
+                const ctThresh = overlay.querySelector('#skp-ct-threshold');
+                const ctThreshVal = overlay.querySelector('#skp-chain-thresh-val');
+                if (ctThresh && ctData.alertThresholdSeconds) {
+                    const mins = Math.round(ctData.alertThresholdSeconds / 60);
+                    ctThresh.value = Math.min(4, Math.max(1, mins));
+                    if (ctThreshVal) ctThreshVal.textContent = ctThresh.value + ' min';
+                }
+            })();
+            // Wire chain timer sub-toggles
+            ctSubMap.forEach(([sel, key]) => {
+                const el = overlay.querySelector(sel);
+                if (!el) return;
+                el.addEventListener('change', async () => {
+                    if (!CS()) return;
+                    const d = await CS().get(CT_KEY) || {};
+                    d[key] = el.checked;
+                    await CS().set(CT_KEY, d);
+                    // Live-update running module
+                    if (window.SidekickModules?.ChainTimer) {
+                        window.SidekickModules.ChainTimer[key] = el.checked;
+                        window.SidekickModules.ChainTimer.saveSettings?.();
+                    }
+                });
+            });
+            // Wire threshold slider
+            const ctThresh = overlay.querySelector('#skp-ct-threshold');
+            if (ctThresh) {
+                ctThresh.addEventListener('change', async () => {
+                    if (!CS()) return;
+                    const secs = parseInt(ctThresh.value, 10) * 60;
+                    const d = await CS().get(CT_KEY) || {};
+                    d.alertThresholdSeconds = secs;
+                    await CS().set(CT_KEY, d);
+                    if (window.SidekickModules?.ChainTimer) {
+                        window.SidekickModules.ChainTimer.alertThresholdSeconds = secs;
+                        window.SidekickModules.ChainTimer.saveSettings?.();
+                    }
+                });
             }
         },
 
